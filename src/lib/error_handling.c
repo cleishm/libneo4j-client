@@ -1,0 +1,72 @@
+/* vi:set ts=4 sw=4 expandtab:
+ *
+ * Copyright 2016, Chris Leishman (http://github.com/cleishm)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include "../../config.h"
+#include "neo4j-client.h"
+#include "util.h"
+#include <string.h>
+#include <errno.h>
+
+const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
+{
+    REQUIRE(buflen > 0, NULL);
+
+    switch (errnum)
+    {
+    case NEO4J_UNEXPECTED_ERROR:
+        return "Unexpected error";
+    case NEO4J_INVALID_URI:
+        return "Invalid URI";
+    case NEO4J_UNKNOWN_URI_SCHEME:
+        return "Unknown URI scheme";
+    case NEO4J_UNKNOWN_HOST:
+        return "Unknown host";
+    case NEO4J_PROTOCOL_NEGOTIATION_FAILED:
+        return "Could not agree on a protocol version";
+    case NEO4J_INVALID_CREDENTIALS:
+        return "Username or password is invalid";
+    case NEO4J_CONNECTION_CLOSED:
+        return "Connection closed";
+    case NEO4J_TOO_MANY_SESSIONS:
+        return "Too many sessions for connection";
+    case NEO4J_SESSION_ACTIVE:
+        return "Session still active";
+    case NEO4J_SESSION_FAILED:
+        return "Session has failed";
+    case NEO4J_SESSION_ENDED:
+        return "Session has ended";
+    case NEO4J_UNCLOSED_RESULT_STREAM:
+        return "Unclosed result stream";
+    case NEO4J_STATEMENT_EVALUATION_FAILED:
+        return "Statement evaluation failed";
+    case NEO4J_STATEMENT_PREVIOUS_FAILURE:
+        return "Statement ignored due to previously failed request";
+    case NEO4J_TLS_NOT_SUPPORTED:
+        return "Neo4j client library has not been compiled with TLS support";
+    case NEO4J_TLS_VERIFICATION_FAILED:
+        return "Authenticity of the server cannot be established";
+    case NEO4J_INVALID_MAP_KEY_TYPE:
+        return "Map contains key of non-String type";
+    case NEO4J_INVALID_LABEL_TYPE:
+        return "Node/Relationship contains label of non-String type";
+    default:
+#ifdef STRERROR_R_CHAR_P
+        return strerror_r(errnum, buf, buflen);
+#else
+        return (strerror_r(errnum, buf, buflen)) ? NULL : buf;
+#endif
+    }
+}
