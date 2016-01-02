@@ -1,0 +1,233 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>libneo4j-client by cleishm</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <style>
+.wrapper {
+    width: 960px;
+}
+header {
+    width: 220px;
+}
+header ul {
+    width: 220px;
+}
+header li {
+    width: 220px;
+    border-right: none;
+}
+footer {
+    width: 220px;
+}
+section {
+    width: 660px;
+}
+    </style>
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>libneo4j-client</h1>
+        <p>Neo4j Client Library</p>
+
+        <p class="view"><a href="https://github.com/cleishm/libneo4j-client">View the Project on GitHub <small>cleishm/libneo4j-client</small></a></p>
+
+
+        <ul>
+            <li><a href="https://github.com/cleishm/libneo4j-client/releases">Release <strong>Download</strong></a></li>
+        </ul>
+      </header>
+      <section>
+<h2>
+<a id="about" class="anchor" href="#about" aria-hidden="true"><span class="octicon octicon-link"></span></a>About</h2>
+
+<p>libneo4j-client is a client library written in C for Neo4j. It is not intended
+as a complete driver, but rather as a foundation on which basic tools and
+drivers for various languages may be built. libneo4j-client takes care of all
+the detail of establishing a session with a Neo4j server, sending statements
+for evaluation, and retrieving results.</p>
+
+<p>Included with libneo4j-client is neo4j-client, a small command shell for
+Neo4j that uses libneo4j-client for all interaction with Neo4j server.</p>
+
+<h2>
+<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<p>libneo4j-client is known to work on GNU/Linux, Mac OS X and FreeBSD. It
+requires neo4j 3.0.0-M02 or later.</p>
+
+<p>Note that libneo4j-client is still an alpha release, and may change in
+incompatible ways before a stable release is made.</p>
+
+<h2>
+<a id="neo4j-client-usage" class="anchor" href="#neo4j-client-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>neo4j-client Usage</h2>
+
+<p>neo4j-client is a command shell for Neo4j. It supports secure connections
+to Neo4j server, sending of statements (including multiline statements),
+persistent command history, and rendering of results to tables or CSV.</p>
+
+<p>Basic usage:</p>
+
+<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-s1">neo4j-client -v neo4j://localhost:7687</span>
+<span class="pl-mo">The authenticity of host 'localhost:7687' could not be established.</span>
+<span class="pl-mo">TLS certificate fingerprint is BD:3D:65:E2:7C:94:C6:79:45:92:F9:47:91:DA:8E:07:93:45:69:78.</span>
+<span class="pl-mo">Would you like to trust this certificate (NO/yes/once)? yes</span>
+<span class="pl-mo">neo4j&gt; :help</span>
+<span class="pl-mo">:quit                Exit the shell</span>
+<span class="pl-mo">:connect &lt;url&gt;       Connect to the specified URL</span>
+<span class="pl-mo">:disconnect          Disconnect the client from the server</span>
+<span class="pl-mo">:help                Show usage information</span>
+<span class="pl-mo">:output (table|csv)  Set the output format</span>
+<span class="pl-mo">:width &lt;n&gt;           Set the number of columns in the table output</span>
+<span class="pl-mo">neo4j&gt; MATCH (n:Person) RETURN n LIMIT 3;</span>
+<span class="pl-mo">+----------------------------------------------------------------------------+</span>
+<span class="pl-mo">| n                                                                          |</span>
+<span class="pl-mo">+----------------------------------------------------------------------------+</span>
+<span class="pl-mo">| (:Person{born:1964,name:"Keanu Reeves"})                                   |</span>
+<span class="pl-mo">| (:Person{born:1967,name:"Carrie-Anne Moss"})                               |</span>
+<span class="pl-mo">| (:Person{born:1961,name:"Laurence Fishburne"})                             |</span>
+<span class="pl-mo">+----------------------------------------------------------------------------+</span>
+<span class="pl-mo">neo4j&gt; :exit</span>
+$</pre></div>
+
+<h2>
+<a id="libneo4j-client-usage" class="anchor" href="#libneo4j-client-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>libneo4j-client Usage</h2>
+
+<p>libneo4j-client provides a single C header file, <code>neo4j-client.h</code>, for
+inclusion in source code using the libneo4j-client API. The API is described in
+the <a href="#api_documentation">API Documentation</a>.</p>
+
+<p>libneo4j-client can be included in your project by linking the library at
+compile time, typically using the linking flags <code>-lneo4j-client -lssl -lcrypto</code>.
+Alternatively, libneo4j-client ships with a <a href="https://wiki.freedesktop.org/www/Software/pkg-config/">pkg-config</a> description file,
+enabling you to obtain the required flags using
+<code>pkg-config --libs libneo4j-client</code>.</p>
+
+<h2>
+<a id="api-documentation" class="anchor" href="#api-documentation" aria-hidden="true"><span class="octicon octicon-link"></span></a>API Documentation</h2>
+
+<p>API documentation for the latest release is available at
+<a href="https://cleishm.github.io/libneo4j-client/doc/latest/neo4j-client_8h.html">https://cleishm.github.io/libneo4j-client/doc/latest/neo4j-client_8h.html</a>.</p>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<div class="highlight highlight-source-c"><pre>#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>errno.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>neo4j-client.h<span class="pl-pds">&gt;</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">&lt;</span>stdio.h<span class="pl-pds">&gt;</span></span>
+
+<span class="pl-k">static</span> <span class="pl-k">void</span> <span class="pl-en">error</span>(<span class="pl-k">const</span> <span class="pl-k">char</span> *msg);
+
+<span class="pl-k">int</span> <span class="pl-en">main</span>(<span class="pl-k">int</span> argc, <span class="pl-k">char</span> *argv[])
+{
+    <span class="pl-c1">neo4j_client_init</span>();
+
+    <span class="pl-c1">neo4j_connection_t</span> *connection = <span class="pl-c1">neo4j_connect</span>(<span class="pl-s"><span class="pl-pds">"</span>neo4j://localhost:7687<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, <span class="pl-c1">0</span>);
+    <span class="pl-k">if</span> (connection == <span class="pl-c1">NULL</span>)
+    {
+        <span class="pl-c1">error</span>(<span class="pl-s"><span class="pl-pds">"</span>Connection failed<span class="pl-pds">"</span></span>);
+    }
+
+    <span class="pl-c1">neo4j_session_t</span> *session = <span class="pl-c1">neo4j_new_session</span>(connection);
+    <span class="pl-k">if</span> (session == <span class="pl-c1">NULL</span>)
+    {
+        <span class="pl-c1">error</span>(<span class="pl-s"><span class="pl-pds">"</span>Failed to start session<span class="pl-pds">"</span></span>);
+    }
+
+    <span class="pl-c1">neo4j_result_stream_t</span> *results = <span class="pl-c1">neo4j_run</span>(session, <span class="pl-s"><span class="pl-pds">"</span>RETURN 'hello world'<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, <span class="pl-c1">0</span>);
+    <span class="pl-k">if</span> (results == <span class="pl-c1">NULL</span>)
+    {
+        <span class="pl-c1">error</span>(<span class="pl-s"><span class="pl-pds">"</span>Failed to run statement<span class="pl-pds">"</span></span>);
+    }
+
+    <span class="pl-c1">neo4j_result_t</span> *result = <span class="pl-c1">neo4j_fetch_next</span>(results);
+    <span class="pl-k">if</span> (results == <span class="pl-c1">NULL</span>)
+    {
+        <span class="pl-c1">error</span>(<span class="pl-s"><span class="pl-pds">"</span>Failed to fetch result<span class="pl-pds">"</span></span>);
+    }
+
+    <span class="pl-c1">neo4j_value_t</span> value = <span class="pl-c1">neo4j_result_field</span>(result, <span class="pl-c1">0</span>);
+    <span class="pl-k">char</span> buf[<span class="pl-c1">128</span>];
+    <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">neo4j_tostring</span>(value, buf, <span class="pl-k">sizeof</span>(buf)));
+
+    <span class="pl-c1">neo4j_close_results</span>(results);
+    <span class="pl-c1">neo4j_end_session</span>(session);
+    <span class="pl-c1">neo4j_close</span>(connection);
+    <span class="pl-c1">neo4j_client_cleanup</span>();
+}
+
+<span class="pl-k">void</span> <span class="pl-en">error</span>(<span class="pl-k">const</span> <span class="pl-k">char</span> *msg)
+{
+    <span class="pl-k">char</span> ebuf[<span class="pl-c1">256</span>];
+    <span class="pl-c1">fprintf</span>(stderr, <span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%s</span>: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, msg, <span class="pl-c1">neo4j_strerror</span>(errno, ebuf, <span class="pl-k">sizeof</span>(ebuf)));
+    <span class="pl-c1">exit</span>(<span class="pl-c1">1</span>);
+}</pre></div>
+
+<h2>
+<a id="building" class="anchor" href="#building" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building</h2>
+
+<p>To build software using libneo4j-client, consider installing libneo4j-client
+using the package management system for your operating system.</p>
+
+<p>If libneo4j-client is not available via your package management system,
+please <a href="https://github.com/cleishm/libneo4j-client/releases">download
+the latest release</a> and then:</p>
+
+<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-s1">./configure</span>
+$ <span class="pl-s1">make clean check</span>
+$ <span class="pl-s1">sudo make install</span>
+</pre></div>
+
+<h2>
+<a id="support" class="anchor" href="#support" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support</h2>
+
+<p>Having trouble with libneo4j-client? Please raise any issues with usage on
+<a href="http://stackoverflow.com/questions/tagged/libneo4j-client">StackOverflow</a>. If
+you've found a bug in the code for libneo4j-client, please raise an issue on
+<a href="https://github.com/cleishm/libneo4j-client">GitHub</a> and include details of how
+to reproduce the bug.</p>
+
+<h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>Contributions to libneo4j-client are welcome and encouraged! Please see the
+<a href="https://github.com/cleishm/libneo4j-client#readme">GitHub repository</a> for more detail.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>libneo4j-client is licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+
+<p>Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations under the License.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/cleishm">cleishm</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-4129248-4");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
