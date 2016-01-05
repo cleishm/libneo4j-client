@@ -10,6 +10,6 @@ static_assert(1, "impossible");
       [neo4j_cv_macro_static_assert=no])])
 
   if test "X$neo4j_cv_macro_static_assert" = "Xno"; then
-    AC_DEFINE(static_assert(c,m), , [Substitute for static_assert])
+    AC_DEFINE([static_assert(c,m)],[struct _no_static_assert{}], [Substitute for static_assert])
   fi
 ])
