@@ -163,6 +163,11 @@ libneo4j-client requires some dependencies to build, including OpenSSL and
 [libedit](http://thrysoee.dk/editline/). The need for these can be disabled
 by invoking configure with `--without-tls` or `--disable-tools` respectively.
 
+NOTE: Recent versions of Mac OS X ship without the OpenSSL header files, and
+autoconf doesn't pick this up (yet). If you get a build failure related to
+missing openssl headers, use homebrew to add the headers with
+`brew link openssl --force`.
+
 To checkout from GitHub and build:
 
 ```
