@@ -199,7 +199,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
     REQUIRE(n == 0 || params != NULL, NULL);
 
     run_result_stream_t *results = neo4j_calloc(session->config->allocator,
-            1, sizeof(run_result_stream_t));
+            NULL, 1, sizeof(run_result_stream_t));
 
     results->session = session;
     results->logger = neo4j_get_logger(session->config, "results");

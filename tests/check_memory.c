@@ -53,14 +53,15 @@ static inline bool test_buffer_overlap(char *ptr)
 }
 
 
-static void *test_alloc(neo4j_memory_allocator_t *allocator, size_t size)
+static void *test_alloc(neo4j_memory_allocator_t *allocator, void *context,
+        size_t size)
 {
     struct test_allocator *tallocator = (struct test_allocator *)allocator;
     (tallocator->allocations)++;
     return malloc(size);
 }
 
-static void *test_calloc(neo4j_memory_allocator_t *allocator,
+static void *test_calloc(neo4j_memory_allocator_t *allocator, void *context,
         size_t count, size_t size)
 {
     struct test_allocator *tallocator = (struct test_allocator *)allocator;

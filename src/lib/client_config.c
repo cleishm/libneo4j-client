@@ -132,6 +132,13 @@ void neo4j_config_set_connection_factory(neo4j_config_t *config,
 }
 
 
+void neo4j_config_set_memory_allocator(neo4j_config_t *config,
+        struct neo4j_memory_allocator *allocator)
+{
+    config->allocator = allocator;
+}
+
+
 int neo4j_config_set_username(neo4j_config_t *config, const char *username)
 {
     return replace_strptr_dup(&(config->username), username);

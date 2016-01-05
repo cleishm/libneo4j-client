@@ -373,11 +373,17 @@ struct neo4j_memory_allocator
      * Allocate memory from this allocator.
      *
      * @param [self] This allocator.
+     * @param [context] An opaque 'context' for the allocation, which an
+     *         allocator may use to try an optimize storage as memory allocated
+     *         with the same context is likely (but not guaranteed) to be all
+     *         deallocated at the same time. Context may be `NULL`, in which
+     *         case it does not offer any guidance on deallocation.
      * @param [size] The amount of memory (in bytes) to allocate.
      * @return A pointer to the allocated memory, or `NULL` if an error occurs
      *         (errno will be set).
      */
-    void *(*alloc)(struct neo4j_memory_allocator *self, size_t size);
+    void *(*alloc)(struct neo4j_memory_allocator *self, void *context,
+            size_t size);
     /**
      * Allocate memory for consecutive objects from this allocator.
      *
@@ -385,12 +391,17 @@ struct neo4j_memory_allocator
      * and fills the space with bytes of value zero.
      *
      * @param [self] This allocator.
+     * @param [context] An opaque 'context' for the allocation, which an
+     *         allocator may use to try an optimize storage as memory allocated
+     *         with the same context is likely (but not guaranteed) to be all
+     *         deallocated at the same time. Context may be `NULL`, in which
+     *         case it does not offer any guidance on deallocation.
      * @param [count] The number of objects to allocate.
      * @param [size] The size (in bytes) of each object.
      * @return A pointer to the allocated memory, or `NULL` if an error occurs
      *         (errno will be set).
      */
-    void *(*calloc)(struct neo4j_memory_allocator *self,
+    void *(*calloc)(struct neo4j_memory_allocator *self, void *context,
             size_t count, size_t size);
     /**
      * Return memory to this allocator.
@@ -818,7 +829,7 @@ void neo4j_config_set_logger_provider(neo4j_config_t *config,
  * Set a connection factory in the neo4j client configuration.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [factory] The connection factory function.
+ * @param [factory] The connection factory.
  */
 void neo4j_config_set_connection_factory(neo4j_config_t *config,
         struct neo4j_connection_factory *factory);
@@ -834,6 +845,15 @@ extern struct neo4j_connection_factory neo4j_std_connection_factory;
  * This memory allocator delegates to the system malloc/free functions.
  */
 extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
+
+/**
+ * Set a memory allocator in the neo4j client configuration.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [allocator] The memory allocator.
+ */
+void neo4j_config_set_memory_allocator(neo4j_config_t *config,
+        struct neo4j_memory_allocator *allocator);
 
 /**
  * Set the username in the neo4j client configuration.

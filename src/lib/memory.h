@@ -28,14 +28,19 @@ typedef struct neo4j_memory_allocator neo4j_memory_allocator_t;
  * Allocate memory using the specified allocator.
  *
  * @param [allocator] The allocator to use.
+ * @param [context] An opaque 'context' for the allocation, which an
+ *         allocator may use to try an optimize storage as memory allocated
+ *         with the same context is likely (but not guaranteed) to be all
+ *         deallocated at the same time. Context may be `NULL`, in which
+ *         case it does not offer any guidance on deallocation.
  * @param [size] The number of bytes to allocate.
  * @return A pointer the newly allocated memory, or `NULL` if an error occurs
  *         (errno will be set).
  */
 static inline void *neo4j_alloc(neo4j_memory_allocator_t *allocator,
-        size_t size)
+        void *context, size_t size)
 {
-    return allocator->alloc(allocator, size);
+    return allocator->alloc(allocator, context, size);
 }
 
 
@@ -45,15 +50,20 @@ static inline void *neo4j_alloc(neo4j_memory_allocator_t *allocator,
  * The memory will be filled with bytes of value zero.
  *
  * @param [allocator] The allocator to use.
+ * @param [context] An opaque 'context' for the allocation, which an
+ *         allocator may use to try an optimize storage as memory allocated
+ *         with the same context is likely (but not guaranteed) to be all
+ *         deallocated at the same time. Context may be `NULL`, in which
+ *         case it does not offer any guidance on deallocation.
  * @param [count] The number of objects to allocate contiguous space for.
  * @param [size] The size of each object.
  * @return A pointer the newly allocated memory, or `NULL` if an error occurs
  *         (errno will be set).
  */
 static inline void *neo4j_calloc(neo4j_memory_allocator_t *allocator,
-        size_t count, size_t size)
+        void *context, size_t count, size_t size)
 {
-    return allocator->calloc(allocator, count, size);
+    return allocator->calloc(allocator, context, count, size);
 }
 
 
@@ -166,7 +176,7 @@ static inline size_t _neo4j_mpool_depth(const neo4j_mpool_t *pool)
  */
 static inline void *neo4j_mpool_alloc(neo4j_mpool_t *pool, size_t size)
 {
-    void *ptr = neo4j_alloc(pool->allocator, size);
+    void *ptr = neo4j_alloc(pool->allocator, pool, size);
     if (neo4j_mpool_add(pool, ptr) < 0)
     {
         int errsv = errno;
@@ -192,7 +202,7 @@ static inline void *neo4j_mpool_alloc(neo4j_mpool_t *pool, size_t size)
 static inline void *neo4j_mpool_calloc(neo4j_mpool_t *pool,
         size_t count, size_t size)
 {
-    void *ptr = neo4j_calloc(pool->allocator, count, size);
+    void *ptr = neo4j_calloc(pool->allocator, pool, count, size);
     if (neo4j_mpool_add(pool, ptr) < 0)
     {
         int errsv = errno;

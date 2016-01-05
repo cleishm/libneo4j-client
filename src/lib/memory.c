@@ -22,8 +22,9 @@
 #include <string.h>
 
 
-static void *system_alloc(neo4j_memory_allocator_t *allocator, size_t size);
-static void *system_calloc(neo4j_memory_allocator_t *allocator,
+static void *system_alloc(neo4j_memory_allocator_t *allocator, void *context,
+        size_t size);
+static void *system_calloc(neo4j_memory_allocator_t *allocator, void *context,
                 size_t count, size_t size);
 static void system_free(neo4j_memory_allocator_t *allocator, void *ptr);
 static void system_vfree(neo4j_memory_allocator_t *allocator, void **ptrs,
@@ -38,15 +39,16 @@ struct neo4j_memory_allocator neo4j_std_memory_allocator =
 };
 
 
-void *system_alloc(neo4j_memory_allocator_t *allocator, size_t size)
+void *system_alloc(neo4j_memory_allocator_t *allocator, void *context,
+        size_t size)
 {
     assert(allocator != NULL);
     return malloc(size);
 }
 
 
-void *system_calloc(neo4j_memory_allocator_t *allocator,
-                size_t count, size_t size)
+void *system_calloc(neo4j_memory_allocator_t *allocator, void *context,
+        size_t count, size_t size)
 {
     assert(allocator != NULL);
     return calloc(count, size);
@@ -120,7 +122,7 @@ ssize_t neo4j_mpool_add(neo4j_mpool_t *pool, void *ptr)
 
 int remove_debounce(neo4j_mpool_t *pool)
 {
-    void **block = neo4j_alloc(pool->allocator,
+    void **block = neo4j_alloc(pool->allocator, pool,
             pool->block_size * sizeof(void *));
     if (block == NULL)
     {
@@ -227,7 +229,8 @@ int resize_pool(neo4j_mpool_t *npool, neo4j_mpool_t *pool,
 
     neo4j_mpool_t tpool = neo4j_mpool(pool->allocator, block_size);
 
-    tpool.ptrs = neo4j_alloc(tpool.allocator, block_size * sizeof(void *));
+    tpool.ptrs = neo4j_alloc(tpool.allocator, npool,
+            block_size * sizeof(void *));
     if (tpool.ptrs == NULL)
     {
         return -1;
@@ -260,7 +263,8 @@ int resize_pool(neo4j_mpool_t *npool, neo4j_mpool_t *pool,
         }
         else if (space == 0)
         {
-            *nblock = neo4j_alloc(tpool.allocator, block_size * sizeof(void *));
+            *nblock = neo4j_alloc(tpool.allocator,
+                    npool, block_size * sizeof(void *));
             if (*nblock == NULL)
             {
                 goto cleanup;
