@@ -1320,6 +1320,8 @@ void neo4j_release(neo4j_result_t *result);
  * =====================================
  */
 
+#define NEO4J_RENDER_MAX_WIDTH 4096
+
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
 

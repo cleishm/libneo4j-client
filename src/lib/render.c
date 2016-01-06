@@ -40,6 +40,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags)
 {
     REQUIRE(width > 1, -1);
+    REQUIRE(width < NEO4J_RENDER_MAX_WIDTH, -1);
 
     int err = neo4j_check_failure(results);
     if (err != 0)

@@ -209,11 +209,11 @@ int width(shell_state_t *state, const char *args)
         return 0;
     }
 
-    long width = strtol(s, NULL, 10);
-    if (width < 2 || width > INT_MAX)
+    long width = strtol(arg, NULL, 10);
+    if (width < 2 || width >= NEO4J_RENDER_MAX_WIDTH)
     {
         fprintf(state->err, "Width value (%ld) out of range [1,%d)\n",
-                width, UINT_MAX);
+                width, NEO4J_RENDER_MAX_WIDTH);
         return -1;
     }
 
