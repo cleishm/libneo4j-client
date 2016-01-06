@@ -14,6 +14,10 @@ for evaluation, and retrieving results.
 Included with libneo4j-client is neo4j-client, a small command shell for
 Neo4j that uses libneo4j-client for all interaction with Neo4j server.
 
+For more details, see [the project page](
+https://cleishm.github.io/libneo4j-client/) and the [FAQ](
+https://github.com/cleishm/libneo4j-client/wiki/FAQ).
+
 
 Requirements
 ------------
