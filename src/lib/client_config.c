@@ -39,7 +39,7 @@ neo4j_config_t *neo4j_new_config()
     config->connection_factory = &neo4j_std_connection_factory;
     config->allocator = &neo4j_std_memory_allocator;
     config->mpool_block_size = 128;
-    config->client_id = "libneo4j-client/0.2.0";
+    config->client_id = PACKAGE_NAME "/" PACKAGE_VERSION;
     config->sndbuf_size = -1;
     config->rcvbuf_size = -1;
     config->connect_timeout = 0;
