@@ -22,6 +22,8 @@ libneo4j_client_la_SOURCES = \
 	memory.h \
 	messages.c \
 	messages.h \
+	metadata.c \
+	metadata.h \
 	network.c \
 	network.h \
 	cli_parser.c \

@@ -18,8 +18,9 @@
 #include "result_stream.h"
 #include "client_config.h"
 #include "job.h"
-#include "util.h"
+#include "metadata.h"
 #include "session.h"
+#include "util.h"
 #include <assert.h>
 #include <stddef.h>
 
@@ -180,15 +181,6 @@ void result_record_release(result_record_t *record);
 static int set_eval_failure(run_result_stream_t *results,
         const char *src_message_type, const neo4j_value_t *argv, uint16_t argc);
 static void set_failure(run_result_stream_t *results, int error);
-static const neo4j_value_t *failure_metadata(const neo4j_value_t *argv,
-        uint16_t argc, const char *src_message_type, neo4j_logger_t *logger,
-        const neo4j_session_t *session);
-static const neo4j_value_t *validate_metadata(const neo4j_value_t *argv,
-        uint16_t argc, const char *message_type, const char *src_message_type,
-        neo4j_logger_t *logger, const neo4j_session_t *session);
-static int extract_fieldnames(const neo4j_value_t metadata,
-        const char* const **fields, run_result_stream_t *results);
-static char *extract_string(neo4j_value_t value, neo4j_mpool_t *mpool);
 
 
 neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
@@ -481,24 +473,29 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         }
         return 0;
     }
+
+    char description[128];
+    snprintf(description, sizeof(description),
+            "%s message received in %p (in response to RUN)",
+            neo4j_message_type_str(type), session);
+
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
-        neo4j_log_error(logger,
-                "unexpected %s message received in %p (in response to RUN)",
-                neo4j_message_type_str(type), session);
+        neo4j_log_error(logger, "unexpected %s", description);
         set_failure(results, errno = EPROTO);
         return -1;
     }
 
-    const neo4j_value_t *metadata = validate_metadata(argv, argc,
-            "SUCCESS", "RUN", logger, session);
+    const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+            description, logger);
     if (metadata == NULL)
     {
         set_failure(results, errno);
         return -1;
     }
 
-    int nfields = extract_fieldnames(*metadata, &(results->fields), results);
+    int nfields = neo4j_meta_fieldnames(&(results->fields), *metadata,
+            &(results->mpool), description, logger);
     if (nfields < 0)
     {
         set_failure(results, errno);
@@ -577,8 +574,13 @@ int pull_all_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
 
-    const neo4j_value_t *metadata = validate_metadata(argv, argc,
-            "SUCCESS", "PULL_ALL", logger, session);
+    char description[128];
+    snprintf(description, sizeof(description),
+            "SUCCESS message received in %p (in response to PULL_ALL)",
+            session);
+
+    const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+            description, logger);
     if (metadata == NULL)
     {
         set_failure(results, errno);
@@ -756,41 +758,34 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
 {
     assert(results != NULL);
 
-    const neo4j_value_t *metadata = failure_metadata(argv, argc,
-            src_message_type, results->logger, results->session);
+    if (results->failure != 0)
+    {
+        return 0;
+    }
+
+    set_failure(results, NEO4J_STATEMENT_EVALUATION_FAILED);
+
+    char description[128];
+    snprintf(description, sizeof(description),
+            "FAILURE message received in %p (in response to %s)",
+            results->session, src_message_type);
+
+    const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+            description, results->logger);
     if (metadata == NULL)
     {
         set_failure(results, errno);
         return -1;
     }
 
-    if (results->failure != 0)
-    {
-        return 0;
-    }
-
-    neo4j_value_t code_val = neo4j_map_get(*metadata, neo4j_string("code"));
-    assert(neo4j_type(code_val) == NEO4J_STRING);
-    const char *code = extract_string(code_val, &(results->mpool));
-    if (code == NULL)
+    if (neo4j_meta_failure_details(&(results->error_code),
+                &(results->error_message), *metadata, &(results->mpool),
+                description, results->logger))
     {
         set_failure(results, errno);
         return -1;
     }
 
-    neo4j_value_t msg_val = neo4j_map_get(*metadata, neo4j_string("message"));
-    assert(neo4j_type(msg_val) == NEO4J_STRING);
-    const char *msg = extract_string(msg_val, &(results->mpool));
-    if (msg == NULL)
-    {
-        set_failure(results, errno);
-        return -1;
-    }
-
-    set_failure(results, NEO4J_STATEMENT_EVALUATION_FAILED);
-    results->failure_metadata = metadata;
-    results->error_code = code;
-    results->error_message = msg;
     return 0;
 }
 
@@ -805,183 +800,4 @@ void set_failure(run_result_stream_t *results, int error)
     results->failure_metadata = NULL;
     results->error_code = NULL;
     results->error_message = NULL;
-}
-
-
-const neo4j_value_t *failure_metadata(const neo4j_value_t *argv, uint16_t argc,
-        const char *src_message_type, neo4j_logger_t *logger,
-        const neo4j_session_t *session)
-{
-    const neo4j_value_t *metadata = validate_metadata(argv, argc,
-            "FAILURE", src_message_type, logger, session);
-    if (metadata == NULL)
-    {
-        return NULL;
-    }
-
-    neo4j_value_t code = neo4j_map_get(*metadata, neo4j_string("code"));
-    if (neo4j_is_null(code))
-    {
-        neo4j_log_error(logger,
-                "invalid field in FAILURE message received in %p"
-                " (in response to %s): no 'code' property",
-                session, src_message_type);
-        errno = EPROTO;
-        return NULL;
-    }
-    if (neo4j_type(code) != NEO4J_STRING)
-    {
-        neo4j_log_error(logger,
-                "invalid field in FAILURE message received in %p"
-                " (in response to %s): 'code' property not a String",
-                session, src_message_type);
-        errno = EPROTO;
-        return NULL;
-    }
-
-    const neo4j_value_t message =
-        neo4j_map_get(*metadata, neo4j_string("message"));
-    if (neo4j_is_null(message))
-    {
-        neo4j_log_error(logger,
-                "invalid field in FAILURE message received in %p"
-                " (in response to %s): no 'message' property",
-                session, src_message_type);
-        errno = EPROTO;
-        return NULL;
-    }
-    if (neo4j_type(message) != NEO4J_STRING)
-    {
-        neo4j_log_error(logger,
-                "invalid field in FAILURE message received in %p"
-                " (in response to %s): 'message' property not a String",
-                session, src_message_type);
-        errno = EPROTO;
-        return NULL;
-    }
-
-    return metadata;
-}
-
-
-const neo4j_value_t *validate_metadata(const neo4j_value_t *argv, uint16_t argc,
-        const char *message_type, const char *src_message_type,
-        neo4j_logger_t *logger, const neo4j_session_t *session)
-{
-    assert(message_type != NULL);
-    assert(src_message_type != NULL);
-    assert(session != NULL);
-    assert(argc == 0 || argv != NULL);
-
-    if (argc != 1)
-    {
-        neo4j_log_error(logger,
-                "invalid number of fields in %s message received in %p"
-                " (in reponse to %s)", message_type, session, src_message_type);
-        errno = EPROTO;
-        return NULL;
-    }
-
-    neo4j_type_t arg_type = neo4j_type(argv[0]);
-    if (arg_type != NEO4J_MAP)
-    {
-        neo4j_log_error(logger,
-                "invalid field in %s message received in %p"
-                " (in response to %s): got %s, expected MAP",
-                message_type, session, src_message_type,
-                neo4j_type_str(arg_type));
-        errno = EPROTO;
-        return NULL;
-    }
-
-    return &(argv[0]);
-}
-
-
-int extract_fieldnames(const neo4j_value_t metadata,
-        const char* const **fields, run_result_stream_t *results)
-{
-    assert(neo4j_type(metadata) == NEO4J_MAP);
-    assert(fields != NULL);
-    assert(results != NULL);
-    size_t pdepth = neo4j_mpool_depth(results->mpool);
-
-    const neo4j_value_t mfields =
-        neo4j_map_get(metadata, neo4j_string("fields"));
-    if (neo4j_is_null(mfields))
-    {
-        neo4j_log_error(results->logger,
-                "invalid field in SUCCESS message received in %p"
-                " (in response to RUN): no 'fields' property",
-                results->session);
-        errno = EPROTO;
-        goto failure;
-    }
-    if (neo4j_type(mfields) != NEO4J_LIST)
-    {
-        neo4j_log_error(results->logger,
-                "invalid field in SUCCESS message received in %p"
-                " (in response to RUN): 'fields' property not a List",
-                results->session);
-        errno = EPROTO;
-        goto failure;
-    }
-
-    unsigned int n = neo4j_list_length(mfields);
-    if (n == 0)
-    {
-        *fields = NULL;
-        return 0;
-    }
-
-    char **cfields =
-        neo4j_mpool_calloc(&(results->mpool), n, sizeof(const char *));
-    if (cfields == NULL)
-    {
-        goto failure;
-    }
-
-    for (unsigned int i = 0; i < n; ++i)
-    {
-        const neo4j_value_t fieldname = neo4j_list_get(mfields, i);
-        if (neo4j_type(fieldname) != NEO4J_STRING)
-        {
-            neo4j_log_error(results->logger,
-                    "invalid field in SUCCESS message received in %p"
-                    " (in response to RUN): fields[%d] not a String",
-                    i, results->session);
-            errno = EPROTO;
-            goto failure;
-        }
-        cfields[i] = extract_string(fieldname, &(results->mpool));
-        if (cfields[i] == NULL)
-        {
-            goto failure;
-        }
-    }
-
-    // clang will incorrectly raise an error without this cast
-    *fields = (const char *const *)cfields;
-    return n;
-
-    int errsv;
-failure:
-    errsv = errno;
-    neo4j_mpool_drainto(&(results->mpool), pdepth);
-    errno = errsv;
-    return -1;
-}
-
-
-char *extract_string(neo4j_value_t value, neo4j_mpool_t *mpool)
-{
-    assert(neo4j_type(value) == NEO4J_STRING);
-    size_t nlength = neo4j_string_length(value);
-    char *s = neo4j_mpool_alloc(mpool, nlength + 1);
-    if (s == NULL)
-    {
-        return NULL;
-    }
-    neo4j_string_value(value, s, nlength + 1);
-    return s;
 }

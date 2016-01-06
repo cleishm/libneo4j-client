@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 
