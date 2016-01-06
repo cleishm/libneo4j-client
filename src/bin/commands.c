@@ -150,12 +150,12 @@ int db_disconnect(shell_state_t *state, const char *args)
 int help(shell_state_t *state, const char *args)
 {
     fprintf(state->out,
-":quit                Exit the shell\n"
-":connect <url>       Connect to the specified URL\n"
-":disconnect          Disconnect the client from the server\n"
-":help                Show usage information\n"
-":output (table|csv)  Set the output format\n"
-":width <n>           Set the number of columns in the table output\n");
+":quit                  Exit the shell\n"
+":connect '<url>'       Connect to the specified URL\n"
+":disconnect            Disconnect the client from the server\n"
+":help                  Show usage information\n"
+":output (table|csv)    Set the output format\n"
+":width <n>             Set the number of columns in the table output\n");
     fflush(state->out);
     return 0;
 }
