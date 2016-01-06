@@ -68,6 +68,8 @@ requires neo4j 3.0.0-M02 or later.</p>
 <p>Note that libneo4j-client is still an alpha release, and may change in
 incompatible ways before a stable release is made.</p>
 
+<p>For more details, see the <a href="https://github.com/cleishm/libneo4j-client/wiki/FAQ">FAQ</a>.</p>
+
 <h2>
 <a id="neo4j-client-usage" class="anchor" href="#neo4j-client-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>neo4j-client Usage</h2>
 
@@ -186,6 +188,25 @@ the latest release</a> and then:</p>
 $ <span class="pl-s1">make clean check</span>
 $ <span class="pl-s1">sudo make install</span>
 </pre></div>
+
+<p>libneo4j-client requires some dependencies to build, including OpenSSL and
+<a href="http://thrysoee.dk/editline/">libedit</a>. The need for these can be
+disabled by invoking configure with <code>--without-tls</code> or
+<code>--disable-tools</code> respectively.
+
+<p>NOTE: Recent versions of Mac OS X ship without the OpenSSL header files, and
+autoconf doesn't pick this up (yet). If you're using Mac OS X and running
+El Capitan or you get a build failure related to missing openssl headers, try
+the following:</p>
+
+<div class="highlight highlight-text-shell-session"><pre>
+$ <span class="pl-s1">brew install openssl</span>
+$ <span class="pl-s1">./configure LDFLAGS="-L/usr/local/opt/openssl/lib" CFLAGS="-I/usr/local/opt/openssl/include"</span>
+$ <span class="pl-s1">make clean check</span>
+$ <span class="pl-s1">sudo make install</span>
+</pre></div>
+
+<p>More detail about this workaround can be found via <code>brew info openssl</code>.</p>
 
 <h2>
 <a id="support" class="anchor" href="#support" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support</h2>
