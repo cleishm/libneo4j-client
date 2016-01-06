@@ -38,7 +38,7 @@ Basic usage:
 $ neo4j-client -v neo4j://localhost:7687
 The authenticity of host 'localhost:7687' could not be established.
 TLS certificate fingerprint is BD:3D:65:E2:7C:94:C6:79:45:92:F9:47:91:DA:8E:07:93:45:69:78.
-Would you like to trust this certificate (NO/yes/once)? yes
+Would you like to trust this host (NO/yes/once)? yes
 neo4j> :help
 :quit                Exit the shell
 :connect <url>       Connect to the specified URL

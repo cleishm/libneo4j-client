@@ -50,7 +50,7 @@ int unrecognized_host_verification(shell_state_t *state,
     fprintf(state->tty,
 "The authenticity of host '%s' could not be established.\n"
 "TLS certificate fingerprint is %s.\n"
-"Would you like to trust this certificate (NO/yes/once)? ", host, fingerprint);
+"Would you like to trust this host (NO/yes/once)? ", host, fingerprint);
     fflush(state->tty);
     return read_response(state);
 }
