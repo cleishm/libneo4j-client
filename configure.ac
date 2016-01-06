@@ -24,7 +24,7 @@ AM_MAINTAINER_MODE([enable])
 GCC_CFLAGS="-fvisibility=hidden -pipe -Wall -W -Werror \
     -Wno-unused-parameter -Wno-missing-field-initializers -Wpointer-arith \
     -Wstrict-prototypes -Wcast-qual -Wcast-align -Wno-error=unused-function \
-    -Wno-error=unused-variable"
+    -Wno-error=unused-variable -Wno-error=deprecated-declarations"
 
 LT_INIT
 AC_LANG([C])
