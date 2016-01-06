@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.10"/>
-<title>libneo4j-client-0.2.0: neo4j-client.h File Reference</title>
+<title>libneo4j-client-0.2.2~devel: neo4j-client.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.2.0
+   <div id="projectname">libneo4j-client-0.2.2~devel
    </div>
   </td>
  </tr>
@@ -298,10 +298,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:adc16b4d0d0085968c421ff39cd57bad9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close a result stream.  <a href="#adc16b4d0d0085968c421ff39cd57bad9">More...</a><br /></td></tr>
 <tr class="separator:adc16b4d0d0085968c421ff39cd57bad9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d76a109fffe5ef92834868a3b0f2f1e"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a3d76a109fffe5ef92834868a3b0f2f1e">neo4j_error_code</a> (<a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *results)</td></tr>
-<tr class="memdesc:a3d76a109fffe5ef92834868a3b0f2f1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the error code sent from Neo4j.  <a href="#a3d76a109fffe5ef92834868a3b0f2f1e">More...</a><br /></td></tr>
+<tr class="memdesc:a3d76a109fffe5ef92834868a3b0f2f1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the error code sent from neo4j.  <a href="#a3d76a109fffe5ef92834868a3b0f2f1e">More...</a><br /></td></tr>
 <tr class="separator:a3d76a109fffe5ef92834868a3b0f2f1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa66af2d7635746626a24d71bfe2471b4"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#aa66af2d7635746626a24d71bfe2471b4">neo4j_error_message</a> (<a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *results)</td></tr>
-<tr class="memdesc:aa66af2d7635746626a24d71bfe2471b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the error message sent from Neo4j.  <a href="#aa66af2d7635746626a24d71bfe2471b4">More...</a><br /></td></tr>
+<tr class="memdesc:aa66af2d7635746626a24d71bfe2471b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the error message sent from neo4j.  <a href="#aa66af2d7635746626a24d71bfe2471b4">More...</a><br /></td></tr>
 <tr class="separator:aa66af2d7635746626a24d71bfe2471b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2932305981f891c0f31948dbdef27c54"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structneo4j__update__counts.html">neo4j_update_counts</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a2932305981f891c0f31948dbdef27c54">neo4j_update_counts</a> (<a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *results)</td></tr>
 <tr class="memdesc:a2932305981f891c0f31948dbdef27c54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the update counts for the result stream.  <a href="#a2932305981f891c0f31948dbdef27c54">More...</a><br /></td></tr>
@@ -870,7 +870,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Initialize the neo4j client library. </p>
-<p>This function should be invoked once per application including the Neo4j client library.</p>
+<p>This function should be invoked once per application including the neo4j client library.</p>
 <p>NOTE: when compiled with GCC, this method is automatically invoked when the shared library is loaded.</p>
 <dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
 
@@ -1646,8 +1646,8 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Return the error code sent from Neo4j. </p>
-<p>When <code>neo4j_check_failure</code> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the error code sent from Neo4j.</p>
+<p>Return the error code sent from neo4j. </p>
+<p>When <code>neo4j_check_failure</code> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the error code sent from neo4j.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[results]</td><td>The result stream. </td></tr>
@@ -1672,8 +1672,8 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Return the error message sent from Neo4j. </p>
-<p>When <code>neo4j_check_failure</code> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the detailed error message sent from Neo4j.</p>
+<p>Return the error message sent from neo4j. </p>
+<p>When <code>neo4j_check_failure</code> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the detailed error message sent from neo4j.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[results]</td><td>The result stream. </td></tr>
@@ -3126,7 +3126,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Return a pointer to a UTF-8 string. </p>
-<p>The pointer will be to a UTF-8 string, and <em>will NOT be <code>NULL</code> terminated</em>. The length of the string, in bytes, can be obtained using neo4j_ustring_length(value).</p>
+<p>The pointer will be to a UTF-8 string, and will NOT be <code>NULL</code> terminated. The length of the string, in bytes, can be obtained using neo4j_ustring_length(value).</p>
 <p>Note that the result is undefined if the value is not of type NEO4J_STRING.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
