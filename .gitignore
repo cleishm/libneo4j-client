@@ -5,6 +5,7 @@
 *.o
 *.lo
 *.la
+*.sig
 *.swp
 *.dSYM
 neo4j-client.pc
