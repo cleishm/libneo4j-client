@@ -168,7 +168,10 @@ autoconf doesn't pick this up (yet). If you get a build failure related to
 missing openssl headers, use homebrew to add the headers with
 `brew link openssl --force`.
 
-To checkout from GitHub and build:
+Building from the GitHub repository requires a few extra steps. Firstly, some
+additional tooling is required, including autoconf, automake, libtool and
+[peg/leg](http://piumarta.com/software/peg/). Assuming these are available,
+to checkout from GitHub and build:
 
 ```
 $ git clone https://github.com/cleishm/libneo4j-client.git
@@ -178,10 +181,6 @@ $ ./configure
 $ make clean check
 $ sudo make install
 ```
-
-Note that building from the repository version will require additional tooling,
-including autoconf, automake, libtool and [peg/leg](
-http://piumarta.com/software/peg/).
 
 
 Support
