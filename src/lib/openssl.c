@@ -148,7 +148,11 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
     SSL_CTX_free(ctx);
 
     BIO_push(ssl_bio, delegate);
-    BIO_set_close(ssl_bio, BIO_CLOSE);
+    if (BIO_set_close(ssl_bio, BIO_CLOSE) != 1)
+    {
+        errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);
+        goto failure;
+    }
 
     if (BIO_do_handshake(ssl_bio) != 1)
     {
