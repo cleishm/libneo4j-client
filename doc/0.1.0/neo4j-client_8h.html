@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.10"/>
-<title>libneo4j-client-0.2.0: neo4j-client.h File Reference</title>
+<title>libneo4j-client-0.1.0: neo4j-client.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.2.0
+   <div id="projectname">libneo4j-client-0.1.0
    </div>
   </td>
  </tr>
@@ -42,7 +42,6 @@
 <code>#include &lt;stdarg.h&gt;</code><br />
 <code>#include &lt;stdbool.h&gt;</code><br />
 <code>#include &lt;stdio.h&gt;</code><br />
-<code>#include &lt;string.h&gt;</code><br />
 <code>#include &lt;sys/types.h&gt;</code><br />
 <code>#include &lt;sys/uio.h&gt;</code><br />
 </div><table class="memberdecls">
@@ -68,9 +67,6 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structneo4j__map__entry.html">neo4j_map_entry_t</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An entry in a neo4j map.  <a href="structneo4j__map__entry.html#details">More...</a><br /></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structneo4j__update__counts.html">neo4j_update_counts</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update counts.  <a href="structneo4j__update__counts.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -216,9 +212,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9e3bb0c589a04d2935b0cf0b93c29b09">neo4j_config_set_connection_factory</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connection_factory</a> *factory)</td></tr>
 <tr class="memdesc:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a connection factory in the neo4j client configuration.  <a href="#a9e3bb0c589a04d2935b0cf0b93c29b09">More...</a><br /></td></tr>
 <tr class="separator:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a08c1b1ab2c98a1c3c9bc4ede181ad61a">neo4j_config_set_memory_allocator</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__memory__allocator.html">neo4j_memory_allocator</a> *allocator)</td></tr>
-<tr class="memdesc:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a memory allocator in the neo4j client configuration.  <a href="#a08c1b1ab2c98a1c3c9bc4ede181ad61a">More...</a><br /></td></tr>
-<tr class="separator:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b314a005997c9ee7137a256157ee9fb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7b314a005997c9ee7137a256157ee9fb">neo4j_config_set_username</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *username)</td></tr>
 <tr class="memdesc:a7b314a005997c9ee7137a256157ee9fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the username in the neo4j client configuration.  <a href="#a7b314a005997c9ee7137a256157ee9fb">More...</a><br /></td></tr>
 <tr class="separator:a7b314a005997c9ee7137a256157ee9fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -303,9 +296,6 @@ Functions</h2></td></tr>
 <tr class="memitem:aa66af2d7635746626a24d71bfe2471b4"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#aa66af2d7635746626a24d71bfe2471b4">neo4j_error_message</a> (<a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *results)</td></tr>
 <tr class="memdesc:aa66af2d7635746626a24d71bfe2471b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the error message sent from Neo4j.  <a href="#aa66af2d7635746626a24d71bfe2471b4">More...</a><br /></td></tr>
 <tr class="separator:aa66af2d7635746626a24d71bfe2471b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2932305981f891c0f31948dbdef27c54"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structneo4j__update__counts.html">neo4j_update_counts</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a2932305981f891c0f31948dbdef27c54">neo4j_update_counts</a> (<a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *results)</td></tr>
-<tr class="memdesc:a2932305981f891c0f31948dbdef27c54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the update counts for the result stream.  <a href="#a2932305981f891c0f31948dbdef27c54">More...</a><br /></td></tr>
-<tr class="separator:a2932305981f891c0f31948dbdef27c54"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abd8ce4a012c694dcad787d62ec335dac"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#abd8ce4a012c694dcad787d62ec335dac">neo4j_result_field</a> (const <a class="el" href="neo4j-client_8h.html#a684fa02daeb236ea6d4d7671a251fe05">neo4j_result_t</a> *result, unsigned int index)</td></tr>
 <tr class="memdesc:abd8ce4a012c694dcad787d62ec335dac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a field from a result.  <a href="#abd8ce4a012c694dcad787d62ec335dac">More...</a><br /></td></tr>
 <tr class="separator:abd8ce4a012c694dcad787d62ec335dac"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -980,7 +970,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[factory]</td><td>The connection factory. </td></tr>
+    <tr><td class="paramname">[factory]</td><td>The connection factory function. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1053,41 +1043,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
     <tr><td class="paramname">[logger_provider]</td><td>The logger provider function. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a08c1b1ab2c98a1c3c9bc4ede181ad61a"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void neo4j_config_set_memory_allocator </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
-          <td class="paramname"><em>config</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">struct <a class="el" href="structneo4j__memory__allocator.html">neo4j_memory_allocator</a> *&#160;</td>
-          <td class="paramname"><em>allocator</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set a memory allocator in the neo4j client configuration. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[allocator]</td><td>The memory allocator. </td></tr>
   </table>
   </dd>
 </dl>
@@ -3046,32 +3001,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a <code>NULL</code> terminated string containing the type name. </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a2932305981f891c0f31948dbdef27c54"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">struct <a class="el" href="structneo4j__update__counts.html">neo4j_update_counts</a> <a class="el" href="structneo4j__update__counts.html">neo4j_update_counts</a> </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *&#160;</td>
-          <td class="paramname"><em>results</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the update counts for the result stream. </p>
-<dl class="section attention"><dt>Attention</dt><dd>As the update counts are only available at the end of the result stream, invoking this function will will result in any unfetched results being pulled from the server and held in memory. It is usually better to exhaust the stream using <code>neo4j_fetch_next(...)</code> before invoking this method.</dd></dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[results]</td><td>The result stream. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The update counts. If an error has occurred, all the counts will be zero. </dd></dl>
 
 </div>
 </div>
