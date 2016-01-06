@@ -67,6 +67,19 @@ neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results)
     return results->fetch_next(results);
 }
 
+
+struct neo4j_update_counts neo4j_update_counts(neo4j_result_stream_t *results)
+{
+    if (results == NULL)
+    {
+        struct neo4j_update_counts counts;
+        memset(&counts, 0, sizeof(counts));
+        return counts;
+    }
+    return results->update_counts(results);
+}
+
+
 int neo4j_close_results(neo4j_result_stream_t *results)
 {
     REQUIRE(results != NULL, -1);
@@ -134,10 +147,10 @@ struct run_result_stream
     neo4j_mpool_t mpool;
     neo4j_mpool_t record_mpool;
     unsigned int refcount;
-    unsigned int opening;
-    bool closed;
+    unsigned int starting;
+    unsigned int streaming;
+    struct neo4j_update_counts update_counts;
     int failure;
-    const neo4j_value_t *failure_metadata;
     const char *error_code;
     const char *error_message;
     unsigned int nfields;
@@ -158,6 +171,8 @@ static unsigned int run_rs_nfields(neo4j_result_stream_t *results);
 static const char *run_rs_fieldname(neo4j_result_stream_t *results,
         unsigned int index);
 static neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self);
+static struct neo4j_update_counts run_rs_update_counts(
+        neo4j_result_stream_t *self);
 static int run_rs_close(neo4j_result_stream_t *self);
 
 static neo4j_value_t run_result_field(const neo4j_result_t *self,
@@ -227,7 +242,8 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
     }
     (results->refcount)++;
 
-    results->opening = true;
+    results->starting = true;
+    results->streaming = true;
 
     neo4j_result_stream_t *result_stream = (neo4j_result_stream_t *)results;
     result_stream->check_failure = run_rs_check_failure;
@@ -236,6 +252,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
     result_stream->nfields = run_rs_nfields;
     result_stream->fieldname = run_rs_fieldname;
     result_stream->fetch_next = run_rs_fetch_next;
+    result_stream->update_counts = run_rs_update_counts;
     result_stream->close = run_rs_close;
     return result_stream;
 
@@ -254,7 +271,7 @@ int run_rs_check_failure(neo4j_result_stream_t *self)
     run_result_stream_t *results = (run_result_stream_t *)self;
     REQUIRE(results != NULL, -1);
 
-    if (results->failure != 0 || await(results, &(results->opening)))
+    if (results->failure != 0 || await(results, &(results->starting)))
     {
         assert(results->failure != 0);
         // continue
@@ -284,7 +301,7 @@ unsigned int run_rs_nfields(neo4j_result_stream_t *self)
     run_result_stream_t *results = (run_result_stream_t *)self;
     REQUIRE(results != NULL, -1);
 
-    if (results->failure != 0 || await(results, &(results->opening)))
+    if (results->failure != 0 || await(results, &(results->starting)))
     {
         assert(results->failure != 0);
         errno = results->failure;
@@ -300,7 +317,7 @@ const char *run_rs_fieldname(neo4j_result_stream_t *self,
     run_result_stream_t *results = (run_result_stream_t *)self;
     REQUIRE(results != NULL, NULL);
 
-    if (results->failure != 0 || await(results, &(results->opening)))
+    if (results->failure != 0 || await(results, &(results->starting)))
     {
         assert(results->failure != 0);
         errno = results->failure;
@@ -330,7 +347,7 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
 
     if (results->records == NULL)
     {
-        if (results->closed)
+        if (!results->streaming)
         {
             errno = results->failure;
             return NULL;
@@ -344,7 +361,7 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
         }
         if (results->records == NULL)
         {
-            assert(results->closed);
+            assert(!results->streaming);
             errno = results->failure;
             return NULL;
         }
@@ -363,12 +380,31 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
 }
 
 
+struct neo4j_update_counts run_rs_update_counts(neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = (run_result_stream_t *)self;
+
+    if (results == NULL || results->failure != 0 ||
+            await(results, &(results->streaming)))
+    {
+        goto failure;
+    }
+
+    return results->update_counts;
+
+    struct neo4j_update_counts counts;
+failure:
+    memset(&counts, 0, sizeof(counts));
+    return counts;
+}
+
+
 int run_rs_close(neo4j_result_stream_t *self)
 {
     run_result_stream_t *results = (run_result_stream_t *)self;
     REQUIRE(results != NULL, -1);
 
-    results->closed = true;
+    results->streaming = false;
     assert(results->refcount > 0);
     --(results->refcount);
     int err = await(results, &(results->refcount));
@@ -437,7 +473,7 @@ void notify_session_ending(neo4j_job_t *job)
 
     job->next = NULL;
     results->session = NULL;
-    if (!results->closed && results->failure == 0)
+    if (results->streaming && results->failure == 0)
     {
         set_failure(results, NEO4J_SESSION_ENDED);
     }
@@ -453,7 +489,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     neo4j_logger_t *logger = results->logger;
     neo4j_session_t *session = results->session;
 
-    results->opening = 0;
+    results->starting = false;
     --(results->refcount);
 
     if (session == NULL)
@@ -502,7 +538,6 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
     results->nfields = nfields;
-    //TODO: extract other metadata fields?
     return 0;
 }
 
@@ -528,7 +563,7 @@ int pull_all_callback(void *cdata, neo4j_message_type_t type,
     }
 
     --(results->refcount);
-    results->closed = true;
+    results->streaming = false;
     results->awaiting_records = 0;
 
     // not a record, so keep this memory only along with the result stream
@@ -594,7 +629,12 @@ int pull_all_callback(void *cdata, neo4j_message_type_t type,
                 neo4j_tostring(*metadata, buf, sizeof(buf)));
     }
 
-    //TODO: extract metadata fields?
+    if (neo4j_meta_update_counts(&(results->update_counts), *metadata,
+                description, logger))
+    {
+        set_failure(results, errno);
+        return -1;
+    }
     return 0;
 }
 
@@ -609,7 +649,7 @@ int discard_all_callback(void *cdata, neo4j_message_type_t type,
     neo4j_session_t *session = results->session;
 
     --(results->refcount);
-    results->closed = true;
+    results->streaming = false;
 
     if (session == NULL)
     {
@@ -690,7 +730,7 @@ int append_result(run_result_stream_t *results,
         return -1;
     }
 
-    if (results->closed)
+    if (!results->streaming)
     {
         // discard memory for the record
         neo4j_mpool_drain(&(results->record_mpool));
@@ -795,9 +835,8 @@ void set_failure(run_result_stream_t *results, int error)
     assert(results != NULL);
     assert(error != 0);
     results->failure = error;
-    results->closed = true;
+    results->streaming = false;
     results->awaiting_records = 0;
-    results->failure_metadata = NULL;
     results->error_code = NULL;
     results->error_message = NULL;
 }

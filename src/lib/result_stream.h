@@ -86,6 +86,20 @@ struct neo4j_result_stream
     neo4j_result_t *(*fetch_next)(neo4j_result_stream_t *self);
 
     /**
+     * Return the update counts for the result stream.
+     *
+     * @attention As the update counts are only available at the end of the
+     * result stream, invoking this function will will result in any unfetched
+     * results being pulled from the server and held in memory. It is usually
+     * better to exhaust the stream using `neo4j_fetch_next(...)` before
+     * invoking this method.
+     *
+     * @param [results] The result stream.
+     * @return The update counts.
+     */
+    struct neo4j_update_counts (*update_counts)(neo4j_result_stream_t *self);
+
+    /**
      * Close a result stream.
      *
      * Closes the result stream and releases all memory held by it, including

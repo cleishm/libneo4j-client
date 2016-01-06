@@ -1276,6 +1276,42 @@ const char *neo4j_error_code(neo4j_result_stream_t *results);
  */
 const char *neo4j_error_message(neo4j_result_stream_t *results);
 
+/**
+ * Update counts.
+ *
+ * These are a count of all the updates that occurred as a result of
+ * the statement sent to neo4j.
+ */
+struct neo4j_update_counts
+{
+    unsigned long long nodes_created;
+    unsigned long long nodes_deleted;
+    unsigned long long relationships_created;
+    unsigned long long relationships_deleted;
+    unsigned long long properties_set;
+    unsigned long long labels_added;
+    unsigned long long labels_removed;
+    unsigned long long indexes_added;
+    unsigned long long indexes_removed;
+    unsigned long long constraints_added;
+    unsigned long long constraints_removed;
+};
+
+/**
+ * Return the update counts for the result stream.
+ *
+ * @attention As the update counts are only available at the end of the result
+ * stream, invoking this function will will result in any unfetched results
+ * being pulled from the server and held in memory. It is usually better to
+ * exhaust the stream using `neo4j_fetch_next(...)` before invoking this
+ * method.
+ *
+ * @param [results] The result stream.
+ * @return The update counts. If an error has occurred, all the counts will be
+ *         zero.
+ */
+struct neo4j_update_counts neo4j_update_counts(neo4j_result_stream_t *results);
+
 
 /*
  * =====================================

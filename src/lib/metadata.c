@@ -18,6 +18,7 @@
 #include "metadata.h"
 #include "memory.h"
 #include <assert.h>
+#include <limits.h>
 
 
 static char *extract_string(neo4j_value_t value, neo4j_mpool_t *mpool);
@@ -66,8 +67,8 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
     if (neo4j_type(code_val) != NEO4J_STRING)
     {
         neo4j_log_error(logger,
-                "invalid field in %s: 'code' property not a String",
-                description);
+                "invalid field in %s: 'code' is %s, expected String",
+                description, neo4j_type_str(neo4j_type(code_val)));
         errno = EPROTO;
         goto failure;
     }
@@ -84,8 +85,8 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
     if (neo4j_type(message_val) != NEO4J_STRING)
     {
         neo4j_log_error(logger,
-                "invalid field in %s: 'message' property not a String",
-                description);
+                "invalid field in %s: 'message' is %s, expected String",
+                description, neo4j_type_str(neo4j_type(message_val)));
         errno = EPROTO;
         goto failure;
     }
@@ -117,6 +118,7 @@ failure:
 int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
         neo4j_mpool_t *mpool, const char *description, neo4j_logger_t *logger)
 {
+    assert(names != NULL);
     assert(neo4j_type(map) == NEO4J_MAP);
     assert(mpool != NULL);
     assert(description != NULL);
@@ -133,8 +135,8 @@ int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
     if (neo4j_type(mfields) != NEO4J_LIST)
     {
         neo4j_log_error(logger,
-                "invalid field in %s: 'fields' property not a List",
-                description);
+                "invalid field in %s: 'fields' is %s, expected List",
+                description, neo4j_type_str(neo4j_type(mfields)));
         errno = EPROTO;
         goto failure;
     }
@@ -158,8 +160,8 @@ int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
         if (neo4j_type(fieldname) != NEO4J_STRING)
         {
             neo4j_log_error(logger,
-                    "invalid field in %s: fields[%d] not a String",
-                    i, description);
+                    "invalid field in %s: fields[%d] is %s, expected String",
+                    i, description, neo4j_type_str(neo4j_type(fieldname)));
             errno = EPROTO;
             goto failure;
         }
@@ -180,6 +182,97 @@ failure:
     neo4j_mpool_drainto(mpool, pdepth);
     errno = errsv;
     return -1;
+}
+
+
+int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
+        const neo4j_value_t map, const char *description,
+        neo4j_logger_t *logger)
+{
+    assert(counts != NULL);
+    assert(neo4j_type(map) == NEO4J_MAP);
+    assert(description != NULL);
+
+    const neo4j_value_t stats = neo4j_map_get(map, neo4j_string("stats"));
+    if (neo4j_is_null(stats))
+    {
+        memset(counts, 0, sizeof(struct neo4j_update_counts));
+        return 0;
+    }
+    if (neo4j_type(stats) != NEO4J_MAP)
+    {
+        neo4j_log_error(logger,
+                "invalid field in %s: 'stats' is %s, expected Map",
+                description, neo4j_type_str(neo4j_type(stats)));
+        errno = EPROTO;
+        return -1;
+    }
+
+    static const char * const field_names[] = {
+        "nodes-created",
+        "nodes-deleted",
+        "relationships-created",
+        "relationships-deleted",
+        "properties-set",
+        "labels-added",
+        "labels-removed",
+        "indexes-added",
+        "indexes-removed",
+        "constraints-added",
+        "constraints-removed",
+        NULL
+    };
+    unsigned long long * const count_fields[] = {
+        &(counts->nodes_created),
+        &(counts->nodes_deleted),
+        &(counts->relationships_created),
+        &(counts->relationships_deleted),
+        &(counts->properties_set),
+        &(counts->labels_added),
+        &(counts->labels_removed),
+        &(counts->indexes_added),
+        &(counts->indexes_removed),
+        &(counts->constraints_added),
+        &(counts->constraints_removed),
+        NULL
+    };
+
+    assert(sizeof(field_names) == sizeof(count_fields));
+
+    for (int i = 0; field_names[i] != NULL; ++i)
+    {
+        neo4j_value_t key = neo4j_string(field_names[i]);
+        const neo4j_value_t val = neo4j_map_get(stats, key);
+        if (neo4j_is_null(val))
+        {
+            continue;
+        }
+
+        if (neo4j_type(val) != NEO4J_INT)
+        {
+            neo4j_log_error(logger,
+                    "invalid field in %s: 'stats.%s' is %s, expected Int",
+                    description, field_names[i],
+                    neo4j_type_str(neo4j_type(val)));
+            errno = EPROTO;
+            return -1;
+        }
+
+        int64_t count = neo4j_int_value(val);
+        if (count < 0)
+        {
+            neo4j_log_error(logger,
+                    "invalid field in %s: 'stats.%s' value out of range",
+                    description, field_names[i]);
+            errno = EPROTO;
+            return -1;
+        }
+
+        assert(count_fields[i] != NULL);
+        *(count_fields[i]) = (unsigned long long)count;
+    }
+
+    return 0;
 }
 
 
