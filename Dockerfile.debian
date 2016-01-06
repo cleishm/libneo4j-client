@@ -3,6 +3,7 @@ RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y \
         autotools-dev \
+        automake \
         build-essential \
         check \
         debhelper \
