@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "render.h"
+#include <assert.h>
 #include <neo4j-client.h>
 #include <stdio.h>
 #include <string.h>
@@ -81,4 +82,54 @@ int terminal_width(shell_state_t *state)
         return -1;
     }
     return w.ws_col;
+}
+
+
+int render_update_counts(shell_state_t *state, neo4j_result_stream_t *results)
+{
+    assert(results != NULL);
+    struct neo4j_update_counts counts = neo4j_update_counts(results);
+
+    static const char * const count_names[] = {
+        "Nodes created",
+        "Nodes deleted",
+        "Relationships created",
+        "Relationships deleted",
+        "Properties set",
+        "Labels added",
+        "Labels removed",
+        "Indexes added",
+        "Indexes removed",
+        "Constraints added",
+        "Constraints removed",
+        NULL
+    };
+    unsigned long long count_values[] = {
+        counts.nodes_created,
+        counts.nodes_deleted,
+        counts.relationships_created,
+        counts.relationships_deleted,
+        counts.properties_set,
+        counts.labels_added,
+        counts.labels_removed,
+        counts.indexes_added,
+        counts.indexes_removed,
+        counts.constraints_added,
+        counts.constraints_removed
+    };
+
+    for (int i = 0; count_names[i] != NULL; ++i)
+    {
+        if (count_values[i] == 0)
+        {
+            continue;
+        }
+        if (fprintf(state->out, "%s: %llu\n",
+                count_names[i], count_values[i]) < 0)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
 }

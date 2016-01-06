@@ -278,6 +278,11 @@ int evaluate_statement(shell_state_t *state, const char *statement)
         goto cleanup;
     }
 
+    if (render_update_counts(state, results))
+    {
+        goto cleanup;
+    }
+
     result = 0;
 
 cleanup:

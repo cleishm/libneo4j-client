@@ -26,4 +26,6 @@ renderer_t find_renderer(const char *name);
 int render_csv(shell_state_t *state, neo4j_result_stream_t *results);
 int render_table(shell_state_t *state, neo4j_result_stream_t *results);
 
+int render_update_counts(shell_state_t *state, neo4j_result_stream_t *results);
+
 #endif/*NEO4J_RENDER_H*/

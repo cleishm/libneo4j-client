@@ -513,7 +513,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     char description[128];
     snprintf(description, sizeof(description),
             "%s message received in %p (in response to RUN)",
-            neo4j_message_type_str(type), session);
+            neo4j_message_type_str(type), (void *)session);
 
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
@@ -612,7 +612,7 @@ int pull_all_callback(void *cdata, neo4j_message_type_t type,
     char description[128];
     snprintf(description, sizeof(description),
             "SUCCESS message received in %p (in response to PULL_ALL)",
-            session);
+            (void *)session);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
             description, logger);
@@ -808,7 +808,7 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
     char description[128];
     snprintf(description, sizeof(description),
             "FAILURE message received in %p (in response to %s)",
-            results->session, src_message_type);
+            (void *)(results->session), src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
             description, results->logger);
