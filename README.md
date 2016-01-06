@@ -157,7 +157,7 @@ If libneo4j-client is not available via your package management system,
 please [download the latest release](
 https://github.com/cleishm/libneo4j-client/releases) and then:
 
-```
+```console
 $ ./configure
 $ make clean check
 $ sudo make install
@@ -168,16 +168,25 @@ libneo4j-client requires some dependencies to build, including OpenSSL and
 by invoking configure with `--without-tls` or `--disable-tools` respectively.
 
 NOTE: Recent versions of Mac OS X ship without the OpenSSL header files, and
-autoconf doesn't pick this up (yet). If you get a build failure related to
-missing openssl headers, use homebrew to add the headers with
-`brew link openssl --force`.
+autoconf doesn't pick this up (yet). If you're using Mac OS X and running
+El Capitan or you get a build failure related to missing openssl headers, try
+the following:
+
+```console
+$ brew install openssl
+$ ./configure LDFLAGS="-L/usr/local/opt/openssl/lib" CFLAGS="-I/usr/local/opt/openssl/include"
+$ make clean check
+$ sudo make install
+```
+
+More detail about this workaround can be found via `brew info openssl`.
 
 Building from the GitHub repository requires a few extra steps. Firstly, some
 additional tooling is required, including autoconf, automake, libtool and
 [peg/leg](http://piumarta.com/software/peg/). Assuming these are available,
 to checkout from GitHub and build:
 
-```
+```console
 $ git clone https://github.com/cleishm/libneo4j-client.git
 $ cd libneo4j-client
 $ ./autogen.sh
