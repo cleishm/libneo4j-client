@@ -95,7 +95,7 @@ typedef size_t (*neo4j_password_callback_t)(void *userdata,
 /**
  * Initialize the neo4j client library.
  *
- * This function should be invoked once per application including the Neo4j
+ * This function should be invoked once per application including the neo4j
  * client library.
  *
  * NOTE: when compiled with GCC, this method is automatically invoked when
@@ -636,7 +636,7 @@ uint32_t neo4j_string_length(neo4j_value_t value);
 /**
  * Return a pointer to a UTF-8 string.
  *
- * The pointer will be to a UTF-8 string, and *will NOT be `NULL` terminated*.
+ * The pointer will be to a UTF-8 string, and will NOT be `NULL` terminated.
  * The length of the string, in bytes, can be obtained using
  * neo4j_ustring_length(value).
  *
@@ -1250,10 +1250,10 @@ int neo4j_close_results(neo4j_result_stream_t *results);
  */
 
 /**
- * Return the error code sent from Neo4j.
+ * Return the error code sent from neo4j.
  *
  * When `neo4j_check_failure` returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
- * then this function can be used to get the error code sent from Neo4j.
+ * then this function can be used to get the error code sent from neo4j.
  *
  * @param [results] The result stream.
  * @return A `NULL` terminated string reprenting the error code, or NULL
@@ -1263,11 +1263,11 @@ int neo4j_close_results(neo4j_result_stream_t *results);
 const char *neo4j_error_code(neo4j_result_stream_t *results);
 
 /**
- * Return the error message sent from Neo4j.
+ * Return the error message sent from neo4j.
  *
  * When `neo4j_check_failure` returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
  * then this function can be used to get the detailed error message sent
- * from Neo4j.
+ * from neo4j.
  *
  * @param [results] The result stream.
  * @return A `NULL` terminated string containing the error message, or NULL
@@ -1284,16 +1284,27 @@ const char *neo4j_error_message(neo4j_result_stream_t *results);
  */
 struct neo4j_update_counts
 {
+    /** Nodes created. */
     unsigned long long nodes_created;
+    /** Nodes deleted. */
     unsigned long long nodes_deleted;
+    /** Relationships created. */
     unsigned long long relationships_created;
+    /** Relationships deleted. */
     unsigned long long relationships_deleted;
+    /** Properties set. */
     unsigned long long properties_set;
+    /** Labels added. */
     unsigned long long labels_added;
+    /** Labels removed. */
     unsigned long long labels_removed;
+    /** Indexes added. */
     unsigned long long indexes_added;
+    /** Indexes removed. */
     unsigned long long indexes_removed;
+    /** Constraints added. */
     unsigned long long constraints_added;
+    /** Constraints removed. */
     unsigned long long constraints_removed;
 };
 
