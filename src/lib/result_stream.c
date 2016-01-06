@@ -743,8 +743,10 @@ void result_record_release(result_record_t *record)
     if (--(record->refcount) == 0)
     {
         // record was allocated in its own pool, so draining the pool
-        // deallocates the record
-        neo4j_mpool_drain(&(record->mpool));
+        // deallocates the record - so we have to copy the pool out first
+        // or it'll be deallocated whist still draining
+        neo4j_mpool_t mpool = record->mpool;
+        neo4j_mpool_drain(&mpool);
     }
 }
 
