@@ -49,7 +49,7 @@ AS_IF([test "X$ac_cv_c_vararrays" != "Xyes"],
 AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
-AC_CHECK_HEADERS([endian.h sys/endian.h])
+AC_CHECK_HEADERS([endian.h sys/endian.h libkern/OSByteOrder.h])
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_FUNC_STRERROR_R
@@ -71,6 +71,9 @@ AC_CHECK_DECL([AI_ADDRCONFIG],[AC_DEFINE([HAVE_AI_ADDRCONFIG],[1],
 
 AC_CHECK_DECL([htonll],[AC_DEFINE([HAVE_HTONLL],[1],
   [Define to 1 if you have htonll])])
+AC_CHECK_DECL([ntohll],[AC_DEFINE([HAVE_NTOHLL],[1],
+  [Define to 1 if you have ntohll])])
+
 
 AC_CHECK_DECL([htobe64],[AC_DEFINE([HAVE_HTOBE64],[1],
   [Define to 1 if you have htobe64])],
@@ -83,7 +86,6 @@ AC_CHECK_DECL([htobe64],[AC_DEFINE([HAVE_HTOBE64],[1],
 #include <sys/endian.h>
 #endif
   ])
-
 AC_CHECK_DECL([be64toh],[AC_DEFINE([HAVE_BE64TOH],[1],
   [Define to 1 if you have be64toh])],
   [],
@@ -96,8 +98,23 @@ AC_CHECK_DECL([be64toh],[AC_DEFINE([HAVE_BE64TOH],[1],
 #endif
   ])
 
-AC_CHECK_DECL([ntohll],[AC_DEFINE([HAVE_NTOHLL],[1],
-  [Define to 1 if you have ntohll])])
+
+AC_CHECK_DECL([OSSwapHostToBigInt64],[AC_DEFINE([HAVE_OSSWAPHOSTTOBIGINT64],[1],
+  [Define to 1 if you have OSSwapHostToBigInt64 in the <libkern/OSByteOrder.h> header file])],
+  [],
+  [
+#ifdef HAVE_LIBKERN_OSBYTEORDER_H
+#include <libkern/OSByteOrder.h>
+#endif
+  ])
+AC_CHECK_DECL([OSSwapBigToHostInt64],[AC_DEFINE([HAVE_OSSWAPBIGTOHOSTINT64],[1],
+  [Define to 1 if you have OSSwapBigToHostInt64 in the <libkern/OSByteOrder.h> header file])],
+  [],
+  [
+#ifdef HAVE_LIBKERN_OSBYTEORDER_H
+#include <libkern/OSByteOrder.h>
+#endif
+  ])
 
 AC_CHECK_DECL([bswap_64],[AC_DEFINE([HAVE_BSWAP_64],[1],
   [Define to 1 if you have bswap_64])])

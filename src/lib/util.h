@@ -31,7 +31,9 @@
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
 #endif
-
+#ifdef HAVE_LIBKERN_OSBYTEORDER_H
+#include <libkern/OSByteOrder.h>
+#endif
 
 
 #define REQUIRE(cond, res) \
@@ -165,38 +167,32 @@ int iov_limit(struct iovec *diov, int diovcnt,
         const struct iovec *siov, int siovcnt, size_t nbyte);
 
 
-#ifndef HAVE_HTONLL
-#  ifdef HAVE_HTOBE64
-#    define htonll(l) htobe64(l)
+#ifndef HAVE_HTOBE64
+#  ifdef HAVE_HTONLL
+#    define htobe64(l) htonll(l)
+#  elif HAVE_OSSWAPHOSTTOBIGINT64
+#    define htobe64(l) OSSwapHostToBigInt64(l)
+#  elif WORDS_BIGENDIAN
+#    define htobe64(l) (l)
+#  elif HAVE_BSWAP_64
+#    define htobe64(l) bswap_64(l)
 #  else
-#    ifdef WORDS_BIGENDIAN
-#      define htonll(l) (l)
-#    else
-#      ifdef HAVE_BSWAP_64
-#        define htonll(l) bswap_64(l)
-#      else
-#        error No htonll
-#      endif
-#    endif
+#    error "No htobe64 or altnerative"
 #  endif
 #endif
 
-
-#ifndef HAVE_NTOHLL
-#  ifdef HAVE_BE64TOH
-#    define ntohll(l) be64toh(l)
+#ifndef HAVE_BE64TOH
+#  ifdef HAVE_NTOHLL
+#    define be64toh(l) ntohll(l)
+#  elif HAVE_OSSWAPBIGTOHOSTINT64
+#    define be64toh(l) OSSwapBigToHostInt64(l)
+#  elif WORDS_BIGENDIAN
+#    define be64toh(l) (l)
+#  elif HAVE_BSWAP_64
+#    define be64toh(l) bswap_64(l)
 #  else
-#    ifdef WORDS_BIGENDIAN
-#      define ntohll(l) (l)
-#    else
-#      ifdef HAVE_BSWAP_64
-#        define ntohll(l) bswap_64(l)
-#      else
-#        error No ntohll
-#      endif
-#    endif
+#    error "No be64toh or altnerative"
 #  endif
 #endif
-
 
 #endif/*NEO4J_UTIL_H*/

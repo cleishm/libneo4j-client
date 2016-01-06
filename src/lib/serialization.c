@@ -165,7 +165,7 @@ int neo4j_int_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
     else
     {
         marker = int_markers.m64;
-        data.v64 = htonll(v->value);
+        data.v64 = htobe64(v->value);
         datalen = 8;
     }
 
@@ -210,7 +210,7 @@ int neo4j_float_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
     } double_data;
 
     double_data.value = v->value;
-    double_data.data = htonll(double_data.data);
+    double_data.data = htobe64(double_data.data);
     iov[1].iov_base = &(double_data.data);
     iov[1].iov_len = 8;
     return neo4j_ios_writev_all(stream, iov, 2, NULL);

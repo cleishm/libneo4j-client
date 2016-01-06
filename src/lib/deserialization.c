@@ -201,7 +201,7 @@ int float_deserialize(uint8_t marker, neo4j_iostream_t *stream,
         return -1;
     }
 
-    double_data.data = ntohll(double_data.data);
+    double_data.data = be64toh(double_data.data);
     *value = neo4j_float(double_data.value);
     return 0;
 }
@@ -266,7 +266,7 @@ int int64_deserialize(uint8_t marker, neo4j_iostream_t *stream,
     {
         return -1;
     }
-    data = ntohll(data);
+    data = be64toh(data);
     *value = neo4j_int(data);
     return 0;
 }
