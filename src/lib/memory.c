@@ -196,10 +196,6 @@ ssize_t neo4j_mpool_merge(neo4j_mpool_t *pool1, neo4j_mpool_t *pool2)
     {
         return -1;
     }
-    if (pool2->debounce_offset > 0 && remove_debounce(pool2))
-    {
-        return -1;
-    }
 
     neo4j_mpool_t tpool;
     if (pool1->block_size != pool2->block_size ||
@@ -224,8 +220,12 @@ ssize_t neo4j_mpool_merge(neo4j_mpool_t *pool1, neo4j_mpool_t *pool2)
 int resize_pool(neo4j_mpool_t *npool, neo4j_mpool_t *pool,
         unsigned int block_size)
 {
-    assert(pool->debounce_offset == 0);
     assert(pool->depth > 0);
+
+    if (pool->debounce_offset > 0 && remove_debounce(pool))
+    {
+        return -1;
+    }
 
     neo4j_mpool_t tpool = neo4j_mpool(pool->allocator, block_size);
 
@@ -309,53 +309,65 @@ int merge_pools(neo4j_mpool_t *pool1, neo4j_mpool_t *pool2)
 {
     assert(pool1->allocator == pool2->allocator);
     assert(pool1->debounce_offset == 0);
-    assert(pool2->debounce_offset == 0);
-    assert(pool2->depth > 0);
 
     unsigned int space = pool1->block_size - pool1->offset;
     unsigned int used = pool1->offset - 1;
 
     void **block = pool2->ptrs;
-
-    // reverse pool2 blocks
-    void **prev = NULL;
-    while (*block != NULL)
+    if (block != NULL)
     {
-        void **next = *block;
+        // reverse pool2 blocks
+        void **prev = NULL;
+        while (*block != NULL)
+        {
+            void **next = *block;
+            *block = prev;
+            prev = block;
+            block = next;
+        }
         *block = prev;
-        prev = block;
-        block = next;
-    }
-    *block = prev;
 
-    // shift blocks into pool1
-    prev = pool1->ptrs;
-    while (*block != NULL)
-    {
-        memcpy(prev+1+used, block+1, space * sizeof(void *));
-        memmove(block+1, block+1+space,
-                (pool2->block_size-1-space) * sizeof(void *));
-        void **next = *block;
-        *block = prev;
-        prev = block;
-        block = next;
+        // shift blocks into pool1
+        prev = pool1->ptrs;
+        while (*block != NULL)
+        {
+            memcpy(prev+1+used, block+1, space * sizeof(void *));
+            memmove(block+1, block+1+space,
+                    (pool2->block_size-1-space) * sizeof(void *));
+            void **next = *block;
+            *block = prev;
+            prev = block;
+            block = next;
+        }
+
+        if (space < pool2->offset)
+        {
+            memcpy(prev+1+used, block+1, space * sizeof(void *));
+            memmove(block+1, block+1+space,
+                    (pool2->offset-1-space) * sizeof(void *));
+            *block = prev;
+            pool1->ptrs = block;
+            pool1->offset = pool2->offset - space;
+        }
+        else
+        {
+            memcpy(prev+1+used, block+1, pool2->offset * sizeof(void *));
+            neo4j_free(pool1->allocator, block);
+            pool1->ptrs = prev;
+            pool1->offset += pool2->offset - 1;
+        }
     }
 
-    if (space < pool2->offset)
+    if (pool2->debounce_offset > 0)
     {
-        memcpy(prev+1+used, block+1, space * sizeof(void *));
-        memmove(block+1, block+1+space,
-                (pool2->offset-1-space) * sizeof(void *));
-        *block = prev;
-        pool1->ptrs = block;
-        pool1->offset = pool2->offset - space;
-    }
-    else
-    {
-        memcpy(prev+1+used, block+1, pool2->offset * sizeof(void *));
-        neo4j_free(pool1->allocator, block);
-        pool1->ptrs = prev;
-        pool1->offset += pool2->offset - 1;
+        unsigned int tocopy = minu(pool1->block_size - pool1->offset,
+                pool2->debounce_offset);
+        memcpy(pool1->ptrs + pool1->offset, pool2->debounce_ptrs,
+                tocopy * sizeof(void *));
+        pool1->offset += tocopy;
+        pool1->debounce_offset = pool2->debounce_offset - tocopy;
+        memcpy(pool1->debounce_ptrs, pool2->debounce_ptrs + tocopy,
+                pool1->debounce_offset * sizeof(void *));
     }
 
     pool1->depth += pool2->depth;
@@ -374,7 +386,6 @@ int concat_pools(neo4j_mpool_t *pool1, neo4j_mpool_t *pool2)
     assert(pool1->allocator == pool2->allocator);
     assert(pool1->debounce_offset == 0);
     assert(pool1->offset == pool1->block_size);
-    assert(pool2->debounce_offset == 0);
     assert(pool2->depth > 0);
     assert(pool1->block_size == pool2->block_size);
 
@@ -384,6 +395,14 @@ int concat_pools(neo4j_mpool_t *pool1, neo4j_mpool_t *pool2)
     *last_block = pool1->ptrs;
     pool1->ptrs = pool2->ptrs;
     pool1->offset = pool2->offset;
+
+    if (pool2->debounce_offset > 0)
+    {
+        memcpy(pool1->debounce_ptrs, pool2->debounce_ptrs,
+                pool2->debounce_offset * sizeof(void *));
+        pool1->debounce_offset = pool2->debounce_offset;
+    }
+
     pool1->depth += pool2->depth;
 
     pool2->debounce_offset = 0;
