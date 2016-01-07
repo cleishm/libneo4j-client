@@ -145,7 +145,7 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
         neo4j_config_t *config, uint_fast32_t flags)
 {
     REQUIRE(hostname != NULL, NULL);
-    REQUIRE(port < UINT16_MAX, NULL);
+    REQUIRE(port <= UINT16_MAX, NULL);
 
     config = neo4j_config_dup(config);
     if (config == NULL)
@@ -154,7 +154,7 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
     }
 
     char namebuf[1024];
-    if (snprintf(namebuf, sizeof(namebuf), "%s:%d", hostname, port) <= 0)
+    if (snprintf(namebuf, sizeof(namebuf), "%s:%u", hostname, port) <= 0)
     {
         return NULL;
     }
@@ -260,10 +260,10 @@ neo4j_iostream_t *std_tcp_connect(struct neo4j_connection_factory *factory,
     REQUIRE(factory != NULL, NULL);
     REQUIRE(config != NULL, NULL);
     REQUIRE(hostname != NULL, NULL);
-    REQUIRE(port >= 0, NULL);
+    REQUIRE(port <= UINT16_MAX, NULL);
 
     char servname[16];
-    snprintf(servname, sizeof(servname), "%d", port);
+    snprintf(servname, sizeof(servname), "%u", port);
     int fd = neo4j_connect_tcp_socket(hostname, servname, config, logger);
     if (fd < 0)
     {
