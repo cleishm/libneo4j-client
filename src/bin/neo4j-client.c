@@ -39,6 +39,7 @@ const char *shortopts = "hv";
 #define INSECURE_OPT 1001
 #define KNOWN_HOSTS_OPT 1002
 #define NOHIST_OPT 1003
+#define VERSION_OPT 1004
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -47,6 +48,7 @@ static struct option longopts[] =
       { "insecure", no_argument, NULL, INSECURE_OPT },
       { "known-hosts", required_argument, NULL, KNOWN_HOSTS_OPT },
       { "verbose", no_argument, NULL, 'v' },
+      { "version", no_argument, NULL, VERSION_OPT },
       { NULL, 0, NULL, 0 } };
 
 static void usage(FILE *s, const char *prog_name)
@@ -152,6 +154,10 @@ int main(int argc, char *argv[])
         case NOHIST_OPT:
             state.histfile = NULL;
             break;
+        case VERSION_OPT:
+            fprintf(state.out, "%s\n", PACKAGE_NAME "/" PACKAGE_VERSION);
+            result = EXIT_SUCCESS;
+            goto cleanup;
         default:
             usage(state.err, prog_name);
             goto cleanup;
