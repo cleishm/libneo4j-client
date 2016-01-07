@@ -71,6 +71,17 @@ incompatible ways before a stable release is made.</p>
 <p>For more details, see the <a href="https://github.com/cleishm/libneo4j-client/wiki/FAQ">FAQ</a>.</p>
 
 <h2>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<p>If you're using Mac OS X, libneo4j-client can be installed using homebrew:</p>
+
+<div class="highlight highlight-text-shell-session"><pre>
+$ <span class="pl-s1">brew install cleishm/neo4j/libneo4j-client</span>
+</pre></div>
+
+<p>For other platforms, please see <a href="#building">Building</a> below.</p>
+
+<h2>
 <a id="neo4j-client-usage" class="anchor" href="#neo4j-client-usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>neo4j-client Usage</h2>
 
 <p>neo4j-client is a command shell for Neo4j. It supports secure connections
@@ -178,7 +189,12 @@ enabling you to obtain the required flags using
 <a id="building" class="anchor" href="#building" aria-hidden="true"><span class="octicon octicon-link"></span></a>Building</h2>
 
 <p>To build software using libneo4j-client, consider installing libneo4j-client
-using the package management system for your operating system.</p>
+using the package management system for your operating system (currently only
+Mac OS X). See <a href="#getting-started">Getting Started</a> for detail.
+
+<p>NOTE: Recent versions of Mac OS X ship without the OpenSSL header files, and
+autoconf doesn't pick this up (yet). Please use the homebrew package to install
+on Mac OS X.</p>
 
 <p>If libneo4j-client is not available via your package management system,
 please <a href="https://github.com/cleishm/libneo4j-client/releases">download
@@ -193,20 +209,6 @@ $ <span class="pl-s1">sudo make install</span>
 <a href="http://thrysoee.dk/editline/">libedit</a>. The need for these can be
 disabled by invoking configure with <code>--without-tls</code> or
 <code>--disable-tools</code> respectively.
-
-<p>NOTE: Recent versions of Mac OS X ship without the OpenSSL header files, and
-autoconf doesn't pick this up (yet). If you're using Mac OS X and running
-El Capitan or you get a build failure related to missing openssl headers, try
-the following:</p>
-
-<div class="highlight highlight-text-shell-session"><pre>
-$ <span class="pl-s1">brew install openssl</span>
-$ <span class="pl-s1">./configure LDFLAGS="-L/usr/local/opt/openssl/lib" CFLAGS="-I/usr/local/opt/openssl/include"</span>
-$ <span class="pl-s1">make clean check</span>
-$ <span class="pl-s1">sudo make install</span>
-</pre></div>
-
-<p>More detail about this workaround can be found via <code>brew info openssl</code>.</p>
 
 <h2>
 <a id="support" class="anchor" href="#support" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support</h2>
