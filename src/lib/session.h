@@ -66,6 +66,8 @@ struct neo4j_session
 /**
  * Attach a job to a session.
  *
+ * @internal
+ *
  * @param [session] The session to attach to.
  * @param [job] The job to attach.
  * @return 0 on success, -1 on failure (errno will be set).
@@ -75,6 +77,8 @@ int neo4j_attach_job(neo4j_session_t *session, neo4j_job_t *job);
 /**
  * Detach a job from a session.
  *
+ * @internal
+ *
  * @param [session] The session to detach from.
  * @param [job] The job to detach.
  * @return 0 on success, -1 on failure (errno will be set).
@@ -83,6 +87,8 @@ int neo4j_detach_job(neo4j_session_t *session, neo4j_job_t *job);
 
 /**
  * Synchronize a session.
+ *
+ * @internal
  *
  * Sends and receives messages until the queue is empty or a condition
  * is met.
@@ -96,6 +102,8 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition);
 
 /**
  * Send a RUN message in a session.
+ *
+ * @internal
  * 
  * @param [session] The session to send the message in.
  * @param [mpool] The memory pool to use when sending and receiving.
@@ -113,6 +121,8 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
 /**
  * Send a PULL_ALL message in a session.
  *
+ * @internal
+ *
  * @param [session] The session to send the message in.
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [callback] The callback to be invoked for responses.
@@ -124,6 +134,8 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
 
 /**
  * Send a DISCARD_ALL message in a session.
+ *
+ * @internal
  *
  * @param [session] The session to send the message in.
  * @param [mpool] The memory pool to use when sending and receiving.

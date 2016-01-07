@@ -25,6 +25,8 @@
 /**
  * Create a chunking iostream.
  *
+ * @internal
+ *
  * @param [delegate] The underlying stream to read/write chunks from.
  * @param [snd_min_chunk] The minimal chunk size.
  * @param [snd_max_chunk] The maximum chunk size.
@@ -53,6 +55,8 @@ static_assert(offsetof(struct neo4j_chunking_iostream, _iostream) == 0,
 
 /**
  * Initialize a `struct neo4j_chunking_iostream`.
+ *
+ * @internal
  *
  * @param [ios] The chunking stream to initialize.
  * @param [delegate] The underlying stream to read/write chunks from.

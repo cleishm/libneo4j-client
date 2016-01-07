@@ -25,6 +25,8 @@
  *
  * Must be called at initialization. Not thread safe.
  *
+ * @internal
+ *
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_openssl_init(void);
@@ -34,12 +36,16 @@ int neo4j_openssl_init(void);
  *
  * Should be called before termination. Not thread safe.
  *
+ * @internal
+ *
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_openssl_cleanup(void);
 
 /**
  * Create a SSL BIO.
+ *
+ * @internal
  *
  * @param [delegate] A BIO for the cleartext stream.
  * @param [hostname] The hostname of the server.

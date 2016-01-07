@@ -19,7 +19,19 @@
 
 #include "neo4j-client.h"
 
-int neo4j_check_known_hosts(const char *hostname, int port,
-        char *fingerprint, const neo4j_config_t *config, uint_fast8_t flags);
+/**
+ * Check if the host is trusted according to the TOFU process.
+ *
+ * @param [hostname] The hostname.
+ * @param [port] The port on the host.
+ * @param [fingerprint] The fingerprint of the host.
+ * @param [config] The client config.
+ * @param [flags] A bitmask of flags to control connections.
+ * @return 0 if the host is trusted, >0 if the host is not trusted, and -1
+ *         if an error occurs (errno will be set).
+ */
+int neo4j_check_known_hosts(const char * restrict hostname, int port,
+        const char * restrict fingerprint, const neo4j_config_t *config,
+        uint_fast8_t flags);
 
 #endif/*NEO4J_TOFU_H*/

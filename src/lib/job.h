@@ -30,6 +30,8 @@ struct neo4j_job
 /**
  * Notify a job that the session it is attached to in ending.
  *
+ * @internal
+ *
  * @param [job] The job to notify.
  */
 static inline void neo4j_job_notify_session_ending(neo4j_job_t *job)

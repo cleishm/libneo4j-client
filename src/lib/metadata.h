@@ -27,6 +27,8 @@
  * Validates that the message contained a single field, and that the field was
  * of type MAP.
  *
+ * @internal
+ *
  * @param [fields] The fields of the server message.
  * @param [nfields] The number of fields.
  * @param [description] A description of the message, for use when logging
@@ -43,6 +45,8 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
  * Ensures that the metadata map contains a "code" and a "message" entry,
  * both of which must be of type String, and returns null terminated strings
  * of each in the provided pointers.
+ *
+ * @internal
  *
  * @param [code] A pointer that will be updated to reference a null terminated
  *         string containing the failure code.
@@ -65,6 +69,8 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
  * Validates that the map contains a "fields" entry, of type List, containing
  * all String values. These strings are extracted into a set of null
  * terminated strings.
+ *
+ * @internal
  *
  * @param [names] A pointer that will be updated to reference an array of
  *         field name strings, or `NULL` if there were zero field names.

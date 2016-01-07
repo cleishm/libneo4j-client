@@ -38,7 +38,7 @@ If you're using Mac OS X, libneo4j-client can be installed using homebrew:
 $ brew install cleishm/neo4j/libneo4j-client
 ```
 
-For other platforms, please see [Building](#Building) below.
+For other platforms, please see [Building](#building) below.
 
 
 neo4j-client Usage
@@ -99,7 +99,7 @@ API documentation for the latest release is available at
 
 Documentation can be built using `make doc`, which will use doxygen to generate
 documentation and output it into the `doc/` directory of the libneo4j-client
-source tree. See [Building](#Building) below.
+source tree. See [Building](#building) below.
 
 
 Example

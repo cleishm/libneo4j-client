@@ -23,6 +23,8 @@
 /**
  * Create an iostream for an OpenSSL BIO.
  *
+ * @internal
+ *
  * @param [delegate] The iostream to establish SSL over.
  * @param [hostname] The hostname of the server the underlying iostream is
  *         connected to.

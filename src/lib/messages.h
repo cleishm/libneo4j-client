@@ -52,6 +52,8 @@ static inline const char *neo4j_message_type_str(neo4j_message_type_t type)
  *
  * This call may block until network buffers have sufficient space.
  *
+ * @internal
+ *
  * @param [ios] The iostream to send over.
  * @param [type] The message type.
  * @param [argv] The vector of argument values to send with the message.
@@ -66,6 +68,8 @@ int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
  * Receive a message on a connection.
  *
  * This call may block until data is available from the network.
+ *
+ * @internal
  *
  * @param [ios] The iostream to receive from.
  * @param [mpool] A memory pool to allocate values and buffer spaces in.

@@ -31,14 +31,17 @@
 #define NEO4J_MAX_KNOWN_HOSTS_LINE_LENGTH 1024
 #define NEO4J_TEMP_FILE_SUFFIX ".tmpXXXXXX"
 
-static int retrieve_stored_fingerprint(const char *file, const char *host,
-        char *buf, size_t n, neo4j_logger_t *logger);
-static int update_stored_fingerprint(const char *file, const char *host,
-        char *fingerprint, neo4j_logger_t *logger);
+static int retrieve_stored_fingerprint(const char * restrict file,
+        const char * restrict host, char * restrict buf, size_t n,
+        neo4j_logger_t *logger);
+static int update_stored_fingerprint(const char * restrict file,
+        const char * restrict host, const char * restrict fingerprint,
+        neo4j_logger_t *logger);
 
 
-int neo4j_check_known_hosts(const char *hostname, int port,
-        char *fingerprint, const neo4j_config_t *config, uint_fast8_t flags)
+int neo4j_check_known_hosts(const char * restrict hostname, int port,
+        const char * restrict fingerprint, const neo4j_config_t *config,
+        uint_fast8_t flags)
 {
     neo4j_logger_t *logger = neo4j_get_logger(config, "tofu");
 
@@ -99,8 +102,9 @@ int neo4j_check_known_hosts(const char *hostname, int port,
 }
 
 
-int retrieve_stored_fingerprint(const char *file, const char *host,
-        char *buf, size_t n, neo4j_logger_t *logger)
+int retrieve_stored_fingerprint(const char * restrict file,
+        const char * restrict host, char * restrict buf, size_t n,
+        neo4j_logger_t *logger)
 {
     char ebuf[256];
 
@@ -155,8 +159,9 @@ cleanup:
 }
 
 
-int update_stored_fingerprint(const char *file, const char *host,
-        char *fingerprint, neo4j_logger_t *logger)
+int update_stored_fingerprint(const char * restrict file,
+        const char * restrict host, const char * restrict fingerprint,
+        neo4j_logger_t *logger)
 {
     char ebuf[256];
 

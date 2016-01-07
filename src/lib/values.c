@@ -593,36 +593,3 @@ bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other)
     }
     return true;
 }
-
-
-uint8_t neo4j_struct_signature(neo4j_value_t value)
-{
-    REQUIRE(neo4j_type(value) == NEO4J_STRUCT, 0);
-    return ((const struct neo4j_struct *)&value)->signature;
-}
-
-
-uint16_t neo4j_struct_size(neo4j_value_t value)
-{
-    REQUIRE(neo4j_type(value) == NEO4J_STRUCT, 0);
-    return ((const struct neo4j_struct *)&value)->nfields;
-}
-
-
-neo4j_value_t neo4j_struct_getfield(neo4j_value_t value, unsigned int index)
-{
-    REQUIRE(neo4j_type(value) == NEO4J_STRUCT, neo4j_null);
-    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
-    if (v->nfields <= index)
-    {
-        return neo4j_null;
-    }
-    return v->fields[index];
-}
-
-
-const neo4j_value_t *neo4j_struct_fields(neo4j_value_t value)
-{
-    REQUIRE(neo4j_type(value) == NEO4J_STRUCT, NULL);
-    return ((const struct neo4j_struct *)&value)->fields;
-}

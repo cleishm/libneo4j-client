@@ -24,7 +24,7 @@
 #include <stddef.h>
 
 
-#define CHECK_VALUE_ALIGNMENT(type) \
+#define ASSERT_VALUE_ALIGNMENT(type) \
     static_assert( \
         sizeof(type) == sizeof(struct neo4j_value), \
         #type " must be the same size as struct neo4j_value"); \
@@ -33,7 +33,7 @@
         #type "#_vt_off is at the wrong offset"); \
     static_assert( \
         offsetof(type, _type) == offsetof(struct neo4j_value, _type), \
-        #type "#_type is at the wrong offset") \
+        #type "#_type is at the wrong offset")
 
 
 struct neo4j_bool
@@ -47,7 +47,7 @@ struct neo4j_bool
         union _neo4j_value_data _pad3;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_bool);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_bool);
 
 
 struct neo4j_int
@@ -61,7 +61,7 @@ struct neo4j_int
         union _neo4j_value_data _pad3;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_int);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_int);
 
 
 struct neo4j_float
@@ -75,7 +75,7 @@ struct neo4j_float
         union _neo4j_value_data _pad3;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_float);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_float);
 
 
 struct neo4j_string
@@ -89,7 +89,7 @@ struct neo4j_string
         union _neo4j_value_data _pad2;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_string);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_string);
 
 
 struct neo4j_list
@@ -103,7 +103,7 @@ struct neo4j_list
         union _neo4j_value_data _pad2;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_list);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_list);
 
 
 struct neo4j_map
@@ -117,7 +117,7 @@ struct neo4j_map
         union _neo4j_value_data _pad2;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_map);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_map);
 
 
 #define NEO4J_NODE_SIGNATURE 0x4E
@@ -137,21 +137,112 @@ struct neo4j_struct
         union _neo4j_value_data _pad3;
     };
 };
-CHECK_VALUE_ALIGNMENT(struct neo4j_struct);
+ASSERT_VALUE_ALIGNMENT(struct neo4j_struct);
 
 
+/**
+ * @internal
+ *
+ * Construct a neo4j value encoding a struct.
+ *
+ *
+ * @param [signature] The struct signature.
+ * @param [fields] The fields for the structure.
+ * @param [n] The number of fields.
+ * @return The neo4j value encoding the struct.
+ */
 neo4j_value_t neo4j_struct(uint8_t signature,
         const neo4j_value_t *fields, uint16_t n);
 
+/**
+ * Construct a neo4j value encoding a node.
+ *
+ * @internal
+ *
+ * @param [signature] The struct signature.
+ * @param [fields] The fields for the node, which must be an Int identifier,
+ *         a List of Strings for labels and a Map of properties.
+ * @return The neo4j value encoding the node.
+ */
 neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
+
+/**
+ * Construct a neo4j value encoding a node.
+ *
+ * @internal
+ *
+ * @param [signature] The struct signature.
+ * @param [fields] The fields for the node, which must be an Int identifier,
+ *         a List of Strings for labels and a Map of properties.
+ * @return The neo4j value encoding the node.
+ */
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
 
-uint8_t neo4j_struct_signature(neo4j_value_t value);
-uint16_t neo4j_struct_size(neo4j_value_t value);
+/**
+ * Get the signature of a neo4j struct.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_STRUCT.
+ *
+ * @internal
+ *
+ * @param [value] The neo4j struct.
+ * @return The signature.
+ */
+static inline uint8_t neo4j_struct_signature(neo4j_value_t value)
+{
+    return ((const struct neo4j_struct *)&value)->signature;
+}
 
-neo4j_value_t neo4j_struct_getfield(neo4j_value_t value, unsigned int index);
+/**
+ * Get the size of a neo4j struct.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_STRUCT.
+ *
+ * @internal
+ *
+ * @param [value] The neo4j struct.
+ * @return The size of the struct.
+ */
+static inline uint16_t neo4j_struct_size(neo4j_value_t value)
+{
+    return ((const struct neo4j_struct *)&value)->nfields;
+}
 
-const neo4j_value_t *neo4j_struct_fields(neo4j_value_t value);
+/**
+ * Get a field from a neo4j struct.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_STRUCT.
+ *
+ * @internal
+ *
+ * @param [value] The neo4j struct.
+ * @param [index] The index of the field.
+ * @return The size of the struct.
+ */
+static inline neo4j_value_t neo4j_struct_getfield(neo4j_value_t value,
+        unsigned int index)
+{
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    if (v->nfields <= index)
+    {
+        return neo4j_null;
+    }
+    return v->fields[index];
+}
 
+/**
+ * Get the array of fields from a neo4j struct.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_STRUCT.
+ *
+ * @internal
+ *
+ * @param [value] The neo4j struct.
+ * @return A pointer to the array of fields.
+ */
+static inline const neo4j_value_t *neo4j_struct_fields(neo4j_value_t value)
+{
+    return ((const struct neo4j_struct *)&value)->fields;
+}
 
 #endif/*NEO4J_VALUES_H*/
