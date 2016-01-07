@@ -315,19 +315,37 @@ int write_quoted_string(FILE *stream, const char *s, size_t n, char quot)
     {
         return -1;
     }
-    for (size_t i = 0; i < n; ++i)
+
+    const char *end = s + n;
+    while (s < end)
     {
-        if (s[i] == '"')
+        const char *c = (const char *)memchr((void *)(intptr_t)s, '"', n);
+        if (c == NULL)
         {
-            if (fputc(quot, stream) == EOF)
+            if (fwrite(s, sizeof(char), n, stream) < n)
             {
                 return -1;
             }
+            break;
         }
-        if (fputc(s[i], stream) == EOF)
+
+        assert(c >= s && c < end);
+        assert(*c == '"');
+        size_t l = c - s;
+        if (fwrite(s, sizeof(char), l, stream) < l)
         {
             return -1;
         }
+        if (fputc(quot, stream) == EOF)
+        {
+            return -1;
+        }
+        if (fputc('"', stream) == EOF)
+        {
+            return -1;
+        }
+        n -= l+1;
+        s = c+1;
     }
     if (fputc('"', stream) == EOF)
     {
