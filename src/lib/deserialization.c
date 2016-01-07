@@ -22,13 +22,8 @@
 #include <errno.h>
 
 
-struct deserializer
-{
-    uint8_t marker;
-    uint8_t mask;
-    int (*deserialize)(uint8_t marker, neo4j_iostream_t *stream,
+typedef int (*deserializer_t)(uint8_t marker, neo4j_iostream_t *stream,
             neo4j_mpool_t *pool, neo4j_value_t *value);
-};
 
 #define DESERIALIZER_FUNC_DEF(funcname) \
     static int funcname(uint8_t marker, neo4j_iostream_t *stream, \
@@ -69,34 +64,263 @@ static int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         neo4j_mpool_t *pool, neo4j_value_t *value);
 
 
-static const struct deserializer deserializers[] =
-    { { .marker = 0x00, .mask=0x80, .deserialize = tiny_int_deserialize },
-      { .marker = 0x80, .mask=0xF0, .deserialize = tiny_string_deserialize },
-      { .marker = 0x90, .mask=0xF0, .deserialize = tiny_list_deserialize },
-      { .marker = 0xA0, .mask=0xF0, .deserialize = tiny_map_deserialize },
-      { .marker = 0xB0, .mask=0xF0, .deserialize = tiny_struct_deserialize },
-      { .marker = 0xC0, .mask=0xFF, .deserialize = null_deserialize },
-      { .marker = 0xC1, .mask=0xFF, .deserialize = float_deserialize },
-      { .marker = 0xC2, .mask=0xFF, .deserialize = boolean_false_deserialize },
-      { .marker = 0xC3, .mask=0xFF, .deserialize = boolean_true_deserialize },
-      { .marker = 0xC8, .mask=0xFF, .deserialize = int8_deserialize },
-      { .marker = 0xC9, .mask=0xFF, .deserialize = int16_deserialize },
-      { .marker = 0xCA, .mask=0xFF, .deserialize = int32_deserialize },
-      { .marker = 0xCB, .mask=0xFF, .deserialize = int64_deserialize },
-      { .marker = 0xD0, .mask=0xFF, .deserialize = string8_deserialize },
-      { .marker = 0xD1, .mask=0xFF, .deserialize = string16_deserialize },
-      { .marker = 0xD2, .mask=0xFF, .deserialize = string32_deserialize },
-      { .marker = 0xD4, .mask=0xFF, .deserialize = list8_deserialize },
-      { .marker = 0xD5, .mask=0xFF, .deserialize = list16_deserialize },
-      { .marker = 0xD6, .mask=0xFF, .deserialize = list32_deserialize },
-      { .marker = 0xD8, .mask=0xFF, .deserialize = map8_deserialize },
-      { .marker = 0xD9, .mask=0xFF, .deserialize = map16_deserialize },
-      { .marker = 0xDA, .mask=0xFF, .deserialize = map32_deserialize },
-      { .marker = 0xDC, .mask=0xFF, .deserialize = struct8_deserialize },
-      { .marker = 0xDD, .mask=0xFF, .deserialize = struct16_deserialize },
-      { .marker = 0xF0, .mask=0xF0, .deserialize = tiny_int_deserialize } };
-static const int deserializers_max =
-    sizeof(deserializers) / sizeof(struct deserializer);
+static const deserializer_t deserializers[UINT8_MAX+1] =
+    { tiny_int_deserialize,              // 0x00
+      tiny_int_deserialize,              // 0x01
+      tiny_int_deserialize,              // 0x02
+      tiny_int_deserialize,              // 0x03
+      tiny_int_deserialize,              // 0x04
+      tiny_int_deserialize,              // 0x05
+      tiny_int_deserialize,              // 0x06
+      tiny_int_deserialize,              // 0x07
+      tiny_int_deserialize,              // 0x08
+      tiny_int_deserialize,              // 0x09
+      tiny_int_deserialize,              // 0x0a
+      tiny_int_deserialize,              // 0x0b
+      tiny_int_deserialize,              // 0x0c
+      tiny_int_deserialize,              // 0x0d
+      tiny_int_deserialize,              // 0x0e
+      tiny_int_deserialize,              // 0x0f
+      tiny_int_deserialize,              // 0x10
+      tiny_int_deserialize,              // 0x11
+      tiny_int_deserialize,              // 0x12
+      tiny_int_deserialize,              // 0x13
+      tiny_int_deserialize,              // 0x14
+      tiny_int_deserialize,              // 0x15
+      tiny_int_deserialize,              // 0x16
+      tiny_int_deserialize,              // 0x17
+      tiny_int_deserialize,              // 0x18
+      tiny_int_deserialize,              // 0x19
+      tiny_int_deserialize,              // 0x1a
+      tiny_int_deserialize,              // 0x1b
+      tiny_int_deserialize,              // 0x1c
+      tiny_int_deserialize,              // 0x1d
+      tiny_int_deserialize,              // 0x1e
+      tiny_int_deserialize,              // 0x1f
+      tiny_int_deserialize,              // 0x20
+      tiny_int_deserialize,              // 0x21
+      tiny_int_deserialize,              // 0x22
+      tiny_int_deserialize,              // 0x23
+      tiny_int_deserialize,              // 0x24
+      tiny_int_deserialize,              // 0x25
+      tiny_int_deserialize,              // 0x26
+      tiny_int_deserialize,              // 0x27
+      tiny_int_deserialize,              // 0x28
+      tiny_int_deserialize,              // 0x29
+      tiny_int_deserialize,              // 0x2a
+      tiny_int_deserialize,              // 0x2b
+      tiny_int_deserialize,              // 0x2c
+      tiny_int_deserialize,              // 0x2d
+      tiny_int_deserialize,              // 0x2e
+      tiny_int_deserialize,              // 0x2f
+      tiny_int_deserialize,              // 0x30
+      tiny_int_deserialize,              // 0x31
+      tiny_int_deserialize,              // 0x32
+      tiny_int_deserialize,              // 0x33
+      tiny_int_deserialize,              // 0x34
+      tiny_int_deserialize,              // 0x35
+      tiny_int_deserialize,              // 0x36
+      tiny_int_deserialize,              // 0x37
+      tiny_int_deserialize,              // 0x38
+      tiny_int_deserialize,              // 0x39
+      tiny_int_deserialize,              // 0x3a
+      tiny_int_deserialize,              // 0x3b
+      tiny_int_deserialize,              // 0x3c
+      tiny_int_deserialize,              // 0x3d
+      tiny_int_deserialize,              // 0x3e
+      tiny_int_deserialize,              // 0x3f
+      tiny_int_deserialize,              // 0x40
+      tiny_int_deserialize,              // 0x41
+      tiny_int_deserialize,              // 0x42
+      tiny_int_deserialize,              // 0x43
+      tiny_int_deserialize,              // 0x44
+      tiny_int_deserialize,              // 0x45
+      tiny_int_deserialize,              // 0x46
+      tiny_int_deserialize,              // 0x47
+      tiny_int_deserialize,              // 0x48
+      tiny_int_deserialize,              // 0x49
+      tiny_int_deserialize,              // 0x4a
+      tiny_int_deserialize,              // 0x4b
+      tiny_int_deserialize,              // 0x4c
+      tiny_int_deserialize,              // 0x4d
+      tiny_int_deserialize,              // 0x4e
+      tiny_int_deserialize,              // 0x4f
+      tiny_int_deserialize,              // 0x50
+      tiny_int_deserialize,              // 0x51
+      tiny_int_deserialize,              // 0x52
+      tiny_int_deserialize,              // 0x53
+      tiny_int_deserialize,              // 0x54
+      tiny_int_deserialize,              // 0x55
+      tiny_int_deserialize,              // 0x56
+      tiny_int_deserialize,              // 0x57
+      tiny_int_deserialize,              // 0x58
+      tiny_int_deserialize,              // 0x59
+      tiny_int_deserialize,              // 0x5a
+      tiny_int_deserialize,              // 0x5b
+      tiny_int_deserialize,              // 0x5c
+      tiny_int_deserialize,              // 0x5d
+      tiny_int_deserialize,              // 0x5e
+      tiny_int_deserialize,              // 0x5f
+      tiny_int_deserialize,              // 0x60
+      tiny_int_deserialize,              // 0x61
+      tiny_int_deserialize,              // 0x62
+      tiny_int_deserialize,              // 0x63
+      tiny_int_deserialize,              // 0x64
+      tiny_int_deserialize,              // 0x65
+      tiny_int_deserialize,              // 0x66
+      tiny_int_deserialize,              // 0x67
+      tiny_int_deserialize,              // 0x68
+      tiny_int_deserialize,              // 0x69
+      tiny_int_deserialize,              // 0x6a
+      tiny_int_deserialize,              // 0x6b
+      tiny_int_deserialize,              // 0x6c
+      tiny_int_deserialize,              // 0x6d
+      tiny_int_deserialize,              // 0x6e
+      tiny_int_deserialize,              // 0x6f
+      tiny_int_deserialize,              // 0x70
+      tiny_int_deserialize,              // 0x71
+      tiny_int_deserialize,              // 0x72
+      tiny_int_deserialize,              // 0x73
+      tiny_int_deserialize,              // 0x74
+      tiny_int_deserialize,              // 0x75
+      tiny_int_deserialize,              // 0x76
+      tiny_int_deserialize,              // 0x77
+      tiny_int_deserialize,              // 0x78
+      tiny_int_deserialize,              // 0x79
+      tiny_int_deserialize,              // 0x7a
+      tiny_int_deserialize,              // 0x7b
+      tiny_int_deserialize,              // 0x7c
+      tiny_int_deserialize,              // 0x7d
+      tiny_int_deserialize,              // 0x7e
+      tiny_int_deserialize,              // 0x7f
+      tiny_string_deserialize,           // 0x80
+      tiny_string_deserialize,           // 0x81
+      tiny_string_deserialize,           // 0x82
+      tiny_string_deserialize,           // 0x83
+      tiny_string_deserialize,           // 0x84
+      tiny_string_deserialize,           // 0x85
+      tiny_string_deserialize,           // 0x86
+      tiny_string_deserialize,           // 0x87
+      tiny_string_deserialize,           // 0x88
+      tiny_string_deserialize,           // 0x89
+      tiny_string_deserialize,           // 0x8a
+      tiny_string_deserialize,           // 0x8b
+      tiny_string_deserialize,           // 0x8c
+      tiny_string_deserialize,           // 0x8d
+      tiny_string_deserialize,           // 0x8e
+      tiny_string_deserialize,           // 0x8f
+      tiny_list_deserialize,             // 0x90
+      tiny_list_deserialize,             // 0x91
+      tiny_list_deserialize,             // 0x92
+      tiny_list_deserialize,             // 0x93
+      tiny_list_deserialize,             // 0x94
+      tiny_list_deserialize,             // 0x95
+      tiny_list_deserialize,             // 0x96
+      tiny_list_deserialize,             // 0x97
+      tiny_list_deserialize,             // 0x98
+      tiny_list_deserialize,             // 0x99
+      tiny_list_deserialize,             // 0x9a
+      tiny_list_deserialize,             // 0x9b
+      tiny_list_deserialize,             // 0x9c
+      tiny_list_deserialize,             // 0x9d
+      tiny_list_deserialize,             // 0x9e
+      tiny_list_deserialize,             // 0x9f
+      tiny_map_deserialize,              // 0xa0
+      tiny_map_deserialize,              // 0xa1
+      tiny_map_deserialize,              // 0xa2
+      tiny_map_deserialize,              // 0xa3
+      tiny_map_deserialize,              // 0xa4
+      tiny_map_deserialize,              // 0xa5
+      tiny_map_deserialize,              // 0xa6
+      tiny_map_deserialize,              // 0xa7
+      tiny_map_deserialize,              // 0xa8
+      tiny_map_deserialize,              // 0xa9
+      tiny_map_deserialize,              // 0xaa
+      tiny_map_deserialize,              // 0xab
+      tiny_map_deserialize,              // 0xac
+      tiny_map_deserialize,              // 0xad
+      tiny_map_deserialize,              // 0xae
+      tiny_map_deserialize,              // 0xaf
+      tiny_struct_deserialize,           // 0xb0
+      tiny_struct_deserialize,           // 0xb1
+      tiny_struct_deserialize,           // 0xb2
+      tiny_struct_deserialize,           // 0xb3
+      tiny_struct_deserialize,           // 0xb4
+      tiny_struct_deserialize,           // 0xb5
+      tiny_struct_deserialize,           // 0xb6
+      tiny_struct_deserialize,           // 0xb7
+      tiny_struct_deserialize,           // 0xb8
+      tiny_struct_deserialize,           // 0xb9
+      tiny_struct_deserialize,           // 0xba
+      tiny_struct_deserialize,           // 0xbb
+      tiny_struct_deserialize,           // 0xbc
+      tiny_struct_deserialize,           // 0xbd
+      tiny_struct_deserialize,           // 0xbe
+      tiny_struct_deserialize,           // 0xbf
+      null_deserialize,                  // 0xc0
+      float_deserialize,                 // 0xc1
+      boolean_false_deserialize,         // 0xc2
+      boolean_true_deserialize,          // 0xc3
+      NULL,                              // 0xc4
+      NULL,                              // 0xc5
+      NULL,                              // 0xc6
+      NULL,                              // 0xc7
+      int8_deserialize,                  // 0xc8
+      int16_deserialize,                 // 0xc9
+      int32_deserialize,                 // 0xca
+      int64_deserialize,                 // 0xcb
+      NULL,                              // 0xcc
+      NULL,                              // 0xcd
+      NULL,                              // 0xce
+      NULL,                              // 0xcf
+      string8_deserialize,               // 0xd0
+      string16_deserialize,              // 0xd1
+      string32_deserialize,              // 0xd2
+      NULL,                              // 0xd3
+      list8_deserialize,                 // 0xd4
+      list16_deserialize,                // 0xd5
+      list32_deserialize,                // 0xd6
+      NULL,                              // 0xd7
+      map8_deserialize,                  // 0xd8
+      map16_deserialize,                 // 0xd9
+      map32_deserialize,                 // 0xda
+      NULL,                              // 0xdb
+      struct8_deserialize,               // 0xdc
+      struct16_deserialize,              // 0xdd
+      NULL,                              // 0xde
+      NULL,                              // 0xdf
+      NULL,                              // 0xe0
+      NULL,                              // 0xe1
+      NULL,                              // 0xe2
+      NULL,                              // 0xe3
+      NULL,                              // 0xe4
+      NULL,                              // 0xe5
+      NULL,                              // 0xe6
+      NULL,                              // 0xe7
+      NULL,                              // 0xe8
+      NULL,                              // 0xe9
+      NULL,                              // 0xea
+      NULL,                              // 0xeb
+      NULL,                              // 0xec
+      NULL,                              // 0xed
+      NULL,                              // 0xee
+      NULL,                              // 0xef
+      tiny_int_deserialize,              // 0xf0
+      tiny_int_deserialize,              // 0xf1
+      tiny_int_deserialize,              // 0xf2
+      tiny_int_deserialize,              // 0xf3
+      tiny_int_deserialize,              // 0xf4
+      tiny_int_deserialize,              // 0xf5
+      tiny_int_deserialize,              // 0xf6
+      tiny_int_deserialize,              // 0xf7
+      tiny_int_deserialize,              // 0xf8
+      tiny_int_deserialize,              // 0xf9
+      tiny_int_deserialize,              // 0xfa
+      tiny_int_deserialize,              // 0xfb
+      tiny_int_deserialize,              // 0xfc
+      tiny_int_deserialize,              // 0xfd
+      tiny_int_deserialize,              // 0xfe
+      tiny_int_deserialize };            // 0xff
 
 
 int neo4j_deserialize(neo4j_iostream_t *stream, neo4j_mpool_t *pool,
@@ -113,20 +337,14 @@ int neo4j_deserialize(neo4j_iostream_t *stream, neo4j_mpool_t *pool,
         goto failure;
     }
 
-    int i = 0;
-    while (i < deserializers_max &&
-            (marker & deserializers[i].mask) != deserializers[i].marker)
-    {
-        ++i;
-    }
-
-    if (i >= deserializers_max)
+    deserializer_t deserialize = deserializers[marker];
+    if (deserialize == NULL)
     {
         errno = EPROTO;
         goto failure;
     }
 
-    if (deserializers[i].deserialize(marker, stream, pool, value))
+    if (deserialize(marker, stream, pool, value))
     {
         goto failure;
     }
