@@ -98,22 +98,97 @@ ssize_t chunking_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
     REQUIRE(buf != NULL, -1);
     struct neo4j_chunking_iostream *ios =
         (struct neo4j_chunking_iostream *)stream;
+    if (ios->delegate == NULL)
+    {
+        errno = EPIPE;
+        return -1;
+    }
     if (nbyte == 0)
     {
         errno = ios->rcv_errno;
         return (ios->rcv_errno != 0)? -1 : 0;
     }
 
-    struct iovec iov[1];
-    iov[0].iov_base = buf;
-    iov[0].iov_len = nbyte;
-    return chunking_readv(stream, iov, 1);
+    struct iovec iov[2];
+    uint16_t length;
+
+    ssize_t received = 0;
+    do
+    {
+        int iovcnt;
+        size_t l;
+
+        if (ios->rcv_chunk_remaining == 0)
+        {
+            iov[0].iov_base = &length;
+            iov[0].iov_len = sizeof(length);
+            iovcnt = 1;
+            l = 0;
+        }
+        else if (nbyte < (size_t)ios->rcv_chunk_remaining)
+        {
+            iov[0].iov_base = buf;
+            iov[0].iov_len = nbyte;
+            iovcnt = 1;
+            l = nbyte;
+        }
+        else
+        {
+            // since the chunk will be exhausted,
+            // also read the next chunk length
+            iov[0].iov_base = buf;
+            iov[0].iov_len = (size_t)ios->rcv_chunk_remaining;
+            iov[1].iov_base = &length;
+            iov[1].iov_len = sizeof(length);
+            iovcnt = 2;
+            l = (size_t)ios->rcv_chunk_remaining;
+        }
+
+        size_t result;
+        if (neo4j_ios_readv_all(ios->delegate, iov, iovcnt, &result) < 0)
+        {
+            // only report reading up to the next chunk length
+            received += minzu(result, l);
+            ios->rcv_errno = errno;
+            ios->rcv_chunk_remaining = -1;
+            return received;
+        }
+
+        if (result <= (size_t)ios->rcv_chunk_remaining)
+        {
+            received += result;
+            ios->rcv_chunk_remaining -= result;
+            return received;
+        }
+
+        // we received a complete chunk and the next chunk length
+        received += ios->rcv_chunk_remaining;
+        assert((result - ios->rcv_chunk_remaining) == sizeof(length));
+
+        // if the next chunk length is zero, then we're done
+        if (length == 0)
+        {
+            ios->rcv_chunk_remaining = -1;
+            return received;
+        }
+
+        nbyte -= l;
+        buf = ((uint8_t *)buf) + l;
+        ios->rcv_chunk_remaining = ntohs(length);
+    } while (nbyte > 0);
+
+    return received;
 }
 
 
 ssize_t chunking_readv(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt)
 {
+    if (iovcnt == 1)
+    {
+        return chunking_read(stream, iov[0].iov_base, iov[0].iov_len);
+    }
+
     REQUIRE(iov != NULL, -1);
     struct neo4j_chunking_iostream *ios =
         (struct neo4j_chunking_iostream *)stream;
@@ -159,7 +234,7 @@ ssize_t chunking_readv(neo4j_iostream_t *stream,
         if (neo4j_ios_readv_all(ios->delegate, riov, riovcnt, &result) < 0)
         {
             // only report reading up to the next chunk length
-            received += min(result, total);
+            received += minzu(result, total);
             ios->rcv_errno = errno;
             ios->rcv_chunk_remaining = -1;
             return received;
@@ -284,7 +359,7 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
                 assert(diovcnt < niovcnt);
                 cbytes = 0;
             }
-            size_t diov_len = min(ios->snd_max_chunk - cbytes, iov_len);
+            size_t diov_len = minzu(ios->snd_max_chunk - cbytes, iov_len);
             diov[diovcnt].iov_base = base;
             diov[diovcnt].iov_len = diov_len;
             diovcnt++;
