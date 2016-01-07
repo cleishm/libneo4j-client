@@ -33,12 +33,12 @@
 
 
 static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config);
-static neo4j_connection_t *establish_connection(const char *hostname, int port,
-        const char *connection_name, neo4j_config_t *config,
+static neo4j_connection_t *establish_connection(const char *hostname,
+        unsigned int port, const char *connection_name, neo4j_config_t *config,
         uint_fast32_t flags);
 static neo4j_iostream_t *std_tcp_connect(
         struct neo4j_connection_factory *factory, const char *hostname,
-        int port, neo4j_config_t *config, uint_fast32_t flags,
+        unsigned int port, neo4j_config_t *config, uint_fast32_t flags,
         struct neo4j_logger *logger);
 static int negotiate_protocol_version(neo4j_iostream_t *iostream,
         uint32_t *protocol_version);
@@ -89,8 +89,9 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
         }
     }
 
+    unsigned int port = (uri->port > 0)? uri->port : NEO4J_DEFAULT_TCP_PORT;
     connection = establish_connection(
-            uri->hostname, uri->port, uri_string, config, flags);
+            uri->hostname, port, uri_string, config, flags);
 
     int errsv;
 cleanup:
@@ -144,6 +145,7 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
         neo4j_config_t *config, uint_fast32_t flags)
 {
     REQUIRE(hostname != NULL, NULL);
+    REQUIRE(port < UINT16_MAX, NULL);
 
     config = neo4j_config_dup(config);
     if (config == NULL)
@@ -160,8 +162,8 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
 }
 
 
-neo4j_connection_t *establish_connection(const char *hostname, int port,
-        const char *connection_name, neo4j_config_t *config,
+neo4j_connection_t *establish_connection(const char *hostname,
+        unsigned int port, const char *connection_name, neo4j_config_t *config,
         uint_fast32_t flags)
 {
     neo4j_logger_t *logger = neo4j_get_logger(config, "connection");
@@ -252,9 +254,8 @@ failure:
 
 
 neo4j_iostream_t *std_tcp_connect(struct neo4j_connection_factory *factory,
-        const char *hostname, int port,
-        neo4j_config_t *config, uint_fast32_t flags,
-        struct neo4j_logger *logger)
+        const char *hostname, unsigned int port, neo4j_config_t *config,
+        uint_fast32_t flags, struct neo4j_logger *logger)
 {
     REQUIRE(factory != NULL, NULL);
     REQUIRE(config != NULL, NULL);

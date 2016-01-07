@@ -26,11 +26,11 @@
 
 static neo4j_iostream_t *stub_connect(
         struct neo4j_connection_factory *factory,
-        const char *hostname, int port, neo4j_config_t *config,
+        const char *hostname, unsigned int port, neo4j_config_t *config,
         uint_fast32_t flags, struct neo4j_logger *logger);
 static neo4j_iostream_t *stub_failing_connect(
         struct neo4j_connection_factory *factory,
-        const char *hostname, int port, neo4j_config_t *config,
+        const char *hostname, unsigned int port, neo4j_config_t *config,
         uint_fast32_t flags, struct neo4j_logger *logger);
 static int ios_noop_close(struct neo4j_iostream *self);
 
@@ -75,7 +75,7 @@ static void teardown(void)
 
 
 neo4j_iostream_t *stub_connect(struct neo4j_connection_factory *factory,
-        const char *hostname, int port, neo4j_config_t *config,
+        const char *hostname, unsigned int port, neo4j_config_t *config,
         uint_fast32_t flags, struct neo4j_logger *logger)
 {
     if (strcmp(hostname, "localhost") != 0)
@@ -100,7 +100,7 @@ neo4j_iostream_t *stub_connect(struct neo4j_connection_factory *factory,
 
 neo4j_iostream_t *stub_failing_connect(
         struct neo4j_connection_factory *factory,
-        const char *hostname, int port, neo4j_config_t *config,
+        const char *hostname, unsigned int port, neo4j_config_t *config,
         uint_fast32_t flags, struct neo4j_logger *logger)
 {
     errno = STUB_FAILURE_CODE;

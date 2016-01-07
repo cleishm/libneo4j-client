@@ -314,7 +314,7 @@ struct neo4j_connection_factory
      *         (errno will be set).
      */
     struct neo4j_iostream *(*tcp_connect)(struct neo4j_connection_factory *self,
-            const char *hostname, int port,
+            const char *hostname, unsigned int port,
             neo4j_config_t *config, uint_fast32_t flags,
             struct neo4j_logger *logger);
 };
@@ -1073,6 +1073,8 @@ int neo4j_mkdir_p(const char *path);
  * connection
  * =====================================
  */
+
+#define NEO4J_DEFAULT_TCP_PORT 7687
 
 #define NEO4J_INSECURE (1<<0)
 

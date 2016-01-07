@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "uri.h"
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -225,13 +226,14 @@ struct uri *parse_uri(const char *str, const char **endptr)
     if (port_len > 0)
     {
         char *eptr;
-        uri->port = (int) strtol(port_start, &eptr, 10);
-        if (eptr != (port_start + port_len))
+        long port = strtol(port_start, &eptr, 10);
+        if (eptr != (port_start + port_len) || port > UINT16_MAX)
         {
             maybe_set(endptr, eptr);
             errno = EINVAL;
             goto cleanup;
         }
+        uri->port = (int)port;
     }
     uri->path = strndup(path_start, path_len);
     if (uri->path == NULL)

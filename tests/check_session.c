@@ -35,7 +35,7 @@ struct received_response
 
 
 static neo4j_iostream_t *stub_connect(struct neo4j_connection_factory *factory,
-        const char *hostname, int port, neo4j_config_t *config,
+        const char *hostname, unsigned int port, neo4j_config_t *config,
         uint_fast32_t flags, struct neo4j_logger *logger);
 static void queue_message(neo4j_iostream_t *ios, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
@@ -93,7 +93,7 @@ static void teardown(void)
 
 
 neo4j_iostream_t *stub_connect(struct neo4j_connection_factory *factory,
-            const char *hostname, int port, neo4j_config_t *config,
+            const char *hostname, unsigned int port, neo4j_config_t *config,
             uint_fast32_t flags, struct neo4j_logger *logger)
 {
     return client_ios;
