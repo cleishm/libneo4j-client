@@ -88,6 +88,23 @@ typedef size_t (*neo4j_password_callback_t)(void *userdata,
 
 /*
  * =====================================
+ * version
+ * =====================================
+ */
+
+/**
+ * The version string for libneo4j-client.
+ */
+const char *libneo4j_client_version(void);
+
+/**
+ * The default client ID string for libneo4j-client.
+ */
+const char *libneo4j_client_id(void);
+
+
+/*
+ * =====================================
  * init
  * =====================================
  */
@@ -818,6 +835,18 @@ neo4j_config_t *neo4j_new_config(void);
 void neo4j_config_free(neo4j_config_t *config);
 
 /**
+ * Set the client ID.
+ *
+ * The client ID will be used when identifying the client to neo4j.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [client_id] The client ID string. This string should remain allocated
+ *         whilst the config is allocated _or if any connections opened with
+ *         the config remain active_.
+ */
+void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
+
+/**
  * Set a logger provider in the neo4j client configuration.
  *
  * @param [config] The neo4j client configuration to update.
@@ -860,7 +889,8 @@ void neo4j_config_set_memory_allocator(neo4j_config_t *config,
  * Set the username in the neo4j client configuration.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [username] The username to authenticate with.
+ * @param [username] The username to authenticate with. The string will be
+ *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_config_set_username(neo4j_config_t *config, const char *username);
@@ -869,7 +899,8 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username);
  * Set the password in the neo4j client configuration.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [password] The password to authenticate with.
+ * @param [password] The password to authenticate with. The string will be
+ *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_config_set_password(neo4j_config_t *config, const char *password);
@@ -879,7 +910,9 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password);
  *
  * @param [config] The neo4j client configuration to update.
  * @param [path] The path to the PEM file containing the private key
- *         and certificate chain.
+ *         and certificate chain. This string should remain allocated whilst
+ *         the config is allocated _or if any connections opened with the
+ *         config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
@@ -920,6 +953,8 @@ int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
  *
  * @param [config] The neo4j client configuration to update.
  * @param [path] The path to the PEM file containing the root certificates.
+ *         This string should remain allocated whilst the config is allocated
+ *         _or if any connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
@@ -931,7 +966,9 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
  * according to the `c_rehash` tool.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [path] The path to the directory of certificates.
+ * @param [path] The path to the directory of certificates. This string should
+ *         remain allocated whilst the config is allocated _or if any
+ *         connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
@@ -961,7 +998,9 @@ int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
  * will be used for storing trust information when using "Trust On First Use".
  *
  * @param [config] The neo4j client configuration to update.
- * @param [path] The path to known hosts file.
+ * @param [path] The path to known hosts file. This string should
+ *         remain allocated whilst the config is allocated _or if any
+ *         connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_config_set_known_hosts_file(neo4j_config_t *config,

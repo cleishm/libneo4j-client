@@ -29,6 +29,18 @@
 static size_t default_password_callback(void *userdata, char *buf, size_t n);
 
 
+const char *libneo4j_client_id(void)
+{
+    return PACKAGE_NAME "/" PACKAGE_VERSION;
+}
+
+
+const char *libneo4j_client_version(void)
+{
+    return PACKAGE_VERSION;
+}
+
+
 neo4j_config_t *neo4j_new_config()
 {
     neo4j_config_t *config = calloc(1, sizeof(neo4j_config_t));
@@ -39,7 +51,7 @@ neo4j_config_t *neo4j_new_config()
     config->connection_factory = &neo4j_std_connection_factory;
     config->allocator = &neo4j_std_memory_allocator;
     config->mpool_block_size = 128;
-    config->client_id = PACKAGE_NAME "/" PACKAGE_VERSION;
+    config->client_id = libneo4j_client_id();
     config->sndbuf_size = -1;
     config->rcvbuf_size = -1;
     config->connect_timeout = 0;
@@ -115,6 +127,12 @@ void neo4j_config_free(neo4j_config_t *config)
 #endif
     free(config->known_hosts_file);
     free(config);
+}
+
+
+void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
+{
+    config->client_id = client_id;
 }
 
 

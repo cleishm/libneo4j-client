@@ -3,6 +3,7 @@
 .libs
 *~
 *.o
+*.o-*
 *.lo
 *.la
 *.sig

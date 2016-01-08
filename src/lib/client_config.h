@@ -31,7 +31,7 @@ struct neo4j_config
     char *username;
     char *password;
 
-    char *client_id;
+    const char *client_id;
 
     int sndbuf_size;
     int rcvbuf_size;
