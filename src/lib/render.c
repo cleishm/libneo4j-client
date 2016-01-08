@@ -177,15 +177,10 @@ int write_field(FILE *stream, neo4j_value_t value, unsigned int width,
     }
     else
     {
-        const char *field = value_tostring(&value, buffer, width+2, flags);
-        if (field == NULL)
-        {
-            return -1;
-        }
-        assert(field == buffer);
-        length = strlen(field);
+        value_tostring(&value, buffer, width+2, flags);
+        length = strlen(buffer);
     }
-    assert (length < width + 2);
+    assert(length < width + 2);
     bool oversize = (length > width);
 
     if (length < width)
@@ -374,12 +369,8 @@ int write_value(FILE *stream, const neo4j_value_t *value,
     assert(*bufcap >= 2);
     for (;;)
     {
-        ssize_t required = neo4j_ntostring(*value, *buffer, *bufcap);
-        if (required < 0)
-        {
-            return -1;
-        }
-        if ((size_t)required < *bufcap)
+        size_t required = neo4j_ntostring(*value, *buffer, *bufcap);
+        if (required < *bufcap)
         {
             break;
         }

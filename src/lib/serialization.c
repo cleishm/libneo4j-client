@@ -59,7 +59,7 @@ struct length_header
 static size_t identifier_str(char *buf, size_t n, const neo4j_value_t *value);
 static size_t string_str(char *buf, size_t n, char quot, const char *s,
         size_t len);
-static ssize_t list_str(char *buf, size_t n, const neo4j_value_t *values,
+static size_t list_str(char *buf, size_t n, const neo4j_value_t *values,
         unsigned int nvalues);
 static int build_header(struct iovec *iov, struct length_header *header,
         size_t length, struct markers *markers);
@@ -67,12 +67,14 @@ static int build_header(struct iovec *iov, struct length_header *header,
 
 /* null */
 
-ssize_t neo4j_null_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_null_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_NULL);
-    return snprintf(buf, n, "null");
+    int r = snprintf(buf, n, "null");
+    assert(r == 4);
+    return (size_t)r;
 }
 
 
@@ -88,13 +90,15 @@ int neo4j_null_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* boolean */
 
-ssize_t neo4j_bool_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_bool_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_BOOL);
     const struct neo4j_bool *v = (const struct neo4j_bool *)value;
-    return snprintf(buf, n, (v->value > 0) ? "true" : "false");
+    int r = snprintf(buf, n, (v->value > 0) ? "true" : "false");
+    assert(r == 4 || r == 5);
+    return (size_t)r;
 }
 
 
@@ -112,13 +116,15 @@ int neo4j_bool_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* integer */
 
-ssize_t neo4j_int_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_int_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_INT);
     const struct neo4j_int *v = (const struct neo4j_int *)value;
-    return snprintf(buf, n, "%" PRId64, v->value);
+    int r = snprintf(buf, n, "%" PRId64, v->value);
+    assert(r > 0);
+    return (size_t)r;
 }
 
 
@@ -181,13 +187,15 @@ int neo4j_int_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* float */
 
-ssize_t neo4j_float_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_float_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_FLOAT);
     const struct neo4j_float *v = (const struct neo4j_float *)value;
-    return snprintf(buf, n, "%f", v->value);
+    int r = snprintf(buf, n, "%f", v->value);
+    assert(r > 0);
+    return (size_t)r;
 }
 
 
@@ -219,7 +227,7 @@ int neo4j_float_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* string */
 
-ssize_t neo4j_string_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_string_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
@@ -324,7 +332,7 @@ int neo4j_string_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* list */
 
-ssize_t neo4j_list_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_list_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
@@ -338,12 +346,7 @@ ssize_t neo4j_list_str(const neo4j_value_t *value, char *buf, size_t n)
     }
     l++;
 
-    ssize_t slen = list_str(buf+l, (l < n)? n-l : 0, v->items, v->length);
-    if (slen < 0)
-    {
-        return -1;
-    }
-    l += slen;
+    l += list_str(buf+l, (l < n)? n-l : 0, v->items, v->length);
 
     if ((l+1) < n)
     {
@@ -358,18 +361,13 @@ ssize_t neo4j_list_str(const neo4j_value_t *value, char *buf, size_t n)
 }
 
 
-ssize_t list_str(char *buf, size_t n, const neo4j_value_t *values,
+size_t list_str(char *buf, size_t n, const neo4j_value_t *values,
         unsigned int nvalues)
 {
     size_t l = 0;
     for (unsigned int i = 0; i < nvalues; ++i)
     {
-        ssize_t vlen = neo4j_ntostring(values[i], buf+l, (l < n)? n-l : 0);
-        if (vlen < 0)
-        {
-            return -1;
-        }
-        l += vlen;
+        l += neo4j_ntostring(values[i], buf+l, (l < n)? n-l : 0);
 
         if ((i+1) < nvalues)
         {
@@ -414,7 +412,7 @@ int neo4j_list_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* map */
 
-ssize_t neo4j_map_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_map_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
@@ -431,11 +429,7 @@ ssize_t neo4j_map_str(const neo4j_value_t *value, char *buf, size_t n)
     for (unsigned int i = 0; i < v->nentries; ++i)
     {
         const neo4j_map_entry_t *entry = v->entries + i;
-        if (neo4j_type(entry->key) != NEO4J_STRING)
-        {
-            errno = NEO4J_INVALID_MAP_KEY_TYPE;
-            return -1;
-        }
+        assert(neo4j_type(entry->key) == NEO4J_STRING);
         l += identifier_str(buf+l, (l < n)? n-l : 0, &(entry->key));
 
         if ((l+1) < n)
@@ -444,12 +438,7 @@ ssize_t neo4j_map_str(const neo4j_value_t *value, char *buf, size_t n)
         }
         l++;
 
-        ssize_t vlen = neo4j_ntostring(entry->value, buf+l, (l < n)? n-l : 0);
-        if (vlen < 0)
-        {
-            return -1;
-        }
-        l += vlen;
+        l += neo4j_ntostring(entry->value, buf+l, (l < n)? n-l : 0);
 
         if ((i+1) < v->nentries)
         {
@@ -514,7 +503,7 @@ int neo4j_map_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 
 /* node */
 
-ssize_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
@@ -536,11 +525,7 @@ ssize_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
     for (unsigned int i = 0; i < labels->length; ++i)
     {
         const neo4j_value_t *label = labels->items + i;
-        if (neo4j_type(*label) != NEO4J_STRING)
-        {
-            errno = NEO4J_INVALID_LABEL_TYPE;
-            return -1;
-        }
+        assert(neo4j_type(*label) == NEO4J_STRING);
         if ((l+1) < n)
         {
             buf[l] = ':';
@@ -550,12 +535,7 @@ ssize_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
     }
 
     assert(neo4j_type(v->fields[2]) == NEO4J_MAP);
-    ssize_t mlen = neo4j_map_str(&(v->fields[2]), buf+l, (l < n)? n-l : 0);
-    if (mlen < 0)
-    {
-        return -1;
-    }
-    l += mlen;
+    l += neo4j_map_str(&(v->fields[2]), buf+l, (l < n)? n-l : 0);
 
     if ((l+1) < n)
     {
@@ -572,7 +552,7 @@ ssize_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
 
 /* relationship */
 
-ssize_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
@@ -597,12 +577,7 @@ ssize_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
     l += identifier_str(buf+l, (l < n)? n-l : 0, &(v->fields[3]));
 
     assert(neo4j_type(v->fields[4]) == NEO4J_MAP);
-    ssize_t mlen = neo4j_map_str(&(v->fields[4]), buf+l, (l < n)? n-l : 0);
-    if (mlen < 0)
-    {
-        return -1;
-    }
-    l += mlen;
+    l += neo4j_map_str(&(v->fields[4]), buf+l, (l < n)? n-l : 0);
 
     if ((l+1) < n)
     {
@@ -619,32 +594,24 @@ ssize_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
 
 /* structure */
 
-ssize_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n)
+size_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_STRUCT);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
 
-    ssize_t hlen = snprintf(buf, n, "struct<0x%X>", v->signature);
-    if (hlen < 0)
-    {
-        return -1;
-    }
+    int hlen = snprintf(buf, n, "struct<0x%X>", v->signature);
+    assert(hlen > 10);
 
-    size_t l = hlen;
+    size_t l = (size_t)hlen;
     if ((l+1) < n)
     {
         buf[l] = '(';
     }
     l++;
 
-    ssize_t slen = list_str(buf+l, (l < n)? n-l : 0, v->fields, v->nfields);
-    if (slen < 0)
-    {
-        return -1;
-    }
-    l += slen;
+    l += list_str(buf+l, (l < n)? n-l : 0, v->fields, v->nfields);
 
     if ((l+1) < n)
     {

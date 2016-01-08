@@ -21,10 +21,11 @@
 #include <unistd.h>
 
 
+static char buf[1024];
+
+
 START_TEST (null_value)
 {
-    char buf[256];
-
     neo4j_value_t value = neo4j_null;
     ck_assert(neo4j_type(value) == NEO4J_NULL);
 
@@ -49,8 +50,6 @@ END_TEST
 
 START_TEST (bool_value)
 {
-    char buf[256];
-
     neo4j_value_t value = neo4j_bool(true);
     ck_assert(neo4j_type(value) == NEO4J_BOOL);
 
@@ -82,8 +81,6 @@ END_TEST
 
 START_TEST (int_value)
 {
-    char buf[256];
-
     neo4j_value_t value = neo4j_int(42);
     ck_assert(neo4j_type(value) == NEO4J_INT);
 
@@ -116,8 +113,6 @@ END_TEST
 
 START_TEST (float_value)
 {
-    char buf[256];
-
     neo4j_value_t value = neo4j_float(4.2);
     ck_assert(neo4j_type(value) == NEO4J_FLOAT);
 
@@ -151,8 +146,6 @@ END_TEST
 
 START_TEST (string_value)
 {
-    char buf[256];
-
     neo4j_value_t value = neo4j_string("the \"rum diary\"");
     ck_assert(neo4j_type(value) == NEO4J_STRING);
 
@@ -227,8 +220,6 @@ END_TEST
 
 START_TEST (list_value)
 {
-    char buf[256];
-
     neo4j_value_t list_values[] = { neo4j_int(1), neo4j_string("the \"rum\"") };
     neo4j_value_t value = neo4j_list(list_values, 2);
     ck_assert(neo4j_type(value) == NEO4J_LIST);
@@ -305,8 +296,6 @@ END_TEST
 
 START_TEST (map_value)
 {
-    char buf[256];
-
     neo4j_map_entry_t map_entries[] =
         { { .key = neo4j_string("bernie"), .value = neo4j_string("sanders") },
           { .key = neo4j_string("b. sanders"), .value = neo4j_int(2) } };
@@ -351,10 +340,7 @@ START_TEST (invalid_map_value)
         { { .key = neo4j_string("bernie"), .value = neo4j_int(1) },
           { .key = neo4j_int(1), .value = neo4j_int(2) } };
     neo4j_value_t value = neo4j_map(map_entries, 2);
-    ck_assert(neo4j_type(value) == NEO4J_MAP);
-
-    char *str = neo4j_tostring(value, NULL, 0);
-    ck_assert_ptr_eq(str, NULL);
+    ck_assert(neo4j_is_null(value));
     ck_assert_int_eq(errno, NEO4J_INVALID_MAP_KEY_TYPE);
 }
 END_TEST
@@ -410,10 +396,8 @@ END_TEST
 
 START_TEST (node_value)
 {
-    char buf[256];
-
     neo4j_value_t labels[] =
-        { neo4j_string("Person"), neo4j_string("Human Being") };
+        { neo4j_string("Person"), neo4j_string("Democrat Senator") };
     neo4j_map_entry_t props[] =
         { { .key = neo4j_string("bernie"), .value = neo4j_int(1) },
           { .key = neo4j_string("sanders"), .value = neo4j_int(2) } };
@@ -425,11 +409,11 @@ START_TEST (node_value)
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
-    ck_assert_str_eq(str, "(:Person:`Human Being`{bernie:1,sanders:2})");
+    ck_assert_str_eq(str, "(:Person:`Democrat Senator`{bernie:1,sanders:2})");
 
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 43);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 43);
-    ck_assert_str_eq(buf, "(:Person:`Human Being`{bernie:1,sanders:2})");
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 48);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 48);
+    ck_assert_str_eq(buf, "(:Person:`Democrat Senator`{bernie:1,sanders:2})");
 }
 END_TEST
 
@@ -445,10 +429,7 @@ START_TEST (invalid_node_value)
     neo4j_value_t field_values[] =
         { neo4j_int(1), neo4j_list(labels, 2), neo4j_map(props, 2) };
     neo4j_value_t value = neo4j_node(field_values);
-    ck_assert(neo4j_type(value) == NEO4J_NODE);
-
-    char *str = neo4j_tostring(value, NULL, 0);
-    ck_assert_ptr_eq(str, NULL);
+    ck_assert(neo4j_is_null(value));
     ck_assert_int_eq(errno, NEO4J_INVALID_LABEL_TYPE);
 }
 END_TEST
@@ -456,8 +437,6 @@ END_TEST
 
 START_TEST (relationship_value)
 {
-    char buf[256];
-
     neo4j_value_t type = neo4j_string("Candidate");
     neo4j_map_entry_t props[] =
         { { .key = neo4j_string("year"), .value = neo4j_int(2016) } };
@@ -480,8 +459,6 @@ END_TEST
 
 START_TEST (struct_value)
 {
-    char buf[256];
-
     neo4j_value_t field_values[] = { neo4j_int(1), neo4j_string("bernie") };
     neo4j_value_t value = neo4j_struct(0x78, field_values, 2);
     ck_assert(neo4j_type(value) == NEO4J_STRUCT);

@@ -102,7 +102,7 @@ const char *neo4j_type_str(const neo4j_type_t type)
 
 struct neo4j_value_vt
 {
-    ssize_t (*str)(const neo4j_value_t *self, char *strbuf, size_t n);
+    size_t (*str)(const neo4j_value_t *self, char *strbuf, size_t n);
     int (*serialize)(const neo4j_value_t *self, neo4j_iostream_t *stream);
     bool (*eq)(const neo4j_value_t *self, const neo4j_value_t *other);
 };
@@ -181,16 +181,12 @@ static_assert(
 
 char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n)
 {
-    ssize_t result = neo4j_ntostring(value, strbuf, n);
-    if (result < 0)
-    {
-        return NULL;
-    }
+    neo4j_ntostring(value, strbuf, n);
     return strbuf;
 }
 
 
-ssize_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n)
+size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n)
 {
     REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
     REQUIRE(value._type < _MAX_TYPE, -1);
@@ -440,6 +436,15 @@ neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n)
         n = UINT32_MAX;
     }
 #endif
+    for (unsigned int i = 0; i < n; ++i)
+    {
+        if (neo4j_type(entries[i].key) != NEO4J_STRING)
+        {
+            errno = NEO4J_INVALID_MAP_KEY_TYPE;
+            return neo4j_null;
+        }
+    }
+
     struct neo4j_map v =
         { ._type = NEO4J_MAP, ._vt_off = MAP_VT_OFF,
           .entries = entries, .nentries = n };
@@ -527,6 +532,23 @@ neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value)
 
 neo4j_value_t neo4j_node(const neo4j_value_t fields[3])
 {
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_LIST ||
+            neo4j_type(fields[2]) != NEO4J_MAP)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+    const struct neo4j_list *labels = (const struct neo4j_list *)&(fields[1]);
+    for (unsigned int i = 0; i < labels->length; ++i)
+    {
+        if (neo4j_type(labels->items[i]) != NEO4J_STRING)
+        {
+            errno = NEO4J_INVALID_LABEL_TYPE;
+            return neo4j_null;
+        }
+    }
+
     struct neo4j_struct v =
             { ._type = NEO4J_NODE, ._vt_off = NODE_VT_OFF,
               .signature = NEO4J_NODE_SIGNATURE,
@@ -559,6 +581,16 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value)
 
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5])
 {
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_INT ||
+            neo4j_type(fields[2]) != NEO4J_INT ||
+            neo4j_type(fields[3]) != NEO4J_STRING ||
+            neo4j_type(fields[4]) != NEO4J_MAP)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
     struct neo4j_struct v =
             { ._type = NEO4J_RELATIONSHIP, ._vt_off = RELATIONSHIP_VT_OFF,
               .signature = NEO4J_REL_SIGNATURE,

@@ -159,7 +159,6 @@ neo4j_value_t neo4j_struct(uint8_t signature,
  *
  * @internal
  *
- * @param [signature] The struct signature.
  * @param [fields] The fields for the node, which must be an Int identifier,
  *         a List of Strings for labels and a Map of properties.
  * @return The neo4j value encoding the node.
@@ -171,10 +170,10 @@ neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
  *
  * @internal
  *
- * @param [signature] The struct signature.
- * @param [fields] The fields for the node, which must be an Int identifier,
- *         a List of Strings for labels and a Map of properties.
- * @return The neo4j value encoding the node.
+ * @param [fields] The fields for the relationship, which must be an Int
+ *         identifier, the Int identifier of the start node, the Int identifier
+ *         of the end node, a String reltype and a Map of properties.
+ * @return The neo4j value encoding the relationship.
  */
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
 

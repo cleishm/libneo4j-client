@@ -520,8 +520,7 @@ const char *neo4j_type_str(const neo4j_type_t t);
  * @param [value] The neo4j value.
  * @param [strbuf] A buffer to write the string representation into.
  * @param [n] The length of the buffer.
- * @return A pointer to the provided buffer, or `NULL` if an error occurs
- *         (errno will be set).
+ * @return A pointer to the provided buffer.
  */
 char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
 
@@ -535,10 +534,9 @@ char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
  * @param [strbuf] A buffer to write the string representation into.
  * @param [n] The length of the buffer.
  * @return The number of bytes that would have been written into the buffer
- *         had the buffer been large enough, or -1 if an error occurs (errno
- *         will be set).
+ *         had the buffer been large enough.
  */
-ssize_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n);
+size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n);
 
 /**
  * Compare two neo4j values for equality.

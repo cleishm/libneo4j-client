@@ -723,19 +723,6 @@ START_TEST (serialize_map8)
 END_TEST
 
 
-START_TEST (serialize_invalid_map)
-{
-    neo4j_map_entry_t entries[] =
-            { { .key = neo4j_string("0"), .value = neo4j_int(1) },
-              { .key = neo4j_int(1), .value = neo4j_int(2) } };
-    neo4j_value_t map = neo4j_map(entries, 2);
-    int r = neo4j_serialize(map, ios);
-    ck_assert_int_eq(r, -1);
-    ck_assert_int_eq(errno, NEO4J_INVALID_MAP_KEY_TYPE);
-}
-END_TEST
-
-
 TCase* serialization_tcase(void)
 {
     TCase *tc = tcase_create("serialization");
@@ -759,6 +746,5 @@ TCase* serialization_tcase(void)
     tcase_add_test(tc, serialize_struct16);
     tcase_add_test(tc, serialize_tiny_map);
     tcase_add_test(tc, serialize_map8);
-    tcase_add_test(tc, serialize_invalid_map);
     return tc;
 }

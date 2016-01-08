@@ -684,11 +684,6 @@ int map_deserialize(uint32_t nentries, neo4j_iostream_t *stream,
             {
                 return -1;
             }
-            if (neo4j_type(entries[i].key) != NEO4J_STRING)
-            {
-                errno = NEO4J_INVALID_MAP_KEY_TYPE;
-                return -1;
-            }
             if (neo4j_deserialize(stream, pool, &(entries[i].value)))
             {
                 return -1;
@@ -696,7 +691,13 @@ int map_deserialize(uint32_t nentries, neo4j_iostream_t *stream,
         }
     }
 
-    *value = neo4j_map(entries, nentries);
+    neo4j_value_t v = neo4j_map(entries, nentries);
+    if (neo4j_is_null(v))
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    *value = v;
     return 0;
 }
 
@@ -728,6 +729,7 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         }
     }
 
+    neo4j_value_t v;
     switch (signature)
     {
     case NEO4J_NODE_SIGNATURE:
@@ -736,15 +738,7 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
             errno = EPROTO;
             return -1;
         }
-        if (neo4j_type(fields[0]) != NEO4J_INT ||
-            neo4j_type(fields[1]) != NEO4J_LIST ||
-            neo4j_type(fields[2]) != NEO4J_MAP)
-        {
-            errno = EPROTO;
-            return -1;
-        }
-        // TODO: check all labels are strings
-        *value = neo4j_node(fields);
+        v = neo4j_node(fields);
         break;
     case NEO4J_REL_SIGNATURE:
         if (nfields != 5)
@@ -752,20 +746,18 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
             errno = EPROTO;
             return -1;
         }
-        if (neo4j_type(fields[0]) != NEO4J_INT ||
-            neo4j_type(fields[1]) != NEO4J_INT ||
-            neo4j_type(fields[2]) != NEO4J_INT ||
-            neo4j_type(fields[3]) != NEO4J_STRING ||
-            neo4j_type(fields[4]) != NEO4J_MAP)
-        {
-            errno = EPROTO;
-            return -1;
-        }
-        *value = neo4j_relationship(fields);
+        v = neo4j_relationship(fields);
         break;
     default:
-        *value = neo4j_struct(signature, fields, nfields);
+        v = neo4j_struct(signature, fields, nfields);
         break;
     }
+
+    if (neo4j_is_null(v))
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    *value = v;
     return 0;
 }
