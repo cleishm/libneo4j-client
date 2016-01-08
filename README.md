@@ -202,7 +202,7 @@ openssl headers, try the following:
 
 ```console
 $ brew install openssl
-$ ./configure LDFLAGS="-L/usr/local/opt/openssl/lib" CFLAGS="-I/usr/local/opt/openssl/include"
+$ ./configure LDFLAGS="-L/usr/local/opt/openssl/lib" CPPFLAGS="-I/usr/local/opt/openssl/include"
 $ make clean check
 $ sudo make install
 ```
