@@ -19,6 +19,7 @@
 #include "util.h"
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 
 
@@ -259,8 +260,18 @@ bool neo4j_bool_value(neo4j_value_t value)
 
 // int
 
-neo4j_value_t neo4j_int(int64_t value)
+neo4j_value_t neo4j_int(long long value)
 {
+#if LLONG_MIN != INT64_MIN || LLONG_MAX != INT64_MAX
+    if (value < INT64_MIN)
+    {
+        value = INT64_MIN;
+    }
+    else if (value > INT64_MAX)
+    {
+        value = INT64_MAX;
+    }
+#endif
     struct neo4j_int v =
         { ._type = NEO4J_INT, ._vt_off = INT_VT_OFF, .value = value };
     return *((neo4j_value_t *)(&v));
@@ -275,7 +286,7 @@ bool int_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 }
 
 
-int64_t neo4j_int_value(neo4j_value_t value)
+long long neo4j_int_value(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_INT, 0);
     return ((const struct neo4j_int *)&value)->value;
@@ -309,8 +320,14 @@ double neo4j_float_value(neo4j_value_t value)
 
 // string
 
-neo4j_value_t neo4j_ustring(const char *u, uint32_t n)
+neo4j_value_t neo4j_ustring(const char *u, unsigned int n)
 {
+#if UINT_MAX != UINT32_MAX
+    if (n > UINT32_MAX)
+    {
+        n = UINT32_MAX;
+    }
+#endif
     struct neo4j_string v =
         { ._type = NEO4J_STRING, ._vt_off = STRING_VT_OFF,
           .ustring = u, .length = n };
@@ -330,7 +347,7 @@ bool string_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 }
 
 
-uint32_t neo4j_string_length(neo4j_value_t value)
+unsigned int neo4j_string_length(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_STRING, 0);
     return ((const struct neo4j_string *)&value)->length;
@@ -357,8 +374,14 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length)
 
 // list
 
-neo4j_value_t neo4j_list(const neo4j_value_t *items, uint32_t n)
+neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n)
 {
+#if UINT_MAX != UINT32_MAX
+    if (n > UINT32_MAX)
+    {
+        n = UINT32_MAX;
+    }
+#endif
     struct neo4j_list v =
         { ._type = NEO4J_LIST, ._vt_off = LIST_VT_OFF,
           .items = items, .length = n };
@@ -388,7 +411,7 @@ bool list_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 }
 
 
-uint32_t neo4j_list_length(neo4j_value_t value)
+unsigned int neo4j_list_length(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_LIST, 0);
     return ((const struct neo4j_list *)&value)->length;
@@ -409,8 +432,14 @@ neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index)
 
 // map
 
-neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, uint32_t n)
+neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n)
 {
+#if UINT_MAX != UINT32_MAX
+    if (n > UINT32_MAX)
+    {
+        n = UINT32_MAX;
+    }
+#endif
     struct neo4j_map v =
         { ._type = NEO4J_MAP, ._vt_off = MAP_VT_OFF,
           .entries = entries, .nentries = n };
@@ -449,7 +478,7 @@ bool map_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 }
 
 
-uint32_t neo4j_map_size(neo4j_value_t value)
+unsigned int neo4j_map_size(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_MAP, 0);
     return ((const struct neo4j_map *)&value)->nentries;

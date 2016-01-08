@@ -587,10 +587,11 @@ bool neo4j_bool_value(neo4j_value_t value);
 /**
  * Construct a neo4j value encoding an integer.
  *
- * @param [value] A signed integer, up to 64bits in length.
+ * @param [value] A signed integer. This must be in the range INT64_MIN to
+ *         INT64_MAX, or it will be capped to the closest value.
  * @return A neo4j value encoding the integer.
  */
-neo4j_value_t neo4j_int(int64_t value);
+neo4j_value_t neo4j_int(long long value);
 
 /**
  * Return the native integer value from a neo4j int.
@@ -600,7 +601,7 @@ neo4j_value_t neo4j_int(int64_t value);
  * @param [value] The neo4j value
  * @return The native integer value
  */
-int64_t neo4j_int_value(neo4j_value_t value);
+long long neo4j_int_value(neo4j_value_t value);
 
 
 /**
@@ -626,7 +627,9 @@ double neo4j_float_value(neo4j_value_t value);
  * @fn neo4j_value_t neo4j_string(const char *s)
  * @brief Construct a neo4j value encoding a string.
  *
- * @param [s] A pointer to a `NULL` terminated ASCII string.
+ * @param [s] A pointer to a `NULL` terminated ASCII string. The pointer
+ *         must remain valid, and the content unchanged, for the lifetime of
+ *         the neo4j value.
  * @return A neo4j value encoding the string.
  */
 #define neo4j_string(s) (neo4j_ustring((s), strlen(s)))
@@ -634,11 +637,13 @@ double neo4j_float_value(neo4j_value_t value);
 /**
  * Construct a neo4j value encoding a string.
  *
- * @param [u] A pointer to a UTF-8 string.
- * @param [n] The length of the UTF-8 string.
+ * @param [u] A pointer to a UTF-8 string. The pointer must remain valid, and
+ *         the content unchanged, for the lifetime of the neo4j value.
+ * @param [n] The length of the UTF-8 string. This must be less than
+ *         UINT32_MAX in length (and will be truncated otherwise).
  * @return A neo4j value encoding the string.
  */
-neo4j_value_t neo4j_ustring(const char *u, uint32_t n);
+neo4j_value_t neo4j_ustring(const char *u, unsigned int n);
 
 /**
  * Return the length of a neo4j UTF-8 string.
@@ -648,7 +653,7 @@ neo4j_value_t neo4j_ustring(const char *u, uint32_t n);
  * @param [value] The neo4j string.
  * @return The length of the string in bytes.
  */
-uint32_t neo4j_string_length(neo4j_value_t value);
+unsigned int neo4j_string_length(neo4j_value_t value);
 
 /**
  * Return a pointer to a UTF-8 string.
@@ -673,7 +678,9 @@ const char *neo4j_ustring_value(neo4j_value_t value);
  * Note that the result is undefined if the value is not of type NEO4J_STRING.
  *
  * @param [value] The neo4j string.
- * @param [buffer] A pointer to a buffer for storing the string.
+ * @param [buffer] A pointer to a buffer for storing the string. The pointer
+ *         must remain valid, and the content unchanged, for the lifetime of
+ *         the neo4j value.
  * @param [length] The length of the buffer.
  * @return A pointer to the supplied buffer.
  */
@@ -683,11 +690,14 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length);
 /**
  * Construct a neo4j value encoding a list.
  *
- * @param [items] An array of neo4j values.
- * @param [n] The length of the array of items.
+ * @param [items] An array of neo4j values. The pointer to the items must
+ *         remain valid, and the content unchanged, for the lifetime of the
+ *         neo4j value.
+ * @param [n] The length of the array of items. This must be less than
+ *         UINT32_MAX (or the list will be truncated).
  * @return A neo4j value encoding the list.
  */
-neo4j_value_t neo4j_list(const neo4j_value_t *items, uint32_t n);
+neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n);
 
 /**
  * Return the length of a neo4j list (number of entries).
@@ -697,7 +707,7 @@ neo4j_value_t neo4j_list(const neo4j_value_t *items, uint32_t n);
  * @param [value] The neo4j list.
  * @return The number of entries.
  */
-uint32_t neo4j_list_length(neo4j_value_t value);
+unsigned int neo4j_list_length(neo4j_value_t value);
 
 /**
  * Return an element from a neo4j list.
@@ -715,11 +725,14 @@ neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index);
 /**
  * Construct a neo4j value encoding a map.
  *
- * @param [entries] An array of neo4j map entries.
- * @param [n] The length of the array of entries.
+ * @param [entries] An array of neo4j map entries. This pointer must remain
+ *         valid, and the content unchanged, for the lifetime of the neo4j
+ *         value.
+ * @param [n] The length of the array of entries. This must be less than
+ *         UINT32_MAX (or the list of entries will be truncated).
  * @return A neo4j value encoding the map.
  */
-neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, uint32_t n);
+neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n);
 
 /**
  * Return the size of a neo4j map (number of entries).
@@ -729,7 +742,7 @@ neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, uint32_t n);
  * @param [value] The neo4j map.
  * @return The number of entries.
  */
-uint32_t neo4j_map_size(neo4j_value_t value);
+unsigned int neo4j_map_size(neo4j_value_t value);
 
 /**
  * Return an entry from a neo4j map.
@@ -1429,7 +1442,6 @@ void neo4j_release(neo4j_result_t *result);
  */
 int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags);
-
 
 /**
  * Render a result stream as comma separated value.
