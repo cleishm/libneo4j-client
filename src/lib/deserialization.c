@@ -748,6 +748,14 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         }
         v = neo4j_relationship(fields);
         break;
+    case NEO4J_UNBOUND_REL_SIGNATURE:
+        if (nfields != 3)
+        {
+            errno = EPROTO;
+            return -1;
+        }
+        v = neo4j_unbound_relationship(fields);
+        break;
     default:
         v = neo4j_struct(signature, fields, nfields);
         break;

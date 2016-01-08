@@ -582,8 +582,8 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value)
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5])
 {
     if (neo4j_type(fields[0]) != NEO4J_INT ||
-            neo4j_type(fields[1]) != NEO4J_INT ||
-            neo4j_type(fields[2]) != NEO4J_INT ||
+            (neo4j_type(fields[1]) != NEO4J_INT && !neo4j_is_null(fields[1])) ||
+            (neo4j_type(fields[2]) != NEO4J_INT && !neo4j_is_null(fields[1])) ||
             neo4j_type(fields[3]) != NEO4J_STRING ||
             neo4j_type(fields[4]) != NEO4J_MAP)
     {
@@ -599,13 +599,39 @@ neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5])
 }
 
 
+neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_STRING ||
+            neo4j_type(fields[2]) != NEO4J_MAP)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_RELATIONSHIP, ._vt_off = RELATIONSHIP_VT_OFF,
+              .signature = NEO4J_REL_SIGNATURE,
+              .fields = fields, .nfields = 3 };
+    return *((neo4j_value_t *)(&v));
+}
+
+
 neo4j_value_t neo4j_relationship_type(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_RELATIONSHIP, neo4j_null);
     const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
-    assert(v->nfields == 5);
-    assert(neo4j_type(v->fields[3]) == NEO4J_STRING);
-    return v->fields[3];
+    if (v->nfields == 5)
+    {
+        assert(neo4j_type(v->fields[3]) == NEO4J_STRING);
+        return v->fields[3];
+    }
+    else
+    {
+        assert(v->nfields == 3);
+        assert(neo4j_type(v->fields[1]) == NEO4J_STRING);
+        return v->fields[1];
+    }
 }
 
 
@@ -613,9 +639,17 @@ neo4j_value_t neo4j_relationship_properties(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_RELATIONSHIP, neo4j_null);
     const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
-    assert(v->nfields == 5);
-    assert(neo4j_type(v->fields[4]) == NEO4J_MAP);
-    return v->fields[4];
+    if (v->nfields == 5)
+    {
+        assert(neo4j_type(v->fields[4]) == NEO4J_MAP);
+        return v->fields[4];
+    }
+    else
+    {
+        assert(v->nfields == 3);
+        assert(neo4j_type(v->fields[2]) == NEO4J_MAP);
+        return v->fields[2];
+    }
 }
 
 

@@ -558,7 +558,7 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_RELATIONSHIP);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    assert(v->nfields == 5);
+    assert(v->nfields == 5 || v->nfields == 3);
 
     size_t l = 0;
     if ((l+1) < n)
@@ -567,17 +567,18 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
     }
     l++;
 
-    assert(neo4j_type(v->fields[3]) == NEO4J_STRING);
+    int idx = (v->nfields == 5)? 3 : 1;
+    assert(neo4j_type(v->fields[idx]) == NEO4J_STRING);
 
     if ((l+1) < n)
     {
         buf[l] = ':';
     }
     l++;
-    l += identifier_str(buf+l, (l < n)? n-l : 0, &(v->fields[3]));
+    l += identifier_str(buf+l, (l < n)? n-l : 0, &(v->fields[idx]));
 
-    assert(neo4j_type(v->fields[4]) == NEO4J_MAP);
-    l += neo4j_map_str(&(v->fields[4]), buf+l, (l < n)? n-l : 0);
+    assert(neo4j_type(v->fields[idx+1]) == NEO4J_MAP);
+    l += neo4j_map_str(&(v->fields[idx+1]), buf+l, (l < n)? n-l : 0);
 
     if ((l+1) < n)
     {

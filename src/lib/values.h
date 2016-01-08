@@ -123,6 +123,7 @@ ASSERT_VALUE_ALIGNMENT(struct neo4j_map);
 #define NEO4J_NODE_SIGNATURE 0x4E
 #define NEO4J_REL_SIGNATURE 0x52
 #define NEO4J_PATH_SIGNATURE 0x50
+#define NEO4J_UNBOUND_REL_SIGNATURE 0x72
 
 struct neo4j_struct
 {
@@ -166,7 +167,7 @@ neo4j_value_t neo4j_struct(uint8_t signature,
 neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
 
 /**
- * Construct a neo4j value encoding a node.
+ * Construct a neo4j value encoding a relationship.
  *
  * @internal
  *
@@ -176,6 +177,17 @@ neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
  * @return The neo4j value encoding the relationship.
  */
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
+
+/**
+ * Construct a neo4j value encoding an unbound relationship.
+ *
+ * @internal
+ *
+ * @param [fields] The fields for the relationship, which must be an Int
+ *         identifier, a String reltype and a Map of properties.
+ * @return The neo4j value encoding the relationship.
+ */
+neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
 
 /**
  * Get the signature of a neo4j struct.

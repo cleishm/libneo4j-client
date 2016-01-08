@@ -631,6 +631,26 @@ START_TEST (deserialize_map8)
 END_TEST
 
 
+START_TEST (deserialize_map8_with_invalid_key_type)
+{
+    uint8_t bytes[] =
+            { 0xD8, 0x10, 0x81, 0x30, 0x01, 0x81, 0x31, 0x02,
+              0x81, 0x32, 0x03, 0x81, 0x33, 0x04, 0x81, 0x34,
+              0x05, 0x81, 0x35, 0x06, 0x81, 0x36, 0x07, 0x81,
+              0x37, 0x08, 0x81, 0x38, 0x09, 0x81, 0x39, 0x0A,
+              0x81, 0x61, 0x0B, 0x81, 0x62, 0x0C, 0x81, 0x63,
+              0x0D, 0xC3, 0x0E, 0x81, 0x65, 0x0F, 0x81,
+              0x66, 0x10 };
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, -1);
+    ck_assert_int_eq(errno, EPROTO);
+}
+END_TEST
+
+
 START_TEST (deserialize_struct8)
 {
     uint8_t bytes[] =
@@ -748,6 +768,209 @@ START_TEST (deserialize_negative_tiny_int)
 END_TEST
 
 
+START_TEST (deserialize_node)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x4E, 0x01, 0x91, 0x8A, 0x4A, 0x6f,
+              0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73, 0x74,
+              0xA1, 0x84, 0x74, 0x79, 0x70, 0x65, 0x85, 0x47,
+              0x6F, 0x6E, 0x7A, 0x6F };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, 0);
+    ck_assert_int_eq(neo4j_type(value), NEO4J_NODE);
+
+    neo4j_value_t labels = neo4j_node_labels(value);
+    ck_assert_int_eq(neo4j_type(labels), NEO4J_LIST);
+    ck_assert_int_eq(neo4j_list_length(labels), 1);
+    char buf[16];
+    neo4j_value_t label = neo4j_list_get(labels, 0);
+    ck_assert_int_eq(neo4j_type(label), NEO4J_STRING);
+    ck_assert_str_eq(neo4j_string_value(label, buf, sizeof(buf)),
+            "Journalist");
+
+    neo4j_value_t props = neo4j_node_properties(value);
+    ck_assert_int_eq(neo4j_type(props), NEO4J_MAP);
+    ck_assert_int_eq(neo4j_map_size(props), 1);
+    const neo4j_map_entry_t *entry = neo4j_map_getentry(props, 0);
+    ck_assert_ptr_ne(entry, NULL);
+    ck_assert_int_eq(neo4j_type(entry->key), NEO4J_STRING);
+    ck_assert_int_eq(neo4j_type(entry->value), NEO4J_STRING);
+    ck_assert_str_eq(neo4j_string_value(entry->key, buf, sizeof(buf)),
+            "type");
+    ck_assert_str_eq(neo4j_string_value(entry->value, buf, sizeof(buf)),
+            "Gonzo");
+
+    ck_assert_int_eq(rb_used(rb), 0);
+}
+END_TEST
+
+
+START_TEST (deserialize_node_with_incorrect_field_count)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x02, 0x4E, 0x01, 0x91, 0x8A, 0x4A, 0x6f,
+              0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73, 0x74 };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, -1);
+    ck_assert_int_eq(errno, EPROTO);
+}
+END_TEST
+
+
+START_TEST (deserialize_node_with_incorrect_identifier_type)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x4E, 0xC3, 0x91, 0x8A, 0x4A, 0x6f,
+              0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73, 0x74,
+              0xA1, 0x84, 0x74, 0x79, 0x70, 0x65, 0x85, 0x47,
+              0x6F, 0x6E, 0x7A, 0x6F };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, -1);
+    ck_assert_int_eq(errno, EPROTO);
+}
+END_TEST
+
+
+START_TEST (deserialize_node_with_incorrect_labels_type)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x4E, 0x01, 0xC3,
+              0xA1, 0x84, 0x74, 0x79, 0x70, 0x65, 0x85, 0x47,
+              0x6F, 0x6E, 0x7A, 0x6F };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, -1);
+    ck_assert_int_eq(errno, EPROTO);
+}
+END_TEST
+
+
+START_TEST (deserialize_node_with_bad_label_type)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x4E, 0xC3, 0x91, 0x8A, 0x4A, 0x6f,
+              0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73, 0x74,
+              0xA1, 0x84, 0x74, 0x79, 0x70, 0x65, 0x85, 0x47,
+              0x6F, 0x6E, 0x7A, 0x6F };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, -1);
+    ck_assert_int_eq(errno, EPROTO);
+}
+END_TEST
+
+
+START_TEST (deserialize_node_with_incorrect_map_type)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x4E, 0x01, 0x91, 0x8A, 0x4A, 0x6f,
+              0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73, 0x74,
+              0xC3 };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, -1);
+    ck_assert_int_eq(errno, EPROTO);
+}
+END_TEST
+
+
+START_TEST (deserialize_relationship)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x05, 0x52, 0x01, 0x01, 0x02, 0x8A, 0x4A,
+              0x6f, 0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73,
+              0x74, 0xA1, 0x84, 0x74, 0x79, 0x70, 0x65, 0x85,
+              0x47, 0x6F, 0x6E, 0x7A, 0x6F };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, 0);
+    ck_assert_int_eq(neo4j_type(value), NEO4J_RELATIONSHIP);
+
+    neo4j_value_t reltype = neo4j_relationship_type(value);
+    ck_assert_int_eq(neo4j_type(reltype), NEO4J_STRING);
+    char buf[16];
+    ck_assert_str_eq(neo4j_string_value(reltype, buf, sizeof(buf)),
+            "Journalist");
+
+    neo4j_value_t props = neo4j_relationship_properties(value);
+    ck_assert_int_eq(neo4j_type(props), NEO4J_MAP);
+    ck_assert_int_eq(neo4j_map_size(props), 1);
+    const neo4j_map_entry_t *entry = neo4j_map_getentry(props, 0);
+    ck_assert_ptr_ne(entry, NULL);
+    ck_assert_int_eq(neo4j_type(entry->key), NEO4J_STRING);
+    ck_assert_int_eq(neo4j_type(entry->value), NEO4J_STRING);
+    ck_assert_str_eq(neo4j_string_value(entry->key, buf, sizeof(buf)),
+            "type");
+    ck_assert_str_eq(neo4j_string_value(entry->value, buf, sizeof(buf)),
+            "Gonzo");
+
+    ck_assert_int_eq(rb_used(rb), 0);
+}
+END_TEST
+
+
+START_TEST (deserialize_unbound_relationship)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x72, 0x01, 0x8A, 0x4A, 0x6f, 0x75,
+              0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73, 0x74, 0xA1,
+              0x84, 0x74, 0x79, 0x70, 0x65, 0x85, 0x47, 0x6F,
+              0x6E, 0x7A, 0x6F };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, 0);
+    ck_assert_int_eq(neo4j_type(value), NEO4J_RELATIONSHIP);
+
+    neo4j_value_t reltype = neo4j_relationship_type(value);
+    ck_assert_int_eq(neo4j_type(reltype), NEO4J_STRING);
+    char buf[16];
+    ck_assert_str_eq(neo4j_string_value(reltype, buf, sizeof(buf)),
+            "Journalist");
+
+    neo4j_value_t props = neo4j_relationship_properties(value);
+    ck_assert_int_eq(neo4j_type(props), NEO4J_MAP);
+    ck_assert_int_eq(neo4j_map_size(props), 1);
+    const neo4j_map_entry_t *entry = neo4j_map_getentry(props, 0);
+    ck_assert_ptr_ne(entry, NULL);
+    ck_assert_int_eq(neo4j_type(entry->key), NEO4J_STRING);
+    ck_assert_int_eq(neo4j_type(entry->value), NEO4J_STRING);
+    ck_assert_str_eq(neo4j_string_value(entry->key, buf, sizeof(buf)),
+            "type");
+    ck_assert_str_eq(neo4j_string_value(entry->value, buf, sizeof(buf)),
+            "Gonzo");
+
+    ck_assert_int_eq(rb_used(rb), 0);
+}
+END_TEST
+
+
 TCase* deserialization_tcase(void)
 {
     TCase *tc = tcase_create("deserialization");
@@ -770,8 +993,17 @@ TCase* deserialization_tcase(void)
     tcase_add_test(tc, deserialize_list8);
     tcase_add_test(tc, deserialize_list16);
     tcase_add_test(tc, deserialize_map8);
+    tcase_add_test(tc, deserialize_map8_with_invalid_key_type);
     tcase_add_test(tc, deserialize_struct8);
     tcase_add_test(tc, deserialize_struct16);
     tcase_add_test(tc, deserialize_negative_tiny_int);
+    tcase_add_test(tc, deserialize_node);
+    tcase_add_test(tc, deserialize_node_with_incorrect_field_count);
+    tcase_add_test(tc, deserialize_node_with_incorrect_identifier_type);
+    tcase_add_test(tc, deserialize_node_with_incorrect_labels_type);
+    tcase_add_test(tc, deserialize_node_with_bad_label_type);
+    tcase_add_test(tc, deserialize_node_with_incorrect_map_type);
+    tcase_add_test(tc, deserialize_relationship);
+    tcase_add_test(tc, deserialize_unbound_relationship);
     return tc;
 }

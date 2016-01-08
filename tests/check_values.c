@@ -457,6 +457,28 @@ START_TEST (relationship_value)
 END_TEST
 
 
+START_TEST (unbound_relationship_value)
+{
+    neo4j_value_t type = neo4j_string("Candidate");
+    neo4j_map_entry_t props[] =
+        { { .key = neo4j_string("year"), .value = neo4j_int(2016) } };
+
+    neo4j_value_t field_values[] =
+        { neo4j_int(1), type, neo4j_map(props, 1) };
+    neo4j_value_t value = neo4j_unbound_relationship(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_RELATIONSHIP);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "[:Candidate{year:2016}]");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
+    ck_assert_str_eq(str, "[:Candidate{year:2016}]");
+}
+END_TEST
+
+
 START_TEST (struct_value)
 {
     neo4j_value_t field_values[] = { neo4j_int(1), neo4j_string("bernie") };
@@ -525,6 +547,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, node_value);
     tcase_add_test(tc, invalid_node_value);
     tcase_add_test(tc, relationship_value);
+    tcase_add_test(tc, unbound_relationship_value);
     tcase_add_test(tc, struct_value);
     tcase_add_test(tc, struct_eq);
     return tc;
