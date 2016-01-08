@@ -283,7 +283,7 @@ int neo4j_mkdir_p(const char *path)
         struct stat sb;
         if (stat(buf, &sb))
         {
-            if (errno != ENOENT || (mkdir(path, 0777) && errno != EEXIST))
+            if (errno != ENOENT || (mkdir(buf, 0777) && errno != EEXIST))
             {
                 return -1;
             }

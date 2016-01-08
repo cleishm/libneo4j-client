@@ -27,9 +27,8 @@ static char known_hosts[PATH_MAX];
 
 static void setup(void)
 {
-    int r = tmpfilename(known_hosts, sizeof(known_hosts), "known_hosts_XXXXXX");
-    ck_assert_int_eq(r, 0);
-    FILE *f = fopen(known_hosts, "w");
+    FILE *f = check_tmpfile(known_hosts, sizeof(known_hosts),
+            "known_hosts_XXXXXX");
     ck_assert_ptr_ne(f, NULL);
     fputs("host.local:6546 aa7b6261e21d7b2950e044453543bce3840429e2\r\n", f);
     fclose(f);
@@ -248,14 +247,15 @@ END_TEST
 START_TEST (test_trust_creates_known_hosts_file_and_directory)
 {
     char dir[PATH_MAX];
-    int r = tmpfilename(dir, sizeof(dir), ".neo4j_XXXXXX");
+    int r = check_tmpdir(dir, sizeof(dir), ".neo4j_XXXXXX");
     ck_assert_int_eq(r, 0);
 
+    const char *kh_path = "/sub/dir/kh";
     size_t dirlen = strlen(dir);
-    ck_assert_int_lt(dirlen + 3, PATH_MAX);
+    ck_assert_int_lt(dirlen + strlen(kh_path), PATH_MAX);
     char path[PATH_MAX];
     memcpy(path, dir, dirlen);
-    memcpy(path + dirlen, "/kh", 4);
+    strncpy(path + dirlen, kh_path, PATH_MAX - dirlen);
 
     neo4j_config_set_known_hosts_file(config, path);
 

@@ -23,7 +23,9 @@
 
 int create_tmpdir(char *buf, size_t n);
 
-int tmpfilename(char *buf, size_t n, const char *template);
+FILE *check_tmpfile(char *buf, size_t n, const char *template);
+
+int check_tmpdir(char *buf, size_t n, const char *template);
 
 int rm_rf(char *path);
 

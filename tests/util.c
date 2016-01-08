@@ -30,6 +30,8 @@
 
 #define CHECK_TMPDIR_TEMPLATE "/check-XXXXXX"
 
+ssize_t tmpfilename(char *buf, size_t n, const char *name);
+
 
 int create_tmpdir(char *buf, size_t n)
 {
@@ -55,7 +57,36 @@ int create_tmpdir(char *buf, size_t n)
 }
 
 
-int tmpfilename(char *buf, size_t n, const char *template)
+FILE *check_tmpfile(char *buf, size_t n, const char *template)
+{
+    ssize_t len = tmpfilename(buf, n, template);
+    if (len < 0)
+    {
+        return NULL;
+    }
+
+    int fd = mkstemp(buf);
+    if (fd < 0)
+    {
+        return NULL;
+    }
+    return fdopen(fd, "w+");
+}
+
+
+int check_tmpdir(char *buf, size_t n, const char *template)
+{
+    ssize_t len = tmpfilename(buf, n, template);
+    if (len < 0)
+    {
+        return -1;
+    }
+
+    return (mkdtemp(buf) == NULL)? -1 : 0;
+}
+
+
+ssize_t tmpfilename(char *buf, size_t n, const char *name)
 {
     const char *dir = getenv("CHECK_TMPDIR");
     if (dir == NULL)
@@ -72,8 +103,8 @@ int tmpfilename(char *buf, size_t n, const char *template)
     }
 
     size_t dirlen = strlen(dir);
-    size_t tlen = strlen(template);
-    if ((dirlen + tlen + 2) > n)
+    size_t nlen = strlen(name);
+    if ((dirlen + nlen + 2) > n)
     {
         errno = ERANGE;
         return -1;
@@ -81,15 +112,9 @@ int tmpfilename(char *buf, size_t n, const char *template)
 
     memcpy(buf, dir, dirlen);
     buf[dirlen] = '/';
-    memcpy(buf + dirlen + 1, template, tlen);
-    buf[dirlen + tlen + 1] = '\0';
-
-    if (buf[dirlen + tlen] == 'X' && (mktemp(buf) == NULL || buf[0] == '\0'))
-    {
-        return -1;
-    }
-
-    return 0;
+    memcpy(buf + dirlen + 1, name, nlen);
+    buf[dirlen + nlen + 1] = '\0';
+    return dirlen + nlen;
 }
 
 
