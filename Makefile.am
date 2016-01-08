@@ -17,5 +17,12 @@ src/.doc/neo4j-client.h: src/lib/neo4j-client.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = neo4j-client.pc
 
+docker-check:
+	$(MAKE) dist
+	id=`docker create -i debian-dev \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure && make check'` && \
+	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
+	docker start -i $$id
+
 clean-local:
 	rm -rf doc src/.doc
