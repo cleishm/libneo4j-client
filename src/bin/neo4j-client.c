@@ -155,8 +155,9 @@ int main(int argc, char *argv[])
             state.histfile = NULL;
             break;
         case VERSION_OPT:
-            fprintf(state.out, "%s\n", "neo4j-client/" PACKAGE_VERSION);
-            fprintf(state.out, "%s\n", libneo4j_client_id());
+            fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);
+            fprintf(state.out, "libneo4j-client: %s\n",
+                    libneo4j_client_version());
             result = EXIT_SUCCESS;
             goto cleanup;
         default:
