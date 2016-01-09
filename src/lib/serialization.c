@@ -241,21 +241,9 @@ size_t identifier_str(char *buf, size_t n, const neo4j_value_t *value)
 {
     assert(neo4j_type(*value) == NEO4J_STRING);
     const struct neo4j_string *v = (const struct neo4j_string *)value;
-
     const char *s = (const char *)v->ustring;
 
-    bool simple = true;
-    for (unsigned int i = 0; i < v->length; ++i)
-    {
-        char c = s[i];
-        if (!isalnum(c) && c != '_')
-        {
-            simple = false;
-            break;
-        }
-    }
-
-    if (!simple)
+    if (memcspn_ident(s, v->length) < v->length)
     {
         return string_str(buf, n, '`', s, v->length);
     }
@@ -272,31 +260,42 @@ size_t identifier_str(char *buf, size_t n, const neo4j_value_t *value)
 
 size_t string_str(char *buf, size_t n, char quot, const char *s, size_t len)
 {
-    size_t l = 0;
-    if ((l+1) < n)
+    const unsigned char esc[2] = { quot, '\\' };
+
+    if (n > 0)
     {
-        buf[l] = quot;
+        buf[0] = quot;
     }
-    l++;
-    for (size_t i = 0; i < len; ++i)
+
+    size_t l = 1;
+    const char *end = s + len;
+    while (s < end)
     {
-        if (s[i] == quot || s[i] == '\\')
-        {
-            if ((l+2) < n)
-            {
-                buf[l] = '\\';
-            }
-            else if ((l+1) < n)
-            {
-                buf[l] = '\0';
-            }
-            l++;
-        }
+        size_t i = memcspn(s, end - s, esc, 2);
         if ((l+1) < n)
         {
-            buf[l] = s[i];
+            memcpy(buf+l, s, minzu(n-l-1, i));
         }
-        l++;
+        s += i;
+        l += i;
+
+        if (s >= end)
+        {
+            assert(s == end);
+            break;
+        }
+
+        if ((l+2) < n)
+        {
+            buf[l] = '\\';
+            buf[l+1] = *s;
+        }
+        else if ((l+1) < n)
+        {
+            buf[l] = '\0';
+        }
+        l += 2;
+        ++s;
     }
 
     if ((l+1) < n)
