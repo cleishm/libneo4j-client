@@ -58,27 +58,27 @@ AC_FUNC_STRERROR_R
 MACRO_STATIC_ASSERT
 
 AC_CHECK_TYPE([socklen_t],[],
-  [AC_DEFINE([socklen_t],[int],[Substitute for socklen_t])],
+  [AC_DEFINE([socklen_t],[int],[Substitute for socklen_t.])],
   [
 #include <sys/types.h>
 #include <sys/socket.h>
   ])
 
 AC_CHECK_DECL([AI_ADDRCONFIG],[AC_DEFINE([HAVE_AI_ADDRCONFIG],[1],
-  [Define to 1 if you have AI_ADDRCONFIG in the <netdb.h> header file])],
+  [Define to 1 if you have AI_ADDRCONFIG in the <netdb.h> header file.])],
   [],
   [
 #include <netdb.h>
   ])
 
 AC_CHECK_DECL([htonll],[AC_DEFINE([HAVE_HTONLL],[1],
-  [Define to 1 if you have htonll])])
+  [Define to 1 if you have htonll.])])
 AC_CHECK_DECL([ntohll],[AC_DEFINE([HAVE_NTOHLL],[1],
-  [Define to 1 if you have ntohll])])
+  [Define to 1 if you have ntohll.])])
 
 
 AC_CHECK_DECL([htobe64],[AC_DEFINE([HAVE_HTOBE64],[1],
-  [Define to 1 if you have htobe64])],
+  [Define to 1 if you have htobe64.])],
   [],
   [
 #ifdef HAVE_ENDIAN_H
@@ -89,7 +89,7 @@ AC_CHECK_DECL([htobe64],[AC_DEFINE([HAVE_HTOBE64],[1],
 #endif
   ])
 AC_CHECK_DECL([be64toh],[AC_DEFINE([HAVE_BE64TOH],[1],
-  [Define to 1 if you have be64toh])],
+  [Define to 1 if you have be64toh.])],
   [],
   [
 #ifdef HAVE_ENDIAN_H
@@ -102,7 +102,7 @@ AC_CHECK_DECL([be64toh],[AC_DEFINE([HAVE_BE64TOH],[1],
 
 
 AC_CHECK_DECL([OSSwapHostToBigInt64],[AC_DEFINE([HAVE_OSSWAPHOSTTOBIGINT64],[1],
-  [Define to 1 if you have OSSwapHostToBigInt64 in the <libkern/OSByteOrder.h> header file])],
+  [Define to 1 if you have OSSwapHostToBigInt64 in the <libkern/OSByteOrder.h> header file.])],
   [],
   [
 #ifdef HAVE_LIBKERN_OSBYTEORDER_H
@@ -110,7 +110,7 @@ AC_CHECK_DECL([OSSwapHostToBigInt64],[AC_DEFINE([HAVE_OSSWAPHOSTTOBIGINT64],[1],
 #endif
   ])
 AC_CHECK_DECL([OSSwapBigToHostInt64],[AC_DEFINE([HAVE_OSSWAPBIGTOHOSTINT64],[1],
-  [Define to 1 if you have OSSwapBigToHostInt64 in the <libkern/OSByteOrder.h> header file])],
+  [Define to 1 if you have OSSwapBigToHostInt64 in the <libkern/OSByteOrder.h> header file.])],
   [],
   [
 #ifdef HAVE_LIBKERN_OSBYTEORDER_H
@@ -119,7 +119,7 @@ AC_CHECK_DECL([OSSwapBigToHostInt64],[AC_DEFINE([HAVE_OSSWAPBIGTOHOSTINT64],[1],
   ])
 
 AC_CHECK_DECL([bswap_64],[AC_DEFINE([HAVE_BSWAP_64],[1],
-  [Define to 1 if you have bswap_64])])
+  [Define to 1 if you have bswap_64.])])
 
 AC_CHECK_FUNCS([mkstemp],[],[AC_MSG_ERROR([A working mkstemp is required])],
   [
@@ -135,7 +135,7 @@ AC_CHECK_FUNCS([open_memstream],[],[],
 
 AX_PTHREAD([has_pthreads=yes])
 AS_IF([test "X$has_pthreads" = "Xyes"],
-  [AC_DEFINE([HAVE_PTHREADS], [1], [Define to 1 if you have pthreads])])
+  [AC_DEFINE([HAVE_PTHREADS], [1], [Define to 1 if you have pthreads.])])
 
 
 dnl Check for TLS support
@@ -149,12 +149,12 @@ AS_IF([test "X$with_tls" = "Xyes" -o "X$with_tls" = "Xopenssl"],
     [AC_MSG_ERROR([openssl not found (specify --without-tls to ignore)])])])
 
 AS_IF([test "X$has_openssl" = "Xyes"],
-  [AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if you have openssl])
+  [AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if you have openssl.])
    REQUIRES="$REQUIRES, openssl >= 0.9.7"])
 AM_CONDITIONAL([HAVE_OPENSSL], [test "X$has_openssl" = "Xyes"])
 
 AS_IF([test "X$has_tls" = "Xyes"],
-  [AC_DEFINE([HAVE_TLS], [1], [Define to 1 if tls support is enabled])],
+  [AC_DEFINE([HAVE_TLS], [1], [Define to 1 if tls support is enabled.])],
   [test "X$with_tls" != "Xno"],
   [AC_MSG_ERROR([TLS library "$with_tls" not found])])
 AM_CONDITIONAL([WITH_TLS], [test "X$has_tls" != "Xno"])
@@ -178,7 +178,8 @@ AS_IF([test "X$enable_tools" != "Xno" -a "X$has_libedit" != "Xyes"],
 
 dnl Check if assertions should be disabled
 AC_ARG_ENABLE([debug], AS_HELP_STRING([--disable-debug], [Disable debug]))
-AS_IF([test "X$enable_debug" = "Xno"], [AC_DEFINE([NDEBUG], [1], [No Debug])])
+AS_IF([test "X$enable_debug" = "Xno"],
+  [AC_DEFINE([NDEBUG], [1], [Define to 1 to disable assertions.])])
 
 
 dnl Add GCC flags
