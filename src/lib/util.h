@@ -157,6 +157,12 @@ static inline size_t iovlen(const struct iovec *iov, int iovcnt)
 }
 
 
+size_t memcspn(const void *s, size_t n, const unsigned char *reject,
+        size_t rlen);
+
+size_t memcspn_ident(const void *s, size_t n);
+
+
 ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, int iovcnt,
         size_t dmax);
 
