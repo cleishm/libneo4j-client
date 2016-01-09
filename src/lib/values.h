@@ -190,6 +190,18 @@ neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
 neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
 
 /**
+ * Construct a neo4j value encoding a path.
+ *
+ * @internal
+ *
+ * @param [fields] The fields for the path, which must be an List of Nodes,
+ *         a List of Relationships and a List of Int indexes describing the
+ *         Path sequence.
+ * @return The neo4j value encoding the path.
+ */
+neo4j_value_t neo4j_path(const neo4j_value_t fields[3]);
+
+/**
  * Get the signature of a neo4j struct.
  *
  * Note that the result is undefined if the value is not of type NEO4J_STRUCT.

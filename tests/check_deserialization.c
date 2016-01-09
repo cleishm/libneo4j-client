@@ -933,6 +933,66 @@ START_TEST (deserialize_relationship)
 END_TEST
 
 
+START_TEST (deserialize_path)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x50, 0x92, 0xDC, 0x03, 0x4E, 0x01,
+              0x91, 0x81, 0x41, 0xA0, 0xDC, 0x03, 0x4E, 0x02,
+              0x91, 0x81, 0x42, 0xA0, 0x92, 0xDC, 0x03, 0x72,
+              0x08, 0x81, 0x59, 0xA0, 0xDC, 0x03, 0x72, 0x09,
+              0x81, 0x5A, 0xA0, 0x94, 0x01, 0x01, 0xFE, 0x00 };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, 0);
+    ck_assert_int_eq(neo4j_type(value), NEO4J_PATH);
+
+    ck_assert_int_eq(neo4j_path_length(value), 2);
+
+    neo4j_value_t node1 = neo4j_path_get_node(value, 0);
+    ck_assert_int_eq(neo4j_type(node1), NEO4J_NODE);
+    ck_assert_int_eq(neo4j_type(neo4j_node_labels(node1)), NEO4J_LIST);
+    neo4j_value_t node1_label = neo4j_list_get(neo4j_node_labels(node1), 0);
+    char buf[16];
+    ck_assert_str_eq(neo4j_string_value(node1_label, buf, sizeof(buf)), "A");
+
+    bool forward;
+    neo4j_value_t rel1 = neo4j_path_get_relationship(value, 0, &forward);
+    ck_assert_int_eq(neo4j_type(rel1), NEO4J_RELATIONSHIP);
+    neo4j_value_t rel1_type = neo4j_relationship_type(rel1);
+    ck_assert_int_eq(neo4j_type(rel1_type), NEO4J_STRING);
+    ck_assert_str_eq(neo4j_string_value(rel1_type, buf, sizeof(buf)), "Y");
+    ck_assert(forward == true);
+
+    neo4j_value_t node2 = neo4j_path_get_node(value, 1);
+    ck_assert_int_eq(neo4j_type(node2), NEO4J_NODE);
+    ck_assert_int_eq(neo4j_type(neo4j_node_labels(node2)), NEO4J_LIST);
+    neo4j_value_t node2_label = neo4j_list_get(neo4j_node_labels(node2), 0);
+    ck_assert_str_eq(neo4j_string_value(node2_label, buf, sizeof(buf)), "B");
+
+    neo4j_value_t rel2 = neo4j_path_get_relationship(value, 1, &forward);
+    ck_assert_int_eq(neo4j_type(rel2), NEO4J_RELATIONSHIP);
+    neo4j_value_t rel2_type = neo4j_relationship_type(rel2);
+    ck_assert_int_eq(neo4j_type(rel2_type), NEO4J_STRING);
+    ck_assert_str_eq(neo4j_string_value(rel2_type, buf, sizeof(buf)), "Z");
+    ck_assert(forward == false);
+
+    neo4j_value_t node3 = neo4j_path_get_node(value, 2);
+    ck_assert_int_eq(neo4j_type(node3), NEO4J_NODE);
+    ck_assert_int_eq(neo4j_type(neo4j_node_labels(node3)), NEO4J_LIST);
+    neo4j_value_t node3_label = neo4j_list_get(neo4j_node_labels(node3), 0);
+    ck_assert_str_eq(neo4j_string_value(node3_label, buf, sizeof(buf)), "A");
+
+    ck_assert(neo4j_is_null(neo4j_path_get_node(value, 3)));
+    ck_assert(neo4j_is_null(neo4j_path_get_relationship(value, 3, NULL)));
+
+    ck_assert_int_eq(rb_used(rb), 0);
+}
+END_TEST
+
+
 START_TEST (deserialize_unbound_relationship)
 {
     uint8_t bytes[] =
@@ -1004,6 +1064,7 @@ TCase* deserialization_tcase(void)
     tcase_add_test(tc, deserialize_node_with_bad_label_type);
     tcase_add_test(tc, deserialize_node_with_incorrect_map_type);
     tcase_add_test(tc, deserialize_relationship);
+    tcase_add_test(tc, deserialize_path);
     tcase_add_test(tc, deserialize_unbound_relationship);
     return tc;
 }

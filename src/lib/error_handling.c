@@ -62,6 +62,16 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Map contains key of non-String type";
     case NEO4J_INVALID_LABEL_TYPE:
         return "Node/Relationship contains label of non-String type";
+    case NEO4J_INVALID_PATH_NODE_TYPE:
+        return "Path contains a node of non-Node type";
+    case NEO4J_INVALID_PATH_RELATIONSHIP_TYPE:
+        return "Path contains a relationship of non-Relationship type";
+    case NEO4J_INVALID_PATH_SEQUENCE_LENGTH:
+        return "Path contains an invalid sequence length";
+    case NEO4J_INVALID_PATH_SEQUENCE_IDX_TYPE:
+        return "Path contains a sequence index of non-Int type";
+    case NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE:
+        return "Path contains an out-of-range sequence index";
     default:
 #ifdef STRERROR_R_CHAR_P
         return strerror_r(errnum, buf, buflen);

@@ -361,6 +361,11 @@ struct neo4j_connection_factory
 #define NEO4J_TLS_VERIFICATION_FAILED -25
 #define NEO4J_INVALID_MAP_KEY_TYPE -26
 #define NEO4J_INVALID_LABEL_TYPE -27
+#define NEO4J_INVALID_PATH_NODE_TYPE -28
+#define NEO4J_INVALID_PATH_RELATIONSHIP_TYPE -29
+#define NEO4J_INVALID_PATH_SEQUENCE_LENGTH -30
+#define NEO4J_INVALID_PATH_SEQUENCE_IDX_TYPE -31
+#define NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE -32
 
 /**
  * Look up the error message corresponding to an error number.
@@ -464,6 +469,8 @@ extern const neo4j_type_t NEO4J_MAP;
 extern const neo4j_type_t NEO4J_NODE;
 /** The neo4j relationship value type. */
 extern const neo4j_type_t NEO4J_RELATIONSHIP;
+/** The neo4j path value type. */
+extern const neo4j_type_t NEO4J_PATH;
 extern const neo4j_type_t NEO4J_STRUCT;
 
 union _neo4j_value_data
@@ -818,6 +825,45 @@ neo4j_value_t neo4j_relationship_type(neo4j_value_t value);
  * @return A neo4j value encoding the map of properties.
  */
 neo4j_value_t neo4j_relationship_properties(neo4j_value_t value);
+
+/**
+ * Return the length of a neo4j path.
+ *
+ * The length of a path is defined by the number of relationships included in
+ * it.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_PATH.
+ *
+ * @param [value] The neo4j path.
+ * @return The length of the path
+ */
+unsigned int neo4j_path_length(neo4j_value_t value);
+
+/**
+ * Return the node at a given distance into the path.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_PATH.
+ *
+ * @param [value] The neo4j path.
+ * @param [hops] The number of hops (distance).
+ * @return A neo4j value enconding the node.
+ */
+neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
+
+/**
+ * Return the relationship for the given hop in the path.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_PATH.
+ *
+ * @param [value] The neo4j path.
+ * @param [hops] The number of hops (distance).
+ * @param [forward] `NULL`, or a pointer to a boolean which will be set to
+ *         `true` if the relationship was traversed in its natural direction
+ *         and `false` if it was traversed backward.
+ * @return A neo4j value enconding the relationship.
+ */
+neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
+        unsigned int hops, bool *forward);
 
 
 /*

@@ -593,6 +593,88 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
 }
 
 
+/* path */
+
+size_t neo4j_path_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_PATH);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+    assert(v->nfields == 3);
+
+    assert(neo4j_type(v->fields[0]) == NEO4J_LIST);
+    const struct neo4j_list *nodes = (const struct neo4j_list *)&(v->fields[0]);
+    assert(neo4j_type(v->fields[1]) == NEO4J_LIST);
+    const struct neo4j_list *rels = (const struct neo4j_list *)&(v->fields[1]);
+    assert(neo4j_type(v->fields[2]) == NEO4J_LIST);
+    const struct neo4j_list *seq = (const struct neo4j_list *)&(v->fields[2]);
+
+    assert(nodes->length > 0);
+    assert(neo4j_type(nodes->items[0]) == NEO4J_NODE);
+
+    size_t l = neo4j_node_str(&(nodes->items[0]), buf, n);
+
+    assert(seq->length % 2 == 0);
+    for (unsigned int i = 0; i < seq->length; i += 2)
+    {
+        assert(neo4j_type(seq->items[i]) == NEO4J_INT);
+        const struct neo4j_int *ridx_val =
+            (const struct neo4j_int *)&(seq->items[i]);
+        assert(neo4j_type(seq->items[i+1]) == NEO4J_INT);
+        const struct neo4j_int *nidx_val =
+            (const struct neo4j_int *)&(seq->items[i+1]);
+
+        assert((ridx_val->value > 0 && ridx_val->value <= rels->length) ||
+               (ridx_val->value < 0 && -(ridx_val->value) <= rels->length));
+        unsigned int ridx = (unsigned int)(llabs(ridx_val->value) - 1);
+        assert(neo4j_type(rels->items[ridx]) == NEO4J_RELATIONSHIP);
+
+        assert(nidx_val->value >= 0 && nidx_val->value < nodes->length);
+        unsigned int nidx = (unsigned int)nidx_val->value;
+        assert(neo4j_type(nodes->items[nidx]) == NEO4J_NODE);
+
+        if (ridx_val->value < 0)
+        {
+            if ((l+1) < n)
+            {
+                buf[l] = '<';
+            }
+            l++;
+        }
+        if ((l+1) < n)
+        {
+            buf[l] = '-';
+        }
+        l++;
+
+        l += neo4j_rel_str(&(rels->items[ridx]), buf+l, (l < n)? n-l : 0);
+
+        if ((l+1) < n)
+        {
+            buf[l] = '-';
+        }
+        l++;
+        if (ridx_val->value > 0)
+        {
+            if ((l+1) < n)
+            {
+                buf[l] = '>';
+            }
+            l++;
+        }
+
+        l += neo4j_node_str(&(nodes->items[nidx]), buf+l, (l < n)? n-l : 0);
+    }
+
+    if (n > 0)
+    {
+        buf[minzu(n - 1, l)] = '\0';
+    }
+    return l;
+}
+
+
 /* structure */
 
 size_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n)

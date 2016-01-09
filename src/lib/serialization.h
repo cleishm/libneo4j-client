@@ -53,6 +53,7 @@ int neo4j_map_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 
 size_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n);
 size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n);
+size_t neo4j_path_str(const neo4j_value_t *value, char *buf, size_t n);
 
 size_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n);
 int neo4j_struct_serialize(const neo4j_value_t *value,

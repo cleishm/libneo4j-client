@@ -49,6 +49,7 @@ static const struct neo4j_type list_type = { .name = "List" };
 static const struct neo4j_type map_type = { .name = "Map" };
 static const struct neo4j_type node_type = { .name = "Node" };
 static const struct neo4j_type relationship_type = { .name = "Relationship" };
+static const struct neo4j_type path_type = { .name = "Path" };
 static const struct neo4j_type struct_type = { .name = "Struct" };
 
 static const struct neo4j_type *neo4j_types[] =
@@ -61,6 +62,7 @@ static const struct neo4j_type *neo4j_types[] =
       &map_type,
       &node_type,
       &relationship_type,
+      &path_type,
       &struct_type };
 
 #define NULL_TYPE_OFF 0
@@ -81,7 +83,9 @@ const uint8_t NEO4J_MAP = MAP_TYPE_OFF;
 const uint8_t NEO4J_NODE = NODE_TYPE_OFF;
 #define RELATIONSHIP_TYPE_OFF 8
 const uint8_t NEO4J_RELATIONSHIP = RELATIONSHIP_TYPE_OFF;
-#define STRUCT_TYPE_OFF 9
+#define PATH_TYPE_OFF 9
+const uint8_t NEO4J_PATH = PATH_TYPE_OFF;
+#define STRUCT_TYPE_OFF 10
 const uint8_t NEO4J_STRUCT = STRUCT_TYPE_OFF;
 static const uint8_t _MAX_TYPE =
     (sizeof(neo4j_types) / sizeof(struct neo4j_type *));
@@ -143,6 +147,10 @@ static struct neo4j_value_vt relationship_vt =
     { .str = neo4j_rel_str,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
+static struct neo4j_value_vt path_vt =
+    { .str = neo4j_path_str,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
 static struct neo4j_value_vt struct_vt =
     { .str = neo4j_struct_str,
       .serialize = neo4j_struct_serialize,
@@ -158,6 +166,7 @@ static const struct neo4j_value_vt *neo4j_value_vts[] =
       &map_vt,
       &node_vt,
       &relationship_vt,
+      &path_vt,
       &struct_vt };
 
 #define NULL_VT_OFF 0
@@ -169,7 +178,8 @@ static const struct neo4j_value_vt *neo4j_value_vts[] =
 #define MAP_VT_OFF 6
 #define NODE_VT_OFF 7
 #define RELATIONSHIP_VT_OFF 8
-#define STRUCT_VT_OFF 9
+#define PATH_VT_OFF 9
+#define STRUCT_VT_OFF 10
 #define _MAX_VT_OFF (sizeof(neo4j_value_vts) / sizeof(struct neo4j_value_vt *))
 
 static_assert(
@@ -650,6 +660,156 @@ neo4j_value_t neo4j_relationship_properties(neo4j_value_t value)
         assert(neo4j_type(v->fields[2]) == NEO4J_MAP);
         return v->fields[2];
     }
+}
+
+
+// path
+
+neo4j_value_t neo4j_path(const neo4j_value_t fields[3])
+{
+    if (neo4j_type(fields[0]) != NEO4J_LIST ||
+            neo4j_type(fields[1]) != NEO4J_LIST ||
+            neo4j_type(fields[2]) != NEO4J_LIST)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    const struct neo4j_list *nodes = (const struct neo4j_list *)&(fields[0]);
+    for (unsigned int i = 0; i < nodes->length; ++i)
+    {
+        if (neo4j_type(nodes->items[i]) != NEO4J_NODE)
+        {
+            errno = NEO4J_INVALID_PATH_NODE_TYPE;
+            return neo4j_null;
+        }
+    }
+
+    const struct neo4j_list *rels = (const struct neo4j_list *)&(fields[1]);
+    for (unsigned int i = 0; i < rels->length; ++i)
+    {
+        if (neo4j_type(rels->items[i]) != NEO4J_RELATIONSHIP)
+        {
+            errno = NEO4J_INVALID_PATH_RELATIONSHIP_TYPE;
+            return neo4j_null;
+        }
+    }
+
+    const struct neo4j_list *seq = (const struct neo4j_list *)&(fields[2]);
+    if ((seq->length % 2) != 0)
+    {
+        errno = NEO4J_INVALID_PATH_SEQUENCE_LENGTH;
+        return neo4j_null;
+    }
+    for (unsigned int i = 0; i < seq->length; i += 2)
+    {
+        if (neo4j_type(seq->items[i]) != NEO4J_INT ||
+            neo4j_type(seq->items[i+1]) != NEO4J_INT)
+        {
+            errno = NEO4J_INVALID_PATH_SEQUENCE_IDX_TYPE;
+            return neo4j_null;
+        }
+        const struct neo4j_int *idx =
+            (const struct neo4j_int *)&(seq->items[i]);
+        if (idx->value == 0 || idx->value > rels->length ||
+            -(idx->value) > rels->length)
+        {
+            errno = NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE;
+            return neo4j_null;
+        }
+
+        idx = (const struct neo4j_int *)&(seq->items[i+1]);
+        if (idx->value < 0 || idx->value >= nodes->length)
+        {
+            errno = NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE;
+            return neo4j_null;
+        }
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_PATH, ._vt_off = PATH_VT_OFF,
+              .signature = NEO4J_PATH_SIGNATURE,
+              .fields = fields, .nfields = 3 };
+    return *((neo4j_value_t *)(&v));
+}
+
+
+unsigned int neo4j_path_length(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_PATH, 0);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    assert(v->nfields == 3);
+    assert(neo4j_type(v->fields[2]) == NEO4J_LIST);
+    unsigned int slength = neo4j_list_length(v->fields[2]);
+    assert((slength % 2) == 0);
+    return slength / 2;
+}
+
+
+neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_PATH, neo4j_null);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    assert(v->nfields == 3);
+    assert(neo4j_type(v->fields[0]) == NEO4J_LIST);
+    assert(neo4j_type(v->fields[2]) == NEO4J_LIST);
+
+    const struct neo4j_list *nodes = (const struct neo4j_list *)&(v->fields[0]);
+    const struct neo4j_list *seq = (const struct neo4j_list *)&(v->fields[2]);
+    assert((seq->length % 2) == 0);
+
+    if (hops > (seq->length / 2))
+    {
+        return neo4j_null;
+    }
+
+    if (hops == 0)
+    {
+        assert(nodes->length > 0 && neo4j_type(nodes->items[0]) == NEO4J_NODE);
+        return nodes->items[0];
+    }
+
+    unsigned int seq_idx = ((hops - 1) * 2) + 1;
+    assert(seq_idx < seq->length);
+    assert(neo4j_type(seq->items[seq_idx]) == NEO4J_INT);
+    const struct neo4j_int *node_idx =
+        (const struct neo4j_int *)&(seq->items[seq_idx]);
+    assert(node_idx->value >= 0 && node_idx->value < nodes->length);
+    assert(neo4j_type(nodes->items[node_idx->value]) == NEO4J_NODE);
+    return nodes->items[node_idx->value];
+}
+
+
+neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
+        unsigned int hops, bool *forward)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_PATH, neo4j_null);
+    ENSURE_NOT_NULL(bool, forward, false);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    assert(v->nfields == 3);
+    assert(neo4j_type(v->fields[1]) == NEO4J_LIST);
+    assert(neo4j_type(v->fields[2]) == NEO4J_LIST);
+
+    const struct neo4j_list *rels = (const struct neo4j_list *)&(v->fields[1]);
+    const struct neo4j_list *seq = (const struct neo4j_list *)&(v->fields[2]);
+    assert((seq->length % 2) == 0);
+
+    if (hops > (seq->length / 2))
+    {
+        return neo4j_null;
+    }
+
+    unsigned int seq_idx = hops * 2;
+    assert(seq_idx < seq->length);
+    assert(neo4j_type(seq->items[seq_idx]) == NEO4J_INT);
+    const struct neo4j_int *rel_idx =
+        (const struct neo4j_int *)&(seq->items[seq_idx]);
+    assert((rel_idx->value > 0 && rel_idx->value <= rels->length) ||
+        (rel_idx->value < 0 && -(rel_idx->value) <= rels->length));
+    *forward = (rel_idx->value > 0);
+    unsigned int idx = (unsigned int)(llabs(rel_idx->value) - 1);
+    assert(neo4j_type(rels->items[idx]) == NEO4J_RELATIONSHIP);
+    return rels->items[idx];
 }
 
 
