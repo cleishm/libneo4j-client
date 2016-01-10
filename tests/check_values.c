@@ -16,12 +16,29 @@
  */
 #include "../config.h"
 #include "../src/lib/values.h"
+#include "memstream.h"
 #include <check.h>
 #include <errno.h>
 #include <unistd.h>
 
 
 static char buf[1024];
+static char *memstream_buffer;
+static size_t memstream_size;
+static FILE *memstream;
+
+
+static void setup(void)
+{
+    memstream = open_memstream(&memstream_buffer, &memstream_size);
+}
+
+
+static void teardown(void)
+{
+    fclose(memstream);
+    free(memstream_buffer);
+}
 
 
 START_TEST (null_value)
@@ -36,6 +53,10 @@ START_TEST (null_value)
     ck_assert_int_eq(neo4j_ntostring(value, buf, 2), 4);
     ck_assert_str_eq(buf, "n");
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 4);
+
+    ck_assert(neo4j_fprint(value, memstream) == 4);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "null");
 }
 END_TEST
 
@@ -64,6 +85,10 @@ START_TEST (bool_value)
     ck_assert_str_eq(neo4j_tostring(value, buf, sizeof(buf)), "false");
 
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 5);
+
+    ck_assert(neo4j_fprint(value, memstream) == 5);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "false");
 }
 END_TEST
 
@@ -93,6 +118,10 @@ START_TEST (int_value)
     ck_assert_int_eq(neo4j_ntostring(value, buf, 2), 3);
     ck_assert_str_eq(buf, "-");
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 3);
+
+    ck_assert(neo4j_fprint(value, memstream) == 3);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "-53");
 }
 END_TEST
 
@@ -126,6 +155,10 @@ START_TEST (float_value)
     ck_assert_int_eq(neo4j_ntostring(value, buf, 4), 10);
     ck_assert_str_eq(buf, "-89");
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 10);
+
+    ck_assert(neo4j_fprint(value, memstream) == 10);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "-89.834230");
 }
 END_TEST
 
@@ -202,6 +235,11 @@ START_TEST (string_value)
     ck_assert_str_eq(buf, "\"black\\\\");
     ck_assert_int_eq(neo4j_ntostring(value, buf, 10), 14);
     ck_assert_str_eq(buf, "\"black\\\\w");
+
+    value = neo4j_string("the \"rum diary\"");
+    ck_assert(neo4j_fprint(value, memstream) == 19);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "\"the \\\"rum diary\\\"\"");
 }
 END_TEST
 
@@ -266,6 +304,11 @@ START_TEST (list_value)
     value = neo4j_list(list_values, 0);
     str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert_str_eq(str, "[]");
+
+    value = neo4j_list(list_values, 2);
+    ck_assert(neo4j_fprint(value, memstream) == 17);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "[1,\"the \\\"rum\\\"\"]");
 }
 END_TEST
 
@@ -330,6 +373,11 @@ START_TEST (map_value)
     value = neo4j_map(map_entries, 0);
     str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert_str_eq(buf, "{}");
+
+    value = neo4j_map(map_entries, 2);
+    ck_assert(neo4j_fprint(value, memstream) == 33);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "{bernie:\"sanders\",`b. sanders`:2}");
 }
 END_TEST
 
@@ -414,6 +462,11 @@ START_TEST (node_value)
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 48);
     ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 48);
     ck_assert_str_eq(buf, "(:Person:`Democrat Senator`{bernie:1,sanders:2})");
+
+    ck_assert(neo4j_fprint(value, memstream) == 48);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer,
+            "(:Person:`Democrat Senator`{bernie:1,sanders:2})");
 }
 END_TEST
 
@@ -453,6 +506,10 @@ START_TEST (relationship_value)
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
     ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
     ck_assert_str_eq(buf, "[:Candidate{year:2016}]");
+
+    ck_assert(neo4j_fprint(value, memstream) == 23);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "[:Candidate{year:2016}]");
 }
 END_TEST
 
@@ -533,6 +590,12 @@ START_TEST (path_value)
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 66);
     ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 66);
     ck_assert_str_eq(buf,
+            "(:State{})<-[:Senator{}]-(:Person{})-[:Candidate{}]->(:Campaign{})"
+            );
+
+    ck_assert(neo4j_fprint(value, memstream) == 66);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer,
             "(:State{})<-[:Senator{}]-(:Person{})-[:Candidate{}]->(:Campaign{})"
             );
 }
@@ -898,6 +961,10 @@ START_TEST (struct_value)
     ck_assert_str_eq(buf, "struct<0x78>(1,\"bernie\"");
     ck_assert_int_eq(neo4j_ntostring(value, buf, 23), 24);
     ck_assert_str_eq(buf, "struct<0x78>(1,\"bernie");
+
+    ck_assert(neo4j_fprint(value, memstream) == 24);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "struct<0x78>(1,\"bernie\")");
 }
 END_TEST
 
@@ -930,6 +997,7 @@ END_TEST
 TCase* values_tcase(void)
 {
     TCase *tc = tcase_create("values");
+    tcase_add_checked_fixture(tc, setup, teardown);
     tcase_add_test(tc, null_value);
     tcase_add_test(tc, null_eq);
     tcase_add_test(tc, bool_value);

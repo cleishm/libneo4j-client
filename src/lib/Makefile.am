@@ -27,6 +27,8 @@ libneo4j_client_la_SOURCES = \
 	network.c \
 	network.h \
 	cli_parser.c \
+	print.c \
+	print.h \
 	posix_iostream.c \
 	posix_iostream.h \
 	render.c \

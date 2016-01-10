@@ -16,6 +16,9 @@
  */
 #include "../../config.h"
 #include "values.h"
+#include "iostream.h"
+#include "print.h"
+#include "serialization.h"
 #include "util.h"
 #include <assert.h>
 #include <errno.h>
@@ -107,52 +110,64 @@ const char *neo4j_type_str(const neo4j_type_t type)
 struct neo4j_value_vt
 {
     size_t (*str)(const neo4j_value_t *self, char *strbuf, size_t n);
+    ssize_t (*fprint)(const neo4j_value_t *self, FILE *stream);
     int (*serialize)(const neo4j_value_t *self, neo4j_iostream_t *stream);
     bool (*eq)(const neo4j_value_t *self, const neo4j_value_t *other);
 };
 
 static struct neo4j_value_vt null_vt =
     { .str = neo4j_null_str,
+      .fprint = neo4j_null_fprint,
       .serialize = neo4j_null_serialize,
       .eq = null_eq };
 static struct neo4j_value_vt bool_vt =
     { .str = neo4j_bool_str,
+      .fprint = neo4j_bool_fprint,
       .serialize = neo4j_bool_serialize,
       .eq = bool_eq };
 static struct neo4j_value_vt int_vt =
     { .str = neo4j_int_str,
+      .fprint = neo4j_int_fprint,
       .serialize = neo4j_int_serialize,
       .eq = int_eq };
 static struct neo4j_value_vt float_vt =
     { .str = neo4j_float_str,
+      .fprint = neo4j_float_fprint,
       .serialize = neo4j_float_serialize,
       .eq = float_eq };
 static struct neo4j_value_vt string_vt =
     { .str = neo4j_string_str,
+      .fprint = neo4j_string_fprint,
       .serialize = neo4j_string_serialize,
       .eq = string_eq };
 static struct neo4j_value_vt list_vt =
     { .str = neo4j_list_str,
+      .fprint = neo4j_list_fprint,
       .serialize = neo4j_list_serialize,
       .eq = list_eq };
 static struct neo4j_value_vt map_vt =
     { .str = neo4j_map_str,
+      .fprint = neo4j_map_fprint,
       .serialize = neo4j_map_serialize,
       .eq = map_eq };
 static struct neo4j_value_vt node_vt =
     { .str = neo4j_node_str,
+      .fprint = neo4j_node_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt relationship_vt =
     { .str = neo4j_rel_str,
+      .fprint = neo4j_rel_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt path_vt =
     { .str = neo4j_path_str,
+      .fprint = neo4j_path_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt struct_vt =
     { .str = neo4j_struct_str,
+      .fprint = neo4j_struct_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 
@@ -202,6 +217,15 @@ size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n)
     REQUIRE(value._type < _MAX_TYPE, -1);
     const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
     return vt->str(&value, strbuf, n);
+}
+
+
+ssize_t neo4j_fprint(neo4j_value_t value, FILE *stream)
+{
+    REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
+    REQUIRE(value._type < _MAX_TYPE, -1);
+    const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
+    return vt->fprint(&value, stream);
 }
 
 

@@ -18,7 +18,6 @@
 #define NEO4J_VALUES_H
 
 #include "neo4j-client.h"
-#include "serialization.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>

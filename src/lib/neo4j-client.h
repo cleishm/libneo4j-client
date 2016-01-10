@@ -546,6 +546,16 @@ char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
 size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n);
 
 /**
+ * Print a string representation of a neo4j value to a stream.
+ *
+ * @param [value] The neo4j value.
+ * @param [stream] The stream to print to.
+ * @return The number of bytes written to the stream, or -1 if an error
+ *         occurs (errno will be set).
+ */
+ssize_t neo4j_fprint(neo4j_value_t value, FILE *stream);
+
+/**
  * Compare two neo4j values for equality.
  *
  * @param [value1] The first neo4j value.
