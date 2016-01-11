@@ -24,5 +24,12 @@ docker-check:
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker start -i $$id
 
+docker-valgrind:
+	$(MAKE) dist
+	id=`docker create -i debian-dev \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure && make check && CK_FORK=no valgrind ./tests/check_libneo4j-client'` && \
+	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
+	docker start -i $$id
+
 clean-local:
 	rm -rf doc src/.doc
