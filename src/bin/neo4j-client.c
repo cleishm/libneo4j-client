@@ -262,9 +262,7 @@ int evaluate_statement(shell_state_t *state, const char *statement)
             statement, NULL, 0);
     if (results == NULL)
     {
-        char buf[1024];
-        fprintf(state->err, "failed to run statement: %s\n",
-                neo4j_strerror(errno, buf, sizeof(buf)));
+        neo4j_perror(state->err, errno, "failed to run statement");
         return -1;
     }
 
@@ -274,14 +272,11 @@ int evaluate_statement(shell_state_t *state, const char *statement)
         int error = errno;
         if (error == NEO4J_STATEMENT_EVALUATION_FAILED)
         {
-            fprintf(state->err, "evaluation error: %s\n",
-                    neo4j_error_message(results));
+            fprintf(state->err, "%s\n", neo4j_error_message(results));
         }
         else
         {
-            char buf[1024];
-            fprintf(state->err, "error: %s\n",
-                    neo4j_strerror(error, buf, sizeof(buf)));
+            neo4j_perror(state->err, errno, "unexpected error");
         }
         goto cleanup;
     }
@@ -296,9 +291,7 @@ int evaluate_statement(shell_state_t *state, const char *statement)
 cleanup:
     if (neo4j_close_results(results) && result == 0)
     {
-        char buf[1024];
-        fprintf(state->err, "failed to close results: %s\n",
-                neo4j_strerror(errno, buf, sizeof(buf)));
+        neo4j_perror(state->err, errno, "failed to close results");
         return -1;
     }
     return result;

@@ -368,6 +368,16 @@ struct neo4j_connection_factory
 #define NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE -32
 
 /**
+ * Print the error message corresponding to an error number.
+ *
+ * @param [stream] The stream to write to.
+ * @param [errnum] The error number.
+ * @param [message] `NULL`, or a pointer to a message string which will
+ *         be prepend to the error message, separated by a colon and space.
+ */
+void neo4j_perror(FILE *stream, int errnum, const char *message);
+
+/**
  * Look up the error message corresponding to an error number.
  *
  * @param [errnum] The error number.
