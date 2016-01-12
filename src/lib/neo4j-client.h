@@ -481,6 +481,8 @@ extern const neo4j_type_t NEO4J_NODE;
 extern const neo4j_type_t NEO4J_RELATIONSHIP;
 /** The neo4j path value type. */
 extern const neo4j_type_t NEO4J_PATH;
+/** The neo4j identity value type. */
+extern const neo4j_type_t NEO4J_IDENTITY;
 extern const neo4j_type_t NEO4J_STRUCT;
 
 union _neo4j_value_data
@@ -594,7 +596,7 @@ extern const neo4j_value_t neo4j_null;
  * Construct a neo4j value encoding a boolean.
  *
  * @param [value] A boolean value.
- * @return A neo4j value encoding the boolean.
+ * @return A neo4j value encoding the Bool.
  */
 neo4j_value_t neo4j_bool(bool value);
 
@@ -614,7 +616,7 @@ bool neo4j_bool_value(neo4j_value_t value);
  *
  * @param [value] A signed integer. This must be in the range INT64_MIN to
  *         INT64_MAX, or it will be capped to the closest value.
- * @return A neo4j value encoding the integer.
+ * @return A neo4j value encoding the Int.
  */
 neo4j_value_t neo4j_int(long long value);
 
@@ -633,7 +635,7 @@ long long neo4j_int_value(neo4j_value_t value);
  * Construct a neo4j value encoding a double.
  *
  * @param [value] A double precision floating point value.
- * @return A neo4j value encoding the double.
+ * @return A neo4j value encoding the Float.
  */
 neo4j_value_t neo4j_float(double value);
 
@@ -655,7 +657,7 @@ double neo4j_float_value(neo4j_value_t value);
  * @param [s] A pointer to a `NULL` terminated ASCII string. The pointer
  *         must remain valid, and the content unchanged, for the lifetime of
  *         the neo4j value.
- * @return A neo4j value encoding the string.
+ * @return A neo4j value encoding the String.
  */
 #define neo4j_string(s) (neo4j_ustring((s), strlen(s)))
 
@@ -666,7 +668,7 @@ double neo4j_float_value(neo4j_value_t value);
  *         the content unchanged, for the lifetime of the neo4j value.
  * @param [n] The length of the UTF-8 string. This must be less than
  *         UINT32_MAX in length (and will be truncated otherwise).
- * @return A neo4j value encoding the string.
+ * @return A neo4j value encoding the String.
  */
 neo4j_value_t neo4j_ustring(const char *u, unsigned int n);
 
@@ -720,7 +722,7 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length);
  *         neo4j value.
  * @param [n] The length of the array of items. This must be less than
  *         UINT32_MAX (or the list will be truncated).
- * @return A neo4j value encoding the list.
+ * @return A neo4j value encoding the List.
  */
 neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n);
 
@@ -755,7 +757,7 @@ neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index);
  *         value.
  * @param [n] The length of the array of entries. This must be less than
  *         UINT32_MAX (or the list of entries will be truncated).
- * @return A neo4j value encoding the map.
+ * @return A neo4j value encoding the Map.
  */
 neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n);
 
@@ -804,28 +806,36 @@ neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value);
 
 
 /**
- * Return the label list from a neo4j node.
+ * Return the label list of a neo4j node.
  *
  * Note that the result is undefined if the value is not of type NEO4J_NODE.
  *
  * @param [value] The neo4j node.
- * @return A neo4j value encoding the list of labels.
+ * @return A neo4j value encoding the List of labels.
  */
 neo4j_value_t neo4j_node_labels(neo4j_value_t value);
 
 /**
- * Return the property map from a neo4j node.
+ * Return the property map of a neo4j node.
  *
  * Note that the result is undefined if the value is not of type NEO4J_NODE.
  *
  * @param [value] The neo4j node.
- * @return A neo4j value encoding the map of properties.
+ * @return A neo4j value encoding the Map of properties.
  */
 neo4j_value_t neo4j_node_properties(neo4j_value_t value);
 
+/**
+ * Return the identity of a neo4j node.
+ *
+ * @param [value] The neo4j node.
+ * @return A neo4j value encoding the Identity of the node.
+ */
+neo4j_value_t neo4j_node_identity(neo4j_value_t value);
+
 
 /**
- * Return the type from a neo4j relationship.
+ * Return the type of a neo4j relationship.
  *
  * Note that the result is undefined if the value is not of type
  * NEO4J_RELATIONSHIP.
@@ -836,15 +846,40 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value);
 neo4j_value_t neo4j_relationship_type(neo4j_value_t value);
 
 /**
- * Return the property map from a neo4j relationship.
+ * Return the property map of a neo4j relationship.
  *
  * Note that the result is undefined if the value is not of type
  * NEO4J_RELATIONSHIP.
  *
  * @param [value] The neo4j relationship.
- * @return A neo4j value encoding the map of properties.
+ * @return A neo4j value encoding the Map of properties.
  */
 neo4j_value_t neo4j_relationship_properties(neo4j_value_t value);
+
+/**
+ * Return the identity of a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Identity of the relationship.
+ */
+neo4j_value_t neo4j_relationship_identity(neo4j_value_t value);
+
+/**
+ * Return the start node identity for a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Identity of the start node.
+ */
+neo4j_value_t neo4j_relationship_start_node_identity(neo4j_value_t value);
+
+/**
+ * Return the end node identity for a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Identity of the end node.
+ */
+neo4j_value_t neo4j_relationship_end_node_identity(neo4j_value_t value);
+
 
 /**
  * Return the length of a neo4j path.
@@ -866,7 +901,7 @@ unsigned int neo4j_path_length(neo4j_value_t value);
  *
  * @param [value] The neo4j path.
  * @param [hops] The number of hops (distance).
- * @return A neo4j value enconding the node.
+ * @return A neo4j value enconding the Node.
  */
 neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
 
@@ -880,7 +915,7 @@ neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
  * @param [forward] `NULL`, or a pointer to a boolean which will be set to
  *         `true` if the relationship was traversed in its natural direction
  *         and `false` if it was traversed backward.
- * @return A neo4j value enconding the relationship.
+ * @return A neo4j value enconding the Relationship.
  */
 neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
         unsigned int hops, bool *forward);

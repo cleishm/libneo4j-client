@@ -733,7 +733,13 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
     switch (signature)
     {
     case NEO4J_NODE_SIGNATURE:
-        if (nfields != 3)
+        if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT)
+        {
+            errno = EPROTO;
+            return -1;
+        }
+        fields[0] = neo4j_identity(neo4j_int_value(fields[0]));
+        if (neo4j_is_null(fields[0]))
         {
             errno = EPROTO;
             return -1;
@@ -741,7 +747,20 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         v = neo4j_node(fields);
         break;
     case NEO4J_REL_SIGNATURE:
-        if (nfields != 5)
+        if (nfields != 5 ||
+                neo4j_type(fields[0]) != NEO4J_INT ||
+                neo4j_type(fields[1]) != NEO4J_INT ||
+                neo4j_type(fields[2]) != NEO4J_INT)
+        {
+            errno = EPROTO;
+            return -1;
+        }
+        fields[0] = neo4j_identity(neo4j_int_value(fields[0]));
+        fields[1] = neo4j_identity(neo4j_int_value(fields[1]));
+        fields[2] = neo4j_identity(neo4j_int_value(fields[2]));
+        if (neo4j_is_null(fields[0]) ||
+                neo4j_is_null(fields[1]) ||
+                neo4j_is_null(fields[2]))
         {
             errno = EPROTO;
             return -1;
@@ -757,7 +776,13 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         v = neo4j_path(fields);
         break;
     case NEO4J_UNBOUND_REL_SIGNATURE:
-        if (nfields != 3)
+        if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT)
+        {
+            errno = EPROTO;
+            return -1;
+        }
+        fields[0] = neo4j_identity(neo4j_int_value(fields[0]));
+        if (neo4j_is_null(fields[0]))
         {
             errno = EPROTO;
             return -1;

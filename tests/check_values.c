@@ -451,9 +451,11 @@ START_TEST (node_value)
           { .key = neo4j_string("sanders"), .value = neo4j_int(2) } };
 
     neo4j_value_t field_values[] =
-        { neo4j_int(1), neo4j_list(labels, 2), neo4j_map(props, 2) };
+        { neo4j_identity(1), neo4j_list(labels, 2), neo4j_map(props, 2) };
     neo4j_value_t value = neo4j_node(field_values);
     ck_assert(neo4j_type(value) == NEO4J_NODE);
+
+    ck_assert(neo4j_eq(neo4j_node_identity(value), neo4j_identity(1)));
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
@@ -480,7 +482,7 @@ START_TEST (invalid_node_label_value)
           { .key = neo4j_string("sanders"), .value = neo4j_int(2) } };
 
     neo4j_value_t field_values[] =
-        { neo4j_int(1), neo4j_list(labels, 2), neo4j_map(props, 2) };
+        { neo4j_identity(1), neo4j_list(labels, 2), neo4j_map(props, 2) };
     neo4j_value_t value = neo4j_node(field_values);
     ck_assert(neo4j_is_null(value));
     ck_assert_int_eq(errno, NEO4J_INVALID_LABEL_TYPE);
@@ -495,9 +497,17 @@ START_TEST (relationship_value)
         { { .key = neo4j_string("year"), .value = neo4j_int(2016) } };
 
     neo4j_value_t field_values[] =
-        { neo4j_int(1), neo4j_int(1), neo4j_int(2), type, neo4j_map(props, 1) };
+        { neo4j_identity(1), neo4j_identity(8), neo4j_identity(9),
+          type, neo4j_map(props, 1) };
     neo4j_value_t value = neo4j_relationship(field_values);
     ck_assert(neo4j_type(value) == NEO4J_RELATIONSHIP);
+
+    ck_assert(neo4j_eq(neo4j_relationship_identity(value),
+                neo4j_identity(1)));
+    ck_assert(neo4j_eq(neo4j_relationship_start_node_identity(value),
+                neo4j_identity(8)));
+    ck_assert(neo4j_eq(neo4j_relationship_end_node_identity(value),
+                neo4j_identity(9)));
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
@@ -521,9 +531,14 @@ START_TEST (unbound_relationship_value)
         { { .key = neo4j_string("year"), .value = neo4j_int(2016) } };
 
     neo4j_value_t field_values[] =
-        { neo4j_int(1), type, neo4j_map(props, 1) };
+        { neo4j_identity(1), type, neo4j_map(props, 1) };
     neo4j_value_t value = neo4j_unbound_relationship(field_values);
     ck_assert(neo4j_type(value) == NEO4J_RELATIONSHIP);
+
+    ck_assert(neo4j_eq(neo4j_relationship_identity(value),
+                neo4j_identity(1)));
+    ck_assert(neo4j_is_null(neo4j_relationship_start_node_identity(value)));
+    ck_assert(neo4j_is_null(neo4j_relationship_end_node_identity(value)));
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
@@ -545,25 +560,25 @@ START_TEST (path_value)
     neo4j_value_t node3_labels[] = { neo4j_string("Campaign") };
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(node1_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(node1_labels, 1), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(node2_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(node2_labels, 1), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(node3_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(node3_labels, 1), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -608,21 +623,21 @@ START_TEST (invalid_path_node_value)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, neo4j_bool(true), node3 };
@@ -647,20 +662,20 @@ START_TEST (invalid_path_relationship_value)
     neo4j_value_t rel1_type = neo4j_string("Senator");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -686,25 +701,25 @@ START_TEST (invalid_path_seq_length)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -730,25 +745,25 @@ START_TEST (invalid_path_seq_rel_index_type)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -774,25 +789,25 @@ START_TEST (invalid_path_seq_node_index_type)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -818,25 +833,25 @@ START_TEST (invalid_path_seq_rel_index_range)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -862,25 +877,25 @@ START_TEST (invalid_path_seq_rel_zero_index_range)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -906,25 +921,25 @@ START_TEST (invalid_path_seq_rel_neg_index_range)
     neo4j_value_t rel2_type = neo4j_string("Candidate");
 
     neo4j_value_t node1_fields[] =
-        { neo4j_int(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
-        { neo4j_int(8), neo4j_int(2), neo4j_int(1),
+        { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
           rel1_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_int(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
-        { neo4j_int(9), neo4j_int(2), neo4j_int(3),
+        { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
           rel2_type, neo4j_map(NULL, 0) };
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_int(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(NULL, 0), neo4j_map(NULL, 0) };
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -994,6 +1009,22 @@ START_TEST (struct_eq)
 END_TEST
 
 
+START_TEST (identity_value)
+{
+    neo4j_value_t value = neo4j_identity(42);
+    ck_assert(neo4j_type(value) == NEO4J_IDENTITY);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(buf, "42");
+
+    ck_assert(neo4j_fprint(value, memstream) == 2);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "42");
+}
+END_TEST
+
+
 TCase* values_tcase(void)
 {
     TCase *tc = tcase_create("values");
@@ -1027,6 +1058,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, invalid_path_seq_rel_index_range);
     tcase_add_test(tc, invalid_path_seq_rel_zero_index_range);
     tcase_add_test(tc, invalid_path_seq_rel_neg_index_range);
+    tcase_add_test(tc, identity_value);
     tcase_add_test(tc, struct_value);
     tcase_add_test(tc, struct_eq);
     return tc;

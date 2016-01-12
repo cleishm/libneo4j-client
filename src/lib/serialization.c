@@ -91,7 +91,8 @@ int neo4j_int_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(stream != NULL, -1);
-    assert(neo4j_type(*value) == NEO4J_INT);
+    assert(neo4j_type(*value) == NEO4J_INT ||
+            neo4j_type(*value) == NEO4J_IDENTITY);
     const struct neo4j_int *v = (const struct neo4j_int *)value;
 
     uint8_t marker;

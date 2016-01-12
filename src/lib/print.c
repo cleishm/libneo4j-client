@@ -101,7 +101,8 @@ size_t neo4j_int_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
-    assert(neo4j_type(*value) == NEO4J_INT);
+    assert(neo4j_type(*value) == NEO4J_INT ||
+            neo4j_type(*value) == NEO4J_IDENTITY);
     const struct neo4j_int *v = (const struct neo4j_int *)value;
     int r = snprintf(buf, n, "%" PRId64, v->value);
     assert(r > 0);
@@ -112,7 +113,8 @@ size_t neo4j_int_str(const neo4j_value_t *value, char *buf, size_t n)
 ssize_t neo4j_int_fprint(const neo4j_value_t *value, FILE *stream)
 {
     REQUIRE(value != NULL, -1);
-    assert(neo4j_type(*value) == NEO4J_INT);
+    assert(neo4j_type(*value) == NEO4J_INT ||
+            neo4j_type(*value) == NEO4J_IDENTITY);
     const struct neo4j_int *v = (const struct neo4j_int *)value;
     return fprintf(stream, "%" PRId64, v->value);
 }

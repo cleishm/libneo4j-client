@@ -53,6 +53,7 @@ static const struct neo4j_type map_type = { .name = "Map" };
 static const struct neo4j_type node_type = { .name = "Node" };
 static const struct neo4j_type relationship_type = { .name = "Relationship" };
 static const struct neo4j_type path_type = { .name = "Path" };
+static const struct neo4j_type identity_type = { .name = "Identity" };
 static const struct neo4j_type struct_type = { .name = "Struct" };
 
 static const struct neo4j_type *neo4j_types[] =
@@ -66,6 +67,7 @@ static const struct neo4j_type *neo4j_types[] =
       &node_type,
       &relationship_type,
       &path_type,
+      &identity_type,
       &struct_type };
 
 #define NULL_TYPE_OFF 0
@@ -88,7 +90,9 @@ const uint8_t NEO4J_NODE = NODE_TYPE_OFF;
 const uint8_t NEO4J_RELATIONSHIP = RELATIONSHIP_TYPE_OFF;
 #define PATH_TYPE_OFF 9
 const uint8_t NEO4J_PATH = PATH_TYPE_OFF;
-#define STRUCT_TYPE_OFF 10
+#define IDENTITY_TYPE_OFF 10
+const uint8_t NEO4J_IDENTITY = IDENTITY_TYPE_OFF;
+#define STRUCT_TYPE_OFF 11
 const uint8_t NEO4J_STRUCT = STRUCT_TYPE_OFF;
 static const uint8_t _MAX_TYPE =
     (sizeof(neo4j_types) / sizeof(struct neo4j_type *));
@@ -165,6 +169,11 @@ static struct neo4j_value_vt path_vt =
       .fprint = neo4j_path_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
+static struct neo4j_value_vt identity_vt =
+    { .str = neo4j_int_str,
+      .fprint = neo4j_int_fprint,
+      .serialize = neo4j_int_serialize,
+      .eq = int_eq };
 static struct neo4j_value_vt struct_vt =
     { .str = neo4j_struct_str,
       .fprint = neo4j_struct_fprint,
@@ -182,6 +191,7 @@ static const struct neo4j_value_vt *neo4j_value_vts[] =
       &node_vt,
       &relationship_vt,
       &path_vt,
+      &identity_vt,
       &struct_vt };
 
 #define NULL_VT_OFF 0
@@ -194,7 +204,8 @@ static const struct neo4j_value_vt *neo4j_value_vts[] =
 #define NODE_VT_OFF 7
 #define RELATIONSHIP_VT_OFF 8
 #define PATH_VT_OFF 9
-#define STRUCT_VT_OFF 10
+#define IDENTITY_VT_OFF 10
+#define STRUCT_VT_OFF 11
 #define _MAX_VT_OFF (sizeof(neo4j_value_vts) / sizeof(struct neo4j_value_vt *))
 
 static_assert(
@@ -566,7 +577,7 @@ neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value)
 
 neo4j_value_t neo4j_node(const neo4j_value_t fields[3])
 {
-    if (neo4j_type(fields[0]) != NEO4J_INT ||
+    if (neo4j_type(fields[0]) != NEO4J_IDENTITY ||
             neo4j_type(fields[1]) != NEO4J_LIST ||
             neo4j_type(fields[2]) != NEO4J_MAP)
     {
@@ -611,13 +622,25 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value)
 }
 
 
+neo4j_value_t neo4j_node_identity(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_NODE, neo4j_null);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    assert(v->nfields == 3);
+    assert(neo4j_type(v->fields[0]) == NEO4J_IDENTITY);
+    return v->fields[0];
+}
+
+
 // relationship
 
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5])
 {
-    if (neo4j_type(fields[0]) != NEO4J_INT ||
-            (neo4j_type(fields[1]) != NEO4J_INT && !neo4j_is_null(fields[1])) ||
-            (neo4j_type(fields[2]) != NEO4J_INT && !neo4j_is_null(fields[1])) ||
+    if (neo4j_type(fields[0]) != NEO4J_IDENTITY ||
+            (neo4j_type(fields[1]) != NEO4J_IDENTITY &&
+                !neo4j_is_null(fields[1])) ||
+            (neo4j_type(fields[2]) != NEO4J_IDENTITY &&
+                !neo4j_is_null(fields[1])) ||
             neo4j_type(fields[3]) != NEO4J_STRING ||
             neo4j_type(fields[4]) != NEO4J_MAP)
     {
@@ -635,7 +658,7 @@ neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5])
 
 neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3])
 {
-    if (neo4j_type(fields[0]) != NEO4J_INT ||
+    if (neo4j_type(fields[0]) != NEO4J_IDENTITY ||
             neo4j_type(fields[1]) != NEO4J_STRING ||
             neo4j_type(fields[2]) != NEO4J_MAP)
     {
@@ -683,6 +706,48 @@ neo4j_value_t neo4j_relationship_properties(neo4j_value_t value)
         assert(v->nfields == 3);
         assert(neo4j_type(v->fields[2]) == NEO4J_MAP);
         return v->fields[2];
+    }
+}
+
+
+neo4j_value_t neo4j_relationship_identity(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_RELATIONSHIP, neo4j_null);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    assert(v->nfields == 3 || v->nfields == 5);
+    assert(neo4j_type(v->fields[0]) == NEO4J_IDENTITY);
+    return v->fields[0];
+}
+
+
+neo4j_value_t neo4j_relationship_start_node_identity(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_RELATIONSHIP, neo4j_null);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    if (v->nfields == 5)
+    {
+        assert(neo4j_type(v->fields[1]) == NEO4J_IDENTITY);
+        return v->fields[1];
+    }
+    else
+    {
+        return neo4j_null;
+    }
+}
+
+
+neo4j_value_t neo4j_relationship_end_node_identity(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_RELATIONSHIP, neo4j_null);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)&value;
+    if (v->nfields == 5)
+    {
+        assert(neo4j_type(v->fields[2]) == NEO4J_IDENTITY);
+        return v->fields[2];
+    }
+    else
+    {
+        return neo4j_null;
     }
 }
 
@@ -834,6 +899,26 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
     unsigned int idx = (unsigned int)(llabs(rel_idx->value) - 1);
     assert(neo4j_type(rels->items[idx]) == NEO4J_RELATIONSHIP);
     return rels->items[idx];
+}
+
+
+// identity
+
+neo4j_value_t neo4j_identity(long long value)
+{
+    if (value < 0)
+    {
+        return neo4j_null;
+    }
+#if LLONG_MIN != INT64_MIN || LLONG_MAX != INT64_MAX
+    if (value > INT64_MAX)
+    {
+        return neo4j_null;
+    }
+#endif
+    struct neo4j_int v =
+        { ._type = NEO4J_IDENTITY, ._vt_off = IDENTITY_VT_OFF, .value = value };
+    return *((neo4j_value_t *)(&v));
 }
 
 

@@ -159,8 +159,8 @@ neo4j_value_t neo4j_struct(uint8_t signature,
  *
  * @internal
  *
- * @param [fields] The fields for the node, which must be an Int identifier,
- *         a List of Strings for labels and a Map of properties.
+ * @param [fields] The fields for the node, which must be the Identity of the
+ *         node, a List of Strings for labels and a Map of properties.
  * @return The neo4j value encoding the node.
  */
 neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
@@ -170,9 +170,9 @@ neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
  *
  * @internal
  *
- * @param [fields] The fields for the relationship, which must be an Int
- *         identifier, the Int identifier of the start node, the Int identifier
- *         of the end node, a String reltype and a Map of properties.
+ * @param [fields] The fields for the relationship, which must be the
+ *         Identity of the relationship, the Identity of the start node, the
+ *         Identity of the end node, a String reltype and a Map of properties.
  * @return The neo4j value encoding the relationship.
  */
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
@@ -183,7 +183,7 @@ neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
  * @internal
  *
  * @param [fields] The fields for the relationship, which must be an Int
- *         identifier, a String reltype and a Map of properties.
+ *         identity, a String reltype and a Map of properties.
  * @return The neo4j value encoding the relationship.
  */
 neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
@@ -199,6 +199,16 @@ neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
  * @return The neo4j value encoding the path.
  */
 neo4j_value_t neo4j_path(const neo4j_value_t fields[3]);
+
+/**
+ * Construct a neo4j identity.
+ *
+ * @internal
+ *
+ * @param [id] The numberic identity value.
+ * @return The neo4j value encoding the identity.
+ */
+neo4j_value_t neo4j_identity(long long identity);
 
 /**
  * Get the signature of a neo4j struct.

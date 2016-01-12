@@ -22,8 +22,7 @@
 #include "memory.h"
 
 /**
- * @fn int neo4j_deserialize(neo4j_iostream_t *stream, neo4j_mpool_t pool, neo4j_value_t *value)
- * @brief Read a neo4j value from a stream.
+ * Read a neo4j value from a stream.
  *
  * @param [stream] The iostream to read from.
  * @param [mpool] The memory pool to allocate value space in.
