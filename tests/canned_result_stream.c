@@ -66,8 +66,9 @@ neo4j_result_stream_t *neo4j_canned_result_stream(
         const char * const *fieldnames, unsigned int nfields,
         const neo4j_value_t *records, size_t nrecords)
 {
-    canned_result_t *cr = calloc(nrecords, sizeof(canned_result_t));
-    if (cr == NULL)
+    canned_result_t *cr = (nrecords > 0)?
+        calloc(nrecords, sizeof(canned_result_t)) : NULL;
+    if (nrecords > 0 && cr == NULL)
     {
         return NULL;
     }

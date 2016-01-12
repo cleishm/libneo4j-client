@@ -53,9 +53,9 @@ static void teardown(void)
 neo4j_result_stream_t *build_stream(const char * const *fieldnames,
         unsigned int nfields, const char *table[][nfields], unsigned int nrows)
 {
-    neo4j_value_t *records = neo4j_mpool_calloc(&mpool,
-            nrows, sizeof(neo4j_value_t));
-    ck_assert(records != NULL);
+    neo4j_value_t *records = (nrows > 0)?
+        neo4j_mpool_calloc(&mpool, nrows, sizeof(neo4j_value_t)) : NULL;
+    ck_assert(nrows == 0 || records != NULL);
 
     for (unsigned int i = 0; i < nrows; ++i)
     {
