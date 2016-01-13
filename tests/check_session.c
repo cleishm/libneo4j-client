@@ -76,7 +76,7 @@ static void setup(void)
 
     connection = neo4j_connect("neo4j://localhost:7687", config, 0);
     ck_assert_ptr_ne(connection, NULL);
-    rb_advance(out_rb, 4 + (4 * sizeof(uint32_t)));
+    rb_discard(out_rb, 4 + (4 * sizeof(uint32_t)));
 }
 
 

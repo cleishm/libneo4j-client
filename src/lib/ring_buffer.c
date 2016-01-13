@@ -213,7 +213,7 @@ int rb_data_iovec(ring_buffer_t *rb, struct iovec iov[2], size_t nbytes)
 }
 
 
-ssize_t rb_advance(ring_buffer_t *rb, size_t nbytes)
+ssize_t rb_discard(ring_buffer_t *rb, size_t nbytes)
 {
     if (rb == NULL)
     {

@@ -64,7 +64,7 @@ END_TEST
 START_TEST (test_to_rb_from_memory_wrapped_around)
 {
     ck_assert_int_eq(rb_append(rb, sample16, 8), 8);
-    ck_assert_int_eq(rb_advance(rb, 7), 7);
+    ck_assert_int_eq(rb_discard(rb, 7), 7);
     ck_assert_int_eq(rb_used(rb), 1);
 
     size_t result = rb_append(rb, sample16, 16);
@@ -80,7 +80,7 @@ END_TEST
 START_TEST (test_to_rb_from_memory_in_center)
 {
     ck_assert_int_eq(rb_append(rb, sample16, 8), 8);
-    ck_assert_int_eq(rb_advance(rb, 7), 7);
+    ck_assert_int_eq(rb_discard(rb, 7), 7);
     ck_assert_int_eq(rb_append(rb, sample16, 11), 11);
     ck_assert_int_eq(rb_used(rb), 12);
     ck_assert_int_eq(rb_space(rb), 4);
@@ -162,7 +162,7 @@ END_TEST
 START_TEST (test_to_memory_from_rb_wrapped_around)
 {
     rb_append(rb, sample16, 16);
-    rb_advance(rb, 10);
+    rb_discard(rb, 10);
     rb_append(rb, sample16, 6);
     ck_assert_int_eq(rb_space(rb), 4);
 
@@ -206,11 +206,11 @@ START_TEST (test_to_fd_from_rb)
 END_TEST
 
 
-START_TEST (test_advance)
+START_TEST (test_discard)
 {
     rb_append(rb, sample16, 16);
 
-    ssize_t result = rb_advance(rb, 8);
+    ssize_t result = rb_discard(rb, 8);
     ck_assert_int_eq(result, 8);
 
     char outbuf[32];
@@ -243,7 +243,7 @@ TCase* ring_buffer_tcase(void)
     tcase_add_test(tc, test_to_memory_from_rb);
     tcase_add_test(tc, test_to_memory_from_rb_wrapped_around);
     tcase_add_test(tc, test_to_fd_from_rb);
-    tcase_add_test(tc, test_advance);
+    tcase_add_test(tc, test_discard);
     tcase_add_test(tc, test_clear);
     return tc;
 }

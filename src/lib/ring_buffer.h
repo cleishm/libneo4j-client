@@ -141,7 +141,7 @@ int rb_data_iovec(ring_buffer_t *rb, struct iovec iov[2], size_t nbytes);
  * @param [nbytes] The number of bytes to discard.
  * @return The number of bytes discarded.
  */
-ssize_t rb_advance(ring_buffer_t *rb, size_t nbytes);
+ssize_t rb_discard(ring_buffer_t *rb, size_t nbytes);
 
 /**
  * Clear a ring buffer.
