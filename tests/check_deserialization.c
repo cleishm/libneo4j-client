@@ -19,7 +19,7 @@
 #include "../src/lib/iostream.h"
 #include "../src/lib/ring_buffer.h"
 #include "../src/lib/values.h"
-#include "buffered_iostream.h"
+#include "memiostream.h"
 #include <check.h>
 #include <errno.h>
 #include <unistd.h>

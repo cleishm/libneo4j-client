@@ -15,35 +15,35 @@
  * limitations under the License.
  */
 #include "../config.h"
-#include "buffered_iostream.h"
+#include "memiostream.h"
 #include "../src/lib/util.h"
 #include <assert.h>
 #include <unistd.h>
 
 
-struct buffered_iostream {
+struct memiostream {
     neo4j_iostream_t iostream;
     ring_buffer_t *inbuffer;
     ring_buffer_t *outbuffer;
 };
 
-static ssize_t buffered_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
-static ssize_t buffered_readv(neo4j_iostream_t *stream,
+static ssize_t memios_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
+static ssize_t memios_readv(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt);
-static ssize_t buffered_write(neo4j_iostream_t *stream,
+static ssize_t memios_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
-static ssize_t buffered_writev(neo4j_iostream_t *stream,
+static ssize_t memios_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt);
-static int buffered_close(neo4j_iostream_t *stream);
+static int memios_close(neo4j_iostream_t *stream);
 
 
-neo4j_iostream_t *neo4j_buffered_iostream(ring_buffer_t *inbuffer,
+neo4j_iostream_t *neo4j_memiostream(ring_buffer_t *inbuffer,
         ring_buffer_t *outbuffer)
 {
     REQUIRE(inbuffer != NULL, NULL);
     REQUIRE(outbuffer != NULL, NULL);
 
-    struct buffered_iostream *ios = calloc(1, sizeof(struct buffered_iostream));
+    struct memiostream *ios = calloc(1, sizeof(struct memiostream));
     if (ios == NULL)
     {
         return NULL;
@@ -51,18 +51,18 @@ neo4j_iostream_t *neo4j_buffered_iostream(ring_buffer_t *inbuffer,
 
     ios->inbuffer = inbuffer;
     ios->outbuffer = outbuffer;
-    ios->iostream.read = buffered_read;
-    ios->iostream.readv = buffered_readv;
-    ios->iostream.write = buffered_write;
-    ios->iostream.writev = buffered_writev;
-    ios->iostream.close = buffered_close;
+    ios->iostream.read = memios_read;
+    ios->iostream.readv = memios_readv;
+    ios->iostream.write = memios_write;
+    ios->iostream.writev = memios_writev;
+    ios->iostream.close = memios_close;
     return (neo4j_iostream_t *)ios;
 }
 
 
-ssize_t buffered_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
+ssize_t memios_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 {
-    struct buffered_iostream *ios = (struct buffered_iostream *)stream;
+    struct memiostream *ios = (struct memiostream *)stream;
     if (ios->inbuffer == NULL)
     {
         errno = EPIPE;
@@ -72,10 +72,10 @@ ssize_t buffered_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 }
 
 
-ssize_t buffered_readv(neo4j_iostream_t *stream,
+ssize_t memios_readv(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt)
 {
-    struct buffered_iostream *ios = (struct buffered_iostream *)stream;
+    struct memiostream *ios = (struct memiostream *)stream;
     if (ios->inbuffer == NULL)
     {
         errno = EPIPE;
@@ -103,9 +103,9 @@ ssize_t buffered_readv(neo4j_iostream_t *stream,
 }
 
 
-ssize_t buffered_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
+ssize_t memios_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 {
-    struct buffered_iostream *ios = (struct buffered_iostream *)stream;
+    struct memiostream *ios = (struct memiostream *)stream;
     if (ios->outbuffer == NULL)
     {
         errno = EPIPE;
@@ -115,10 +115,10 @@ ssize_t buffered_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 }
 
 
-ssize_t buffered_writev(neo4j_iostream_t *stream,
+ssize_t memios_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt)
 {
-    struct buffered_iostream *ios = (struct buffered_iostream *)stream;
+    struct memiostream *ios = (struct memiostream *)stream;
     if (ios->outbuffer == NULL)
     {
         errno = EPIPE;
@@ -140,9 +140,9 @@ ssize_t buffered_writev(neo4j_iostream_t *stream,
 }
 
 
-int buffered_close(neo4j_iostream_t *stream)
+int memios_close(neo4j_iostream_t *stream)
 {
-    struct buffered_iostream *ios = (struct buffered_iostream *)stream;
+    struct memiostream *ios = (struct memiostream *)stream;
     if (ios->inbuffer == NULL || ios->outbuffer == NULL)
     {
         errno = EPIPE;

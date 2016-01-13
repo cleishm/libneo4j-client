@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 #include "../config.h"
-#include "buffered_iostream.h"
 #include "../src/lib/chunking_iostream.h"
 #include "../src/lib/connection.h"
 #include "../src/lib/deserialization.h"
@@ -23,6 +22,7 @@
 #include "../src/lib/session.h"
 #include "../src/lib/serialization.h"
 #include "../src/lib/util.h"
+#include "memiostream.h"
 #include <check.h>
 #include <errno.h>
 
@@ -57,8 +57,8 @@ static void setup(void)
     logger_provider = neo4j_std_logger_provider(stderr, NEO4J_LOG_ERROR, 0);
     in_rb = rb_alloc(1024);
     out_rb = rb_alloc(1024);
-    client_ios = neo4j_buffered_iostream(in_rb, out_rb);
-    server_ios = neo4j_buffered_iostream(out_rb, in_rb);
+    client_ios = neo4j_memiostream(in_rb, out_rb);
+    server_ios = neo4j_memiostream(out_rb, in_rb);
 
     stub_factory.tcp_connect = stub_connect;
     config = neo4j_new_config();

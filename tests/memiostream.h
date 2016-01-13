@@ -14,19 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef BUFFERED_IOSTREAM_H
-#define BUFFERED_IOSTREAM_H
+#ifndef MEMIOSTREAM_H
+#define MEMIOSTREAM_H
 
 #include "../src/lib/neo4j-client.h"
 #include "../src/lib/iostream.h"
 #include "../src/lib/ring_buffer.h"
 
-neo4j_iostream_t *neo4j_buffered_iostream(ring_buffer_t *inbuffer,
+neo4j_iostream_t *neo4j_memiostream(ring_buffer_t *inbuffer,
         ring_buffer_t *outbuffer);
 
 static inline neo4j_iostream_t *neo4j_loopback_iostream(ring_buffer_t *buffer)
 {
-    return neo4j_buffered_iostream(buffer, buffer);
+    return neo4j_memiostream(buffer, buffer);
 }
 
-#endif/*BUFFERED_IOSTREAM_H*/
+#endif/*MEMIOSTREAM_H*/

@@ -17,7 +17,7 @@
 #include "../config.h"
 #include "../src/lib/connection.h"
 #include "../src/lib/util.h"
-#include "buffered_iostream.h"
+#include "memiostream.h"
 #include <check.h>
 #include <errno.h>
 
@@ -51,7 +51,7 @@ static void setup(void)
     logger_provider = neo4j_std_logger_provider(stderr, NEO4J_LOG_ERROR, 0);
     in_rb = rb_alloc(1024);
     out_rb = rb_alloc(1024);
-    client_ios = neo4j_buffered_iostream(in_rb, out_rb);
+    client_ios = neo4j_memiostream(in_rb, out_rb);
     ios_close = client_ios->close;
     client_ios->close = ios_noop_close;
 

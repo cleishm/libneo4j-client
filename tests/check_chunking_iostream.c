@@ -18,7 +18,7 @@
 #include "../src/lib/chunking_iostream.h"
 #include "../src/lib/iostream.h"
 #include "../src/lib/util.h"
-#include "buffered_iostream.h"
+#include "memiostream.h"
 #include <check.h>
 #include <errno.h>
 #include <unistd.h>

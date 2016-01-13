@@ -4,10 +4,10 @@ check_libneo4j_client_SOURCES = \
 	${check_libneo4j_client_CHECKS} \
 	check_libneo4j-client.c \
 	check_libneo4j-client_suite.c \
-	buffered_iostream.c \
-	buffered_iostream.h \
 	canned_result_stream.c \
 	canned_result_stream.h \
+	memiostream.c \
+	memiostream.h \
 	memstream.c \
 	memstream.h \
 	util.c \
