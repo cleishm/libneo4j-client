@@ -34,6 +34,7 @@ static ssize_t memios_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t memios_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt);
+static int memios_flush(neo4j_iostream_t *stream);
 static int memios_close(neo4j_iostream_t *stream);
 
 
@@ -55,6 +56,7 @@ neo4j_iostream_t *neo4j_memiostream(ring_buffer_t *inbuffer,
     ios->iostream.readv = memios_readv;
     ios->iostream.write = memios_write;
     ios->iostream.writev = memios_writev;
+    ios->iostream.flush = memios_flush;
     ios->iostream.close = memios_close;
     return (neo4j_iostream_t *)ios;
 }
@@ -137,6 +139,12 @@ ssize_t memios_writev(neo4j_iostream_t *stream,
         written += result;
     }
     return written;
+}
+
+
+int memios_flush(neo4j_iostream_t *stream)
+{
+    return 0;
 }
 
 

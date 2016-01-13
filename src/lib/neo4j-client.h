@@ -302,13 +302,23 @@ struct neo4j_iostream
             const struct iovec *iov, int iovcnt);
 
     /**
+     * Flush the output buffer of the iostream.
+     *
+     * For unbuffered streams, this is a no-op.
+     *
+     * @param [self] This stream.
+     * @return 0 on success, or -1 on error (errno will be set).
+     */
+    int (*flush)(struct neo4j_iostream *self);
+
+    /**
      * Close the stream.
      *
      * This function should close the stream and deallocate memory associated
      * with it.
      *
      * @param [self] This stream.
-     * @return 0 on success, or -1 if an error occurs (errno will be set).
+     * @return 0 on success, or -1 on error (errno will be set).
      */
     int (*close)(struct neo4j_iostream *self);
 };

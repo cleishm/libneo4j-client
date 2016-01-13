@@ -44,6 +44,7 @@ static ssize_t openssl_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t openssl_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt);
+static int openssl_flush(neo4j_iostream_t *stream);
 static int openssl_close(neo4j_iostream_t *stream);
 
 static int iostream_bio_write(BIO *bio, const char *buf, int nbyte);
@@ -105,6 +106,7 @@ neo4j_iostream_t *neo4j_openssl_iostream(neo4j_iostream_t *delegate,
     iostream->readv = openssl_readv;
     iostream->write = openssl_write;
     iostream->writev = openssl_writev;
+    iostream->flush = openssl_flush;
     iostream->close = openssl_close;
     return iostream;
 
@@ -129,6 +131,7 @@ ssize_t openssl_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
         errno = EPIPE;
         return -1;
     }
+    // TODO: check if BIO_read sets errno on error
     return BIO_read(ios->bio, buf, nbyte);
 }
 
@@ -143,6 +146,9 @@ ssize_t openssl_readv(neo4j_iostream_t *stream,
         errno = EPIPE;
         return -1;
     }
+    // TODO: check if BIO_read sets errno on error
+    // TODO: if iovcnt > 1, this will always be a short read, so instead
+    // consider reading entire vector
     return BIO_read(ios->bio, iov[0].iov_base, iov[0].iov_len);
 }
 
@@ -155,6 +161,7 @@ ssize_t openssl_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
         errno = EPIPE;
         return -1;
     }
+    // TODO: check if BIO_write sets errno on error
     return BIO_write(ios->bio, buf, nbyte);
 }
 
@@ -169,9 +176,24 @@ ssize_t openssl_writev(neo4j_iostream_t *stream,
         errno = EPIPE;
         return -1;
     }
+    // TODO: check if BIO_write sets errno on error
+    // TODO: if iovcnt > 1, this will always be a short write, so instead
+    // consider reading entire vector
     return BIO_write(ios->bio, iov[0].iov_base, iov[0].iov_len);
 }
 
+
+int openssl_flush(neo4j_iostream_t *stream)
+{
+    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    if (ios->bio == NULL)
+    {
+        errno = EPIPE;
+        return -1;
+    }
+    // TODO: check if BIO_flush sets errno on error
+    return (BIO_flush(ios->bio) == 1)? 0 : -1;
+}
 
 int openssl_close(neo4j_iostream_t *stream)
 {

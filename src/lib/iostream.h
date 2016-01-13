@@ -185,7 +185,20 @@ int neo4j_ios_nonconst_writev_all(neo4j_iostream_t *ios,
         struct iovec *iov, int iovcnt, size_t *written);
 
 /**
- * Close the iostream
+ * Flush the output buffer of the iostream.
+ *
+ * For unbuffered streams, this is a no-op.
+ *
+ * @param [ios] The iostream to flush.
+ * @return 0 on success, -1 on error (errno will be set).
+ */
+static inline int neo4j_ios_flush(neo4j_iostream_t *ios)
+{
+    return ios->flush(ios);
+}
+
+/**
+ * Close the iostream.
  *
  * @param [ios] The iostream to close. This iostream will be invalid and
  *         potentially deallocated after the function returns, even on error.

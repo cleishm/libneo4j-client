@@ -28,6 +28,7 @@ static ssize_t chunking_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t chunking_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt);
+static int chunking_flush(neo4j_iostream_t *stream);
 static int chunking_close(neo4j_iostream_t *stream);
 static int chunking_dealloc_close(neo4j_iostream_t *stream);
 static int chunk_iovec(const struct iovec *iov, int iovcnt, uint16_t max_chunk,
@@ -88,6 +89,7 @@ neo4j_iostream_t *neo4j_chunking_iostream_init(
     iostream->readv = chunking_readv;
     iostream->write = chunking_write;
     iostream->writev = chunking_writev;
+    iostream->flush = chunking_flush;
     iostream->close = chunking_close;
     return iostream;
 }
@@ -402,6 +404,20 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
 }
 
 
+int chunking_flush(neo4j_iostream_t *stream)
+{
+    struct neo4j_chunking_iostream *ios =
+        (struct neo4j_chunking_iostream *)stream;
+    if (ios->delegate == NULL)
+    {
+        errno = EPIPE;
+        return -1;
+    }
+
+    return neo4j_ios_flush(ios->delegate);
+}
+
+
 int chunking_close(neo4j_iostream_t *stream)
 {
     struct neo4j_chunking_iostream *ios =
@@ -436,14 +452,15 @@ int chunking_close(neo4j_iostream_t *stream)
     iov[iovcnt].iov_len = sizeof(uint16_t);
     iovcnt++;
 
-    if (neo4j_ios_writev_all(ios->delegate, iov, iovcnt, NULL))
+    int result = neo4j_ios_writev_all(ios->delegate, iov, iovcnt, NULL);
+    if (neo4j_ios_flush(ios->delegate) && result == 0)
     {
-        return -1;
+        result = -1;
     }
     ios->snd_buffer = NULL;
     ios->data_sent = false;
     ios->delegate = NULL;
-    return 0;
+    return result;
 }
 
 

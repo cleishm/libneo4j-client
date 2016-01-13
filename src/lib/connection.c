@@ -369,6 +369,11 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
         return -1;
     }
 
+    if (neo4j_ios_flush(iostream))
+    {
+        return -1;
+    }
+
     uint32_t agreed_version;
     ssize_t result = neo4j_ios_read_all(iostream, &agreed_version,
             sizeof(agreed_version), NULL);

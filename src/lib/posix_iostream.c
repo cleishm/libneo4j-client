@@ -38,6 +38,7 @@ static ssize_t posix_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t posix_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, int iovcnt);
+static int posix_flush(neo4j_iostream_t *stream);
 static int posix_close(neo4j_iostream_t *stream);
 
 
@@ -58,6 +59,7 @@ neo4j_iostream_t *neo4j_posix_iostream(int fd)
     iostream->readv = posix_readv;
     iostream->write = posix_write;
     iostream->writev = posix_writev;
+    iostream->flush = posix_flush;
     iostream->close = posix_close;
     return iostream;
 }
@@ -110,6 +112,12 @@ ssize_t posix_writev(neo4j_iostream_t *stream,
         return -1;
     }
     return writev(ios->fd, iov, iovcnt);
+}
+
+
+int posix_flush(neo4j_iostream_t *stream)
+{
+    return 0;
 }
 
 
