@@ -308,8 +308,8 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
     // buffer less than snd_buffer_size data instead
     if (nbytes < ios->snd_buffer_size)
     {
-        ssize_t result = memcpy_iov_s(ios->snd_buffer + ios->snd_buffer_used,
-                iov, iovcnt, USHRT_MAX - ios->snd_buffer_used);
+        size_t result = memcpy_from_iov(ios->snd_buffer + ios->snd_buffer_used,
+                USHRT_MAX - ios->snd_buffer_used, iov, iovcnt);
         assert(result > 0);
         ios->snd_buffer_used += result;
         return result;
@@ -393,9 +393,8 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
     {
         // last chunk is small enough to be buffered
         assert((tail_chunk_voff + 1) < niovcnt);
-        ssize_t result = memcpy_iov_s(ios->snd_buffer,
-                &(diov[tail_chunk_voff + 1]), niovcnt - tail_chunk_voff - 1,
-                USHRT_MAX);
+        ssize_t result = memcpy_from_iov(ios->snd_buffer, USHRT_MAX,
+                &(diov[tail_chunk_voff + 1]), niovcnt - tail_chunk_voff - 1);
         assert(result >= 0);
         ios->snd_buffer_used = result;
         written += result;

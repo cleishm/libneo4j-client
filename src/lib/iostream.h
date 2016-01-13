@@ -89,7 +89,7 @@ int neo4j_ios_readv_all(neo4j_iostream_t *ios,
  *
  * Will return when the buffers are full or when the stream encounters an error.
  *
- * NOTE: this will modify the supplied iovector, even on failure.
+ * NOTE: this will modify the supplied I/O vector, even on failure.
  *
  * @param [ios] The iostream to read from.
  * @param [iov] The vector of buffers to read into (will be modified!).
@@ -172,7 +172,7 @@ int neo4j_ios_writev_all(neo4j_iostream_t *ios,
  * Will return when all data from the vector of buffers has been written or
  * when the stream encounters an error.
  *
- * NOTE: this will modify the supplied iovector, even on failure.
+ * NOTE: this will modify the supplied I/O vector, even on failure.
  *
  * @param [ios] The iostream to write to.
  * @param [iov] The vector of buffers containing data to write.

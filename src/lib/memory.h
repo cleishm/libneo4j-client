@@ -154,7 +154,7 @@ static inline void neo4j_mpool_drain(neo4j_mpool_t *pool)
 }
 
 /**
- * @fn size_t _neo4j_mpool_depth(const neo4j_mpool_t pool)
+ * @fn size_t neo4j_mpool_depth(const neo4j_mpool_t pool)
  * @brief Get the depth of a memory pool.
  * @param [pool] The pool to check the depth of.
  * @return The depth of the pool.

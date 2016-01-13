@@ -346,7 +346,7 @@ size_t memcspn(const void *s, size_t n, const unsigned char *reject,
 }
 
 
-size_t memcspn_ident(const void *s, size_t n)
+size_t memspn_ident(const void *s, size_t n)
 {
     const unsigned char *c = (const unsigned char *)s;
     for (; c < (const unsigned char *)s + n; c++)
@@ -360,27 +360,71 @@ size_t memcspn_ident(const void *s, size_t n)
 }
 
 
-ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, unsigned int iovcnt,
-        size_t dmax)
+size_t memcpy_from_iov(void *dst, size_t n,
+        const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(dst != NULL, -1);
     REQUIRE(iov != NULL, -1);
-    REQUIRE(dmax <= SSIZE_MAX, -1);
 
-    if (iovlen(iov, iovcnt) > dmax)
+    size_t copied = 0;
+    for (unsigned int i = 0; n > 0 && i < iovcnt; ++i)
     {
-        errno = EFAULT;
-        return -1;
+        size_t l = minzu(iov[i].iov_len, n);
+        memcpy((uint8_t *)dst + copied, iov[i].iov_base, l);
+        copied += l;
+        n -= l;
     }
+    return copied;
+}
 
-    size_t n = 0;
-    for (unsigned int i = 0; i < iovcnt; ++i)
+
+size_t memcpy_to_iov(const struct iovec *iov, unsigned int iovcnt,
+        const void *src, size_t n)
+{
+    REQUIRE(iov != NULL, -1);
+    REQUIRE(src != NULL, -1);
+
+    const uint8_t *src_bytes = src;
+    size_t copied = 0;
+    for (; n > 0 && iovcnt > 0; ++iov, --iovcnt)
     {
-        memcpy((uint8_t *)dst + n, iov[i].iov_base, iov[i].iov_len);
-        n += iov[i].iov_len;
+        size_t l = minzu(iov[0].iov_len, n);
+        memcpy(iov[0].iov_base, src_bytes, l);
+        copied += l;
+        src_bytes += l;
+        n -= l;
     }
+    return copied;
+}
 
-    return n;
+
+size_t memcpy_from_iov_to_iov(const struct iovec *diov, unsigned int diovcnt,
+        const struct iovec *siov, unsigned int siovcnt)
+{
+    REQUIRE(diov != NULL, -1);
+    REQUIRE(siov != NULL, -1);
+
+    size_t copied = 0;
+    size_t doffset = 0;
+    for (unsigned int si = 0; si < siovcnt; ++si)
+    {
+        uint8_t *src_bytes = siov[si].iov_base;
+        size_t src_len = siov[si].iov_len;
+        for (; diovcnt > 0; --diovcnt, ++diov, doffset = 0)
+        {
+            size_t l = minzu(diov[0].iov_len - doffset, src_len);
+            memcpy((uint8_t *)diov[0].iov_base + doffset, src_bytes, l);
+            copied += l;
+            src_bytes += l;
+            src_len -= l;
+            if (src_len == 0)
+            {
+                doffset += l;
+                break;
+            }
+        }
+    }
+    return copied;
 }
 
 

@@ -90,9 +90,20 @@ void rb_free(ring_buffer_t *rb);
  * @param [rb] The ring buffer.
  * @param [src] A pointer to memory for appending into the buffer.
  * @param [nbytes] The number of bytes to be appended.
- * @return The number of bytes appended, or -1 on error (errno will be set).
+ * @return The number of bytes appended, which may be 0 if the buffer is full.
  */
-ssize_t rb_append(ring_buffer_t *rb, const void *src, size_t nbytes);
+size_t rb_append(ring_buffer_t *rb, const void *src, size_t nbytes);
+
+/**
+ * Append data to a ring buffer.
+ *
+ * @param [rb] The ring buffer.
+ * @param [iov] A vector of buffers to append from.
+ * @param [iovcnt] The length of the vector.
+ * @return The number of bytes appended, which may be 0 if the buffer is full.
+ */
+size_t rb_appendv(ring_buffer_t *rb,
+        const struct iovec *iov, unsigned int iovcnt);
 
 /**
  * Read bytes from a file descriptor and append to a buffer.
@@ -110,9 +121,20 @@ ssize_t rb_read(ring_buffer_t * rb, int fd, size_t nbytes);
  * @param [rb] The ring buffer.
  * @param [dst] A pointer to a buffer extracted bytes will be copied to.
  * @param [nbytes] The number of bytes to be extracted.
- * @return The number of bytes extracted, or -1 on error (errno will be set).
+ * @return The number of bytes extracted, which may be 0 if the buffer is empty.
  */
-ssize_t rb_extract(ring_buffer_t *rb, void *dst, size_t nbytes);
+size_t rb_extract(ring_buffer_t *rb, void *dst, size_t nbytes);
+
+/**
+ * Extract data from a ring buffer.
+ *
+ * @param [rb] The ring buffer.
+ * @param [iov] A vector of buffers to extract into.
+ * @param [iovcnt] The length of the vector.
+ * @return The number of bytes extracted, which may be 0 if the buffer is empty.
+ */
+size_t rb_extractv(ring_buffer_t *rb,
+        const struct iovec *iov, unsigned int iovcnt);
 
 /**
  * Extract data from a ring buffer and write to a file descriptor.
@@ -125,14 +147,44 @@ ssize_t rb_extract(ring_buffer_t *rb, void *dst, size_t nbytes);
 ssize_t rb_write(ring_buffer_t *rb, int fd, size_t nbytes);
 
 /**
- * Obtain an iovector covering data stored in a ring buffer.
+ * Obtain an I/O vector covering data stored in a ring buffer.
  *
  * @param [rb] The ring buffer.
- * @param [iov] An iovector to be updated.
+ * @param [iov] An I/O vector to be updated.
  * @param [nbytes] The number of bytes to obtain a vector for.
- * @return The number of entries used in the iovector (up to 2).
+ * @return The number of entries used in the I/O vector (up to 2).
  */
-int rb_data_iovec(ring_buffer_t *rb, struct iovec iov[2], size_t nbytes);
+unsigned int rb_data_iovec(ring_buffer_t *rb, struct iovec iov[2],
+        size_t nbytes);
+
+/**
+ * Obtain an I/O vector covering free space in a ring buffer.
+ *
+ * @param [rb] The ring buffer.
+ * @param [iov] An I/O vector to be updated.
+ * @param [nbytes] The number of bytes to obtain a vector for.
+ * @return The number of entries used in the I/O vector (up to 2). Will be 0
+ *         only if the buffer is full.
+ */
+unsigned int rb_space_iovec(ring_buffer_t *rb, struct iovec iov[2],
+        size_t nbytes);
+
+/**
+ * Increase the used space of a buffer.
+ *
+ * @warning This method MUST only be used after writing data into a vector
+ * obtained via `rb_space_iovec(...)`, as it will mark data in the buffer as
+ * valid. If this data isn't first written then it will contain data that is
+ * either random or contains stale content from previous writes to the buffer,
+ * which could have serious security implications.
+ *
+ * @param [rb] The ring buffer.
+ * @param [nbytes] The number of bytes to to advance the buffer, which must
+ *         be the same amount written into the vector obtained from
+ *         `rb_space_iovec(...)`.
+ * @return The number of bytes advanced.
+ */
+size_t rb_advance(ring_buffer_t *rb, size_t nbytes);
 
 /**
  * Discard bytes from a ring buffer.
@@ -141,13 +193,17 @@ int rb_data_iovec(ring_buffer_t *rb, struct iovec iov[2], size_t nbytes);
  * @param [nbytes] The number of bytes to discard.
  * @return The number of bytes discarded.
  */
-ssize_t rb_discard(ring_buffer_t *rb, size_t nbytes);
+size_t rb_discard(ring_buffer_t *rb, size_t nbytes);
 
 /**
  * Clear a ring buffer.
  *
  * @param [rb] The ring buffer.
  */
-void rb_clear(ring_buffer_t *rb);
+static inline void rb_clear(ring_buffer_t *rb)
+{
+    rb->ptr = rb->buffer;
+    rb->used = 0;
+}
 
 #endif/*NEO4J_RING_BUFFER_H*/

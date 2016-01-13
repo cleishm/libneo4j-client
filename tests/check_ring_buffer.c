@@ -40,7 +40,7 @@ static void teardown(void)
 
 START_TEST (test_to_rb_from_memory)
 {
-    ssize_t result = rb_append(rb, sample16, 10);
+    size_t result = rb_append(rb, sample16, 10);
     ck_assert_int_eq(result, 10);
 
     ck_assert_int_eq(rb_used(rb), 10);
@@ -73,6 +73,30 @@ START_TEST (test_to_rb_from_memory_wrapped_around)
     ck_assert(rb_is_full(rb));
 
     ck_assert(memcmp(rb->buffer, "89ABCDE701234567", 16) == 0);
+}
+END_TEST
+
+
+START_TEST (test_to_rb_from_scattered_memory)
+{
+    ck_assert_int_eq(rb_append(rb, sample16, 8), 8);
+    ck_assert_int_eq(rb_discard(rb, 7), 7);
+    ck_assert_int_eq(rb_used(rb), 1);
+
+    struct iovec iov[3];
+    iov[0].iov_base = sample16 + 4;
+    iov[0].iov_len = 5;
+    iov[1].iov_base = sample16;
+    iov[1].iov_len = 4;
+    iov[2].iov_base = sample16 + 9;
+    iov[2].iov_len = 7;
+
+    size_t result = rb_appendv(rb, iov, 3);
+    ck_assert_int_eq(result, 15);
+    ck_assert(!rb_is_empty(rb));
+    ck_assert(rb_is_full(rb));
+
+    ck_assert(memcmp(rb->buffer, "39ABCDE745678012", 16) == 0);
 }
 END_TEST
 
@@ -142,7 +166,7 @@ START_TEST (test_to_memory_from_rb)
     rb_append(rb, sample16, 16);
 
     char outbuf[32];
-    ssize_t result = rb_extract(rb, outbuf, 10);
+    size_t result = rb_extract(rb, outbuf, 10);
     ck_assert_int_eq(result, 10);
 
     ck_assert_int_eq(rb_space(rb), 10);
@@ -167,13 +191,41 @@ START_TEST (test_to_memory_from_rb_wrapped_around)
     ck_assert_int_eq(rb_space(rb), 4);
 
     char outbuf[32];
-    ssize_t result = rb_extract(rb, outbuf, 16);
+    size_t result = rb_extract(rb, outbuf, 16);
     ck_assert_int_eq(result, 12);
 
     ck_assert(rb_is_empty(rb));
     ck_assert(!rb_is_full(rb));
 
     ck_assert(memcmp(outbuf, "ABCDEF012345", 12) == 0);
+}
+END_TEST
+
+
+START_TEST (test_to_scattered_memory_from_rb)
+{
+    rb_append(rb, sample16, 4);
+    rb_append(rb, sample16, 8);
+    rb_discard(rb, 4);
+    rb_append(rb, sample16+8, 8);
+
+    char outbuf[32];
+    struct iovec iov[3];
+    iov[0].iov_base = outbuf+12;
+    iov[0].iov_len = 2;
+    iov[1].iov_base = outbuf+7;
+    iov[1].iov_len = 5;
+    iov[2].iov_base = outbuf;
+    iov[2].iov_len = 7;
+
+    size_t result = rb_extractv(rb, iov, 3);
+    ck_assert_int_eq(result, 14);
+
+    ck_assert_int_eq(rb_space(rb), 14);
+    ck_assert(!rb_is_empty(rb));
+    ck_assert(!rb_is_full(rb));
+
+    ck_assert(memcmp(outbuf, "789ABCD2345601", 14) == 0);
 }
 END_TEST
 
@@ -206,11 +258,32 @@ START_TEST (test_to_fd_from_rb)
 END_TEST
 
 
+START_TEST (test_advance)
+{
+    rb_append(rb, sample16, 12);
+    rb_discard(rb, 4);
+
+    struct iovec iov[2];
+    ck_assert_int_eq(rb_space_iovec(rb, iov, 16), 2);
+    ck_assert_int_eq(iov[0].iov_len, 4);
+    ck_assert_int_eq(iov[1].iov_len, 4);
+
+    memcpy(iov[0].iov_base, sample16, 4);
+    memcpy(iov[1].iov_base, sample16, 2);
+    rb_advance(rb, 6);
+
+    char outbuf[32];
+    ck_assert_int_eq(rb_extract(rb, outbuf, sizeof(outbuf)), 14);
+    ck_assert(memcmp(outbuf, "456789AB012301", 14) == 0);
+}
+END_TEST
+
+
 START_TEST (test_discard)
 {
     rb_append(rb, sample16, 16);
 
-    ssize_t result = rb_discard(rb, 8);
+    size_t result = rb_discard(rb, 8);
     ck_assert_int_eq(result, 8);
 
     char outbuf[32];
@@ -238,11 +311,14 @@ TCase* ring_buffer_tcase(void)
     tcase_add_test(tc, test_to_rb_from_memory);
     tcase_add_test(tc, test_to_rb_from_memory_wrapped_around);
     tcase_add_test(tc, test_to_rb_from_memory_in_center);
+    tcase_add_test(tc, test_to_rb_from_scattered_memory);
     tcase_add_test(tc, test_to_rb_from_fd);
     tcase_add_test(tc, test_return_enobufs_if_full);
     tcase_add_test(tc, test_to_memory_from_rb);
     tcase_add_test(tc, test_to_memory_from_rb_wrapped_around);
+    tcase_add_test(tc, test_to_scattered_memory_from_rb);
     tcase_add_test(tc, test_to_fd_from_rb);
+    tcase_add_test(tc, test_advance);
     tcase_add_test(tc, test_discard);
     tcase_add_test(tc, test_clear);
     return tc;

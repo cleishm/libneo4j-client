@@ -170,7 +170,7 @@ size_t identifier_str(char *buf, size_t n, const neo4j_value_t *value)
     const struct neo4j_string *v = (const struct neo4j_string *)value;
     const char *s = (const char *)v->ustring;
 
-    if (memcspn_ident(s, v->length) < v->length)
+    if (memspn_ident(s, v->length) < v->length)
     {
         return string_str(buf, n, '`', s, v->length);
     }
@@ -191,7 +191,7 @@ ssize_t identifier_fprint(const neo4j_value_t *value, FILE *stream)
     const struct neo4j_string *v = (const struct neo4j_string *)value;
     const char *s = (const char *)v->ustring;
 
-    if (memcspn_ident(s, v->length) < v->length)
+    if (memspn_ident(s, v->length) < v->length)
     {
         return string_fprint(stream, '`', s, v->length);
     }
