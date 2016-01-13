@@ -18,6 +18,7 @@
 #include "network.h"
 #include "logging.h"
 #include "util.h"
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -139,8 +140,9 @@ void set_socket_options(int fd, const neo4j_config_t *config,
 {
     int option;
 
-    if ((option = config->sndbuf_size) > 0)
+    if ((option = config->so_sndbuf_size) > 0)
     {
+        assert(option > 0);
         if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &option, sizeof(int)))
         {
             neo4j_log_warn_errno(logger, "setsockopt");
@@ -148,8 +150,9 @@ void set_socket_options(int fd, const neo4j_config_t *config,
         }
     }
 
-    if ((option = config->rcvbuf_size) > 0)
+    if ((option = config->so_rcvbuf_size) > 0)
     {
+        assert(option > 0);
         if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &option, sizeof(int)))
         {
             neo4j_log_warn_errno(logger, "setsockopt");

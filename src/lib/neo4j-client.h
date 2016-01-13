@@ -969,45 +969,6 @@ void neo4j_config_free(neo4j_config_t *config);
 void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
 
 /**
- * Set a logger provider in the neo4j client configuration.
- *
- * @param [config] The neo4j client configuration to update.
- * @param [logger_provider] The logger provider function.
- */
-void neo4j_config_set_logger_provider(neo4j_config_t *config,
-        struct neo4j_logger_provider *logger_provider);
-
-/**
- * Set a connection factory in the neo4j client configuration.
- *
- * @param [config] The neo4j client configuration to update.
- * @param [factory] The connection factory.
- */
-void neo4j_config_set_connection_factory(neo4j_config_t *config,
-        struct neo4j_connection_factory *factory);
-
-/**
- * The standard connection factory.
- */
-extern struct neo4j_connection_factory neo4j_std_connection_factory;
-
-/*
- * The standard memory allocator.
- *
- * This memory allocator delegates to the system malloc/free functions.
- */
-extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
-
-/**
- * Set a memory allocator in the neo4j client configuration.
- *
- * @param [config] The neo4j client configuration to update.
- * @param [allocator] The memory allocator.
- */
-void neo4j_config_set_memory_allocator(neo4j_config_t *config,
-        struct neo4j_memory_allocator *allocator);
-
-/**
  * Set the username in the neo4j client configuration.
  *
  * @param [config] The neo4j client configuration to update.
@@ -1170,6 +1131,66 @@ typedef int (*neo4j_unverified_host_callback_t)(void *userdata,
 int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
         neo4j_unverified_host_callback_t callback, void *userdata);
 
+/**
+ * Set a logger provider in the neo4j client configuration.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [logger_provider] The logger provider function.
+ */
+void neo4j_config_set_logger_provider(neo4j_config_t *config,
+        struct neo4j_logger_provider *logger_provider);
+
+/**
+ * Set the socket send buffer size.
+ *
+ * This is only applicable to the standard connection factory.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [size] The socket send buffer size, or 0 to use the system default.
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
+ */
+int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
+
+/**
+ * Set the socket receive buffer size.
+ *
+ * This is only applicable to the standard connection factory.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [size] The socket receive buffer size, or 0 to use the system default.
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
+ */
+int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size);
+
+/**
+ * Set a connection factory in the neo4j client configuration.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [factory] The connection factory.
+ */
+void neo4j_config_set_connection_factory(neo4j_config_t *config,
+        struct neo4j_connection_factory *factory);
+
+/**
+ * The standard connection factory.
+ */
+extern struct neo4j_connection_factory neo4j_std_connection_factory;
+
+/*
+ * The standard memory allocator.
+ *
+ * This memory allocator delegates to the system malloc/free functions.
+ */
+extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
+
+/**
+ * Set a memory allocator in the neo4j client configuration.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [allocator] The memory allocator.
+ */
+void neo4j_config_set_memory_allocator(neo4j_config_t *config,
+        struct neo4j_memory_allocator *allocator);
 
 /**
  * Return a path within the neo4j dot directory.

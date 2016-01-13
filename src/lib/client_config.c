@@ -52,8 +52,8 @@ neo4j_config_t *neo4j_new_config()
     config->allocator = &neo4j_std_memory_allocator;
     config->mpool_block_size = 128;
     config->client_id = libneo4j_client_id();
-    config->sndbuf_size = -1;
-    config->rcvbuf_size = -1;
+    config->so_sndbuf_size = 0;
+    config->so_rcvbuf_size = 0;
     config->connect_timeout = 0;
     config->snd_min_chunk_size = 1024;
     config->snd_max_chunk_size = UINT16_MAX;
@@ -133,27 +133,6 @@ void neo4j_config_free(neo4j_config_t *config)
 void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
 {
     config->client_id = client_id;
-}
-
-
-void neo4j_config_set_logger_provider(neo4j_config_t *config,
-        struct neo4j_logger_provider *logger_provider)
-{
-    config->logger_provider = logger_provider;
-}
-
-
-void neo4j_config_set_connection_factory(neo4j_config_t *config,
-        struct neo4j_connection_factory *connection_factory)
-{
-    config->connection_factory = connection_factory;
-}
-
-
-void neo4j_config_set_memory_allocator(neo4j_config_t *config,
-        struct neo4j_memory_allocator *allocator)
-{
-    config->allocator = allocator;
 }
 
 
@@ -265,4 +244,49 @@ size_t default_password_callback(void *userdata, char *buf, size_t n)
 
     memcpy(buf, password, pwlen);
     return pwlen;
+}
+
+
+void neo4j_config_set_logger_provider(neo4j_config_t *config,
+        struct neo4j_logger_provider *logger_provider)
+{
+    config->logger_provider = logger_provider;
+}
+
+
+int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size)
+{
+    if (size > INT_MAX)
+    {
+        errno = ERANGE;
+        return -1;
+    }
+    config->so_sndbuf_size = size;
+    return 0;
+}
+
+
+int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size)
+{
+    if (size > INT_MAX)
+    {
+        errno = ERANGE;
+        return -1;
+    }
+    config->so_rcvbuf_size = size;
+    return 0;
+}
+
+
+void neo4j_config_set_connection_factory(neo4j_config_t *config,
+        struct neo4j_connection_factory *connection_factory)
+{
+    config->connection_factory = connection_factory;
+}
+
+
+void neo4j_config_set_memory_allocator(neo4j_config_t *config,
+        struct neo4j_memory_allocator *allocator)
+{
+    config->allocator = allocator;
 }

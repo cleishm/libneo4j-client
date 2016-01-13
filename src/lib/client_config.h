@@ -33,8 +33,8 @@ struct neo4j_config
 
     const char *client_id;
 
-    int sndbuf_size;
-    int rcvbuf_size;
+    unsigned int so_sndbuf_size;
+    unsigned int so_rcvbuf_size;
     time_t connect_timeout;
 
     uint16_t snd_min_chunk_size;
