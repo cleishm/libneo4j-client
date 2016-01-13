@@ -18,6 +18,7 @@
 #include "posix_iostream.h"
 #include "util.h"
 #include <assert.h>
+#include <limits.h>
 #include <stddef.h>
 #include <unistd.h>
 
@@ -33,11 +34,11 @@ static_assert(offsetof(struct posix_iostream, _iostream) == 0,
 
 static ssize_t posix_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
 static ssize_t posix_readv(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt);
+        const struct iovec *iov, unsigned int iovcnt);
 static ssize_t posix_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t posix_writev(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt);
+        const struct iovec *iov, unsigned int iovcnt);
 static int posix_flush(neo4j_iostream_t *stream);
 static int posix_close(neo4j_iostream_t *stream);
 
@@ -78,13 +79,17 @@ ssize_t posix_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 
 
 ssize_t posix_readv(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     struct posix_iostream *ios = (struct posix_iostream *)stream;
     if (ios->fd < 0)
     {
         errno = EPIPE;
         return -1;
+    }
+    if (iovcnt > INT_MAX)
+    {
+        iovcnt = INT_MAX;
     }
     return readv(ios->fd, iov, iovcnt);
 }
@@ -103,13 +108,17 @@ ssize_t posix_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 
 
 ssize_t posix_writev(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     struct posix_iostream *ios = (struct posix_iostream *)stream;
     if (ios->fd < 0)
     {
         errno = EPIPE;
         return -1;
+    }
+    if (iovcnt > INT_MAX)
+    {
+        iovcnt = INT_MAX;
     }
     return writev(ios->fd, iov, iovcnt);
 }

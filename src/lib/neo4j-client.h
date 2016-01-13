@@ -278,7 +278,7 @@ struct neo4j_iostream
      * @return The bytes read, or -1 on error (errno will be set).
      */
     ssize_t (*readv)(struct neo4j_iostream *self,
-            const struct iovec *iov, int iovcnt);
+            const struct iovec *iov, unsigned int iovcnt);
 
     /**
      * Write bytes to a stream from the supplied buffer.
@@ -299,7 +299,7 @@ struct neo4j_iostream
      * @return The bytes written, or -1 on error (errno will be set).
      */
     ssize_t (*writev)(struct neo4j_iostream *self,
-            const struct iovec *iov, int iovcnt);
+            const struct iovec *iov, unsigned int iovcnt);
 
     /**
      * Flush the output buffer of the iostream.

@@ -49,7 +49,7 @@ static inline ssize_t neo4j_ios_read(neo4j_iostream_t *ios,
  * @return The number of bytes read, or -1 on failure (errno will be set).
  */
 static inline ssize_t neo4j_ios_readv(neo4j_iostream_t *ios,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     return ios->readv(ios, iov, iovcnt);
 }
@@ -82,7 +82,7 @@ int neo4j_ios_read_all(neo4j_iostream_t *ios,
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_ios_readv_all(neo4j_iostream_t *ios,
-        const struct iovec *iov, int iovcnt, size_t *received);
+        const struct iovec *iov, unsigned int iovcnt, size_t *received);
 
 /**
  * Read from an iostream into a vector of buffers until full.
@@ -99,7 +99,7 @@ int neo4j_ios_readv_all(neo4j_iostream_t *ios,
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_ios_nonconst_readv_all(neo4j_iostream_t *ios,
-        struct iovec *iov, int iovcnt, size_t *received);
+        struct iovec *iov, unsigned int iovcnt, size_t *received);
 
 
 /**
@@ -129,7 +129,7 @@ static inline ssize_t neo4j_ios_write(neo4j_iostream_t *ios,
  * @return The number of bytes written, or -1 on failure (errno will be set).
  */
 static inline ssize_t neo4j_ios_writev(neo4j_iostream_t *ios,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     return ios->writev(ios, iov, iovcnt);
 }
@@ -164,7 +164,7 @@ int neo4j_ios_write_all(neo4j_iostream_t *ios,
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_ios_writev_all(neo4j_iostream_t *ios,
-        const struct iovec *iov, int iovcnt, size_t *written);
+        const struct iovec *iov, unsigned int iovcnt, size_t *written);
 
 /**
  * Write all data from a vector of buffers to an iostream.
@@ -182,7 +182,7 @@ int neo4j_ios_writev_all(neo4j_iostream_t *ios,
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_ios_nonconst_writev_all(neo4j_iostream_t *ios,
-        struct iovec *iov, int iovcnt, size_t *written);
+        struct iovec *iov, unsigned int iovcnt, size_t *written);
 
 /**
  * Flush the output buffer of the iostream.

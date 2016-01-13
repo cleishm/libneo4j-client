@@ -146,10 +146,10 @@ static inline unsigned int maxu(unsigned int a, unsigned int b)
 }
 
 
-static inline size_t iovlen(const struct iovec *iov, int iovcnt)
+static inline size_t iovlen(const struct iovec *iov, unsigned int iovcnt)
 {
     size_t total = 0;
-    for (int i = 0; i < iovcnt; ++i)
+    for (unsigned int i = 0; i < iovcnt; ++i)
     {
         total += iov[i].iov_len;
     }
@@ -163,14 +163,14 @@ size_t memcspn(const void *s, size_t n, const unsigned char *reject,
 size_t memcspn_ident(const void *s, size_t n);
 
 
-ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, int iovcnt,
+ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, unsigned int iovcnt,
         size_t dmax);
 
-int iov_skip(struct iovec *diov, int diovcnt,
-        const struct iovec *siov, int siovcnt, size_t nbyte);
+unsigned int iov_skip(struct iovec *diov, const struct iovec *siov,
+        unsigned int siovcnt, size_t nbyte);
 
-int iov_limit(struct iovec *diov, int diovcnt,
-        const struct iovec *siov, int siovcnt, size_t nbyte);
+unsigned int iov_limit(struct iovec *diov, const struct iovec *siov,
+        unsigned int siovcnt, size_t nbyte);
 
 
 #ifndef HAVE_HTOBE64

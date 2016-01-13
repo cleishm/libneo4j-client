@@ -39,11 +39,11 @@ static_assert(offsetof(struct openssl_iostream, _iostream) == 0,
 
 static ssize_t openssl_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
 static ssize_t openssl_readv(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt);
+        const struct iovec *iov, unsigned int iovcnt);
 static ssize_t openssl_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t openssl_writev(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt);
+        const struct iovec *iov, unsigned int iovcnt);
 static int openssl_flush(neo4j_iostream_t *stream);
 static int openssl_close(neo4j_iostream_t *stream);
 
@@ -132,12 +132,13 @@ ssize_t openssl_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
         return -1;
     }
     // TODO: check if BIO_read sets errno on error
-    return BIO_read(ios->bio, buf, nbyte);
+    int len = (nbyte < INT_MAX)? nbyte : INT_MAX;
+    return BIO_read(ios->bio, buf, len);
 }
 
 
 ssize_t openssl_readv(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(iovcnt > 0 && iov[0].iov_len > 0, -1);
     struct openssl_iostream *ios = (struct openssl_iostream *)stream;
@@ -146,10 +147,12 @@ ssize_t openssl_readv(neo4j_iostream_t *stream,
         errno = EPIPE;
         return -1;
     }
+
     // TODO: check if BIO_read sets errno on error
     // TODO: if iovcnt > 1, this will always be a short read, so instead
     // consider reading entire vector
-    return BIO_read(ios->bio, iov[0].iov_base, iov[0].iov_len);
+    int len = (iov[0].iov_len < INT_MAX)? iov[0].iov_len : INT_MAX;
+    return BIO_read(ios->bio, iov[0].iov_base, len);
 }
 
 
@@ -162,12 +165,13 @@ ssize_t openssl_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
         return -1;
     }
     // TODO: check if BIO_write sets errno on error
-    return BIO_write(ios->bio, buf, nbyte);
+    int len = (nbyte < INT_MAX)? nbyte : INT_MAX;
+    return BIO_write(ios->bio, buf, len);
 }
 
 
 ssize_t openssl_writev(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(iovcnt > 0 && iov[0].iov_len > 0, -1);
     struct openssl_iostream *ios = (struct openssl_iostream *)stream;
@@ -179,7 +183,8 @@ ssize_t openssl_writev(neo4j_iostream_t *stream,
     // TODO: check if BIO_write sets errno on error
     // TODO: if iovcnt > 1, this will always be a short write, so instead
     // consider reading entire vector
-    return BIO_write(ios->bio, iov[0].iov_base, iov[0].iov_len);
+    int len = (iov[0].iov_len < INT_MAX)? iov[0].iov_len : INT_MAX;
+    return BIO_write(ios->bio, iov[0].iov_base, len);
 }
 
 

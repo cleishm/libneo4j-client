@@ -65,7 +65,7 @@ int neo4j_ios_read_all(neo4j_iostream_t *stream,
 
 
 int neo4j_ios_readv_all(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt, size_t *received)
+        const struct iovec *iov, unsigned int iovcnt, size_t *received)
 {
     assert(stream != NULL);
     assert(iov != NULL);
@@ -103,7 +103,7 @@ int neo4j_ios_readv_all(neo4j_iostream_t *stream,
     // read isn't complete - duplicate the iovec and do a nonconst read
     struct iovec diov[iovcnt];
 
-    int diovcnt = iov_skip(diov, iovcnt, iov, iovcnt, *received);
+    unsigned int diovcnt = iov_skip(diov, iov, iovcnt, *received);
     assert(diovcnt > 0);
     size_t additional;
     int r = neo4j_ios_nonconst_readv_all(stream, diov, diovcnt, &additional);
@@ -113,7 +113,7 @@ int neo4j_ios_readv_all(neo4j_iostream_t *stream,
 
 
 int neo4j_ios_nonconst_readv_all(neo4j_iostream_t *stream,
-        struct iovec *iov, int iovcnt, size_t *received)
+        struct iovec *iov, unsigned int iovcnt, size_t *received)
 {
     assert(stream != NULL);
     assert(iov != NULL);
@@ -146,7 +146,7 @@ int neo4j_ios_nonconst_readv_all(neo4j_iostream_t *stream,
 
         *received += result;
         assert(*received <= total);
-        iovcnt = iov_skip(iov, iovcnt, iov, iovcnt, result);
+        iovcnt = iov_skip(iov, iov, iovcnt, result);
     } while (iovcnt > 0);
 
     assert(*received == total);
@@ -192,7 +192,7 @@ int neo4j_ios_write_all(neo4j_iostream_t *stream,
 
 
 int neo4j_ios_writev_all(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt, size_t *written)
+        const struct iovec *iov, unsigned int iovcnt, size_t *written)
 {
     assert(stream != NULL);
     assert(iov != NULL);
@@ -226,7 +226,7 @@ int neo4j_ios_writev_all(neo4j_iostream_t *stream,
     struct iovec diov[iovcnt];
 
     assert(*written > 0);
-    int diovcnt = iov_skip(diov, iovcnt, iov, iovcnt, *written);
+    unsigned int diovcnt = iov_skip(diov, iov, iovcnt, *written);
     assert(diovcnt > 0);
     size_t additional;
     int n = neo4j_ios_nonconst_writev_all(stream, diov, diovcnt, &additional);
@@ -236,7 +236,7 @@ int neo4j_ios_writev_all(neo4j_iostream_t *stream,
 
 
 int neo4j_ios_nonconst_writev_all(neo4j_iostream_t *stream,
-        struct iovec *iov, int iovcnt, size_t *written)
+        struct iovec *iov, unsigned int iovcnt, size_t *written)
 {
     assert(stream != NULL);
     assert(iov != NULL);
@@ -264,7 +264,7 @@ int neo4j_ios_nonconst_writev_all(neo4j_iostream_t *stream,
 
         *written += result;
         assert(*written <= total);
-        iovcnt = iov_skip(iov, iovcnt, iov, iovcnt, result);
+        iovcnt = iov_skip(iov, iov, iovcnt, result);
     } while (iovcnt > 0);
 
     assert(*written == total);

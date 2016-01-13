@@ -29,11 +29,11 @@ struct memiostream {
 
 static ssize_t memios_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
 static ssize_t memios_readv(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt);
+        const struct iovec *iov, unsigned int iovcnt);
 static ssize_t memios_write(neo4j_iostream_t *stream,
         const void *buf, size_t nbyte);
 static ssize_t memios_writev(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt);
+        const struct iovec *iov, unsigned int iovcnt);
 static int memios_flush(neo4j_iostream_t *stream);
 static int memios_close(neo4j_iostream_t *stream);
 
@@ -75,7 +75,7 @@ ssize_t memios_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 
 
 ssize_t memios_readv(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     struct memiostream *ios = (struct memiostream *)stream;
     if (ios->inbuffer == NULL)
@@ -85,7 +85,7 @@ ssize_t memios_readv(neo4j_iostream_t *stream,
     }
 
     ssize_t received = 0;
-    for (int i = 0; i < iovcnt; ++i)
+    for (unsigned int i = 0; i < iovcnt; ++i)
     {
         uint8_t *base = iov[i].iov_base;
         size_t len = iov[i].iov_len;
@@ -118,7 +118,7 @@ ssize_t memios_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 
 
 ssize_t memios_writev(neo4j_iostream_t *stream,
-        const struct iovec *iov, int iovcnt)
+        const struct iovec *iov, unsigned int iovcnt)
 {
     struct memiostream *ios = (struct memiostream *)stream;
     if (ios->outbuffer == NULL)
@@ -128,7 +128,7 @@ ssize_t memios_writev(neo4j_iostream_t *stream,
     }
 
     ssize_t written = 0;
-    for (int i = 0; i < iovcnt; ++i)
+    for (unsigned int i = 0; i < iovcnt; ++i)
     {
         ssize_t result = rb_append(ios->outbuffer,
                 iov[i].iov_base, iov[i].iov_len);

@@ -360,12 +360,11 @@ size_t memcspn_ident(const void *s, size_t n)
 }
 
 
-ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, int iovcnt,
+ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, unsigned int iovcnt,
         size_t dmax)
 {
     REQUIRE(dst != NULL, -1);
     REQUIRE(iov != NULL, -1);
-    REQUIRE(iovcnt >= 0, -1);
     REQUIRE(dmax <= SSIZE_MAX, -1);
 
     if (iovlen(iov, iovcnt) > dmax)
@@ -375,7 +374,7 @@ ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, int iovcnt,
     }
 
     size_t n = 0;
-    for (int i = 0; i < iovcnt; ++i)
+    for (unsigned int i = 0; i < iovcnt; ++i)
     {
         memcpy((uint8_t *)dst + n, iov[i].iov_base, iov[i].iov_len);
         n += iov[i].iov_len;
@@ -385,34 +384,28 @@ ssize_t memcpy_iov_s(void *dst, const struct iovec *iov, int iovcnt,
 }
 
 
-int iov_skip(struct iovec *diov, int diovcnt,
-        const struct iovec *siov, int siovcnt, size_t nbyte)
+unsigned int iov_skip(struct iovec *diov, const struct iovec *siov,
+        unsigned int iovcnt, size_t nbyte)
 {
     REQUIRE(diov != NULL, -1);
     REQUIRE(siov != NULL, -1);
-    REQUIRE(nbyte == 0 || siovcnt > 0, -1);
+    REQUIRE(nbyte == 0 || iovcnt > 0, -1);
 
     // find the first source iovector that should be used
-    int si = 0;
-    while (si < siovcnt && nbyte >= siov[si].iov_len)
+    unsigned int si = 0;
+    while (si < iovcnt && nbyte >= siov[si].iov_len)
     {
         nbyte -= siov[si].iov_len;
         si++;
     }
 
-    if (si == siovcnt && nbyte > 0)
+    if (si == iovcnt && nbyte > 0)
     {
         return 0;
     }
 
-    if (siovcnt - si > diovcnt)
-    {
-        errno = EFAULT;
-        return -1;
-    }
-
     // if necessary, find offset into first source iovector
-    int di = 0;
+    unsigned int di = 0;
     if (nbyte > 0)
     {
         diov[0].iov_base = ((uint8_t *)(siov[si].iov_base)) + nbyte;
@@ -422,14 +415,13 @@ int iov_skip(struct iovec *diov, int diovcnt,
     }
 
     // copy remaining iovectors unchanged
-    for (; si < siovcnt; di++, si++)
+    for (; si < iovcnt; di++, si++)
     {
         if (siov[si].iov_len == 0)
         {
             si++;
             continue;
         }
-        assert(di < diovcnt);
         diov[di] = siov[si];
     }
 
@@ -437,8 +429,8 @@ int iov_skip(struct iovec *diov, int diovcnt,
 }
 
 
-int iov_limit(struct iovec *diov, int diovcnt,
-        const struct iovec *siov, int siovcnt, size_t nbyte)
+unsigned int iov_limit(struct iovec *diov, const struct iovec *siov,
+        unsigned int iovcnt, size_t nbyte)
 {
     REQUIRE(diov != NULL, -1);
     REQUIRE(siov != NULL, -1);
@@ -446,13 +438,14 @@ int iov_limit(struct iovec *diov, int diovcnt,
     {
         return 0;
     }
-    REQUIRE(siovcnt > 0, -1);
+    REQUIRE(iovcnt > 0, -1);
 
     // copy whole iovectors first
-    int si = 0;
-    int di = 0;
-    while (si < siovcnt && di < diovcnt && nbyte >= siov[si].iov_len)
+    unsigned int si = 0;
+    unsigned int di = 0;
+    while (si < iovcnt && nbyte >= siov[si].iov_len)
     {
+        assert(di < iovcnt);
         if (siov[si].iov_len == 0)
         {
             si++;
@@ -465,14 +458,10 @@ int iov_limit(struct iovec *diov, int diovcnt,
     }
 
     // offset into remaining iovector
-    if (si < siovcnt && nbyte > 0)
+    if (si < iovcnt && nbyte > 0)
     {
-        if (di == diovcnt)
-        {
-            errno = EFAULT;
-            return -1;
-        }
         assert(nbyte < siov[si].iov_len);
+        assert(di < iovcnt);
         diov[di].iov_base = siov[si].iov_base;
         diov[di].iov_len = nbyte;
         di++;
