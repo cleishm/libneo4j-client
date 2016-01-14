@@ -64,7 +64,7 @@ endif
 endif
 
 libneo4j_client_la_CFLAGS = @PTHREAD_CFLAGS@ @OPENSSL_CFLAGS@ -Wpedantic
-libneo4j_client_la_LDFLAGS = -version-info 1:0:0
+libneo4j_client_la_LDFLAGS = -version-info 2:0:0
 libneo4j_client_la_LIBADD = @PTHREAD_LIBS@ @OPENSSL_LIBS@
 
 cli_parser.c: cli_parser_leg.c
