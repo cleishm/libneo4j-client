@@ -16,7 +16,6 @@
  */
 #include "../../config.h"
 #include "interactive.h"
-#include "util.h"
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -74,19 +73,19 @@ int interact(shell_state_t *state,
             const char *entry = temp_copy(state, input, end - input);
             if (entry == NULL)
             {
-                print_errno(state->err, "unexpected error", errno);
+                neo4j_perror(state->err, errno, "unexpected error");
                 goto cleanup;
             }
             HistEvent ev;
             if (history(el_history, &ev, H_ENTER, entry) < 0)
             {
-                print_errno(state->err, "unexpected error", errno);
+                neo4j_perror(state->err, errno, "unexpected error");
                 goto cleanup;
             }
             if (state->histfile != NULL &&
                     history(el_history, &ev, H_SAVE, state->histfile) < 0)
             {
-                print_errno(state->err, "unexpected error", errno);
+                neo4j_perror(state->err, errno, "unexpected error");
                 goto cleanup;
             }
         }
@@ -96,7 +95,7 @@ int interact(shell_state_t *state,
             char *buffer = temp_copy(state, end, (input + length - 1) - end);
             if (buffer == NULL)
             {
-                print_errno(state->err, "unexpected error", errno);
+                neo4j_perror(state->err, errno, "unexpected error");
                 goto cleanup;
             }
             el_push(el, buffer);
@@ -129,7 +128,7 @@ int editline_setup(shell_state_t *state, EditLine **el, History **el_history)
     *el = el_init(state->prog_name, state->in, state->out, state->err);
     if (*el == NULL)
     {
-        print_errno(state->err, "failed to initialize editline", errno);
+        neo4j_perror(state->err, errno, "failed to initialize editline");
         return -1;
     }
     el_set(*el, EL_CLIENTDATA, state);
@@ -139,7 +138,7 @@ int editline_setup(shell_state_t *state, EditLine **el, History **el_history)
     *el_history = history_init();
     if (*el_history == NULL)
     {
-        print_errno(state->err, "failed to initialize history", errno);
+        neo4j_perror(state->err, errno, "failed to initialize history");
         return -1;
     }
     HistEvent ev;
@@ -183,7 +182,7 @@ int setup_history(shell_state_t *state, History *el_history)
     }
     if (neo4j_mkdir_p(dir))
     {
-        print_errno(state->err, "failed to create history file", errno);
+        neo4j_perror(state->err, errno, "failed to create history file");
         return -1;
     }
 
@@ -192,13 +191,13 @@ int setup_history(shell_state_t *state, History *el_history)
     {
         if (errno != ENOENT)
         {
-            print_errno(state->err, "failed to load history", errno);
+            neo4j_perror(state->err, errno, "failed to load history");
             return -1;
         }
 
         if (history(el_history, &ev, H_SAVE, state->histfile) < 0)
         {
-            print_errno(state->err, "failed to create history file", errno);
+            neo4j_perror(state->err, errno, "failed to create history file");
             return -1;
         }
     }
@@ -278,7 +277,7 @@ int process_input(shell_state_t *state,
                 &start, &length, &complete);
         if (n < 0)
         {
-            print_errno(state->err, "unexpected error", errno);
+            neo4j_perror(state->err, errno, "unexpected error");
             return -1;
         }
         if (n == 0 || !complete)
@@ -289,7 +288,7 @@ int process_input(shell_state_t *state,
         const char *directive = temp_copy(state, start, length);
         if (directive == NULL)
         {
-            print_errno(state->err, "unexpected error", errno);
+            neo4j_perror(state->err, errno, "unexpected error");
             return -1;
         }
 

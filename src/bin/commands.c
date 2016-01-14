@@ -17,7 +17,6 @@
 #include "../../config.h"
 #include "commands.h"
 #include "render.h"
-#include "util.h"
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -89,7 +88,7 @@ int db_connect(shell_state_t *state, const char *args)
     char *uri_string = strndup(s, n);
     if (uri_string == NULL)
     {
-        print_errno(state->err, "unexpected error", errno);
+        neo4j_perror(state->err, errno, "unexpected error");
         return -1;
     }
 
@@ -117,7 +116,7 @@ int db_connect(shell_state_t *state, const char *args)
     neo4j_session_t *session = neo4j_new_session(connection);
     if (session == NULL)
     {
-        print_errno(state->err, "failed to create new session", errno);
+        neo4j_perror(state->err, errno, "failed to create new session");
         neo4j_close(connection);
         goto cleanup;
     }

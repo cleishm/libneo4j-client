@@ -20,7 +20,6 @@
 #include "interactive.h"
 #include "render.h"
 #include "state.h"
-#include "util.h"
 #include "verification.h"
 #include <errno.h>
 #include <getopt.h>
@@ -111,7 +110,7 @@ int main(int argc, char *argv[])
     config = neo4j_new_config();
     if (config == NULL)
     {
-        print_errno(state.err, "unexpected error", errno);
+        neo4j_perror(state.err, errno, "unexpected error");
         goto cleanup;
     }
     state.config = config;
@@ -120,8 +119,8 @@ int main(int argc, char *argv[])
     char histfile[PATH_MAX];
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
     {
-        print_errno(state.err, "unexpected error",
-                (errno == ERANGE)? ENAMETOOLONG : errno);
+        neo4j_perror(state.err, (errno == ERANGE)? ENAMETOOLONG : errno,
+                "unexpected error");
         goto cleanup;
     }
     state.histfile = histfile;
@@ -147,7 +146,7 @@ int main(int argc, char *argv[])
         case KNOWN_HOSTS_OPT:
             if (neo4j_config_set_known_hosts_file(config, optarg))
             {
-                print_errno(state.err, "unexpected error", errno);
+                neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
             break;
@@ -182,7 +181,7 @@ int main(int argc, char *argv[])
     provider = neo4j_std_logger_provider(state.err, log_level, logger_flags);
     if (provider == NULL)
     {
-        print_errno(state.err, "unexpected error", errno);
+        neo4j_perror(state.err, errno, "unexpected error");
         goto cleanup;
     }
 

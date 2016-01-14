@@ -16,7 +16,6 @@
  */
 #include "../../config.h"
 #include "batch.h"
-#include "util.h"
 #include <errno.h>
 #include <neo4j-client.h>
 
@@ -37,7 +36,7 @@ int batch(shell_state_t *state,
                 &start, &length, &complete);
         if (n < 0)
         {
-            print_errno(state->err, "unexpected error", errno);
+            neo4j_perror(state->err, errno, "unexpected error");
             goto cleanup;
         }
         if (n == 0 || !complete)
@@ -48,7 +47,7 @@ int batch(shell_state_t *state,
         const char *directive = temp_copy(state, start, length);
         if (directive == NULL)
         {
-            print_errno(state->err, "unexpected error", errno);
+            neo4j_perror(state->err, errno, "unexpected error");
             goto cleanup;
         }
 

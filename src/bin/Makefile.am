@@ -11,8 +11,6 @@ neo4j_client_SOURCES = neo4j-client.c \
 	render.h \
 	state.c \
 	state.h \
-	util.c \
-	util.h \
 	verification.c \
 	verification.h
 neo4j_client_CPPFLAGS = -I${top_builddir}/src/lib
