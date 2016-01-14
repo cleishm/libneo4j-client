@@ -208,6 +208,22 @@ START_TEST (test_job_returns_results_and_completes)
 END_TEST
 
 
+START_TEST (test_job_can_close_immediately_after_fetch)
+{
+    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", NULL, 0);
+    ck_assert_ptr_ne(results, NULL);
+    ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
+
+    queue_run_success(server_ios); // RUN
+    queue_record(server_ios); // PULL_ALL
+    queue_pull_all_success(server_ios); // PULL_ALL
+
+    ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
+    ck_assert_int_eq(neo4j_close_results(results), 0);
+}
+END_TEST
+
+
 START_TEST (test_job_returns_run_metadata)
 {
     neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", NULL, 0);
@@ -352,6 +368,7 @@ TCase* job_tcase(void)
     TCase *tc = tcase_create("job");
     tcase_add_checked_fixture(tc, setup, teardown);
     tcase_add_test(tc, test_job_returns_results_and_completes);
+    tcase_add_test(tc, test_job_can_close_immediately_after_fetch);
     tcase_add_test(tc, test_job_returns_run_metadata);
     tcase_add_test(tc, test_job_returns_failure_when_statement_fails);
     tcase_add_test(tc, test_job_returns_failure_during_streaming);

@@ -417,9 +417,9 @@ int run_rs_close(neo4j_result_stream_t *self)
         results->session = NULL;
     }
 
-    if (results->last_fetched)
+    if (results->last_fetched != NULL)
     {
-        result_record_release(results->records);
+        result_record_release(results->last_fetched);
         results->last_fetched = NULL;
     }
     while (results->records != NULL)
