@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "connection.h"
+#include "buffering_iostream.h"
 #include "chunking_iostream.h"
 #include "client_config.h"
 #include "deserialization.h"
@@ -294,6 +295,17 @@ neo4j_iostream_t *std_tcp_connect(struct neo4j_connection_factory *factory,
 #endif
     }
 #endif
+
+    if (config->io_sndbuf_size > 0 || config->io_rcvbuf_size > 0)
+    {
+        neo4j_iostream_t *buffering_ios = neo4j_buffering_iostream(ios, true,
+                config->io_sndbuf_size, config->io_rcvbuf_size);
+        if (buffering_ios == NULL)
+        {
+            goto failure;
+        }
+        ios = buffering_ios;
+    }
 
     return ios;
 

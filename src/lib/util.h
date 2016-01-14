@@ -355,10 +355,14 @@ size_t memcpy_from_iov_to_iov(const struct iovec *diov,
 /**
  * Copy an I/O vector, skipping a given number of preceeding bytes.
  *
+ * The source and destination vector may refer to the same memory, in
+ * which case the modification is done in place.
+ *
  * @param [diov] The destination I/O vector.
  * @param [siov] The source I/O vector.
  * @param [iovcnt] The size of the vectors.
  * @param [nbyte] The number of bytes to skip.
+ * @return The size of the output vector.
  */
 unsigned int iov_skip(struct iovec *diov, const struct iovec *siov,
         unsigned int iovcnt, size_t nbyte);
@@ -370,6 +374,7 @@ unsigned int iov_skip(struct iovec *diov, const struct iovec *siov,
  * @param [siov] The source I/O vector.
  * @param [iovcnt] The size of the vectors.
  * @param [nbyte] The number of bytes to limit to.
+ * @return The size of the output vector.
  */
 unsigned int iov_limit(struct iovec *diov, const struct iovec *siov,
         unsigned int siovcnt, size_t nbyte);
@@ -385,7 +390,7 @@ unsigned int iov_limit(struct iovec *diov, const struct iovec *siov,
 #  elif HAVE_BSWAP_64
 #    define htobe64(l) bswap_64(l)
 #  else
-#    error "No htobe64 or altnerative"
+#    error "No htobe64 or alternative"
 #  endif
 #endif
 
@@ -399,7 +404,7 @@ unsigned int iov_limit(struct iovec *diov, const struct iovec *siov,
 #  elif HAVE_BSWAP_64
 #    define be64toh(l) bswap_64(l)
 #  else
-#    error "No be64toh or altnerative"
+#    error "No be64toh or alternative"
 #  endif
 #endif
 

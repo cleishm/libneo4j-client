@@ -1132,6 +1132,24 @@ int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
         neo4j_unverified_host_callback_t callback, void *userdata);
 
 /**
+ * Set the I/O output buffer size.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [size] The I/O output buffer size.
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
+ */
+int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
+
+/**
+ * Set the I/O input buffer size.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [size] The I/O input buffer size.
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
+ */
+int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size);
+
+/**
  * Set a logger provider in the neo4j client configuration.
  *
  * @param [config] The neo4j client configuration to update.

@@ -52,9 +52,8 @@ neo4j_config_t *neo4j_new_config()
     config->allocator = &neo4j_std_memory_allocator;
     config->mpool_block_size = 128;
     config->client_id = libneo4j_client_id();
-    config->so_sndbuf_size = 0;
-    config->so_rcvbuf_size = 0;
-    config->connect_timeout = 0;
+    config->io_rcvbuf_size = 4096;
+    config->io_sndbuf_size = 4096;
     config->snd_min_chunk_size = 1024;
     config->snd_max_chunk_size = UINT16_MAX;
     config->session_request_queue_size = 256;
@@ -244,6 +243,20 @@ size_t default_password_callback(void *userdata, char *buf, size_t n)
 
     memcpy(buf, password, pwlen);
     return pwlen;
+}
+
+
+int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size)
+{
+    config->io_sndbuf_size = size;
+    return 0;
+}
+
+
+int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size)
+{
+    config->io_rcvbuf_size = size;
+    return 0;
 }
 
 

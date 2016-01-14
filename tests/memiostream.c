@@ -84,24 +84,7 @@ ssize_t memios_readv(neo4j_iostream_t *stream,
         return -1;
     }
 
-    ssize_t received = 0;
-    for (unsigned int i = 0; i < iovcnt; ++i)
-    {
-        uint8_t *base = iov[i].iov_base;
-        size_t len = iov[i].iov_len;
-        while (len > 0)
-        {
-            ssize_t result = rb_extract(ios->inbuffer, base, len);
-            if (result <= 0)
-            {
-                return (received > 0)? received : result;
-            }
-            assert((size_t)result <= len);
-            received += result;
-            len -= result;
-        }
-    }
-    return received;
+    return rb_extractv(ios->inbuffer, iov, iovcnt);
 }
 
 
@@ -127,18 +110,7 @@ ssize_t memios_writev(neo4j_iostream_t *stream,
         return -1;
     }
 
-    ssize_t written = 0;
-    for (unsigned int i = 0; i < iovcnt; ++i)
-    {
-        ssize_t result = rb_append(ios->outbuffer,
-                iov[i].iov_base, iov[i].iov_len);
-        if (result < 0)
-        {
-            return (written > 0)? written : result;
-        }
-        written += result;
-    }
-    return written;
+    return rb_appendv(ios->outbuffer, iov, iovcnt);
 }
 
 
