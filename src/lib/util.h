@@ -19,6 +19,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -40,7 +41,7 @@
  * Ensure the condition is true, or return the specified result value.
  */
 #define REQUIRE(cond, res) \
-    if (!(cond)) { errno = EINVAL; return res; }
+    if (!(cond)) { errno = EINVAL; return (res); }
 
 
 /**
@@ -181,7 +182,7 @@ char *strcat_alloc(const char *s1, const char *s2);
  * @return `true` if the array contains any `NULL` pointer, and false if
  *         none are `NULL`.
  */
-#define contains_null(ptr, n) _contains_null((void **)ptr, n)
+#define contains_null(ptr, n) _contains_null((void **)(ptr), (n))
 static inline bool _contains_null(void *ptrs[], int n)
 {
     for (int i = 0; i < n; ++i)
@@ -266,6 +267,15 @@ static inline size_t maxzu(size_t a, size_t b)
 {
     return (a >= b)? a : b;
 }
+
+
+#ifndef IOV_MAX
+#  ifdef UIO_MAXIOV
+#    define IOV_MAX UIO_MAXIOV
+#  else
+#    define IOV_MAX 1024
+#  endif
+#endif
 
 
 /**

@@ -190,6 +190,10 @@ ssize_t chunking_readv(neo4j_iostream_t *stream,
     {
         return chunking_read(stream, iov[0].iov_base, iov[0].iov_len);
     }
+    else if (iovcnt > IOV_MAX-1)
+    {
+        iovcnt = IOV_MAX-1;
+    }
 
     REQUIRE(iov != NULL, -1);
     struct neo4j_chunking_iostream *ios =
@@ -284,7 +288,6 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(iov != NULL, -1);
-    REQUIRE(iovcnt > 0, -1);
     struct neo4j_chunking_iostream *ios =
         (struct neo4j_chunking_iostream *)stream;
     if (ios->delegate == NULL)
@@ -297,8 +300,18 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
     // chunk length markers, accounting for data already buffered
     size_t nbytes = ios->snd_buffer_used;
     unsigned int nchunks;
-    unsigned int niovcnt = chunk_iovec(iov, iovcnt,
-            ios->snd_max_chunk, &nbytes, &nchunks);
+    unsigned int niovcnt;
+
+    for (;;)
+    {
+        niovcnt = chunk_iovec(iov, iovcnt, ios->snd_max_chunk,
+                &nbytes, &nchunks);
+        if (niovcnt <= IOV_MAX)
+        {
+            break;
+        }
+        --iovcnt;
+    }
 
     if (nbytes == 0)
     {

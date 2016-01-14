@@ -501,7 +501,7 @@ union _neo4j_value_data
 struct neo4j_value
 {
     uint8_t _vt_off;
-    uint8_t _type; // TODO: combine with _vt_off? (both always have same value)
+    uint8_t _type; /*TODO: combine with _vt_off? (both always have same value)*/
     uint16_t _pad1;
     uint32_t _pad2;
     union _neo4j_value_data _vdata;

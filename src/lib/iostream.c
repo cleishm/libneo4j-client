@@ -72,7 +72,7 @@ int neo4j_ios_readv_all(neo4j_iostream_t *stream,
     assert(iovcnt > 0);
     ENSURE_NOT_NULL(size_t, received, 0);
     size_t total = iovlen(iov, iovcnt);
-    if (total > SSIZE_MAX)
+    if (total > SSIZE_MAX || iovcnt > IOV_MAX)
     {
         errno = EMSGSIZE;
         return -1;
@@ -199,7 +199,7 @@ int neo4j_ios_writev_all(neo4j_iostream_t *stream,
     assert(iovcnt > 0);
     ENSURE_NOT_NULL(size_t, written, 0);
     size_t total = iovlen(iov, iovcnt);
-    if (total > SSIZE_MAX)
+    if (total > SSIZE_MAX || iovcnt > IOV_MAX)
     {
         errno = EMSGSIZE;
         return -1;

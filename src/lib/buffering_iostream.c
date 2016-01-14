@@ -16,7 +16,6 @@
  */
 #include "../../config.h"
 #include "buffering_iostream.h"
-#include "limits.h"
 #include "ring_buffer.h"
 #include "util.h"
 #include <assert.h>
@@ -169,6 +168,10 @@ ssize_t buffering_readv(neo4j_iostream_t *stream,
     {
         return neo4j_ios_readv(ios->delegate, iov, iovcnt);
     }
+    if (iovcnt > IOV_MAX-2)
+    {
+        iovcnt = IOV_MAX-2;
+    }
 
     size_t nbyte = iovlen(iov, iovcnt);
 
@@ -278,6 +281,10 @@ ssize_t buffering_writev(neo4j_iostream_t *stream,
     if (ios->sndbuf == NULL)
     {
         return neo4j_ios_writev(ios->delegate, iov, iovcnt);
+    }
+    if (iovcnt > IOV_MAX-2)
+    {
+        iovcnt = IOV_MAX-2;
     }
 
     size_t nbyte = iovlen(iov, iovcnt);
