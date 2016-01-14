@@ -57,7 +57,7 @@ START_TEST (server_refuses_handshake)
 {
     neo4j_iostream_t *ios = neo4j_openssl_iostream(sink, "", 7687, config, 0);
     ck_assert(ios == NULL);
-    ck_assert_int_eq(errno, NEO4J_TLS_NO_SERVER_SUPPORT);
+    ck_assert_int_eq(errno, NEO4J_NO_SERVER_TLS_SUPPORT);
 }
 END_TEST
 

@@ -107,16 +107,27 @@ int db_connect(shell_state_t *state, const char *args)
         neo4j_connect(uri_string, state->config, state->connect_flags);
     if (connection == NULL)
     {
-        char ebuf[512];
-        fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
-                neo4j_strerror(errno, ebuf, sizeof(ebuf)));
+        if (errno == NEO4J_NO_SERVER_TLS_SUPPORT)
+        {
+            fprintf(state->err, "connection to '%s' failed: A secure"
+                    " connection could not be esablished (try --insecure)\n",
+                    uri_string);
+        }
+        else
+        {
+            char ebuf[512];
+            fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
+                    neo4j_strerror(errno, ebuf, sizeof(ebuf)));
+        }
         goto cleanup;
     }
 
     neo4j_session_t *session = neo4j_new_session(connection);
     if (session == NULL)
     {
-        neo4j_perror(state->err, errno, "failed to create new session");
+        char ebuf[512];
+        fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
+                neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         neo4j_close(connection);
         goto cleanup;
     }

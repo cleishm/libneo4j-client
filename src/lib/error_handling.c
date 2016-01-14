@@ -68,8 +68,10 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Library has not been compiled with TLS support";
     case NEO4J_TLS_VERIFICATION_FAILED:
         return "Authenticity of the server cannot be established";
-    case NEO4J_TLS_NO_SERVER_SUPPORT:
+    case NEO4J_NO_SERVER_TLS_SUPPORT:
         return "Server does not support TLS";
+    case NEO4J_SERVER_REQUIRES_SECURE_CONNECTION:
+        return "Server requires a secure connection";
     case NEO4J_INVALID_MAP_KEY_TYPE:
         return "Map contains key of non-String type";
     case NEO4J_INVALID_LABEL_TYPE:

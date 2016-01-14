@@ -159,7 +159,7 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
     {
         if (result == 0)
         {
-            errno = NEO4J_TLS_NO_SERVER_SUPPORT;
+            errno = NEO4J_NO_SERVER_TLS_SUPPORT;
             goto failure;
         }
         errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);

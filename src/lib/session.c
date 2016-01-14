@@ -20,6 +20,7 @@
 #include "iostream.h"
 #include "memory.h"
 #include "messages.h"
+#include "metadata.h"
 #include "serialization.h"
 #include "util.h"
 #include <assert.h>
@@ -462,16 +463,55 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 {
     assert(cdata != NULL);
     neo4j_session_t *session = (neo4j_session_t *)cdata;
-    if (type != NEO4J_SUCCESS_MESSAGE)
+
+    if (type == NEO4J_SUCCESS_MESSAGE)
+    {
+        return 0;
+    }
+
+    if (type != NEO4J_FAILURE_MESSAGE)
     {
         neo4j_log_error(session->logger,
                 "unexpected %s message received in %p"
                 " (expected SUCCESS in response to INIT)",
-                neo4j_message_type_str(type), session);
+                neo4j_message_type_str(type), (void *)session);
         errno = EPROTO;
         return -1;
     }
-    return 0;
+
+    // handle failure
+    char description[128];
+    snprintf(description, sizeof(description),
+            "FAILURE message received in %p (in response to INIT)",
+            (void *)session);
+    const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+            description, session->logger);
+    if (metadata == NULL)
+    {
+        return -1;
+    }
+
+    const neo4j_config_t *config = session->config;
+    const char *code;
+    const char *message;
+    neo4j_mpool_t mpool =
+        neo4j_mpool(config->allocator, config->mpool_block_size);
+    if (neo4j_meta_failure_details(&code, &message, *metadata, &mpool,
+                description, session->logger))
+    {
+        return -1;
+    }
+
+    if (strcmp(code, "Neo.ClientError.Security.EncryptionRequired") == 0)
+    {
+        errno = NEO4J_SERVER_REQUIRES_SECURE_CONNECTION;
+        return -1;
+    }
+
+    neo4j_log_error(session->logger, "session initalization failed: %s",
+            message);
+    errno = NEO4J_UNEXPECTED_ERROR;
+    return -1;
 }
 
 
