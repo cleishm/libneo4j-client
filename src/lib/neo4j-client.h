@@ -115,9 +115,6 @@ const char *libneo4j_client_id(void);
  * This function should be invoked once per application including the neo4j
  * client library.
  *
- * NOTE: when compiled with GCC, this method is automatically invoked when
- * the shared library is loaded.
- *
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_client_init(void);
@@ -128,9 +125,6 @@ int neo4j_client_init(void);
  *
  * Whilst it is not necessary to call this function, it can be useful
  * for clearing any allocated memory when testing with tools such as valgrind.
- *
- * NOTE: when compiled with GCC, this method is automatically invoked when
- * the shared library is unloaded.
  *
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
