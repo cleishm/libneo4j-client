@@ -62,6 +62,8 @@ neo4j> :help
 :help                  Show usage information
 :output (table|csv)    Set the output format
 :width <n>             Set the number of columns in the table output
+neo4j>
+neo4j>
 neo4j> MATCH (n:Person) RETURN n LIMIT 3;
 +----------------------------------------------------------------------------+
 | n                                                                          |
@@ -110,34 +112,38 @@ Example
 #include <errno.h>
 #include <stdio.h>
 
-static void error(const char *msg);
-
 int main(int argc, char *argv[])
 {
     neo4j_client_init();
 
-    neo4j_connection_t *connection = neo4j_connect("neo4j://localhost:7687", NULL, 0);
+    /* use NEO4J_INSECURE when connecting to disable TLS */
+    neo4j_connection_t *connection =
+        neo4j_connect("neo4j://localhost:7687", NULL, NEO4J_INSECURE);
     if (connection == NULL)
     {
-        error("Connection failed");
+        neo4j_perror(stderr, errno, "Connection failed");
+        return EXIT_FAILURE;
     }
 
     neo4j_session_t *session = neo4j_new_session(connection);
     if (session == NULL)
     {
-        error("Failed to start session");
+        neo4j_perror(stderr, errno, "Failed to start session");
+        return EXIT_FAILURE;
     }
 
     neo4j_result_stream_t *results = neo4j_run(session, "RETURN 'hello world'", NULL, 0);
     if (results == NULL)
     {
-        error("Failed to run statement");
+        neo4j_perror(stderr, errno, "Failed to run statement");
+        return EXIT_FAILURE;
     }
 
     neo4j_result_t *result = neo4j_fetch_next(results);
     if (results == NULL)
     {
-        error("Failed to fetch result");
+        neo4j_perror(stderr, errno, "Failed to fetch result");
+        return EXIT_FAILURE;
     }
 
     neo4j_value_t value = neo4j_result_field(result, 0);
@@ -148,13 +154,7 @@ int main(int argc, char *argv[])
     neo4j_end_session(session);
     neo4j_close(connection);
     neo4j_client_cleanup();
-}
-
-void error(const char *msg)
-{
-    char ebuf[256];
-    fprintf(stderr, "%s: %s\n", msg, neo4j_strerror(errno, ebuf, sizeof(ebuf)));
-    exit(1);
+    return EXIT_SUCCESS;
 }
 ```
 
