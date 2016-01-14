@@ -34,6 +34,13 @@ check_libneo4j_client_CHECKS = \
 	check_util.c \
 	check_values.c
 
+if WITH_TLS
+if HAVE_OPENSSL
+check_libneo4j_client_CHECKS += \
+	check_openssl.c
+endif
+endif
+
 check_libneo4j-client_suite.c: ${check_libneo4j_client_CHECKS}
 	@(names=`for check in $^; do \
 		basename $$check .c | sed -e 's/^check_//'; \

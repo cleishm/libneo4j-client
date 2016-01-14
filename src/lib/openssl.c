@@ -154,8 +154,14 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
         goto failure;
     }
 
-    if (BIO_do_handshake(ssl_bio) != 1)
+    int result = BIO_do_handshake(ssl_bio);
+    if (result != 1)
     {
+        if (result == 0)
+        {
+            errno = NEO4J_TLS_NO_SERVER_SUPPORT;
+            goto failure;
+        }
         errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);
         goto failure;
     }
@@ -432,7 +438,7 @@ int openssl_error(neo4j_logger_t *logger, uint_fast8_t level,
 
     char ebuf[256];
     ERR_error_string_n(code, ebuf, sizeof(ebuf));
-    neo4j_log(logger, level, "OpenSSL error: %d:%s:%s:%s", code,
+    neo4j_log(logger, level, "OpenSSL error: %lu:%s:%s:%s", code,
             ERR_lib_error_string(code),
             ERR_func_error_string(code),
             ERR_reason_error_string(code));

@@ -57,6 +57,7 @@ int main(void)
     printf("CHECK_TEMPDIR=\"%s\"%s\n", tdir,
             (tmpdir_buf[0] == '\0')? "" : " (autocleaned)");
 
+    neo4j_client_init();
 
     int number_failed;
     Suite *s = libneo4j_client_suite();
@@ -64,6 +65,8 @@ int main(void)
     srunner_run_all(sr, CK_NORMAL);
     number_failed = srunner_ntests_failed(sr);
     srunner_free(sr);
+
+    neo4j_client_cleanup();
 
     if (tmpdir_buf[0] != '\0')
     {

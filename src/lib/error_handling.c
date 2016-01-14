@@ -65,9 +65,11 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
     case NEO4J_STATEMENT_PREVIOUS_FAILURE:
         return "Statement ignored due to previously failed request";
     case NEO4J_TLS_NOT_SUPPORTED:
-        return "Neo4j client library has not been compiled with TLS support";
+        return "Library has not been compiled with TLS support";
     case NEO4J_TLS_VERIFICATION_FAILED:
         return "Authenticity of the server cannot be established";
+    case NEO4J_TLS_NO_SERVER_SUPPORT:
+        return "Server does not support TLS";
     case NEO4J_INVALID_MAP_KEY_TYPE:
         return "Map contains key of non-String type";
     case NEO4J_INVALID_LABEL_TYPE:
