@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>libneo4j-client-0.5.0: neo4j-client.h File Reference</title>
+<title>libneo4j-client-0.4.0: neo4j-client.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.5.0
+   <div id="projectname">libneo4j-client-0.4.0
    </div>
   </td>
  </tr>
@@ -131,9 +131,6 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a240d4df083636b4f4129812ac0a188fa"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a240d4df083636b4f4129812ac0a188fa">neo4j_log_level_str</a> (uint_fast8_t level)</td></tr>
 <tr class="memdesc:a240d4df083636b4f4129812ac0a188fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">The name for the logging level.  <a href="#a240d4df083636b4f4129812ac0a188fa">More...</a><br /></td></tr>
 <tr class="separator:a240d4df083636b4f4129812ac0a188fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3d194764ed4a57f014104edec1893b9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ab3d194764ed4a57f014104edec1893b9">neo4j_perror</a> (FILE *stream, int errnum, const char *message)</td></tr>
-<tr class="memdesc:ab3d194764ed4a57f014104edec1893b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Print the error message corresponding to an error number.  <a href="#ab3d194764ed4a57f014104edec1893b9">More...</a><br /></td></tr>
-<tr class="separator:ab3d194764ed4a57f014104edec1893b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9504ad227134450386d8dbb4a1564e78"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9504ad227134450386d8dbb4a1564e78">neo4j_strerror</a> (int errnum, char *buf, size_t buflen)</td></tr>
 <tr class="memdesc:a9504ad227134450386d8dbb4a1564e78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Look up the error message corresponding to an error number.  <a href="#a9504ad227134450386d8dbb4a1564e78">More...</a><br /></td></tr>
 <tr class="separator:a9504ad227134450386d8dbb4a1564e78"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -207,29 +204,17 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memdesc:abd93649d77302127e586c720515a0bc6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constrct a neo4j map entry.  <a href="#abd93649d77302127e586c720515a0bc6">More...</a><br /></td></tr>
 <tr class="separator:abd93649d77302127e586c720515a0bc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a3a7540e3fd7b11a966e8578ea5f96b"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a4a3a7540e3fd7b11a966e8578ea5f96b">neo4j_node_labels</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:a4a3a7540e3fd7b11a966e8578ea5f96b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the label list of a neo4j node.  <a href="#a4a3a7540e3fd7b11a966e8578ea5f96b">More...</a><br /></td></tr>
+<tr class="memdesc:a4a3a7540e3fd7b11a966e8578ea5f96b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the label list from a neo4j node.  <a href="#a4a3a7540e3fd7b11a966e8578ea5f96b">More...</a><br /></td></tr>
 <tr class="separator:a4a3a7540e3fd7b11a966e8578ea5f96b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3d64538b6a7888dd936e5fe88d8cb70"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#af3d64538b6a7888dd936e5fe88d8cb70">neo4j_node_properties</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:af3d64538b6a7888dd936e5fe88d8cb70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the property map of a neo4j node.  <a href="#af3d64538b6a7888dd936e5fe88d8cb70">More...</a><br /></td></tr>
+<tr class="memdesc:af3d64538b6a7888dd936e5fe88d8cb70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the property map from a neo4j node.  <a href="#af3d64538b6a7888dd936e5fe88d8cb70">More...</a><br /></td></tr>
 <tr class="separator:af3d64538b6a7888dd936e5fe88d8cb70"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac97b563057a9dc119fa20f7665a20e31"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ac97b563057a9dc119fa20f7665a20e31">neo4j_node_identity</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:ac97b563057a9dc119fa20f7665a20e31"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the identity of a neo4j node.  <a href="#ac97b563057a9dc119fa20f7665a20e31">More...</a><br /></td></tr>
-<tr class="separator:ac97b563057a9dc119fa20f7665a20e31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a137bda2240f5e2bd5c7656442f5a4ac1"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a137bda2240f5e2bd5c7656442f5a4ac1">neo4j_relationship_type</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:a137bda2240f5e2bd5c7656442f5a4ac1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the type of a neo4j relationship.  <a href="#a137bda2240f5e2bd5c7656442f5a4ac1">More...</a><br /></td></tr>
+<tr class="memdesc:a137bda2240f5e2bd5c7656442f5a4ac1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the type from a neo4j relationship.  <a href="#a137bda2240f5e2bd5c7656442f5a4ac1">More...</a><br /></td></tr>
 <tr class="separator:a137bda2240f5e2bd5c7656442f5a4ac1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b74df795648127583f122411b88c0a2"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a1b74df795648127583f122411b88c0a2">neo4j_relationship_properties</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:a1b74df795648127583f122411b88c0a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the property map of a neo4j relationship.  <a href="#a1b74df795648127583f122411b88c0a2">More...</a><br /></td></tr>
+<tr class="memdesc:a1b74df795648127583f122411b88c0a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the property map from a neo4j relationship.  <a href="#a1b74df795648127583f122411b88c0a2">More...</a><br /></td></tr>
 <tr class="separator:a1b74df795648127583f122411b88c0a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2fd233cc5fe6188e0cfdd96734bbbbf3"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a2fd233cc5fe6188e0cfdd96734bbbbf3">neo4j_relationship_identity</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:a2fd233cc5fe6188e0cfdd96734bbbbf3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the identity of a neo4j relationship.  <a href="#a2fd233cc5fe6188e0cfdd96734bbbbf3">More...</a><br /></td></tr>
-<tr class="separator:a2fd233cc5fe6188e0cfdd96734bbbbf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3168e6dd5ee474f45d24058b8fb0f66e"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a3168e6dd5ee474f45d24058b8fb0f66e">neo4j_relationship_start_node_identity</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:a3168e6dd5ee474f45d24058b8fb0f66e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the start node identity for a neo4j relationship.  <a href="#a3168e6dd5ee474f45d24058b8fb0f66e">More...</a><br /></td></tr>
-<tr class="separator:a3168e6dd5ee474f45d24058b8fb0f66e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94c7ddaaf29ea0a5cd16936fa105f40c"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a94c7ddaaf29ea0a5cd16936fa105f40c">neo4j_relationship_end_node_identity</a> (neo4j_value_t value)</td></tr>
-<tr class="memdesc:a94c7ddaaf29ea0a5cd16936fa105f40c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the end node identity for a neo4j relationship.  <a href="#a94c7ddaaf29ea0a5cd16936fa105f40c">More...</a><br /></td></tr>
-<tr class="separator:a94c7ddaaf29ea0a5cd16936fa105f40c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42bba3e04a6d840e0ee3b67574233f8c"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a42bba3e04a6d840e0ee3b67574233f8c">neo4j_path_length</a> (neo4j_value_t value)</td></tr>
 <tr class="memdesc:a42bba3e04a6d840e0ee3b67574233f8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the length of a neo4j path.  <a href="#a42bba3e04a6d840e0ee3b67574233f8c">More...</a><br /></td></tr>
 <tr class="separator:a42bba3e04a6d840e0ee3b67574233f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -248,6 +233,15 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a7b44aae989a6301439bc83bb0638bc2d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7b44aae989a6301439bc83bb0638bc2d">neo4j_config_set_client_id</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *client_id)</td></tr>
 <tr class="memdesc:a7b44aae989a6301439bc83bb0638bc2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the client ID.  <a href="#a7b44aae989a6301439bc83bb0638bc2d">More...</a><br /></td></tr>
 <tr class="separator:a7b44aae989a6301439bc83bb0638bc2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afcceee55bfca787c5aaa78dacc40962d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#afcceee55bfca787c5aaa78dacc40962d">neo4j_config_set_logger_provider</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__logger__provider.html">neo4j_logger_provider</a> *logger_provider)</td></tr>
+<tr class="memdesc:afcceee55bfca787c5aaa78dacc40962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a logger provider in the neo4j client configuration.  <a href="#afcceee55bfca787c5aaa78dacc40962d">More...</a><br /></td></tr>
+<tr class="separator:afcceee55bfca787c5aaa78dacc40962d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9e3bb0c589a04d2935b0cf0b93c29b09">neo4j_config_set_connection_factory</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connection_factory</a> *factory)</td></tr>
+<tr class="memdesc:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a connection factory in the neo4j client configuration.  <a href="#a9e3bb0c589a04d2935b0cf0b93c29b09">More...</a><br /></td></tr>
+<tr class="separator:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a08c1b1ab2c98a1c3c9bc4ede181ad61a">neo4j_config_set_memory_allocator</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__memory__allocator.html">neo4j_memory_allocator</a> *allocator)</td></tr>
+<tr class="memdesc:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a memory allocator in the neo4j client configuration.  <a href="#a08c1b1ab2c98a1c3c9bc4ede181ad61a">More...</a><br /></td></tr>
+<tr class="separator:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b314a005997c9ee7137a256157ee9fb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7b314a005997c9ee7137a256157ee9fb">neo4j_config_set_username</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *username)</td></tr>
 <tr class="memdesc:a7b314a005997c9ee7137a256157ee9fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the username in the neo4j client configuration.  <a href="#a7b314a005997c9ee7137a256157ee9fb">More...</a><br /></td></tr>
 <tr class="separator:a7b314a005997c9ee7137a256157ee9fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -278,27 +272,6 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a42d38599eecccaf1527277341e35d923"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a42d38599eecccaf1527277341e35d923">neo4j_config_set_unverified_host_callback</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, <a class="el" href="neo4j-client_8h.html#a954aab71776ba3e9397d08454ba831db">neo4j_unverified_host_callback_t</a> callback, void *userdata)</td></tr>
 <tr class="memdesc:a42d38599eecccaf1527277341e35d923"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the unverified host callback.  <a href="#a42d38599eecccaf1527277341e35d923">More...</a><br /></td></tr>
 <tr class="separator:a42d38599eecccaf1527277341e35d923"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f99e23ed5b344a1a5f9ad51942f85db"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a1f99e23ed5b344a1a5f9ad51942f85db">neo4j_config_set_sndbuf_size</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, size_t size)</td></tr>
-<tr class="memdesc:a1f99e23ed5b344a1a5f9ad51942f85db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the I/O output buffer size.  <a href="#a1f99e23ed5b344a1a5f9ad51942f85db">More...</a><br /></td></tr>
-<tr class="separator:a1f99e23ed5b344a1a5f9ad51942f85db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3d473884e515e78189003d0d03d8b92e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a3d473884e515e78189003d0d03d8b92e">neo4j_config_set_rcvbuf_size</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, size_t size)</td></tr>
-<tr class="memdesc:a3d473884e515e78189003d0d03d8b92e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the I/O input buffer size.  <a href="#a3d473884e515e78189003d0d03d8b92e">More...</a><br /></td></tr>
-<tr class="separator:a3d473884e515e78189003d0d03d8b92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcceee55bfca787c5aaa78dacc40962d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#afcceee55bfca787c5aaa78dacc40962d">neo4j_config_set_logger_provider</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__logger__provider.html">neo4j_logger_provider</a> *logger_provider)</td></tr>
-<tr class="memdesc:afcceee55bfca787c5aaa78dacc40962d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a logger provider in the neo4j client configuration.  <a href="#afcceee55bfca787c5aaa78dacc40962d">More...</a><br /></td></tr>
-<tr class="separator:afcceee55bfca787c5aaa78dacc40962d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c77e2cd377fda0514b7b6a4e3cad2cb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a4c77e2cd377fda0514b7b6a4e3cad2cb">neo4j_config_set_so_sndbuf_size</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, unsigned int size)</td></tr>
-<tr class="memdesc:a4c77e2cd377fda0514b7b6a4e3cad2cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the socket send buffer size.  <a href="#a4c77e2cd377fda0514b7b6a4e3cad2cb">More...</a><br /></td></tr>
-<tr class="separator:a4c77e2cd377fda0514b7b6a4e3cad2cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0b44dcd3b6bb042c4a95be5ea7a69be"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#aa0b44dcd3b6bb042c4a95be5ea7a69be">neo4j_config_set_so_rcvbuf_size</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, unsigned int size)</td></tr>
-<tr class="memdesc:aa0b44dcd3b6bb042c4a95be5ea7a69be"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the socket receive buffer size.  <a href="#aa0b44dcd3b6bb042c4a95be5ea7a69be">More...</a><br /></td></tr>
-<tr class="separator:aa0b44dcd3b6bb042c4a95be5ea7a69be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9e3bb0c589a04d2935b0cf0b93c29b09">neo4j_config_set_connection_factory</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connection_factory</a> *factory)</td></tr>
-<tr class="memdesc:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a connection factory in the neo4j client configuration.  <a href="#a9e3bb0c589a04d2935b0cf0b93c29b09">More...</a><br /></td></tr>
-<tr class="separator:a9e3bb0c589a04d2935b0cf0b93c29b09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a08c1b1ab2c98a1c3c9bc4ede181ad61a">neo4j_config_set_memory_allocator</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, struct <a class="el" href="structneo4j__memory__allocator.html">neo4j_memory_allocator</a> *allocator)</td></tr>
-<tr class="memdesc:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a memory allocator in the neo4j client configuration.  <a href="#a08c1b1ab2c98a1c3c9bc4ede181ad61a">More...</a><br /></td></tr>
-<tr class="separator:a08c1b1ab2c98a1c3c9bc4ede181ad61a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a78490836844104fdf4877eb93e89c860"><td class="memItemLeft" align="right" valign="top">ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a78490836844104fdf4877eb93e89c860">neo4j_dot_dir</a> (char *buffer, size_t n, const char *append)</td></tr>
 <tr class="memdesc:a78490836844104fdf4877eb93e89c860"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a path within the neo4j dot directory.  <a href="#a78490836844104fdf4877eb93e89c860">More...</a><br /></td></tr>
 <tr class="separator:a78490836844104fdf4877eb93e89c860"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -428,9 +401,6 @@ Variables</h2></td></tr>
 <tr class="memitem:a4ee80898235fd5b985b66f95256cafe8"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a4ee80898235fd5b985b66f95256cafe8">NEO4J_PATH</a></td></tr>
 <tr class="memdesc:a4ee80898235fd5b985b66f95256cafe8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The neo4j path value type.  <a href="#a4ee80898235fd5b985b66f95256cafe8">More...</a><br /></td></tr>
 <tr class="separator:a4ee80898235fd5b985b66f95256cafe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add980ee1efad88733a6586f0b7f49beb"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#add980ee1efad88733a6586f0b7f49beb">NEO4J_IDENTITY</a></td></tr>
-<tr class="memdesc:add980ee1efad88733a6586f0b7f49beb"><td class="mdescLeft">&#160;</td><td class="mdescRight">The neo4j identity value type.  <a href="#add980ee1efad88733a6586f0b7f49beb">More...</a><br /></td></tr>
-<tr class="separator:add980ee1efad88733a6586f0b7f49beb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a46210f793cefbe6936e91f88392635"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1a46210f793cefbe6936e91f88392635"></a>
 const neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a1a46210f793cefbe6936e91f88392635">neo4j_null</a></td></tr>
 <tr class="memdesc:a1a46210f793cefbe6936e91f88392635"><td class="mdescLeft">&#160;</td><td class="mdescRight">The neo4j null value. <br /></td></tr>
@@ -554,7 +524,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Bool. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the boolean. </dd></dl>
 
 </div>
 </div>
@@ -906,6 +876,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Cleanup after use of the neo4j client library. </p>
 <p>Whilst it is not necessary to call this function, it can be useful for clearing any allocated memory when testing with tools such as valgrind.</p>
+<p>NOTE: when compiled with GCC, this method is automatically invoked when the shared library is unloaded.</p>
 <dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
 
 </div>
@@ -926,6 +897,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Initialize the neo4j client library. </p>
 <p>This function should be invoked once per application including the neo4j client library.</p>
+<p>NOTE: when compiled with GCC, this method is automatically invoked when the shared library is loaded.</p>
 <dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
 
 </div>
@@ -1213,152 +1185,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
     <tr><td class="paramname">[password]</td><td>The password to authenticate with. The string will be duplicated, and thus may point to temporary memory. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a3d473884e515e78189003d0d03d8b92e"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int neo4j_config_set_rcvbuf_size </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
-          <td class="paramname"><em>config</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>size</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set the I/O input buffer size. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[size]</td><td>The I/O input buffer size. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a1f99e23ed5b344a1a5f9ad51942f85db"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int neo4j_config_set_sndbuf_size </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
-          <td class="paramname"><em>config</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>size</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set the I/O output buffer size. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[size]</td><td>The I/O output buffer size. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="aa0b44dcd3b6bb042c4a95be5ea7a69be"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int neo4j_config_set_so_rcvbuf_size </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
-          <td class="paramname"><em>config</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>size</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set the socket receive buffer size. </p>
-<p>This is only applicable to the standard connection factory.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[size]</td><td>The socket receive buffer size, or 0 to use the system default. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a4c77e2cd377fda0514b7b6a4e3cad2cb"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int neo4j_config_set_so_sndbuf_size </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
-          <td class="paramname"><em>config</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>size</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Set the socket send buffer size. </p>
-<p>This is only applicable to the standard connection factory.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[size]</td><td>The socket send buffer size, or 0 to use the system default. </td></tr>
   </table>
   </dd>
 </dl>
@@ -2002,7 +1828,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Float. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the double. </dd></dl>
 
 </div>
 </div>
@@ -2089,7 +1915,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Int. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the integer. </dd></dl>
 
 </div>
 </div>
@@ -2176,7 +2002,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the List. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the list. </dd></dl>
 
 </div>
 </div>
@@ -2300,7 +2126,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Map. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the map. </dd></dl>
 
 </div>
 </div>
@@ -2536,31 +2362,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
-<a class="anchor" id="ac97b563057a9dc119fa20f7665a20e31"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">neo4j_value_t neo4j_node_identity </td>
-          <td>(</td>
-          <td class="paramtype">neo4j_value_t&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the identity of a neo4j node. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[value]</td><td>The neo4j node. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Identity of the node. </dd></dl>
-
-</div>
-</div>
 <a class="anchor" id="a4a3a7540e3fd7b11a966e8578ea5f96b"></a>
 <div class="memitem">
 <div class="memproto">
@@ -2575,7 +2376,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Return the label list of a neo4j node. </p>
+<p>Return the label list from a neo4j node. </p>
 <p>Note that the result is undefined if the value is not of type NEO4J_NODE.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -2583,7 +2384,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the List of labels. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the list of labels. </dd></dl>
 
 </div>
 </div>
@@ -2601,7 +2402,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Return the property map of a neo4j node. </p>
+<p>Return the property map from a neo4j node. </p>
 <p>Note that the result is undefined if the value is not of type NEO4J_NODE.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -2609,7 +2410,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Map of properties. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the map of properties. </dd></dl>
 
 </div>
 </div>
@@ -2690,7 +2491,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value enconding the Node. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value enconding the node. </dd></dl>
 
 </div>
 </div>
@@ -2734,7 +2535,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value enconding the Relationship. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value enconding the relationship. </dd></dl>
 
 </div>
 </div>
@@ -2765,98 +2566,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
-<a class="anchor" id="ab3d194764ed4a57f014104edec1893b9"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void neo4j_perror </td>
-          <td>(</td>
-          <td class="paramtype">FILE *&#160;</td>
-          <td class="paramname"><em>stream</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>errnum</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>message</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Print the error message corresponding to an error number. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[stream]</td><td>The stream to write to. </td></tr>
-    <tr><td class="paramname">[errnum]</td><td>The error number. </td></tr>
-    <tr><td class="paramname">[message]</td><td><code>NULL</code>, or a pointer to a message string which will be prepend to the error message, separated by a colon and space. </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a class="anchor" id="a94c7ddaaf29ea0a5cd16936fa105f40c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">neo4j_value_t neo4j_relationship_end_node_identity </td>
-          <td>(</td>
-          <td class="paramtype">neo4j_value_t&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the end node identity for a neo4j relationship. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[value]</td><td>The neo4j relationship. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Identity of the end node. </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a2fd233cc5fe6188e0cfdd96734bbbbf3"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">neo4j_value_t neo4j_relationship_identity </td>
-          <td>(</td>
-          <td class="paramtype">neo4j_value_t&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the identity of a neo4j relationship. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[value]</td><td>The neo4j relationship. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Identity of the relationship. </dd></dl>
-
-</div>
-</div>
 <a class="anchor" id="a1b74df795648127583f122411b88c0a2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -2871,7 +2580,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Return the property map of a neo4j relationship. </p>
+<p>Return the property map from a neo4j relationship. </p>
 <p>Note that the result is undefined if the value is not of type NEO4J_RELATIONSHIP.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -2879,32 +2588,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Map of properties. </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a3168e6dd5ee474f45d24058b8fb0f66e"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">neo4j_value_t neo4j_relationship_start_node_identity </td>
-          <td>(</td>
-          <td class="paramtype">neo4j_value_t&#160;</td>
-          <td class="paramname"><em>value</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Return the start node identity for a neo4j relationship. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[value]</td><td>The neo4j relationship. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the Identity of the start node. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the map of properties. </dd></dl>
 
 </div>
 </div>
@@ -2922,7 +2606,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Return the type of a neo4j relationship. </p>
+<p>Return the type from a neo4j relationship. </p>
 <p>Note that the result is undefined if the value is not of type NEO4J_RELATIONSHIP.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -3352,7 +3036,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the String. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the string. </dd></dl>
 
 </div>
 </div>
@@ -3629,7 +3313,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the String. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>A neo4j value encoding the string. </dd></dl>
 
 </div>
 </div>
@@ -3686,20 +3370,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>The neo4j float value type. </p>
-
-</div>
-</div>
-<a class="anchor" id="add980ee1efad88733a6586f0b7f49beb"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">const <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a> NEO4J_IDENTITY</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>The neo4j identity value type. </p>
 
 </div>
 </div>
