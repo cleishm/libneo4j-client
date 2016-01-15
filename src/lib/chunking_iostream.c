@@ -211,10 +211,20 @@ ssize_t chunking_readv(neo4j_iostream_t *stream,
     }
 
     // duplicate the iovector, as it will be modified
-    struct iovec diov[iovcnt];
+    ALLOC_IOVEC(diov, iovcnt);
+    if (diov == NULL)
+    {
+        return -1;
+    }
     memcpy(diov, iov, iovcnt * sizeof(struct iovec));
 
-    struct iovec riov[iovcnt + 1];
+    ALLOC_IOVEC(riov, iovcnt+1);
+    if (riov == NULL)
+    {
+        FREE_IOVEC(diov);
+        return -1;
+    }
+
     uint16_t length;
     ssize_t received = 0;
     do
@@ -243,14 +253,14 @@ ssize_t chunking_readv(neo4j_iostream_t *stream,
             received += minzu(result, total);
             ios->rcv_errno = errno;
             ios->rcv_chunk_remaining = -1;
-            return received;
+            goto cleanup;
         }
 
         if (result <= (size_t)ios->rcv_chunk_remaining)
         {
             received += result;
             ios->rcv_chunk_remaining -= result;
-            return received;
+            goto cleanup;
         }
 
         // we received a complete chunk and the next chunk length
@@ -262,12 +272,18 @@ ssize_t chunking_readv(neo4j_iostream_t *stream,
         if (length == 0)
         {
             ios->rcv_chunk_remaining = -1;
-            return received;
+            goto cleanup;
         }
 
         ios->rcv_chunk_remaining = ntohs(length);
     } while (iovcnt > 0);
 
+    int errsv;
+cleanup:
+    errsv = errno;
+    FREE_IOVEC(diov);
+    FREE_IOVEC(riov);
+    errno = errsv;
     return received;
 }
 
@@ -331,7 +347,11 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
     // create a new iovec and populate
     // note: every chunk but the last must be snd_max_chunk in size, thus
     // we can reuse the 2 byte length in several iovectors
-    struct iovec diov[niovcnt];
+    ALLOC_IOVEC(diov, niovcnt);
+    if (diov == NULL)
+    {
+        return -1;
+    }
     uint16_t full_chunk_len = htons(ios->snd_max_chunk);
     uint16_t tail_len = ((nbytes - 1) % ios->snd_max_chunk) + 1;
     uint16_t tail_chunk_len = htons(tail_len);
@@ -388,6 +408,7 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
     size_t written;
     if (neo4j_ios_writev_all(ios->delegate, diov, tail_chunk_voff, &written))
     {
+        FREE_IOVEC(diov);
         return -1;
     }
     ios->data_sent = true;
@@ -413,6 +434,7 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
         written += result;
     }
     assert((size_t)written == nbytes);
+    FREE_IOVEC(diov);
     return written;
 }
 

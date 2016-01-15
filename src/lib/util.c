@@ -316,7 +316,11 @@ struct memcspn_index
 size_t memcspn(const void *s, size_t n, const unsigned char *reject,
         size_t rlen)
 {
-    STATIC_THREAD_LOCAL struct memcspn_index index = { .marker = UCHAR_MAX };
+#ifdef THREAD_LOCAL
+    static THREAD_LOCAL struct memcspn_index index = { .marker = UCHAR_MAX };
+#else
+    struct memcspn_index index = { .marker = UCHAR_MAX };
+#endif
 
     if (index.marker == UCHAR_MAX)
     {

@@ -184,23 +184,36 @@ ssize_t buffering_readv(neo4j_iostream_t *stream,
 
     nbyte -= extracted;
 
-    struct iovec diov[iovcnt+2];
+    ALLOC_IOVEC(diov, iovcnt+2);
+    if (diov == NULL)
+    {
+        return (extracted > 0)? (ssize_t)extracted : -1;
+    }
     unsigned int diovcnt = iov_skip(diov, iov, iovcnt, extracted);
 
     diovcnt += rb_space_iovec(ios->rcvbuf, diov + diovcnt,
             rb_size(ios->rcvbuf));
 
-    ssize_t n = neo4j_ios_readv(ios->delegate, diov, diovcnt);
-    if (n < 0)
+    ssize_t result = neo4j_ios_readv(ios->delegate, diov, diovcnt);
+    if (result < 0)
     {
-        return (extracted > 0)? (ssize_t)extracted : -1;
+        result = (extracted > 0)? (ssize_t)extracted : -1;
+        goto cleanup;
     }
-    if ((size_t)n <= nbyte)
+    if ((size_t)result <= nbyte)
     {
-        return extracted + (size_t)n;
+        result += extracted;
+        goto cleanup;
     }
-    rb_advance(ios->rcvbuf, n - nbyte);
-    return extracted + nbyte;
+    rb_advance(ios->rcvbuf, result - nbyte);
+    result = extracted + nbyte;
+
+    int errsv;
+cleanup:
+    errsv = errno;
+    FREE_IOVEC(diov);
+    errno = errsv;
+    return result;
 }
 
 
@@ -296,7 +309,11 @@ ssize_t buffering_writev(neo4j_iostream_t *stream,
 
     size_t buffered = rb_used(ios->sndbuf);
 
-    struct iovec diov[iovcnt+2];
+    ALLOC_IOVEC(diov, iovcnt+2);
+    if (diov == NULL)
+    {
+        return -1;
+    }
     unsigned int diovcnt = rb_data_iovec(ios->sndbuf, diov,
             rb_size(ios->sndbuf));
     memcpy(diov+diovcnt, iov, iovcnt * sizeof(struct iovec));
@@ -304,7 +321,7 @@ ssize_t buffering_writev(neo4j_iostream_t *stream,
     ssize_t written = neo4j_ios_writev(ios->delegate, diov, diovcnt + iovcnt);
     if (written < 0)
     {
-        return -1;
+        goto cleanup;
     }
 
     if ((size_t)written < buffered)
@@ -324,11 +341,18 @@ ssize_t buffering_writev(neo4j_iostream_t *stream,
 
     if (diovcnt == 0)
     {
-        return nbyte;
+        written = nbyte;
+        goto cleanup;
     }
 
-    size_t appended = rb_appendv(ios->sndbuf, diov, diovcnt);
-    return (size_t)written + appended;
+    written += rb_appendv(ios->sndbuf, diov, diovcnt);
+
+    int errsv;
+cleanup:
+    errsv = errno;
+    FREE_IOVEC(diov);
+    errno = errsv;
+    return written;
 }
 
 

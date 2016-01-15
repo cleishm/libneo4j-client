@@ -133,8 +133,7 @@ AC_CHECK_FUNCS([open_memstream],[],[],
   ])
 
 
-AX_THREAD_LOCAL(
-  [AC_DEFINE([STATIC_THREAD_LOCAL], [static THREAD_LOCAL], [Define to a static thread local storage class and empty if none is available.])])
+AX_THREAD_LOCAL()
 AX_PTHREAD([has_pthreads=yes])
 AS_IF([test "X$has_pthreads" = "Xyes"],
   [AC_DEFINE([HAVE_PTHREADS], [1], [Define to 1 if you have pthreads.])])

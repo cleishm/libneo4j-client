@@ -20,14 +20,14 @@ pkgconfig_DATA = neo4j-client.pc
 docker-check:
 	$(MAKE) dist
 	id=`docker create -i debian-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure && make check'` && \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check'` && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker start -i $$id
 
 docker-valgrind:
 	$(MAKE) dist
 	id=`docker create -i debian-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure && make check && CK_FORK=no valgrind --suppressions=valgrind.suppressions ./tests/check_libneo4j-client'` && \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check && CK_FORK=no valgrind --suppressions=valgrind.suppressions ./tests/check_libneo4j-client'` && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker cp valgrind.suppressions $$id:/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
 	docker start -i $$id

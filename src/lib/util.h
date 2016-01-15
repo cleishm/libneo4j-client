@@ -277,6 +277,30 @@ static inline size_t maxzu(size_t a, size_t b)
 #  endif
 #endif
 
+#ifndef IOV_STACK_MAX
+#define IOV_STACK_MAX 8
+#endif
+
+#ifdef THREAD_LOCAL
+struct _local_iovec
+{
+    struct iovec iov[IOV_MAX];
+};
+#define ALLOC_IOVEC(name, size) \
+    assert((size) <= IOV_MAX); \
+    static THREAD_LOCAL struct _local_iovec _##name; \
+    struct iovec *name = (_##name).iov
+#define FREE_IOVEC(name) do { } while(0)
+#else
+#define ALLOC_IOVEC(name, size) \
+    struct iovec _##name[IOV_STACK_MAX]; \
+    struct iovec *name = _##name; \
+    do { if ((size) > IOV_STACK_MAX) { \
+        name = malloc((size) * sizeof(struct iovec)); \
+    } } while (0)
+#define FREE_IOVEC(name) do { if (name != _##name) { free(name); } } while(0)
+#endif
+
 
 /**
  * Obtain the total length of an I/O vector.
