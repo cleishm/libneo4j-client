@@ -58,11 +58,15 @@ static inline const char *neo4j_message_type_str(neo4j_message_type_t type)
  * @param [type] The message type.
  * @param [argv] The vector of argument values to send with the message.
  * @param [argc] The length of the argument vector.
+ * @param [buffer] A buffer to use for data held until a minimal chunk size is
+ *         reached.
+ * @param [bsize] The size of `buffer` (and the minimal chunk size).
+ * @param [max_chunk] The maximum chunk size.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
-        const neo4j_value_t *argv, uint16_t argc,
-        uint16_t min_chunk, uint16_t max_chunk);
+        const neo4j_value_t *argv, uint16_t argc, uint8_t *buffer,
+        uint16_t bsize, uint16_t max_chunk);
 
 /**
  * Receive a message on a connection.

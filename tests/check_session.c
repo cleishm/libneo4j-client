@@ -103,7 +103,7 @@ neo4j_iostream_t *stub_connect(struct neo4j_connection_factory *factory,
 void queue_message(neo4j_iostream_t *ios, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
 {
-    int result = neo4j_message_send(ios, type, argv, argc, 0, 1024);
+    int result = neo4j_message_send(ios, type, argv, argc, NULL, 0, 1024);
     ck_assert_int_eq(result, 0);
 }
 

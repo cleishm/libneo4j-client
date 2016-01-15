@@ -170,12 +170,23 @@ neo4j_connection_t *establish_connection(const char *hostname,
     neo4j_logger_t *logger = neo4j_get_logger(config, "connection");
 
     neo4j_iostream_t *iostream = NULL;
+    uint8_t *snd_buffer = NULL;
     struct neo4j_request *request_queue = NULL;
 
     neo4j_connection_t *connection = calloc(1, sizeof(neo4j_connection_t));
     if (connection == NULL)
     {
         neo4j_log_error_errno(logger, "malloc of neo4j_connection_t failed");
+        goto failure;
+    }
+
+    snd_buffer = malloc(config->snd_min_chunk_size);
+    if (snd_buffer == NULL)
+    {
+        char ebuf[256];
+        neo4j_log_error(logger, "malloc of buffer[%u] failed: %s",
+                config->snd_min_chunk_size,
+                neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         goto failure;
     }
 
@@ -224,6 +235,7 @@ neo4j_connection_t *establish_connection(const char *hostname,
 #else
     connection->insecure = true;
 #endif
+    connection->snd_buffer = snd_buffer;
     connection->request_queue = request_queue;
 
     neo4j_log_info(logger, "connected (%p) to '%s'%s", connection,
@@ -243,6 +255,10 @@ failure:
     if (request_queue != NULL)
     {
         free(request_queue);
+    }
+    if (snd_buffer != NULL)
+    {
+        free(snd_buffer);
     }
     if (iostream != NULL)
     {
@@ -341,9 +357,11 @@ int neo4j_close(neo4j_connection_t *connection)
     neo4j_logger_release(connection->logger);
     neo4j_config_free(connection->config);
     free(connection->request_queue);
+    free(connection->snd_buffer);
     connection->logger = NULL;
     connection->config = NULL;
     connection->request_queue = NULL;
+    connection->snd_buffer = NULL;
     connection->iostream = NULL;
     free(connection);
     errno = errsv;
@@ -411,7 +429,8 @@ int neo4j_connection_send(neo4j_connection_t *connection,
 
     const neo4j_config_t *config = connection->config;
     int res = neo4j_message_send(connection->iostream, type, argv, argc,
-            config->snd_min_chunk_size, config->snd_max_chunk_size);
+            connection->snd_buffer, config->snd_min_chunk_size,
+            config->snd_max_chunk_size);
     if (res && errno != NEO4J_CONNECTION_CLOSED)
     {
         char ebuf[256];

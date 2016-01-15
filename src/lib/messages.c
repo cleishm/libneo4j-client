@@ -74,16 +74,15 @@ neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature)
 
 
 int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
-        const neo4j_value_t *argv, uint16_t argc,
-        uint16_t min_chunk, uint16_t max_chunk)
+        const neo4j_value_t *argv, uint16_t argc, uint8_t *buffer,
+        uint16_t bsize, uint16_t max_chunk)
 {
     REQUIRE(ios != NULL, -1);
     REQUIRE(argc == 0 || argv != NULL, -1);
 
-    uint8_t buffer[min_chunk];
     struct neo4j_chunking_iostream chunking_ios;
     neo4j_iostream_t *cios = neo4j_chunking_iostream_init(&chunking_ios,
-            ios, min_chunk, max_chunk, buffer);
+            ios, buffer, bsize, max_chunk);
 
     neo4j_value_t structure = neo4j_struct(type->struct_signature, argv, argc);
     if (neo4j_serialize(structure, cios))
@@ -107,7 +106,7 @@ int neo4j_message_recv(neo4j_iostream_t *ios,
 
     struct neo4j_chunking_iostream chunking_ios;
     neo4j_iostream_t *cios = neo4j_chunking_iostream_init(&chunking_ios,
-            ios, 0, UINT16_MAX, NULL);
+            ios, NULL, 0, UINT16_MAX);
 
     neo4j_value_t message;
     if (neo4j_deserialize(cios, mpool, &message))

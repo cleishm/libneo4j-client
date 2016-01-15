@@ -60,15 +60,14 @@ static_assert(offsetof(struct neo4j_chunking_iostream, _iostream) == 0,
  *
  * @param [ios] The chunking stream to initialize.
  * @param [delegate] The underlying stream to read/write chunks from.
- * @param [buffer] A memory buffer to use for holding data until a minimal
- *         chunk size is reached.
- * @param [buffer_size] The size of the `snd_buffer` (and the minimal chunk
- *         size).
+ * @param [buffer] A buffer to use for data held until a minimal chunk size is
+ *         reached.
+ * @param [bsize] The size of `buffer` (and the minimal chunk size).
  * @param [max_chunk] The maximum chunk size.
  * @return A pointer to a `neo4j_iostream_t` based on the chunking iostream.
  */
 neo4j_iostream_t *neo4j_chunking_iostream_init(
         struct neo4j_chunking_iostream *ios, neo4j_iostream_t *delegate,
-        uint16_t min_chunk, uint16_t max_chunk, uint8_t *buffer);
+        uint8_t *buffer, uint16_t bsize, uint16_t max_chunk);
 
 #endif/*NEO4J_CHUNKING_IOSTREAM_H*/

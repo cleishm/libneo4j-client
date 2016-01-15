@@ -62,7 +62,7 @@ neo4j_iostream_t *neo4j_chunking_iostream(neo4j_iostream_t *delegate,
     }
 
     neo4j_iostream_t *iostream = neo4j_chunking_iostream_init(ios, delegate,
-            snd_min_chunk, snd_max_chunk, snd_buffer);
+            snd_buffer, snd_min_chunk, snd_max_chunk);
     iostream->close = chunking_dealloc_close;
     return iostream;
 }
@@ -70,18 +70,18 @@ neo4j_iostream_t *neo4j_chunking_iostream(neo4j_iostream_t *delegate,
 
 neo4j_iostream_t *neo4j_chunking_iostream_init(
         struct neo4j_chunking_iostream *ios, neo4j_iostream_t *delegate,
-        uint16_t snd_min_chunk, uint16_t snd_max_chunk, uint8_t *buffer)
+        uint8_t *buffer, uint16_t bsize, uint16_t max_chunk)
 {
     REQUIRE(ios != NULL, NULL);
     REQUIRE(delegate != NULL, NULL);
-    REQUIRE(snd_min_chunk == 0 || buffer != NULL, NULL);
-    REQUIRE(snd_max_chunk > 0, NULL);
+    REQUIRE(bsize == 0 || buffer != NULL, NULL);
+    REQUIRE(max_chunk > 0, NULL);
 
     memset(ios, 0, sizeof(struct neo4j_chunking_iostream));
     ios->snd_buffer = buffer;
-    ios->snd_buffer_size = snd_min_chunk;
+    ios->snd_buffer_size = bsize;
     ios->snd_buffer_used = 0;
-    ios->snd_max_chunk = snd_max_chunk;
+    ios->snd_max_chunk = max_chunk;
     ios->delegate = delegate;
 
     neo4j_iostream_t *iostream = (neo4j_iostream_t *)ios;

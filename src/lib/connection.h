@@ -32,6 +32,8 @@ struct neo4j_connection
     neo4j_iostream_t *iostream;
     uint32_t version;
     bool insecure;
+
+    uint8_t *snd_buffer;
     struct neo4j_request *request_queue;
 
     neo4j_session_t *session;
