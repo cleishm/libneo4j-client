@@ -24,10 +24,10 @@
 #define FIELD_BUFFER_INITIAL_CAPACITY 1024
 
 
-static int render_hr(FILE *stream, unsigned int nfields,
+static int render_hr(FILE *stream, char *buffer, unsigned int nfields,
         unsigned int column_width, bool undersize);
-static int write_field(FILE *stream, neo4j_value_t value, unsigned int width,
-        uint_fast32_t flags);
+static int write_field(FILE *stream, neo4j_value_t value, char *buffer,
+        unsigned int width, uint_fast32_t flags);
 static const char *value_tostring(neo4j_value_t *value, char *buf, size_t n,
         uint_fast32_t flags);
 static int write_quoted_string(FILE *stream, const char *s, size_t n,
@@ -41,6 +41,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
 {
     REQUIRE(width > 1, -1);
     REQUIRE(width < NEO4J_RENDER_MAX_WIDTH, -1);
+    char buffer[NEO4J_RENDER_MAX_WIDTH+1];
 
     int err = neo4j_check_failure(results);
     if (err != 0)
@@ -68,7 +69,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
 
     unsigned int field_width = (column_width <= 2)? 0 : column_width - 2;
 
-    if (render_hr(stream, nfields, column_width, undersize))
+    if (render_hr(stream, buffer, nfields, column_width, undersize))
     {
         goto failure;
     }
@@ -87,7 +88,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_hr(stream, nfields, column_width, undersize))
+    if (render_hr(stream, buffer, nfields, column_width, undersize))
     {
         goto failure;
     }
@@ -102,7 +103,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
                 goto failure;
             }
             neo4j_value_t value = neo4j_result_field(result, i);
-            if (write_field(stream, value, field_width, flags))
+            if (write_field(stream, value, buffer, field_width, flags))
             {
                 goto failure;
             }
@@ -120,7 +121,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_hr(stream, nfields, column_width, undersize))
+    if (render_hr(stream, buffer, nfields, column_width, undersize))
     {
         goto failure;
     }
@@ -141,10 +142,10 @@ failure:
 }
 
 
-int render_hr(FILE *stream, unsigned int nfields, unsigned int column_width,
-        bool undersize)
+int render_hr(FILE *stream, char *buffer, unsigned int nfields,
+        unsigned int column_width, bool undersize)
 {
-    char buffer[column_width+2];
+    assert(column_width < NEO4J_RENDER_MAX_WIDTH);
     buffer[0] = '+';
     memset(buffer+1, '-', column_width);
     buffer[column_width+1] = 0;
@@ -163,10 +164,10 @@ int render_hr(FILE *stream, unsigned int nfields, unsigned int column_width,
 }
 
 
-int write_field(FILE *stream, neo4j_value_t value, unsigned int width,
-        uint_fast32_t flags)
+int write_field(FILE *stream, neo4j_value_t value, char *buffer,
+        unsigned int width, uint_fast32_t flags)
 {
-    char buffer[width+2];
+    assert(width < NEO4J_RENDER_MAX_WIDTH);
     size_t length;
 
     if (neo4j_type(value) == NEO4J_STRING &&
