@@ -613,7 +613,7 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     req->receive = callback;
     req->cdata = cdata;
 
-    neo4j_log_trace(session->logger, "enqu PULL_ALL in %p", session);
+    neo4j_log_trace(session->logger, "enqu PULL_ALL (%p) in %p", req, session);
 
     return 0;
 }
@@ -639,7 +639,8 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     req->receive = callback;
     req->cdata = cdata;
 
-    neo4j_log_trace(session->logger, "enqu DISCARD_ALL in %p", session);
+    neo4j_log_trace(session->logger, "enqu DISCARD_ALL (%p) in %p",
+            req, session);
 
     return 0;
 }
