@@ -22,10 +22,10 @@ check_libneo4j_client_CHECKS = \
 	check_deserialization.c \
 	check_dotdir.c \
 	check_error_handling.c \
-	check_job.c \
 	check_logging.c \
 	check_memory.c \
 	check_render.c \
+	check_result_stream.c \
 	check_ring_buffer.c \
 	check_serialization.c \
 	check_session.c \
