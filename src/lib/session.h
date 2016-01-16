@@ -109,13 +109,12 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition);
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [statement] The statement to send.
  * @param [params] The parameters to send.
- * @param [n] The number of parameters.
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
-        const char *statement, const neo4j_map_entry_t *params, uint32_t n,
+        const char *statement, neo4j_value_t params,
         neo4j_response_recv_t callback, void *cdata);
 
 /**

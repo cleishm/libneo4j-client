@@ -563,13 +563,13 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
 
 
 int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
-        const char *statement, const neo4j_map_entry_t *params, uint32_t n,
+        const char *statement, neo4j_value_t params,
         neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(session != NULL, -1);
     REQUIRE(mpool != NULL, -1);
     REQUIRE(statement != NULL, -1);
-    REQUIRE(n == 0 || params != NULL, -1);
+    REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), -1);
     REQUIRE(callback != NULL, -1);
 
     struct neo4j_request *req = new_request(session);
@@ -579,7 +579,7 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     }
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
-    req->_argv[1] = neo4j_map(params, n);
+    req->_argv[1] = neo4j_is_null(params)? neo4j_map(NULL, 0) : params;
     req->argv = req->_argv;
     req->argc = 2;
     req->mpool = mpool;

@@ -200,11 +200,11 @@ static void set_failure(run_result_stream_t *results, int error);
 
 
 neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
-        const char *statement, const neo4j_map_entry_t *params, unsigned int n)
+        const char *statement, neo4j_value_t params)
 {
     REQUIRE(session != NULL, NULL);
     REQUIRE(statement != NULL, NULL);
-    REQUIRE(n == 0 || params != NULL, NULL);
+    REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
 
     run_result_stream_t *results = run_rs_open(session);
     if (results == NULL)
@@ -212,7 +212,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
         return NULL;
     }
 
-    if (neo4j_session_run(session, &(results->mpool), statement, params, n,
+    if (neo4j_session_run(session, &(results->mpool), statement, params,
             run_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_run failed");
@@ -242,11 +242,11 @@ failure:
 
 
 neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
-        const char *statement, const neo4j_map_entry_t *params, unsigned int n)
+        const char *statement, neo4j_value_t params)
 {
     REQUIRE(session != NULL, NULL);
     REQUIRE(statement != NULL, NULL);
-    REQUIRE(n == 0 || params != NULL, NULL);
+    REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
 
     run_result_stream_t *results = run_rs_open(session);
     if (results == NULL)
@@ -254,7 +254,7 @@ neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
         return NULL;
     }
 
-    if (neo4j_session_run(session, &(results->mpool), statement, params, n,
+    if (neo4j_session_run(session, &(results->mpool), statement, params,
             run_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_run failed");

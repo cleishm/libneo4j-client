@@ -1351,13 +1351,14 @@ int neo4j_end_session(neo4j_session_t *session);
  *
  * @param [session] The session to evaluate the statement in.
  * @param [statement] The statement to be evaluated.
- * @param [params] The parameters for the statement.
+ * @param [params] The parameters for the statement, which must be a value of
+ *         type NEO4J_MAP or `neo4j_null`.
  * @param [n] The number of parameters.
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
  *         will be set).
  */
 neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
-        const char *statement, const neo4j_map_entry_t *params, unsigned int n);
+        const char *statement, neo4j_value_t params);
 
 /**
  * Evaluate a statement, ignoring any results.
@@ -1368,13 +1369,14 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  *
  * @param [session] The session to evaluate the statement in.
  * @param [statement] The statement to be evaluated.
- * @param [params] The parameters for the statement.
+ * @param [params] The parameters for the statement, which must be a value of
+ *         type NEO4J_MAP or `neo4j_null`.
  * @param [n] The number of parameters.
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
  *         will be set).
  */
 neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
-        const char *statement, const neo4j_map_entry_t *params, unsigned int n);
+        const char *statement, neo4j_value_t params);
 
 
 /*

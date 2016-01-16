@@ -258,7 +258,7 @@ int evaluate_statement(shell_state_t *state, const char *statement)
     }
 
     neo4j_result_stream_t *results = neo4j_run(state->session,
-            statement, NULL, 0);
+            statement, neo4j_map(NULL, 0));
     if (results == NULL)
     {
         neo4j_perror(state->err, errno, "failed to run statement");

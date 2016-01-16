@@ -231,7 +231,7 @@ START_TEST (test_session_drains_outstanding_requests_on_close)
     ck_assert_ptr_ne(session, NULL);
 
     struct received_response resp = { 1, NULL };
-    int result = neo4j_session_run(session, &mpool, "RETURN 1", NULL, 0,
+    int result = neo4j_session_run(session, &mpool, "RETURN 1", neo4j_null,
             response_recv_callback, &resp);
     ck_assert_int_eq(result, 0);
 
@@ -250,7 +250,7 @@ START_TEST (test_session_awaits_inflight_requests_on_close)
     ck_assert_ptr_ne(session, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(session, &mpool, "RETURN 1", NULL, 0,
+    int result = neo4j_session_run(session, &mpool, "RETURN 1", neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -285,7 +285,7 @@ START_TEST (test_session_drains_requests_and_acks_after_failure)
     ck_assert(type == NEO4J_INIT_MESSAGE);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(session, &mpool, "RETURN 1", NULL, 0,
+    int result = neo4j_session_run(session, &mpool, "RETURN 1", neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -325,7 +325,7 @@ START_TEST (test_session_cant_start_after_eproto_in_failure)
     ck_assert_ptr_ne(session1, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(session1, &mpool, "RETURN 1", NULL, 0,
+    int result = neo4j_session_run(session1, &mpool, "RETURN 1", neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -361,7 +361,7 @@ START_TEST (test_session_cant_start_after_eproto_in_ack_failure)
     ck_assert_ptr_ne(session1, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(session1, &mpool, "RETURN 1", NULL, 0,
+    int result = neo4j_session_run(session1, &mpool, "RETURN 1", neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -401,7 +401,7 @@ START_TEST (test_session_drains_acks_when_closed)
     ck_assert(type == NEO4J_INIT_MESSAGE);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(session, &mpool, "RETURN 1", NULL, 0,
+    int result = neo4j_session_run(session, &mpool, "RETURN 1", neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
