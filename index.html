@@ -146,7 +146,7 @@ enabling you to obtain the required flags using
 
     <span class="pl-c">/* use NEO4J_INSECURE when connecting to disable TLS */</span>
     <span class="pl-c1">neo4j_connection_t</span> *connection =
-        <span class="pl-c1">neo4j_connect</span>(<span class="pl-s"><span class="pl-pds">"</span>neo4j://localhost:7687<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, NEO4J_INSECURE);
+            <span class="pl-c1">neo4j_connect</span>(<span class="pl-s"><span class="pl-pds">"</span>neo4j://localhost:7687<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, NEO4J_INSECURE);
     <span class="pl-k">if</span> (connection == <span class="pl-c1">NULL</span>)
     {
         <span class="pl-c1">neo4j_perror</span>(stderr, errno, <span class="pl-s"><span class="pl-pds">"</span>Connection failed<span class="pl-pds">"</span></span>);
@@ -160,7 +160,8 @@ enabling you to obtain the required flags using
         <span class="pl-k">return</span> EXIT_FAILURE;
     }
 
-    <span class="pl-c1">neo4j_result_stream_t</span> *results = <span class="pl-c1">neo4j_run</span>(session, <span class="pl-s"><span class="pl-pds">"</span>RETURN 'hello world'<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, <span class="pl-c1">0</span>);
+    <span class="pl-c1">neo4j_result_stream_t</span> *results =
+            <span class="pl-c1">neo4j_run</span>(session, <span class="pl-s"><span class="pl-pds">"</span>RETURN 'hello world'<span class="pl-pds">"</span></span>, <span class="pl-c1">neo4j_null</span>);
     <span class="pl-k">if</span> (results == <span class="pl-c1">NULL</span>)
     {
         <span class="pl-c1">neo4j_perror</span>(stderr, errno, <span class="pl-s"><span class="pl-pds">"</span>Failed to run statement<span class="pl-pds">"</span></span>);
