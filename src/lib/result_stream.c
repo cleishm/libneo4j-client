@@ -68,6 +68,13 @@ neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results)
 }
 
 
+int neo4j_statement_type(neo4j_result_stream_t *results)
+{
+    REQUIRE(results != NULL, -1);
+    return results->statement_type(results);
+}
+
+
 struct neo4j_update_counts neo4j_update_counts(neo4j_result_stream_t *results)
 {
     if (results == NULL)
@@ -149,6 +156,7 @@ struct run_result_stream
     unsigned int refcount;
     unsigned int starting;
     unsigned int streaming;
+    int statement_type;
     struct neo4j_update_counts update_counts;
     int failure;
     const char *error_code;
@@ -172,6 +180,7 @@ static unsigned int run_rs_nfields(neo4j_result_stream_t *results);
 static const char *run_rs_fieldname(neo4j_result_stream_t *results,
         unsigned int index);
 static neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self);
+static int run_rs_statement_type(neo4j_result_stream_t *self);
 static struct neo4j_update_counts run_rs_update_counts(
         neo4j_result_stream_t *self);
 static int run_rs_close(neo4j_result_stream_t *self);
@@ -294,6 +303,7 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     results->allocator = session->config->allocator;
     results->mpool = neo4j_std_mpool(session->config);
     results->record_mpool = neo4j_std_mpool(session->config);
+    results->statement_type = -1;
     results->refcount = 1;
 
     neo4j_job_t *job = (neo4j_job_t *)&(results->job);
@@ -314,6 +324,7 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     result_stream->nfields = run_rs_nfields;
     result_stream->fieldname = run_rs_fieldname;
     result_stream->fetch_next = run_rs_fetch_next;
+    result_stream->statement_type = run_rs_statement_type;
     result_stream->update_counts = run_rs_update_counts;
     result_stream->close = run_rs_close;
     return results;
@@ -438,6 +449,19 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
 
     results->last_fetched = result;
     return (neo4j_result_t *)result;
+}
+
+
+int run_rs_statement_type(neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = (run_result_stream_t *)self;
+    if (results == NULL || results->failure != 0 ||
+            await(results, &(results->streaming)))
+    {
+        return -1;
+    }
+
+    return results->statement_type;
 }
 
 
@@ -711,8 +735,10 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
                 neo4j_tostring(*metadata, buf, sizeof(buf)));
     }
 
-    if (neo4j_meta_update_counts(&(results->update_counts), *metadata,
-                description, logger))
+    results->statement_type =
+        neo4j_meta_statement_type(*metadata, description, logger);
+    if (results->statement_type < 0 || neo4j_meta_update_counts(
+                &(results->update_counts), *metadata, description, logger))
     {
         set_failure(results, errno);
         return -1;

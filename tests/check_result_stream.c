@@ -146,7 +146,7 @@ void queue_stream_end_success(neo4j_iostream_t *ios)
     neo4j_map_entry_t counts = neo4j_map_entry(
             neo4j_string("nodes-created"), neo4j_int(99));
     neo4j_map_entry_t fields[2] =
-        { neo4j_map_entry(neo4j_string("type"), neo4j_string("r")),
+        { neo4j_map_entry(neo4j_string("type"), neo4j_string("rw")),
           neo4j_map_entry(neo4j_string("stats"), neo4j_map(&counts, 1)) };
     neo4j_value_t argv[1] = { neo4j_map(fields, 2) };
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, argv, 1);
@@ -198,6 +198,7 @@ START_TEST (test_run_returns_results_and_completes)
 
     ck_assert_int_eq(neo4j_check_failure(results), 0);
 
+    ck_assert_int_eq(neo4j_statement_type(results), NEO4J_READ_WRITE_STATEMENT);
     struct neo4j_update_counts counts = neo4j_update_counts(results);
     ck_assert_int_eq(counts.nodes_created, 99);
 
@@ -395,6 +396,7 @@ START_TEST (test_send_completes)
 
     ck_assert_int_eq(neo4j_check_failure(results), 0);
 
+    ck_assert_int_eq(neo4j_statement_type(results), NEO4J_READ_WRITE_STATEMENT);
     struct neo4j_update_counts counts = neo4j_update_counts(results);
     ck_assert_int_eq(counts.nodes_created, 99);
 

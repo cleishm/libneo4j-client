@@ -59,7 +59,7 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
  * @param [logger] A logger to emit error messages to.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
-int neo4j_meta_failure_details(const char **code, const char **message, const
+int neo4j_meta_failure_details(const char **code, const char **message,
         neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
         neo4j_logger_t *logger);
 
@@ -81,8 +81,27 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
  * @param [logger] A logger to emit error messages to.
  * @return The number of fields, or -1 if an error occurs (errno will be set).
  */
-int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
+int neo4j_meta_fieldnames(const char * const **names, neo4j_value_t map,
         neo4j_mpool_t *mpool, const char *description, neo4j_logger_t *logger);
+
+/**
+ * Extract statement type from a neo4j map.
+ *
+ * Checks for a "type" entry, of type String. If found, the matching
+ * statement type is returned. If it is not found, or if the value is not
+ * a known statement type.
+ *
+ * @internal
+ *
+ * @param [map] The metadata map.
+ * @param [description] A description of the message from which the metadata
+ *         came, for use when logging errors.
+ * @param [logger] A logger to emit error messages to.
+ * @return A statement type on success, or -1 if an error occurs
+ *         (errno will be set).
+ */
+int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
+        neo4j_logger_t *logger);
 
 /**
  * Extract update counts from a neo4j map.
@@ -90,6 +109,8 @@ int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
  * Checks for a "stats" entry, of type Map, containing another Map of
  * Integer values. These integers, if found, are used to populate the
  * supplied update counts structure.
+ *
+ * @internal
  *
  * @param [counts] A pointer to a update counts structure that will be
  *         populated with values found in the map.
@@ -100,7 +121,7 @@ int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
-        const neo4j_value_t map, const char *description,
+        neo4j_value_t map, const char *description,
         neo4j_logger_t *logger);
 
 

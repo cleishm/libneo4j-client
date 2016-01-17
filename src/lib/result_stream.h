@@ -100,6 +100,27 @@ struct neo4j_result_stream
     struct neo4j_update_counts (*update_counts)(neo4j_result_stream_t *self);
 
     /**
+     * Return the statement type for the result stream.
+     *
+     * The returned value will either be -1, if an error occurs, or one of the
+     * following values:
+     * - NEO4J_READ_ONLY_STATEMENT
+     * - NEO4J_WRITE_ONLY_STATEMENT
+     * - NEO4J_READ_WRITE_STATEMENT
+     * - NEO4J_SCHEMA_WRITE_STATEMENT
+     *
+     * @attention As the statement type is only available at the end of the
+     * result stream, invoking this function will will result in any unfetched
+     * results being pulled from the server and held in memory. It is usually
+     * better to exhaust the stream using `neo4j_fetch_next(...)` before
+     * invoking this method.
+     *
+     * @param [results] The result stream.
+     * @return The statement type, or -1 if an error occurs (errno will be set).
+     */
+    int (*statement_type)(neo4j_result_stream_t *self);
+
+    /**
      * Close a result stream.
      *
      * Closes the result stream and releases all memory held by it, including

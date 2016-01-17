@@ -27,7 +27,7 @@
  * @param [stream] The iostream to write to.
  * @return 0 on success, -1 on failure (errno will be set).
  */
-int neo4j_serialize(const neo4j_value_t v, struct neo4j_iostream *stream);
+int neo4j_serialize(neo4j_value_t v, struct neo4j_iostream *stream);
 
 int neo4j_null_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_bool_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);

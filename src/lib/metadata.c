@@ -59,7 +59,7 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
     neo4j_value_t code_val = neo4j_map_get(map, neo4j_string("code"));
     if (neo4j_is_null(code_val))
     {
-        neo4j_log_error(logger, "invalid field in %s: no 'code' property",
+        neo4j_log_error(logger, "invalid metadata in %s: no 'code' property",
                 description);
         errno = EPROTO;
         goto failure;
@@ -73,8 +73,7 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
         goto failure;
     }
 
-    const neo4j_value_t message_val =
-        neo4j_map_get(map, neo4j_string("message"));
+    neo4j_value_t message_val = neo4j_map_get(map, neo4j_string("message"));
     if (neo4j_is_null(message_val))
     {
         neo4j_log_error(logger, "invalid field in %s: no 'message' property",
@@ -115,7 +114,7 @@ failure:
 }
 
 
-int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
+int neo4j_meta_fieldnames(const char * const **names, neo4j_value_t map,
         neo4j_mpool_t *mpool, const char *description, neo4j_logger_t *logger)
 {
     assert(names != NULL);
@@ -124,10 +123,10 @@ int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
     assert(description != NULL);
     size_t pdepth = neo4j_mpool_depth(*mpool);
 
-    const neo4j_value_t mfields = neo4j_map_get(map, neo4j_string("fields"));
+    neo4j_value_t mfields = neo4j_map_get(map, neo4j_string("fields"));
     if (neo4j_is_null(mfields))
     {
-        neo4j_log_error(logger, "invalid field in %s: no 'fields' property",
+        neo4j_log_error(logger, "invalid metadata in %s: no 'fields' property",
                 description);
         errno = EPROTO;
         goto failure;
@@ -156,7 +155,7 @@ int neo4j_meta_fieldnames(const char * const **names, const neo4j_value_t map,
 
     for (unsigned int i = 0; i < n; ++i)
     {
-        const neo4j_value_t fieldname = neo4j_list_get(mfields, i);
+        neo4j_value_t fieldname = neo4j_list_get(mfields, i);
         if (neo4j_type(fieldname) != NEO4J_STRING)
         {
             neo4j_log_error(logger,
@@ -185,15 +184,61 @@ failure:
 }
 
 
+int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
+        neo4j_logger_t *logger)
+{
+    assert(neo4j_type(map) == NEO4J_MAP);
+    assert(description != NULL);
+
+    neo4j_value_t stype = neo4j_map_get(map, neo4j_string("type"));
+    if (neo4j_is_null(stype))
+    {
+        neo4j_log_error(logger, "invalid metadata in %s: no 'stats' property",
+                description);
+        errno = EPROTO;
+        return -1;
+    }
+    if (neo4j_type(stype) != NEO4J_STRING)
+    {
+        neo4j_log_error(logger,
+                "invalid field in %s: 'type' is %s, expected String",
+                description, neo4j_type_str(neo4j_type(stype)));
+        errno = EPROTO;
+        return -1;
+    }
+
+    if (neo4j_eq(neo4j_string("r"), stype))
+    {
+        return NEO4J_READ_ONLY_STATEMENT;
+    }
+    else if (neo4j_eq(neo4j_string("w"), stype))
+    {
+        return NEO4J_WRITE_ONLY_STATEMENT;
+    }
+    else if (neo4j_eq(neo4j_string("rw"), stype))
+    {
+        return NEO4J_READ_WRITE_STATEMENT;
+    }
+    else if (neo4j_eq(neo4j_string("s"), stype))
+    {
+        return NEO4J_SCHEMA_UPDATE_STATEMENT;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+
 int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
-        const neo4j_value_t map, const char *description,
+        neo4j_value_t map, const char *description,
         neo4j_logger_t *logger)
 {
     assert(counts != NULL);
     assert(neo4j_type(map) == NEO4J_MAP);
     assert(description != NULL);
 
-    const neo4j_value_t stats = neo4j_map_get(map, neo4j_string("stats"));
+    neo4j_value_t stats = neo4j_map_get(map, neo4j_string("stats"));
     if (neo4j_is_null(stats))
     {
         memset(counts, 0, sizeof(struct neo4j_update_counts));
@@ -242,7 +287,7 @@ int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
     for (int i = 0; field_names[i] != NULL; ++i)
     {
         neo4j_value_t key = neo4j_string(field_names[i]);
-        const neo4j_value_t val = neo4j_map_get(stats, key);
+        neo4j_value_t val = neo4j_map_get(stats, key);
         if (neo4j_is_null(val))
         {
             continue;
