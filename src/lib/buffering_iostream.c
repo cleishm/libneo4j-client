@@ -33,9 +33,6 @@ struct buffering_iostream {
     ring_buffer_t *sndbuf;
 };
 
-static_assert(offsetof(struct buffering_iostream, _iostream) == 0,
-        "_iostream must be first field in struct buffering_iostream");
-
 
 static ssize_t buffering_read(neo4j_iostream_t *stream,
         void *buf, size_t nbyte);
@@ -82,7 +79,7 @@ neo4j_iostream_t *neo4j_buffering_iostream(neo4j_iostream_t *delegate,
         }
     }
 
-    neo4j_iostream_t *iostream = (neo4j_iostream_t *)ios;
+    neo4j_iostream_t *iostream = &(ios->_iostream);
     iostream->read = buffering_read;
     iostream->readv = buffering_readv;
     iostream->write = buffering_write;
@@ -110,7 +107,8 @@ failure:
 
 ssize_t buffering_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 {
-    struct buffering_iostream *ios = (struct buffering_iostream *)stream;
+    struct buffering_iostream *ios = container_of(stream,
+            struct buffering_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -158,7 +156,8 @@ ssize_t buffering_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 ssize_t buffering_readv(neo4j_iostream_t *stream,
         const struct iovec *iov, unsigned int iovcnt)
 {
-    struct buffering_iostream *ios = (struct buffering_iostream *)stream;
+    struct buffering_iostream *ios = container_of(stream,
+            struct buffering_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -219,7 +218,8 @@ cleanup:
 
 ssize_t buffering_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 {
-    struct buffering_iostream *ios = (struct buffering_iostream *)stream;
+    struct buffering_iostream *ios = container_of(stream,
+            struct buffering_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -285,7 +285,8 @@ ssize_t buffering_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 ssize_t buffering_writev(neo4j_iostream_t *stream,
         const struct iovec *iov, unsigned int iovcnt)
 {
-    struct buffering_iostream *ios = (struct buffering_iostream *)stream;
+    struct buffering_iostream *ios = container_of(stream,
+            struct buffering_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -358,7 +359,8 @@ cleanup:
 
 int buffering_flush(neo4j_iostream_t *stream)
 {
-    struct buffering_iostream *ios = (struct buffering_iostream *)stream;
+    struct buffering_iostream *ios = container_of(stream,
+            struct buffering_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -383,7 +385,8 @@ int buffering_flush(neo4j_iostream_t *stream)
 
 int buffering_close(neo4j_iostream_t *stream)
 {
-    struct buffering_iostream *ios = (struct buffering_iostream *)stream;
+    struct buffering_iostream *ios = container_of(stream,
+            struct buffering_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;

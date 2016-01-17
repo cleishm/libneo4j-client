@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "logging.h"
+#include "util.h"
 #include <assert.h>
 #include <errno.h>
 #include <stddef.h>
@@ -62,9 +63,6 @@ struct neo4j_std_logger
     struct neo4j_std_logger *next;
 };
 
-static_assert(offsetof(struct neo4j_std_logger, _logger) == 0,
-        "_logger must be first field in struct neo4j_std_logger");
-
 
 struct neo4j_std_logger_provider
 {
@@ -74,9 +72,6 @@ struct neo4j_std_logger_provider
     uint_fast32_t flags;
     struct neo4j_std_logger loggers;
 };
-
-static_assert(offsetof(struct neo4j_std_logger_provider, _provider) == 0,
-        "_provider must be first field in struct neo4j_std_logger_provider");
 
 
 struct neo4j_logger_provider *neo4j_std_logger_provider(FILE *stream,
@@ -93,8 +88,7 @@ struct neo4j_logger_provider *neo4j_std_logger_provider(FILE *stream,
     std_provider->level = level;
     std_provider->flags = flags;
 
-    struct neo4j_logger_provider *provider =
-        (struct neo4j_logger_provider *)std_provider;
+    struct neo4j_logger_provider *provider = &(std_provider->_provider);
     provider->get_logger = std_provider_get_logger;
     return provider;
 }
@@ -102,8 +96,8 @@ struct neo4j_logger_provider *neo4j_std_logger_provider(FILE *stream,
 
 void neo4j_std_logger_provider_free(struct neo4j_logger_provider *provider)
 {
-    struct neo4j_std_logger_provider *p =
-        (struct neo4j_std_logger_provider *)provider;
+    struct neo4j_std_logger_provider *p = container_of(provider,
+        struct neo4j_std_logger_provider, _provider);
     assert(p->loggers.prev == NULL);
     if (p->loggers.next != NULL)
     {
@@ -117,21 +111,21 @@ void neo4j_std_logger_provider_free(struct neo4j_logger_provider *provider)
 struct neo4j_logger *std_provider_get_logger(struct neo4j_logger_provider *self,
         const char *name)
 {
-    struct neo4j_std_logger_provider *p =
-        (struct neo4j_std_logger_provider *)self;
+    struct neo4j_std_logger_provider *p = container_of(self,
+        struct neo4j_std_logger_provider, _provider);
 
-    struct neo4j_std_logger *logger = find_std_logger(p->loggers.next, name);
-    if (logger == NULL)
+    struct neo4j_std_logger *stdlogger = find_std_logger(p->loggers.next, name);
+    if (stdlogger == NULL)
     {
-        logger = new_std_logger(p->stream, p->level, p->flags, name);
-        if (logger == NULL)
+        stdlogger = new_std_logger(p->stream, p->level, p->flags, name);
+        if (stdlogger == NULL)
         {
             return NULL;
         }
-        std_logger_list_add(&(p->loggers), logger);
+        std_logger_list_add(&(p->loggers), stdlogger);
     }
 
-    return (struct neo4j_logger *)logger;
+    return &(stdlogger->_logger);
 }
 
 
@@ -163,7 +157,7 @@ struct neo4j_std_logger *new_std_logger(FILE *stream, uint_fast8_t level,
         return NULL;
     }
 
-    neo4j_logger_t *logger = (neo4j_logger_t *)stdlogger;
+    neo4j_logger_t *logger = &(stdlogger->_logger);
     logger->retain = std_logger_retain;
     logger->release = std_logger_release;
     logger->log = std_logger_log;
@@ -188,7 +182,8 @@ struct neo4j_std_logger *new_std_logger(FILE *stream, uint_fast8_t level,
 
 struct neo4j_logger *std_logger_retain(struct neo4j_logger *self)
 {
-    struct neo4j_std_logger *logger = (struct neo4j_std_logger *)self;
+    struct neo4j_std_logger *logger = container_of(self,
+            struct neo4j_std_logger, _logger);
     ++(logger->refcount);
     return self;
 }
@@ -196,7 +191,8 @@ struct neo4j_logger *std_logger_retain(struct neo4j_logger *self)
 
 void std_logger_release(struct neo4j_logger *self)
 {
-    struct neo4j_std_logger *logger = (struct neo4j_std_logger *)self;
+    struct neo4j_std_logger *logger = container_of(self,
+            struct neo4j_std_logger, _logger);
     if (--(logger->refcount) == 0)
     {
         std_logger_list_remove(logger);
@@ -235,7 +231,8 @@ void std_logger_list_remove(struct neo4j_std_logger *logger)
 void std_logger_log(struct neo4j_logger *self, uint_fast8_t level,
         const char *format, va_list ap)
 {
-    struct neo4j_std_logger *logger = (struct neo4j_std_logger *)self;
+    struct neo4j_std_logger *logger = container_of(self,
+            struct neo4j_std_logger, _logger);
     if (level > logger->level)
     {
         return;
@@ -256,14 +253,16 @@ void std_logger_log(struct neo4j_logger *self, uint_fast8_t level,
 
 bool std_logger_is_enabled(struct neo4j_logger *self, uint_fast8_t level)
 {
-    struct neo4j_std_logger *logger = (struct neo4j_std_logger *)self;
+    struct neo4j_std_logger *logger = container_of(self,
+            struct neo4j_std_logger, _logger);
     return level <= logger->level;
 }
 
 
 void std_logger_set_level(struct neo4j_logger *self, uint_fast8_t level)
 {
-    struct neo4j_std_logger *logger = (struct neo4j_std_logger *)self;
+    struct neo4j_std_logger *logger = container_of(self,
+            struct neo4j_std_logger, _logger);
     // atomic write but not synchronized - in a multithreaded application,
     // raising the level may not immediately stop some log entries being
     // written, which is ok

@@ -119,16 +119,6 @@ void neo4j_release(neo4j_result_t *result)
 
 typedef struct run_result_stream run_result_stream_t;
 
-typedef struct run_job run_job_t;
-struct run_job
-{
-    neo4j_job_t _job;
-    run_result_stream_t *results;
-};
-static_assert(offsetof(struct run_job, _job) == 0,
-        "_job must be first field in struct run_job");
-
-
 typedef struct result_record result_record_t;
 struct result_record
 {
@@ -139,8 +129,6 @@ struct result_record
     neo4j_value_t list;
     result_record_t *next;
 };
-static_assert(offsetof(struct result_record, _result) == 0,
-        "_result must be first field in struct result_record");
 
 
 struct run_result_stream
@@ -148,7 +136,7 @@ struct run_result_stream
     neo4j_result_stream_t _result_stream;
 
     neo4j_session_t *session;
-    run_job_t job;
+    neo4j_job_t job;
     neo4j_logger_t *logger;
     neo4j_memory_allocator_t *allocator;
     neo4j_mpool_t mpool;
@@ -168,8 +156,6 @@ struct run_result_stream
     result_record_t *last_fetched;
     unsigned int awaiting_records;
 };
-static_assert(offsetof(struct run_result_stream, _result_stream) == 0,
-        "_result_stream must be first field in struct run_result_stream");
 
 
 static run_result_stream_t *run_rs_open(neo4j_session_t *session);
@@ -177,7 +163,7 @@ static int run_rs_check_failure(neo4j_result_stream_t *self);
 static const char *run_rs_error_code(neo4j_result_stream_t *self);
 static const char *run_rs_error_message(neo4j_result_stream_t *self);
 static unsigned int run_rs_nfields(neo4j_result_stream_t *results);
-static const char *run_rs_fieldname(neo4j_result_stream_t *results,
+static const char *run_rs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
 static neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self);
 static int run_rs_statement_type(neo4j_result_stream_t *self);
@@ -239,12 +225,12 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
 
     results->starting = true;
     results->streaming = true;
-    return (neo4j_result_stream_t *)results;
+    return &(results->_result_stream);
 
     int errsv;
 failure:
     errsv = errno;
-    run_rs_close((neo4j_result_stream_t *)results);
+    run_rs_close(&(results->_result_stream));
     errno = errsv;
     return NULL;
 }
@@ -282,12 +268,12 @@ neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
 
     results->starting = true;
     results->streaming = true;
-    return (neo4j_result_stream_t *)results;
+    return &(results->_result_stream);
 
     int errsv;
 failure:
     errsv = errno;
-    run_rs_close((neo4j_result_stream_t *)results);
+    run_rs_close(&(results->_result_stream));
     errno = errsv;
     return NULL;
 }
@@ -306,18 +292,15 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     results->statement_type = -1;
     results->refcount = 1;
 
-    neo4j_job_t *job = (neo4j_job_t *)&(results->job);
-    job->notify_session_ending = notify_session_ending;
-    results->job.results = results;
-
-    if (neo4j_attach_job(session, job))
+    results->job.notify_session_ending = notify_session_ending;
+    if (neo4j_attach_job(session, &(results->job)))
     {
         neo4j_log_debug_errno(results->logger,
                 "failed to attach job to session");
         goto failure;
     }
 
-    neo4j_result_stream_t *result_stream = (neo4j_result_stream_t *)results;
+    neo4j_result_stream_t *result_stream = &(results->_result_stream);
     result_stream->check_failure = run_rs_check_failure;
     result_stream->error_code = run_rs_error_code;
     result_stream->error_message = run_rs_error_message;
@@ -332,7 +315,7 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     int errsv;
 failure:
     errsv = errno;
-    run_rs_close((neo4j_result_stream_t *)results);
+    run_rs_close(&(results->_result_stream));
     errno = errsv;
     return NULL;
 }
@@ -340,7 +323,8 @@ failure:
 
 int run_rs_check_failure(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, -1);
 
     if (results->failure != 0 || await(results, &(results->starting)))
@@ -354,7 +338,8 @@ int run_rs_check_failure(neo4j_result_stream_t *self)
 
 const char *run_rs_error_code(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, NULL);
     return results->error_code;
 }
@@ -362,7 +347,8 @@ const char *run_rs_error_code(neo4j_result_stream_t *self)
 
 const char *run_rs_error_message(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, NULL);
     return results->error_message;
 }
@@ -370,7 +356,8 @@ const char *run_rs_error_message(neo4j_result_stream_t *self)
 
 unsigned int run_rs_nfields(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, -1);
 
     if (results->failure != 0 || await(results, &(results->starting)))
@@ -386,7 +373,8 @@ unsigned int run_rs_nfields(neo4j_result_stream_t *self)
 const char *run_rs_fieldname(neo4j_result_stream_t *self,
         unsigned int index)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, NULL);
 
     if (results->failure != 0 || await(results, &(results->starting)))
@@ -408,7 +396,8 @@ const char *run_rs_fieldname(neo4j_result_stream_t *self,
 
 neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, NULL);
 
     if (results->last_fetched != NULL)
@@ -439,22 +428,23 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
         }
     }
 
-    result_record_t *result = results->records;
-    results->records = result->next;
+    result_record_t *record = results->records;
+    results->records = record->next;
     if (results->records == NULL)
     {
         results->records_tail = NULL;
     }
-    result->next = NULL;
+    record->next = NULL;
 
-    results->last_fetched = result;
-    return (neo4j_result_t *)result;
+    results->last_fetched = record;
+    return &(record->_result);
 }
 
 
 int run_rs_statement_type(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     if (results == NULL || results->failure != 0 ||
             await(results, &(results->streaming)))
     {
@@ -467,7 +457,8 @@ int run_rs_statement_type(neo4j_result_stream_t *self)
 
 struct neo4j_update_counts run_rs_update_counts(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
 
     if (results == NULL || results->failure != 0 ||
             await(results, &(results->streaming)))
@@ -486,7 +477,8 @@ failure:
 
 int run_rs_close(neo4j_result_stream_t *self)
 {
-    run_result_stream_t *results = (run_result_stream_t *)self;
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, -1);
 
     results->streaming = false;
@@ -534,7 +526,8 @@ neo4j_value_t run_result_field(const neo4j_result_t *self,
 
 neo4j_result_t *run_result_retain(neo4j_result_t *self)
 {
-    result_record_t *record = (result_record_t *)self;
+    result_record_t *record = container_of(self,
+            result_record_t, _result);
     REQUIRE(record != NULL, NULL);
     (record->refcount)++;
     return self;
@@ -543,14 +536,16 @@ neo4j_result_t *run_result_retain(neo4j_result_t *self)
 
 void run_result_release(neo4j_result_t *self)
 {
-    result_record_t *record = (result_record_t *)self;
+    result_record_t *record = container_of(self,
+            result_record_t, _result);
     result_record_release(record);
 }
 
 
 void notify_session_ending(neo4j_job_t *job)
 {
-    run_result_stream_t *results = ((run_job_t *)job)->results;
+    run_result_stream_t *results = container_of(job,
+            run_result_stream_t, job);
     if (results == NULL || results->session == NULL)
     {
         return;
@@ -809,7 +804,7 @@ int append_result(run_result_stream_t *results,
     record->list = argv[0];
     record->next = NULL;
 
-    neo4j_result_t *result = (neo4j_result_t *)record;
+    neo4j_result_t *result = &(record->_result);
     result->field = run_result_field;
     result->retain = run_result_retain;
     result->release = run_result_release;

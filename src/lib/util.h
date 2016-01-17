@@ -38,6 +38,13 @@
 
 
 /**
+ * Get the containing structure address.
+ */
+#define container_of(ptr, type, member) \
+        (type *)(void *)( (uint8_t *)(uintptr_t)(ptr) - offsetof(type,member) )
+
+
+/**
  * Ensure the condition is true, or return the specified result value.
  */
 #define REQUIRE(cond, res) \

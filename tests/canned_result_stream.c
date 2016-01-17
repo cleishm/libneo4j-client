@@ -16,6 +16,7 @@
  */
 #include "../config.h"
 #include "canned_result_stream.h"
+#include "../src/lib/util.h"
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
@@ -44,8 +45,6 @@ struct canned_result_stream
 
     const char *error_message;
 };
-static_assert(offsetof(struct canned_result_stream, _result_stream) == 0,
-        "_result_stream must be first field in struct canned_result_stream");
 
 
 static int crs_check_failure(neo4j_result_stream_t *self);
@@ -56,10 +55,10 @@ static const char *crs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
 static neo4j_result_t *crs_fetch_next(neo4j_result_stream_t *self);
 static int crs_close(neo4j_result_stream_t *self);
-static neo4j_value_t cr_canned_field(const neo4j_result_t *result,
+static neo4j_value_t cr_canned_field(const neo4j_result_t *self,
         unsigned int index);
-static neo4j_result_t *cr_canned_retain(neo4j_result_t *result);
-static void cr_canned_release(neo4j_result_t *result);
+static neo4j_result_t *cr_canned_retain(neo4j_result_t *self);
+static void cr_canned_release(neo4j_result_t *self);
 
 
 neo4j_result_stream_t *neo4j_canned_result_stream(
@@ -88,7 +87,7 @@ neo4j_result_stream_t *neo4j_canned_result_stream(
     crs->results = cr;
     crs->nresults = nrecords;
 
-    neo4j_result_stream_t *rs = (neo4j_result_stream_t *)crs;
+    neo4j_result_stream_t *rs = &(crs->_result_stream);
     rs->check_failure = crs_check_failure;
     rs->error_code = crs_error_code;
     rs->error_message = crs_error_message;
@@ -100,16 +99,18 @@ neo4j_result_stream_t *neo4j_canned_result_stream(
 }
 
 
-void neo4j_crs_set_error(neo4j_result_stream_t *results, const char *msg)
+void neo4j_crs_set_error(neo4j_result_stream_t *self, const char *msg)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)results;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     crs->error_message = msg;
 }
 
 
 int crs_check_failure(neo4j_result_stream_t *self)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)self;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     return (crs->error_message == NULL)? 0 : 1;
 }
 
@@ -122,14 +123,16 @@ const char *crs_error_code(neo4j_result_stream_t *self)
 
 const char *crs_error_message(neo4j_result_stream_t *self)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)self;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     return crs->error_message;
 }
 
 
 unsigned int crs_nfields(neo4j_result_stream_t *self)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)self;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     return crs->nfields;
 }
 
@@ -137,7 +140,8 @@ unsigned int crs_nfields(neo4j_result_stream_t *self)
 const char *crs_fieldname(neo4j_result_stream_t *self,
         unsigned int index)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)self;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     if (index >= crs->nfields)
     {
         return NULL;
@@ -148,7 +152,8 @@ const char *crs_fieldname(neo4j_result_stream_t *self,
 
 neo4j_result_t *crs_fetch_next(neo4j_result_stream_t *self)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)self;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     if (crs->next_result >= crs->nresults)
     {
         return NULL;
@@ -159,27 +164,29 @@ neo4j_result_t *crs_fetch_next(neo4j_result_stream_t *self)
 
 int crs_close(neo4j_result_stream_t *self)
 {
-    canned_result_stream_t *crs = (canned_result_stream_t *)self;
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
     free(crs->results);
     free(crs);
     return 0;
 }
 
 
-neo4j_value_t cr_canned_field(const neo4j_result_t *result, unsigned int index)
+neo4j_value_t cr_canned_field(const neo4j_result_t *self, unsigned int index)
 {
-    const canned_result_t *canned_result = (const canned_result_t *)result;
+    const canned_result_t *canned_result = container_of(self,
+          const canned_result_t, _result);
     return neo4j_list_get(canned_result->list, index);
 }
 
 
-neo4j_result_t *cr_canned_retain(neo4j_result_t *result)
+neo4j_result_t *cr_canned_retain(neo4j_result_t *self)
 {
     errno = ENOTSUP;
     return NULL;
 }
 
 
-void cr_canned_release(neo4j_result_t *result)
+void cr_canned_release(neo4j_result_t *self)
 {
 }

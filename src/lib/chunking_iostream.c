@@ -21,16 +21,16 @@
 #include <limits.h>
 
 
-static ssize_t chunking_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
-static ssize_t chunking_readv(neo4j_iostream_t *stream,
+static ssize_t chunking_read(neo4j_iostream_t *self, void *buf, size_t nbyte);
+static ssize_t chunking_readv(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt);
-static ssize_t chunking_write(neo4j_iostream_t *stream,
+static ssize_t chunking_write(neo4j_iostream_t *self,
         const void *buf, size_t nbyte);
-static ssize_t chunking_writev(neo4j_iostream_t *stream,
+static ssize_t chunking_writev(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt);
-static int chunking_flush(neo4j_iostream_t *stream);
-static int chunking_close(neo4j_iostream_t *stream);
-static int chunking_dealloc_close(neo4j_iostream_t *stream);
+static int chunking_flush(neo4j_iostream_t *self);
+static int chunking_close(neo4j_iostream_t *self);
+static int chunking_dealloc_close(neo4j_iostream_t *self);
 static unsigned int chunk_iovec(const struct iovec *iov, unsigned int iovcnt,
         uint16_t max_chunk, size_t *nbytes, unsigned int *nchunks);
 
@@ -84,7 +84,7 @@ neo4j_iostream_t *neo4j_chunking_iostream_init(
     ios->snd_max_chunk = max_chunk;
     ios->delegate = delegate;
 
-    neo4j_iostream_t *iostream = (neo4j_iostream_t *)ios;
+    neo4j_iostream_t *iostream = &(ios->_iostream);
     iostream->read = chunking_read;
     iostream->readv = chunking_readv;
     iostream->write = chunking_write;
@@ -95,11 +95,11 @@ neo4j_iostream_t *neo4j_chunking_iostream_init(
 }
 
 
-ssize_t chunking_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
+ssize_t chunking_read(neo4j_iostream_t *self, void *buf, size_t nbyte)
 {
     REQUIRE(buf != NULL, -1);
-    struct neo4j_chunking_iostream *ios =
-        (struct neo4j_chunking_iostream *)stream;
+    struct neo4j_chunking_iostream *ios = container_of(self,
+            struct neo4j_chunking_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -183,12 +183,12 @@ ssize_t chunking_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 }
 
 
-ssize_t chunking_readv(neo4j_iostream_t *stream,
+ssize_t chunking_readv(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt)
 {
     if (iovcnt == 1)
     {
-        return chunking_read(stream, iov[0].iov_base, iov[0].iov_len);
+        return chunking_read(self, iov[0].iov_base, iov[0].iov_len);
     }
     else if (iovcnt > IOV_MAX-1)
     {
@@ -196,8 +196,8 @@ ssize_t chunking_readv(neo4j_iostream_t *stream,
     }
 
     REQUIRE(iov != NULL, -1);
-    struct neo4j_chunking_iostream *ios =
-        (struct neo4j_chunking_iostream *)stream;
+    struct neo4j_chunking_iostream *ios = container_of(self,
+            struct neo4j_chunking_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -288,7 +288,7 @@ cleanup:
 }
 
 
-ssize_t chunking_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
+ssize_t chunking_write(neo4j_iostream_t *self, const void *buf, size_t nbyte)
 {
     REQUIRE(buf != NULL, -1);
     REQUIRE(nbyte > 0, -1);
@@ -296,16 +296,16 @@ ssize_t chunking_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
     struct iovec iov[1];
     iov[0].iov_base = (void *)(uintptr_t)buf;
     iov[0].iov_len = nbyte;
-    return chunking_writev(stream, iov, 1);
+    return chunking_writev(self, iov, 1);
 }
 
 
-ssize_t chunking_writev(neo4j_iostream_t *stream,
+ssize_t chunking_writev(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(iov != NULL, -1);
-    struct neo4j_chunking_iostream *ios =
-        (struct neo4j_chunking_iostream *)stream;
+    struct neo4j_chunking_iostream *ios = container_of(self,
+            struct neo4j_chunking_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -439,10 +439,10 @@ ssize_t chunking_writev(neo4j_iostream_t *stream,
 }
 
 
-int chunking_flush(neo4j_iostream_t *stream)
+int chunking_flush(neo4j_iostream_t *self)
 {
-    struct neo4j_chunking_iostream *ios =
-        (struct neo4j_chunking_iostream *)stream;
+    struct neo4j_chunking_iostream *ios = container_of(self,
+            struct neo4j_chunking_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -453,10 +453,10 @@ int chunking_flush(neo4j_iostream_t *stream)
 }
 
 
-int chunking_close(neo4j_iostream_t *stream)
+int chunking_close(neo4j_iostream_t *self)
 {
-    struct neo4j_chunking_iostream *ios =
-        (struct neo4j_chunking_iostream *)stream;
+    struct neo4j_chunking_iostream *ios = container_of(self,
+            struct neo4j_chunking_iostream, _iostream);
     if (ios->delegate == NULL)
     {
         errno = EPIPE;
@@ -499,12 +499,12 @@ int chunking_close(neo4j_iostream_t *stream)
 }
 
 
-int chunking_dealloc_close(neo4j_iostream_t *stream)
+int chunking_dealloc_close(neo4j_iostream_t *self)
 {
-    struct neo4j_chunking_iostream *ios =
-        (struct neo4j_chunking_iostream *)stream;
+    struct neo4j_chunking_iostream *ios = container_of(self,
+            struct neo4j_chunking_iostream, _iostream);
     uint8_t *snd_buffer = ios->snd_buffer;
-    int result = chunking_close(stream);
+    int result = chunking_close(self);
     int errsv = errno;
     free(snd_buffer);
     free(ios);

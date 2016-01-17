@@ -49,9 +49,6 @@ struct neo4j_chunking_iostream
     int rcv_errno;
 };
 
-static_assert(offsetof(struct neo4j_chunking_iostream, _iostream) == 0,
-        "_iostream must be first field in struct neo4j_chunking_iostream");
-
 
 /**
  * Initialize a `struct neo4j_chunking_iostream`.

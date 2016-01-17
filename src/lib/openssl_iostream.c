@@ -33,19 +33,16 @@ struct openssl_iostream {
     neo4j_iostream_t *delegate;
 };
 
-static_assert(offsetof(struct openssl_iostream, _iostream) == 0,
-        "_iostream must be first field in struct openssl_iostream");
 
-
-static ssize_t openssl_read(neo4j_iostream_t *stream, void *buf, size_t nbyte);
-static ssize_t openssl_readv(neo4j_iostream_t *stream,
+static ssize_t openssl_read(neo4j_iostream_t *self, void *buf, size_t nbyte);
+static ssize_t openssl_readv(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt);
-static ssize_t openssl_write(neo4j_iostream_t *stream,
+static ssize_t openssl_write(neo4j_iostream_t *self,
         const void *buf, size_t nbyte);
-static ssize_t openssl_writev(neo4j_iostream_t *stream,
+static ssize_t openssl_writev(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt);
-static int openssl_flush(neo4j_iostream_t *stream);
-static int openssl_close(neo4j_iostream_t *stream);
+static int openssl_flush(neo4j_iostream_t *self);
+static int openssl_close(neo4j_iostream_t *self);
 
 static int iostream_bio_write(BIO *bio, const char *buf, int nbyte);
 static int iostream_bio_read(BIO *bio, char *buf, int nbyte);
@@ -101,7 +98,7 @@ neo4j_iostream_t *neo4j_openssl_iostream(neo4j_iostream_t *delegate,
 
     ios->bio = ssl_bio;
     ios->delegate = delegate;
-    neo4j_iostream_t *iostream = (neo4j_iostream_t *)ios;
+    neo4j_iostream_t *iostream = &(ios->_iostream);
     iostream->read = openssl_read;
     iostream->readv = openssl_readv;
     iostream->write = openssl_write;
@@ -123,9 +120,10 @@ failure:
 }
 
 
-ssize_t openssl_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
+ssize_t openssl_read(neo4j_iostream_t *self, void *buf, size_t nbyte)
 {
-    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    struct openssl_iostream *ios = container_of(self,
+            struct openssl_iostream, _iostream);
     if (ios->bio == NULL)
     {
         errno = EPIPE;
@@ -137,11 +135,12 @@ ssize_t openssl_read(neo4j_iostream_t *stream, void *buf, size_t nbyte)
 }
 
 
-ssize_t openssl_readv(neo4j_iostream_t *stream,
+ssize_t openssl_readv(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(iovcnt > 0 && iov[0].iov_len > 0, -1);
-    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    struct openssl_iostream *ios = container_of(self,
+            struct openssl_iostream, _iostream);
     if (ios->bio == NULL)
     {
         errno = EPIPE;
@@ -156,9 +155,10 @@ ssize_t openssl_readv(neo4j_iostream_t *stream,
 }
 
 
-ssize_t openssl_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
+ssize_t openssl_write(neo4j_iostream_t *self, const void *buf, size_t nbyte)
 {
-    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    struct openssl_iostream *ios = container_of(self,
+            struct openssl_iostream, _iostream);
     if (ios->bio == NULL)
     {
         errno = EPIPE;
@@ -170,11 +170,12 @@ ssize_t openssl_write(neo4j_iostream_t *stream, const void *buf, size_t nbyte)
 }
 
 
-ssize_t openssl_writev(neo4j_iostream_t *stream,
+ssize_t openssl_writev(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt)
 {
     REQUIRE(iovcnt > 0 && iov[0].iov_len > 0, -1);
-    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    struct openssl_iostream *ios = container_of(self,
+            struct openssl_iostream, _iostream);
     if (ios->bio == NULL)
     {
         errno = EPIPE;
@@ -188,9 +189,10 @@ ssize_t openssl_writev(neo4j_iostream_t *stream,
 }
 
 
-int openssl_flush(neo4j_iostream_t *stream)
+int openssl_flush(neo4j_iostream_t *self)
 {
-    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    struct openssl_iostream *ios = container_of(self,
+            struct openssl_iostream, _iostream);
     if (ios->bio == NULL)
     {
         errno = EPIPE;
@@ -200,9 +202,10 @@ int openssl_flush(neo4j_iostream_t *stream)
     return (BIO_flush(ios->bio) == 1)? 0 : -1;
 }
 
-int openssl_close(neo4j_iostream_t *stream)
+int openssl_close(neo4j_iostream_t *self)
 {
-    struct openssl_iostream *ios = (struct openssl_iostream *)stream;
+    struct openssl_iostream *ios = container_of(self,
+            struct openssl_iostream, _iostream);
     if (ios->bio == NULL)
     {
         errno = EPIPE;
