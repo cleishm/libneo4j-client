@@ -27,6 +27,8 @@ typedef struct neo4j_memory_allocator neo4j_memory_allocator_t;
 /**
  * Allocate memory using the specified allocator.
  *
+ * @internal
+ *
  * @param [allocator] The allocator to use.
  * @param [context] An opaque 'context' for the allocation, which an
  *         allocator may use to try an optimize storage as memory allocated
@@ -37,6 +39,7 @@ typedef struct neo4j_memory_allocator neo4j_memory_allocator_t;
  * @return A pointer the newly allocated memory, or `NULL` if an error occurs
  *         (errno will be set).
  */
+__neo4j_malloc
 static inline void *neo4j_alloc(neo4j_memory_allocator_t *allocator,
         void *context, size_t size)
 {
@@ -49,6 +52,8 @@ static inline void *neo4j_alloc(neo4j_memory_allocator_t *allocator,
  *
  * The memory will be filled with bytes of value zero.
  *
+ * @internal
+ *
  * @param [allocator] The allocator to use.
  * @param [context] An opaque 'context' for the allocation, which an
  *         allocator may use to try an optimize storage as memory allocated
@@ -60,6 +65,7 @@ static inline void *neo4j_alloc(neo4j_memory_allocator_t *allocator,
  * @return A pointer the newly allocated memory, or `NULL` if an error occurs
  *         (errno will be set).
  */
+__neo4j_malloc
 static inline void *neo4j_calloc(neo4j_memory_allocator_t *allocator,
         void *context, size_t count, size_t size)
 {
@@ -69,6 +75,8 @@ static inline void *neo4j_calloc(neo4j_memory_allocator_t *allocator,
 
 /**
  * Return memory to the specified allocator.
+ *
+ * @internal
  *
  * @param [allocator] The allocator to use.
  * @param [ptr] A pointer to the memory being returned.
@@ -81,6 +89,8 @@ static inline void neo4j_free(neo4j_memory_allocator_t *allocator, void *ptr)
 
 /**
  * Return multiple memory regions to the specified allocator.
+ *
+ * @internal
  *
  * @param [allocator] The allocator to use.
  * @param [ptrs] An array of pointers to memory for returning.
@@ -110,6 +120,8 @@ typedef struct neo4j_mpool
 /**
  * Initialize a new memory pool.
  *
+ * @internal
+ *
  * @param [allocator] The allocator to use with the pool.
  * @param [block_size] The number of memory pointers to hold in each block.
  *         The pool will allocate a new block when the previous has been filled.
@@ -124,10 +136,13 @@ neo4j_mpool_t neo4j_mpool(neo4j_memory_allocator_t *allocator,
  * The memory added to the pool will be automatically deallocated when the pool
  * is drained to the current depth or lower.
  *
+ * @internal
+ *
  * @param [pool] A pointer to the pool.
  * @param [ptr] The pointer to be added.
  * @return The new pool depth on success, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 ssize_t neo4j_mpool_add(neo4j_mpool_t *pool, void *ptr);
 
 /**
@@ -135,6 +150,8 @@ ssize_t neo4j_mpool_add(neo4j_mpool_t *pool, void *ptr);
  *
  * If the pool is already below the specified depth, no change to the pool is
  * made.
+ *
+ * @internal
  *
  * @param [pool] A pointer to the pool to drain.
  * @param [depth] The depth to drain to.
@@ -146,6 +163,8 @@ void neo4j_mpool_drainto(neo4j_mpool_t *pool, size_t depth);
  *
  * This deallocates all memory added to the pool.
  *
+ * @internal
+ *
  * @param [pool] A pointer to the pool to drain.
  */
 static inline void neo4j_mpool_drain(neo4j_mpool_t *pool)
@@ -156,6 +175,9 @@ static inline void neo4j_mpool_drain(neo4j_mpool_t *pool)
 /**
  * @fn size_t neo4j_mpool_depth(const neo4j_mpool_t pool)
  * @brief Get the depth of a memory pool.
+ *
+ * @internal
+ *
  * @param [pool] The pool to check the depth of.
  * @return The depth of the pool.
  */
@@ -170,10 +192,13 @@ static inline size_t _neo4j_mpool_depth(const neo4j_mpool_t *pool)
  *
  * Memory will be allocated using the allocator the pool was created with.
  *
+ * @internal
+ *
  * @param [pool] The pool to allocate memory using.
  * @return A pointer the newly allocated memory, or `NULL` if an error occurs
  *         (errno will be set).
  */
+__neo4j_malloc
 static inline void *neo4j_mpool_alloc(neo4j_mpool_t *pool, size_t size)
 {
     void *ptr = neo4j_alloc(pool->allocator, pool, size);
@@ -193,12 +218,15 @@ static inline void *neo4j_mpool_alloc(neo4j_mpool_t *pool, size_t size)
  * Memory will be allocated using the allocator the pool was created with,
  * and will be filled with bytes of value zero.
  *
+ * @internal
+ *
  * @param [pool] The pool to allocate memory using.
  * @param [count] The number of objects to allocate contiguous space for.
  * @param [size] The size of each object.
  * @return A pointer the newly allocated memory, or `NULL` if an error occurs
  *         (errno will be set).
  */
+__neo4j_malloc
 static inline void *neo4j_mpool_calloc(neo4j_mpool_t *pool,
         size_t count, size_t size)
 {
@@ -219,10 +247,13 @@ static inline void *neo4j_mpool_calloc(neo4j_mpool_t *pool,
  * The memory in the second pool is added on top of the memory in the
  * first pool, increasing the depth of the first pool and emptying the second.
  *
+ * @internal
+ *
  * @param [pool1] A pointer to the first pool.
  * @param [pool2] A pointer to the second pool.
  * @return The new pool1 depth on success, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 ssize_t neo4j_mpool_merge(neo4j_mpool_t *pool1, neo4j_mpool_t *pool2);
 
 

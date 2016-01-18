@@ -24,11 +24,14 @@
 /**
  * Read a neo4j value from a stream.
  *
+ * @internal
+ *
  * @param [stream] The iostream to read from.
  * @param [mpool] The memory pool to allocate value space in.
  * @param [value] A pointer to a neo4j value, which will be updated.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_deserialize(neo4j_iostream_t *stream, neo4j_mpool_t *mpool,
         neo4j_value_t *value);
 

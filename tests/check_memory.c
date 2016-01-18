@@ -126,7 +126,7 @@ START_TEST (fill_debounce_and_drain)
 {
     for (int i = NEO4J_MPOOL_DEBOUNCE; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     ck_assert_ptr_eq(pool.ptrs, NULL);
@@ -148,7 +148,7 @@ START_TEST (fill_debounce_and_part_drain)
 {
     for (int i = NEO4J_MPOOL_DEBOUNCE; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     ck_assert_ptr_eq(pool.ptrs, NULL);
@@ -172,7 +172,7 @@ START_TEST (fill_1block_and_drain)
     for (int i = 100; i > 0; --i)
     {
         void *p = test_buffer_next();
-        neo4j_mpool_add(&pool, p);
+        ck_assert_int_gt(neo4j_mpool_add(&pool, p), 0);
     }
 
     ck_assert_ptr_ne(pool.ptrs, NULL);
@@ -195,7 +195,7 @@ START_TEST (fill_1block_and_part_drain)
 {
     for (int i = 100; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     ck_assert_ptr_ne(pool.ptrs, NULL);
@@ -219,7 +219,7 @@ START_TEST (fill_1block_plus_debounce_and_part_drain)
 {
     for (int i = 132; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     ck_assert_ptr_ne(pool.ptrs, NULL);
@@ -262,7 +262,7 @@ START_TEST (fill_and_drain)
     int additions = sizeof(test_buffer) - 1;
     for (int i = additions; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     int expected_blocks = (additions / (block_size - 1)) + 1;
 
@@ -282,7 +282,7 @@ START_TEST (fill_and_partially_drain)
 {
     for (int i = 100; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     ck_assert_int_eq(neo4j_mpool_depth(pool), 100);
@@ -296,7 +296,7 @@ START_TEST (fill_and_partially_drain)
 
     for (int i = 500; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     neo4j_mpool_drainto(&pool, 30);
@@ -308,7 +308,7 @@ START_TEST (fill_and_partially_drain)
 
     for (int i = 140; i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
 
     neo4j_mpool_drainto(&pool, 0);
@@ -327,7 +327,7 @@ START_TEST (merge_with_empty_pool)
     neo4j_mpool_t pool2 = neo4j_mpool(pool.allocator, pool.block_size);
     for (int i = 100; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -343,7 +343,7 @@ START_TEST (merge_with_full_pool)
 {
     for (int i = 3*(pool.block_size-1); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset == pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -352,7 +352,7 @@ START_TEST (merge_with_full_pool)
     neo4j_mpool_t pool2 = neo4j_mpool(pool.allocator, pool.block_size);
     for (int i = 100; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -368,7 +368,7 @@ START_TEST (merge_with_underfull_pool)
 {
     for (int i = 3*(pool.block_size-1) + (pool.block_size/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset < pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -378,7 +378,7 @@ START_TEST (merge_with_underfull_pool)
     unsigned int extra = 2*(pool.block_size-1) + 2*(pool.block_size/3);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -394,7 +394,7 @@ START_TEST (merge_with_underfull_below_offset_pool)
 {
     for (int i = 3*(pool.block_size-1) + (pool.block_size/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset < pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -404,7 +404,7 @@ START_TEST (merge_with_underfull_below_offset_pool)
     unsigned int extra = 2*(pool.block_size-1) + (pool.block_size/3);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -420,7 +420,7 @@ START_TEST (merge_overfull_with_underfull_pool)
 {
     for (int i = 3*(pool.block_size-1) + (pool.block_size/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset < pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -430,7 +430,7 @@ START_TEST (merge_overfull_with_underfull_pool)
     unsigned int extra = 2*(pool.block_size-1) + (NEO4J_MPOOL_DEBOUNCE/2);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -446,7 +446,7 @@ START_TEST (merge_overfull_with_underfull_below_debounce_pool)
 {
     for (int i = 4*(pool.block_size-1) - (NEO4J_MPOOL_DEBOUNCE/3); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset < pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -456,7 +456,7 @@ START_TEST (merge_overfull_with_underfull_below_debounce_pool)
     unsigned int extra = 2*(pool.block_size-1) + (NEO4J_MPOOL_DEBOUNCE/2);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -472,7 +472,7 @@ START_TEST (merge_with_overfull_pool)
 {
     for (int i = 3*(pool.block_size-1) + (NEO4J_MPOOL_DEBOUNCE/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset == pool.block_size);
     ck_assert(pool.debounce_offset > 0);
@@ -482,7 +482,7 @@ START_TEST (merge_with_overfull_pool)
     unsigned int extra = 2*(pool.block_size-1) + 2*(pool.block_size/3);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -498,7 +498,7 @@ START_TEST (merge_overfull_with_overfull_pool)
 {
     for (int i = 3*(pool.block_size-1) + (NEO4J_MPOOL_DEBOUNCE/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset == pool.block_size);
     ck_assert(pool.debounce_offset > 0);
@@ -508,7 +508,7 @@ START_TEST (merge_overfull_with_overfull_pool)
     unsigned int extra = 2*(pool.block_size-1) + 2*(NEO4J_MPOOL_DEBOUNCE/3);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -529,7 +529,7 @@ START_TEST (merge_with_empty_pool_of_smaller_blocksize)
     neo4j_mpool_t pool2 = neo4j_mpool(pool.allocator, 2*(pool.block_size/3));
     for (int i = 300; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -545,7 +545,7 @@ START_TEST (merge_with_pool_of_smaller_blocksize)
 {
     for (int i = 3*(pool.block_size-1) + (pool.block_size/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset < pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -555,7 +555,7 @@ START_TEST (merge_with_pool_of_smaller_blocksize)
     unsigned int extra = 2*(pool.block_size-1) + 2*(pool.block_size/3);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -576,7 +576,7 @@ START_TEST (merge_with_empty_pool_of_larger_blocksize)
     neo4j_mpool_t pool2 = neo4j_mpool(pool.allocator, 3*(pool.block_size/2));
     for (int i = 100; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);
@@ -592,7 +592,7 @@ START_TEST (merge_with_pool_of_larger_blocksize)
 {
     for (int i = 3*(pool.block_size-1) + (pool.block_size/2); i > 0; --i)
     {
-        neo4j_mpool_add(&pool, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     ck_assert(pool.offset < pool.block_size);
     ck_assert(pool.debounce_offset == 0);
@@ -602,7 +602,7 @@ START_TEST (merge_with_pool_of_larger_blocksize)
     unsigned int extra = 2*(pool.block_size-1) + 2*(pool.block_size/3);
     for (int i = extra; i > 0; --i)
     {
-        neo4j_mpool_add(&pool2, test_buffer_next());
+        ck_assert_int_gt(neo4j_mpool_add(&pool2, test_buffer_next()), 0);
     }
 
     ssize_t new_depth = neo4j_mpool_merge(&pool, &pool2);

@@ -65,9 +65,12 @@ struct neo4j_config
 /**
  * Duplicate a `neo4j_config_t`.
  *
+ * @internal
+ *
  * @param [config] The config to duplicate.
  * @return A newly allocated `neo4j_config_t`.
  */
+__neo4j_malloc
 neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
 
 
@@ -76,6 +79,8 @@ neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
  *
  * Differs from `neo4j_config_set_username` as the username string
  * need not be null terminated as the length is supplied separately.
+ *
+ * @internal
  *
  * @param [config] The config to update.
  * @param [username] The string containing the username.
@@ -88,6 +93,8 @@ int neo4j_config_nset_username(neo4j_config_t *config,
 
 /**
  * Initialize a memory pool.
+ *
+ * @internal
  *
  * @param [config] The client configuration.
  * @return A memory pool.

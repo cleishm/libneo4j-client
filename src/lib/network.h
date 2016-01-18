@@ -22,11 +22,15 @@
 /**
  * Connect a TCP socket.
  *
+ * @internal
+ *
  * @param [hostname] The hostname to connect to.
  * @param [servname] The name of the TCP service to connect to.
  * @param [config] The client configuration.
  * @param [logger] A logger to write diagnostics and errors to.
+ * @return 0 on success, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_connect_tcp_socket(const char *hostname, const char *servname,
         const neo4j_config_t *config, struct neo4j_logger *logger);
 

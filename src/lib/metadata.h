@@ -59,6 +59,7 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
  * @param [logger] A logger to emit error messages to.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_meta_failure_details(const char **code, const char **message,
         neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
         neo4j_logger_t *logger);
@@ -120,6 +121,7 @@ int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
  * @param [logger] A logger to emit error messages to.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
         neo4j_value_t map, const char *description,
         neo4j_logger_t *logger);

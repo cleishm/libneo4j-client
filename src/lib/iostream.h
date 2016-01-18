@@ -27,11 +27,14 @@ typedef struct neo4j_iostream neo4j_iostream_t;
  *
  * Note: may return before the buffer is filled.
  *
+ * @internal
+ *
  * @param [ios] The iostream to read from.
  * @param [buf] The buffer to read into.
  * @param [nbyte] The number of bytes to read into the buffer.
  * @return The number of bytes read, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 static inline ssize_t neo4j_ios_read(neo4j_iostream_t *ios,
         void *buf, size_t nbyte)
 {
@@ -43,11 +46,14 @@ static inline ssize_t neo4j_ios_read(neo4j_iostream_t *ios,
  *
  * Note: may return before the buffers in the vector are filled.
  *
+ * @internal
+ *
  * @param [ios] The iostream to read from.
  * @param [iov] The vector of buffers to read into.
  * @param [iovcnt] The length of the vector.
  * @return The number of bytes read, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 static inline ssize_t neo4j_ios_readv(neo4j_iostream_t *ios,
         const struct iovec *iov, unsigned int iovcnt)
 {
@@ -59,6 +65,8 @@ static inline ssize_t neo4j_ios_readv(neo4j_iostream_t *ios,
  *
  * Will return when the buffer is full or when the stream encounters an error.
  *
+ * @internal
+ *
  * @param [ios] The iostream to read from.
  * @param [buf] The buffer to read into.
  * @param [nbyte] The number of bytes to read into the buffer.
@@ -66,6 +74,7 @@ static inline ssize_t neo4j_ios_readv(neo4j_iostream_t *ios,
  *         with the number of bytes actually written into the buffer.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_ios_read_all(neo4j_iostream_t *ios,
         void *buf, size_t nbyte, size_t *received);
 
@@ -74,6 +83,8 @@ int neo4j_ios_read_all(neo4j_iostream_t *ios,
  *
  * Will return when the buffers are full or when the stream encounters an error.
  *
+ * @internal
+ *
  * @param [ios] The iostream to read from.
  * @param [iov] The vector of buffers to read into.
  * @param [iovcnt] The length of the vector.
@@ -81,6 +92,7 @@ int neo4j_ios_read_all(neo4j_iostream_t *ios,
  *         with the number of bytes actually written into the buffer.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_ios_readv_all(neo4j_iostream_t *ios,
         const struct iovec *iov, unsigned int iovcnt, size_t *received);
 
@@ -91,6 +103,8 @@ int neo4j_ios_readv_all(neo4j_iostream_t *ios,
  *
  * NOTE: this will modify the supplied I/O vector, even on failure.
  *
+ * @internal
+ *
  * @param [ios] The iostream to read from.
  * @param [iov] The vector of buffers to read into (will be modified!).
  * @param [iovcnt] The length of the vector.
@@ -98,6 +112,7 @@ int neo4j_ios_readv_all(neo4j_iostream_t *ios,
  *         with the number of bytes actually written into the buffer.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_ios_nonconst_readv_all(neo4j_iostream_t *ios,
         struct iovec *iov, unsigned int iovcnt, size_t *received);
 
@@ -107,11 +122,14 @@ int neo4j_ios_nonconst_readv_all(neo4j_iostream_t *ios,
  *
  * Note: may return before all data in the buffer is written.
  *
+ * @internal
+ *
  * @param [ios] The iostream to write to.
  * @param [buf] The buffer containing data to write.
  * @param [nbyte] The number of bytes in the buffer to be written.
  * @return The number of bytes written, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 static inline ssize_t neo4j_ios_write(neo4j_iostream_t *ios,
         const void *buf, size_t nbyte)
 {
@@ -123,11 +141,14 @@ static inline ssize_t neo4j_ios_write(neo4j_iostream_t *ios,
  *
  * Note: may return before all data in the vector of buffers is written.
  *
+ * @internal
+ *
  * @param [ios] The iostream to write to.
  * @param [iov] The vector of buffers containing data to write.
  * @param [iovcnt] The length of the vector.
  * @return The number of bytes written, or -1 on failure (errno will be set).
  */
+__neo4j_must_check
 static inline ssize_t neo4j_ios_writev(neo4j_iostream_t *ios,
         const struct iovec *iov, unsigned int iovcnt)
 {
@@ -140,6 +161,8 @@ static inline ssize_t neo4j_ios_writev(neo4j_iostream_t *ios,
  * Will return when all data from the buffer is written or when the stream
  * encounters an error.
  *
+ * @internal
+ *
  * @param [ios] The iostream to write to.
  * @param [buf] The buffer containing data to write.
  * @param [nbyte] The number of bytes in the buffer to be written.
@@ -147,6 +170,7 @@ static inline ssize_t neo4j_ios_writev(neo4j_iostream_t *ios,
  *         with the number of bytes actually written to the iostream.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_ios_write_all(neo4j_iostream_t *ios,
         const void *buf, size_t nbyte, size_t *written);
 
@@ -156,6 +180,8 @@ int neo4j_ios_write_all(neo4j_iostream_t *ios,
  * Will return when all data from the vector of buffers has been written or
  * when the stream encounters an error.
  *
+ * @internal
+ *
  * @param [ios] The iostream to write to.
  * @param [iov] The vector of buffers containing data to write.
  * @param [iovcnt] The length of the vector.
@@ -163,6 +189,7 @@ int neo4j_ios_write_all(neo4j_iostream_t *ios,
  *         with the number of bytes actually written to the iostream.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_ios_writev_all(neo4j_iostream_t *ios,
         const struct iovec *iov, unsigned int iovcnt, size_t *written);
 
@@ -174,6 +201,8 @@ int neo4j_ios_writev_all(neo4j_iostream_t *ios,
  *
  * NOTE: this will modify the supplied I/O vector, even on failure.
  *
+ * @internal
+ *
  * @param [ios] The iostream to write to.
  * @param [iov] The vector of buffers containing data to write.
  * @param [iovcnt] The length of the vector.
@@ -181,6 +210,7 @@ int neo4j_ios_writev_all(neo4j_iostream_t *ios,
  *         with the number of bytes actually written to the iostream.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_ios_nonconst_writev_all(neo4j_iostream_t *ios,
         struct iovec *iov, unsigned int iovcnt, size_t *written);
 
@@ -188,6 +218,8 @@ int neo4j_ios_nonconst_writev_all(neo4j_iostream_t *ios,
  * Flush the output buffer of the iostream.
  *
  * For unbuffered streams, this is a no-op.
+ *
+ * @internal
  *
  * @param [ios] The iostream to flush.
  * @return 0 on success, -1 on error (errno will be set).
@@ -199,6 +231,8 @@ static inline int neo4j_ios_flush(neo4j_iostream_t *ios)
 
 /**
  * Close the iostream.
+ *
+ * @internal
  *
  * @param [ios] The iostream to close. This iostream will be invalid and
  *         potentially deallocated after the function returns, even on error.

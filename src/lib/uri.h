@@ -14,8 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_URI_H
-#define NEO4J_URI_H
+#ifndef LIBURI_URI_H
+#define LIBURI_URI_H
+
+#if __GNUC__ > 3
+#define __liburi_malloc __attribute__((malloc))
+#else
+#define __liburi_malloc /*malloc*/
+#endif
+
 
 struct uri
 {
@@ -37,6 +44,7 @@ struct uri
  *         character, then the entire input was valid.
  * @return A newly allocated `struct uri`.
  */
+__liburi_malloc
 struct uri *parse_uri(const char *str, const char **endptr);
 
 /**
@@ -46,4 +54,4 @@ struct uri *parse_uri(const char *str, const char **endptr);
  */
 void free_uri(struct uri *uri);
 
-#endif/*NEO4J_URI_H*/
+#endif/*LIBURI_URI_H*/

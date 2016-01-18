@@ -22,6 +22,8 @@
 /**
  * Check if the host is trusted according to the TOFU process.
  *
+ * @internal
+ *
  * @param [hostname] The hostname.
  * @param [port] The port on the host.
  * @param [fingerprint] The fingerprint of the host.
@@ -30,6 +32,7 @@
  * @return 0 if the host is trusted, >0 if the host is not trusted, and -1
  *         if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_check_known_hosts(const char * restrict hostname, int port,
         const char * restrict fingerprint, const neo4j_config_t *config,
         uint_fast8_t flags);

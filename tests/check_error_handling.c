@@ -51,7 +51,7 @@ END_TEST
 
 START_TEST (test_strerror_invalid_arguments)
 {
-    ck_assert(neo4j_strerror(-1, NULL, 0) == NULL);
+    ck_assert(neo4j_strerror(-1, NULL, 10) == NULL);
     ck_assert_int_eq(errno, EINVAL);
 }
 END_TEST

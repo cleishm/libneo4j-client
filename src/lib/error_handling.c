@@ -32,7 +32,7 @@ void neo4j_perror(FILE *stream, int errnum, const char *message)
 
 const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
 {
-    REQUIRE(buflen > 0, NULL);
+    REQUIRE(buflen == 0 || buf != NULL, NULL);
 
     switch (errnum)
     {

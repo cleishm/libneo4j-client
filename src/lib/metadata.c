@@ -160,7 +160,7 @@ int neo4j_meta_fieldnames(const char * const **names, neo4j_value_t map,
         {
             neo4j_log_error(logger,
                     "invalid field in %s: fields[%d] is %s, expected String",
-                    i, description, neo4j_type_str(neo4j_type(fieldname)));
+                    description, i, neo4j_type_str(neo4j_type(fieldname)));
             errno = EPROTO;
             goto failure;
         }
@@ -330,6 +330,5 @@ char *extract_string(neo4j_value_t value, neo4j_mpool_t *mpool)
     {
         return NULL;
     }
-    neo4j_string_value(value, s, nlength + 1);
-    return s;
+    return neo4j_string_value(value, s, nlength + 1);
 }

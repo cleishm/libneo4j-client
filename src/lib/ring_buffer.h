@@ -14,12 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_RING_BUFFER_H
-#define NEO4J_RING_BUFFER_H
+#ifndef LIBRING_BUFFER_H
+#define LIBRING_BUFFER_H
 
 #include <stdint.h>
 #include <sys/uio.h>
 #include <unistd.h>
+
+#if __GNUC__ > 3
+#define __librb_malloc __attribute__((malloc))
+#else
+#define __librb_malloc /*malloc*/
+#endif
 
 typedef struct ring_buffer
 {
@@ -35,6 +41,7 @@ typedef struct ring_buffer
  * @param [size] The size of the buffer (in bytes).
  * @return A newly allocated buffer.
  */
+__librb_malloc
 ring_buffer_t *rb_alloc(size_t size);
 
 /**
@@ -206,4 +213,4 @@ static inline void rb_clear(ring_buffer_t *rb)
     rb->used = 0;
 }
 
-#endif/*NEO4J_RING_BUFFER_H*/
+#endif/*LIBRING_BUFFER_H*/

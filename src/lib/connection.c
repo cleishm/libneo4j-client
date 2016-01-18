@@ -238,10 +238,10 @@ neo4j_connection_t *establish_connection(const char *hostname,
     connection->snd_buffer = snd_buffer;
     connection->request_queue = request_queue;
 
-    neo4j_log_info(logger, "connected (%p) to '%s'%s", connection,
+    neo4j_log_info(logger, "connected (%p) to '%s'%s", (void *)connection,
             connection_name, connection->insecure? " (insecure)" : "");
     neo4j_log_debug(logger, "connection %p using protocol version %d",
-            connection, protocol_version);
+            (void *)connection, protocol_version);
 
     return connection;
 
@@ -352,7 +352,8 @@ int neo4j_close(neo4j_connection_t *connection)
     int errsv = errno;
     if (result == 0)
     {
-        neo4j_log_info(connection->logger, "disconnected %p", connection);
+        neo4j_log_info(connection->logger, "disconnected %p",
+                (void *)connection);
     }
     neo4j_logger_release(connection->logger);
     neo4j_config_free(connection->config);
@@ -435,7 +436,7 @@ int neo4j_connection_send(neo4j_connection_t *connection,
     {
         char ebuf[256];
         neo4j_log_error(connection->logger,
-                "error sending message on %p: %s\n", connection,
+                "error sending message on %p: %s\n", (void *)connection,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
     }
     return res;
@@ -457,7 +458,7 @@ int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     {
         char ebuf[256];
         neo4j_log_error(connection->logger,
-                "error receiving message on %p: %s\n", connection,
+                "error receiving message on %p: %s\n", (void *)connection,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
     }
     return res;

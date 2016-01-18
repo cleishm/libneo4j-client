@@ -20,10 +20,19 @@
 #include "neo4j-client.h"
 #include "client_config.h"
 
+#if __GNUC__ > 3
+#define __neo4j_format(string_index, first) \
+        __attribute__((format (printf, string_index, first)))
+#else
+#define __neo4j_format(string_index, first) /*format*/
+#endif
+
 typedef struct neo4j_logger neo4j_logger_t;
 
 /**
  * Get a logger for the specified name.
+ *
+ * @internal
  *
  * @param [config] The client configuration.
  * @param [logname] The name for the logger.
@@ -44,6 +53,8 @@ static inline neo4j_logger_t *neo4j_get_logger(const neo4j_config_t *config,
 /**
  * Retain a reference for a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger that will be held.
  * @return The same logger instance.
  */
@@ -58,6 +69,8 @@ static inline neo4j_logger_t *neo4j_logger_retain(neo4j_logger_t *logger)
 
 /**
  * Release a reference to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to be released. May be deallocated if all
  *         references have been released.
@@ -75,6 +88,8 @@ static inline void neo4j_logger_release(neo4j_logger_t *logger)
 /**
  * Check if the logger is enabled for the specified level
  *
+ * @internal
+ *
  * @param [logger] The logger.
  * @param [level] The level to check.
  * @return `true` if enabled, `false` otherwise.
@@ -91,6 +106,8 @@ static inline bool neo4j_log_is_enabled(neo4j_logger_t *logger,
 
 /**
  * Write an entry to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [level] The level to log at.
@@ -110,11 +127,15 @@ static inline void neo4j_vlog(neo4j_logger_t *logger, uint_fast8_t level,
 /**
  * Write an entry to a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [level] The level to log at.
  * @param [format] The printf-style format for the log message.
  * @param [ap] A vector of arguments to the format.
  */
+static inline void neo4j_log(neo4j_logger_t *logger, uint_fast8_t level,
+        const char *format, ...) __neo4j_format(3, 4);
 static inline void neo4j_log(neo4j_logger_t *logger, uint_fast8_t level,
         const char *format, ...)
 {
@@ -129,6 +150,8 @@ static inline void neo4j_log(neo4j_logger_t *logger, uint_fast8_t level,
  *
  * Writes the message with the format `"some message: errno message"`.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [level] The level to log at.
  * @param [message] The message for the start of the log line.
@@ -139,6 +162,8 @@ void neo4j_log_errno(neo4j_logger_t *logger, uint_fast8_t level,
 
 /**
  * Write a trace entry to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
@@ -153,10 +178,14 @@ static inline void neo4j_vlog_trace(neo4j_logger_t *logger,
 /**
  * Write a trace entry to a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
  * @param [...] Arguments to the format.
  */
+static inline void neo4j_log_trace(neo4j_logger_t *logger,
+        const char *format, ...) __neo4j_format(2, 3);
 static inline void neo4j_log_trace(neo4j_logger_t *logger,
         const char *format, ...)
 {
@@ -171,6 +200,8 @@ static inline void neo4j_log_trace(neo4j_logger_t *logger,
  *
  * Writes the message with the format `"some message: errno message"`.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [message] The message for the start of the log line.
  */
@@ -183,6 +214,8 @@ static inline void neo4j_log_trace_errno(neo4j_logger_t *logger,
 
 /**
  * Write a debug entry to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
@@ -197,10 +230,14 @@ static inline void neo4j_vlog_debug(neo4j_logger_t *logger,
 /**
  * Write a debug entry to a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
  * @param [...] Arguments to the format.
  */
+static inline void neo4j_log_debug(neo4j_logger_t *logger,
+        const char *format, ...) __neo4j_format(2, 3);
 static inline void neo4j_log_debug(neo4j_logger_t *logger,
         const char *format, ...)
 {
@@ -215,6 +252,8 @@ static inline void neo4j_log_debug(neo4j_logger_t *logger,
  *
  * Writes the message with the format `"some message: errno message"`.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [message] The message for the start of the log line.
  */
@@ -227,6 +266,8 @@ static inline void neo4j_log_debug_errno(neo4j_logger_t *logger,
 
 /**
  * Write an info entry to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
@@ -241,10 +282,14 @@ static inline void neo4j_vlog_info(neo4j_logger_t *logger,
 /**
  * Write an info entry to a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
  * @param [...] Arguments to the format.
  */
+static inline void neo4j_log_info(neo4j_logger_t *logger,
+        const char *format, ...) __neo4j_format(2, 3);
 static inline void neo4j_log_info(neo4j_logger_t *logger,
         const char *format, ...)
 {
@@ -259,6 +304,8 @@ static inline void neo4j_log_info(neo4j_logger_t *logger,
  *
  * Writes the message with the format `"some message: errno message"`.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [message] The message for the start of the log line.
  */
@@ -271,6 +318,8 @@ static inline void neo4j_log_info_errno(neo4j_logger_t *logger,
 
 /**
  * Write a warn entry to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
@@ -285,10 +334,14 @@ static inline void neo4j_vlog_warn(neo4j_logger_t *logger,
 /**
  * Write a warn entry to a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
  * @param [...] Arguments to the format.
  */
+static inline void neo4j_log_warn(neo4j_logger_t *logger,
+        const char *format, ...) __neo4j_format(2, 3);
 static inline void neo4j_log_warn(neo4j_logger_t *logger,
         const char *format, ...)
 {
@@ -303,6 +356,8 @@ static inline void neo4j_log_warn(neo4j_logger_t *logger,
  *
  * Writes the message with the format `"some message: errno message"`.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [message] The message for the start of the log line.
  */
@@ -315,6 +370,8 @@ static inline void neo4j_log_warn_errno(neo4j_logger_t *logger,
 
 /**
  * Write an error entry to a logger.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
@@ -329,10 +386,14 @@ static inline void neo4j_vlog_error(neo4j_logger_t *logger,
 /**
  * Write an error entry to a logger.
  *
+ * @internal
+ *
  * @param [logger] The logger to write to.
  * @param [format] The printf-style format for the log message.
  * @param [...] Arguments to the format.
  */
+static inline void neo4j_log_error(neo4j_logger_t *logger,
+        const char *format, ...) __neo4j_format(2, 3);
 static inline void neo4j_log_error(neo4j_logger_t *logger,
         const char *format, ...)
 {
@@ -346,6 +407,8 @@ static inline void neo4j_log_error(neo4j_logger_t *logger,
  * Write an error entry containing an error message string.
  *
  * Writes the message with the format `"some message: errno message"`.
+ *
+ * @internal
  *
  * @param [logger] The logger to write to.
  * @param [message] The message for the start of the log line.

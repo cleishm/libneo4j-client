@@ -61,7 +61,8 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
         goto failure;
     }
 
-    neo4j_log_debug(logger, "new session (%p) on %p", session, connection);
+    neo4j_log_debug(logger, "new session (%p) on %p",
+            (void *)session, (void *)connection);
 
     session->connection = connection;
     session->config = connection->config;
@@ -71,7 +72,7 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
         goto failure;
     }
 
-    neo4j_log_debug(logger, "session started (%p)", session, connection);
+    neo4j_log_debug(logger, "session started (%p)", (void *)session);
 
     return session;
 
@@ -95,7 +96,7 @@ int session_start(neo4j_session_t *session)
         char ebuf[256];
         neo4j_log_debug(session->logger,
                 "session (%p) cannot use connection %p: %s",
-                session, session->connection,
+                (void *)session, (void *)(session->connection),
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         return -1;
     }
@@ -156,7 +157,7 @@ int neo4j_end_session(neo4j_session_t *session)
         errsv = errno;
     }
 
-    neo4j_log_debug(session->logger, "session ended (%p)", session);
+    neo4j_log_debug(session->logger, "session ended (%p)", (void *)session);
 
     session->connection = NULL;
     session->config = NULL;
@@ -281,7 +282,8 @@ int send_requests(neo4j_session_t *session)
 
         (session->inflight_requests)++;
         neo4j_log_debug(session->logger, "sent %s (%p) in %p",
-                neo4j_message_type_str(request->type), request, session);
+                neo4j_message_type_str(request->type),
+                (void *)request, (void *)session);
     }
 
     return 0;
@@ -316,7 +318,7 @@ int receive_responses(neo4j_session_t *session, const unsigned int *condition)
             neo4j_log_error(session->logger,
                     "unexpected %s message received in %p"
                     " (expected IGNORED after failure occurred)",
-                    neo4j_message_type_str(type), session);
+                    neo4j_message_type_str(type), (void *)session);
             errno = EPROTO;
             session->failed = true;
             return -1;
@@ -328,7 +330,7 @@ int receive_responses(neo4j_session_t *session, const unsigned int *condition)
 
         neo4j_log_debug(session->logger, "rcvd %s in response to %s (%p)",
                 neo4j_message_type_str(type),
-                neo4j_message_type_str(request->type), request);
+                neo4j_message_type_str(request->type), (void *)request);
 
         int result = request->receive(request->cdata, type, argv, argc);
         int errsv = errno;
@@ -361,7 +363,8 @@ int drain_queued_requests(neo4j_session_t *session)
             &(session->request_queue[session->request_queue_head]);
 
         neo4j_log_trace(session->logger, "draining %s (%p) from queue on %p",
-                neo4j_message_type_str(request->type), request, session);
+                neo4j_message_type_str(request->type),
+                (void *)request, (void *)session);
         int result = request->receive(request->cdata,
                 NEO4J_IGNORED_MESSAGE, NULL, 0);
         assert(result <= 0);
@@ -452,7 +455,7 @@ int initialize(neo4j_session_t *session)
     req->cdata = session;
 
     neo4j_log_trace(session->logger, "enqu INIT{\"%s\"} (%p) in %p",
-            client_id, req, session);
+            client_id, (void *)req, (void *)session);
 
     return neo4j_session_sync(session, NULL);
 }
@@ -530,7 +533,7 @@ int ack_failure(neo4j_session_t *session)
     req->cdata = session;
 
     neo4j_log_trace(session->logger, "enqu ACK_FAILURE (%p) in %p",
-            req, session);
+            (void *)req, (void *)session);
 
     return neo4j_session_sync(session, NULL);
 }
@@ -552,12 +555,13 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
         neo4j_log_error(session->logger,
                 "unexpected %s message received in %p"
                 " (expected SUCCESS in response to ACK_FAILURE)",
-                neo4j_message_type_str(type), session);
+                neo4j_message_type_str(type), (void *)session);
         errno = EPROTO;
         return -1;
     }
 
-    neo4j_log_trace(session->logger, "ACK_FAILURE complete in %p", session);
+    neo4j_log_trace(session->logger, "ACK_FAILURE complete in %p",
+            (void *)session);
     return 0;
 }
 
@@ -587,7 +591,7 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     req->cdata = cdata;
 
     neo4j_log_trace(session->logger, "enqu RUN{\"%s\"} (%p) in %p",
-            statement, req, session);
+            statement, (void *)req, (void *)session);
 
     return 0;
 }
@@ -613,7 +617,8 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     req->receive = callback;
     req->cdata = cdata;
 
-    neo4j_log_trace(session->logger, "enqu PULL_ALL (%p) in %p", req, session);
+    neo4j_log_trace(session->logger, "enqu PULL_ALL (%p) in %p",
+            (void *)req, (void *)session);
 
     return 0;
 }
@@ -640,7 +645,7 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     req->cdata = cdata;
 
     neo4j_log_trace(session->logger, "enqu DISCARD_ALL (%p) in %p",
-            req, session);
+            (void *)req, (void *)session);
 
     return 0;
 }

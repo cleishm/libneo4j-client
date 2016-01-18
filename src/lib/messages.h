@@ -64,6 +64,7 @@ static inline const char *neo4j_message_type_str(neo4j_message_type_t type)
  * @param [max_chunk] The maximum chunk size.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc, uint8_t *buffer,
         uint16_t bsize, uint16_t max_chunk);
@@ -84,6 +85,7 @@ int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
  *         length of the received argument vector.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_message_recv(neo4j_iostream_t *ios,
         neo4j_mpool_t *mpool, neo4j_message_type_t *type,
         const neo4j_value_t **argv, uint16_t *argc);

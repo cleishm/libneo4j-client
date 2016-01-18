@@ -59,8 +59,8 @@ static void setup(void)
     config = neo4j_new_config();
     neo4j_config_set_logger_provider(config, logger_provider);
     neo4j_config_set_connection_factory(config, &stub_factory);
-    neo4j_config_set_username(config, username);
-    neo4j_config_set_password(config, password);
+    ck_assert_int_eq(neo4j_config_set_username(config, username), 0);
+    ck_assert_int_eq(neo4j_config_set_password(config, password), 0);
 }
 
 

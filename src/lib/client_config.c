@@ -117,6 +117,10 @@ failure:
 
 void neo4j_config_free(neo4j_config_t *config)
 {
+    if (config == NULL)
+    {
+        return;
+    }
     free(config->username);
     free(config->password);
 #ifdef HAVE_TLS
@@ -137,6 +141,7 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
 
 int neo4j_config_set_username(neo4j_config_t *config, const char *username)
 {
+    REQUIRE(config != NULL, -1);
     return replace_strptr_dup(&(config->username), username);
 }
 
@@ -144,18 +149,21 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username)
 int neo4j_config_nset_username(neo4j_config_t *config,
         const char *username, size_t n)
 {
+    REQUIRE(config != NULL, -1);
     return replace_strptr_ndup(&(config->username), username, n);
 }
 
 
 int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 {
+    REQUIRE(config != NULL, -1);
     return replace_strptr_dup(&(config->password), password);
 }
 
 
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config, const char *path)
 {
+    REQUIRE(config != NULL, -1);
 #ifdef HAVE_TLS
     return replace_strptr_dup(&(config->tls_private_key_file), path);
 #else
@@ -168,6 +176,7 @@ int neo4j_config_set_TLS_private_key(neo4j_config_t *config, const char *path)
 int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
         neo4j_password_callback_t callback, void *userdata)
 {
+    REQUIRE(config != NULL, -1);
 #ifdef HAVE_TLS
     config->tls_pem_pw_callback = callback;
     config->tls_pem_pw_callback_userdata = userdata;
@@ -182,6 +191,7 @@ int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
 int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
         const char *password)
 {
+    REQUIRE(config != NULL, -1);
     return neo4j_config_set_TLS_private_key_password_callback(config,
             default_password_callback, (void *)(intptr_t)password);
 }
@@ -189,6 +199,7 @@ int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
 
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path)
 {
+    REQUIRE(config != NULL, -1);
 #ifdef HAVE_TLS
     return replace_strptr_dup(&(config->tls_ca_file), path);
 #else
@@ -200,6 +211,7 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path)
 
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path)
 {
+    REQUIRE(config != NULL, -1);
 #ifdef HAVE_TLS
     return replace_strptr_dup(&(config->tls_ca_dir), path);
 #else
@@ -211,6 +223,7 @@ int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path)
 
 int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable)
 {
+    REQUIRE(config != NULL, -1);
     config->trust_known = enable;
     return 0;
 }
@@ -219,12 +232,14 @@ int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable)
 int neo4j_config_set_known_hosts_file(neo4j_config_t *config,
         const char *path)
 {
+    REQUIRE(config != NULL, -1);
     return replace_strptr_dup(&(config->known_hosts_file), path);
 }
 
 int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
         neo4j_unverified_host_callback_t callback, void *userdata)
 {
+    REQUIRE(config != NULL, -1);
     config->unverified_host_callback = callback;
     config->unverified_host_callback_userdata = userdata;
     return 0;
@@ -248,6 +263,7 @@ size_t default_password_callback(void *userdata, char *buf, size_t n)
 
 int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size)
 {
+    REQUIRE(config != NULL, -1);
     config->io_sndbuf_size = size;
     return 0;
 }
@@ -255,6 +271,7 @@ int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size)
 
 int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size)
 {
+    REQUIRE(config != NULL, -1);
     config->io_rcvbuf_size = size;
     return 0;
 }
@@ -269,6 +286,7 @@ void neo4j_config_set_logger_provider(neo4j_config_t *config,
 
 int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size)
 {
+    REQUIRE(config != NULL, -1);
     if (size > INT_MAX)
     {
         errno = ERANGE;
@@ -281,6 +299,7 @@ int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size)
 
 int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size)
 {
+    REQUIRE(config != NULL, -1);
     if (size > INT_MAX)
     {
         errno = ERANGE;

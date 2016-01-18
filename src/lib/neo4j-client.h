@@ -29,6 +29,16 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
+#if __GNUC__ > 3
+#define __neo4j_pure __attribute__((pure))
+#define __neo4j_malloc __attribute__((malloc))
+#define __neo4j_must_check __attribute__((warn_unused_result))
+#else
+#define __neo4j_pure /*pure*/
+#define __neo4j_malloc /*malloc*/
+#define __neo4j_must_check /*must check*/
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -95,11 +105,13 @@ typedef size_t (*neo4j_password_callback_t)(void *userdata,
 /**
  * The version string for libneo4j-client.
  */
+__neo4j_pure
 const char *libneo4j_client_version(void);
 
 /**
  * The default client ID string for libneo4j-client.
  */
+__neo4j_pure
 const char *libneo4j_client_id(void);
 
 
@@ -221,6 +233,7 @@ struct neo4j_logger_provider
  * @param [flags] A bitmask of flags for the standard logger output.
  * @return A `neo4j_logger_provider`, or `NULL` on error (errno will be set).
  */
+__neo4j_malloc
 struct neo4j_logger_provider *neo4j_std_logger_provider(FILE *stream,
         uint_fast8_t level, uint_fast32_t flags);
 
@@ -239,6 +252,7 @@ void neo4j_std_logger_provider_free(struct neo4j_logger_provider *provider);
  * @param [level] The logging level.
  * @return A `NULL` terminated ASCII string describing the logging level.
  */
+__neo4j_pure
 const char *neo4j_log_level_str(uint_fast8_t level);
 
 
@@ -391,6 +405,7 @@ void neo4j_perror(FILE *stream, int errnum, const char *message);
  * @param [buflen] The length of the provided buffer.
  * @return A pointer to a character string containing the error message.
  */
+__neo4j_must_check
 const char *neo4j_strerror(int errnum, char *buf, size_t buflen);
 
 
@@ -534,6 +549,7 @@ struct neo4j_map_entry
  * @param [t] The neo4j type.
  * @return A pointer to a `NULL` terminated string containing the type name.
  */
+__neo4j_pure
 const char *neo4j_type_str(const neo4j_type_t t);
 
 /**
@@ -580,6 +596,7 @@ ssize_t neo4j_fprint(neo4j_value_t value, FILE *stream);
  * @param [value2] The second neo4j value.
  * @return `true` if the two values are equivalent, `false` otherwise.
  */
+__neo4j_pure
 bool neo4j_eq(neo4j_value_t value1, neo4j_value_t value2);
 
 /**
@@ -604,6 +621,7 @@ extern const neo4j_value_t neo4j_null;
  * @param [value] A boolean value.
  * @return A neo4j value encoding the Bool.
  */
+__neo4j_pure
 neo4j_value_t neo4j_bool(bool value);
 
 /**
@@ -614,6 +632,7 @@ neo4j_value_t neo4j_bool(bool value);
  * @param [value] The neo4j value
  * @return The native boolean true or false
  */
+__neo4j_pure
 bool neo4j_bool_value(neo4j_value_t value);
 
 
@@ -624,6 +643,7 @@ bool neo4j_bool_value(neo4j_value_t value);
  *         INT64_MAX, or it will be capped to the closest value.
  * @return A neo4j value encoding the Int.
  */
+__neo4j_pure
 neo4j_value_t neo4j_int(long long value);
 
 /**
@@ -634,6 +654,7 @@ neo4j_value_t neo4j_int(long long value);
  * @param [value] The neo4j value
  * @return The native integer value
  */
+__neo4j_pure
 long long neo4j_int_value(neo4j_value_t value);
 
 
@@ -643,6 +664,7 @@ long long neo4j_int_value(neo4j_value_t value);
  * @param [value] A double precision floating point value.
  * @return A neo4j value encoding the Float.
  */
+__neo4j_pure
 neo4j_value_t neo4j_float(double value);
 
 /**
@@ -653,6 +675,7 @@ neo4j_value_t neo4j_float(double value);
  * @param [value] The neo4j value
  * @return The native double value
  */
+__neo4j_pure
 double neo4j_float_value(neo4j_value_t value);
 
 
@@ -676,6 +699,7 @@ double neo4j_float_value(neo4j_value_t value);
  *         UINT32_MAX in length (and will be truncated otherwise).
  * @return A neo4j value encoding the String.
  */
+__neo4j_pure
 neo4j_value_t neo4j_ustring(const char *u, unsigned int n);
 
 /**
@@ -686,6 +710,7 @@ neo4j_value_t neo4j_ustring(const char *u, unsigned int n);
  * @param [value] The neo4j string.
  * @return The length of the string in bytes.
  */
+__neo4j_pure
 unsigned int neo4j_string_length(neo4j_value_t value);
 
 /**
@@ -700,6 +725,7 @@ unsigned int neo4j_string_length(neo4j_value_t value);
  * @param [value] The neo4j string.
  * @return A pointer to a UTF-8 string, which will not be terminated.
  */
+__neo4j_pure
 const char *neo4j_ustring_value(neo4j_value_t value);
 
 /**
@@ -730,6 +756,7 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length);
  *         UINT32_MAX (or the list will be truncated).
  * @return A neo4j value encoding the List.
  */
+__neo4j_pure
 neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n);
 
 /**
@@ -740,6 +767,7 @@ neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n);
  * @param [value] The neo4j list.
  * @return The number of entries.
  */
+__neo4j_pure
 unsigned int neo4j_list_length(neo4j_value_t value);
 
 /**
@@ -752,6 +780,7 @@ unsigned int neo4j_list_length(neo4j_value_t value);
  * @return A pointer to a `neo4j_value_t` element, or `NULL` if the index is
  *         beyond the end of the list.
  */
+__neo4j_pure
 neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index);
 
 
@@ -765,6 +794,7 @@ neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index);
  *         UINT32_MAX (or the list of entries will be truncated).
  * @return A neo4j value encoding the Map.
  */
+__neo4j_pure
 neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n);
 
 /**
@@ -775,6 +805,7 @@ neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n);
  * @param [value] The neo4j map.
  * @return The number of entries.
  */
+__neo4j_pure
 unsigned int neo4j_map_size(neo4j_value_t value);
 
 /**
@@ -786,6 +817,7 @@ unsigned int neo4j_map_size(neo4j_value_t value);
  * @param [index] The index of the entry to return.
  * @return The entry at the specified index, or `NULL` if the index is too large.
  */
+__neo4j_pure
 const neo4j_map_entry_t *neo4j_map_getentry(neo4j_value_t value,
         unsigned int index);
 
@@ -799,6 +831,7 @@ const neo4j_map_entry_t *neo4j_map_getentry(neo4j_value_t value,
  * @return The value stored under the specified key, or `NULL` if the key is
  *         not known.
  */
+__neo4j_pure
 neo4j_value_t neo4j_map_get(neo4j_value_t value, neo4j_value_t key);
 
 /**
@@ -808,6 +841,7 @@ neo4j_value_t neo4j_map_get(neo4j_value_t value, neo4j_value_t key);
  * @param [value] The value for the entry.
  * @return A neo4j map entry.
  */
+__neo4j_pure
 neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value);
 
 
@@ -819,6 +853,7 @@ neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value);
  * @param [value] The neo4j node.
  * @return A neo4j value encoding the List of labels.
  */
+__neo4j_pure
 neo4j_value_t neo4j_node_labels(neo4j_value_t value);
 
 /**
@@ -829,6 +864,7 @@ neo4j_value_t neo4j_node_labels(neo4j_value_t value);
  * @param [value] The neo4j node.
  * @return A neo4j value encoding the Map of properties.
  */
+__neo4j_pure
 neo4j_value_t neo4j_node_properties(neo4j_value_t value);
 
 /**
@@ -837,6 +873,7 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value);
  * @param [value] The neo4j node.
  * @return A neo4j value encoding the Identity of the node.
  */
+__neo4j_pure
 neo4j_value_t neo4j_node_identity(neo4j_value_t value);
 
 
@@ -849,6 +886,7 @@ neo4j_value_t neo4j_node_identity(neo4j_value_t value);
  * @param [value] The neo4j node.
  * @return A neo4j value encoding the type as a String.
  */
+__neo4j_pure
 neo4j_value_t neo4j_relationship_type(neo4j_value_t value);
 
 /**
@@ -860,6 +898,7 @@ neo4j_value_t neo4j_relationship_type(neo4j_value_t value);
  * @param [value] The neo4j relationship.
  * @return A neo4j value encoding the Map of properties.
  */
+__neo4j_pure
 neo4j_value_t neo4j_relationship_properties(neo4j_value_t value);
 
 /**
@@ -868,6 +907,7 @@ neo4j_value_t neo4j_relationship_properties(neo4j_value_t value);
  * @param [value] The neo4j relationship.
  * @return A neo4j value encoding the Identity of the relationship.
  */
+__neo4j_pure
 neo4j_value_t neo4j_relationship_identity(neo4j_value_t value);
 
 /**
@@ -876,6 +916,7 @@ neo4j_value_t neo4j_relationship_identity(neo4j_value_t value);
  * @param [value] The neo4j relationship.
  * @return A neo4j value encoding the Identity of the start node.
  */
+__neo4j_pure
 neo4j_value_t neo4j_relationship_start_node_identity(neo4j_value_t value);
 
 /**
@@ -884,6 +925,7 @@ neo4j_value_t neo4j_relationship_start_node_identity(neo4j_value_t value);
  * @param [value] The neo4j relationship.
  * @return A neo4j value encoding the Identity of the end node.
  */
+__neo4j_pure
 neo4j_value_t neo4j_relationship_end_node_identity(neo4j_value_t value);
 
 
@@ -898,6 +940,7 @@ neo4j_value_t neo4j_relationship_end_node_identity(neo4j_value_t value);
  * @param [value] The neo4j path.
  * @return The length of the path
  */
+__neo4j_pure
 unsigned int neo4j_path_length(neo4j_value_t value);
 
 /**
@@ -909,6 +952,7 @@ unsigned int neo4j_path_length(neo4j_value_t value);
  * @param [hops] The number of hops (distance).
  * @return A neo4j value enconding the Node.
  */
+__neo4j_pure
 neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
 
 /**
@@ -923,6 +967,7 @@ neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
  *         and `false` if it was traversed backward.
  * @return A neo4j value enconding the Relationship.
  */
+__neo4j_pure
 neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
         unsigned int hops, bool *forward);
 
@@ -942,6 +987,7 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
  * @return A pointer to a new neo4j client configuration, or `NULL` if an error
  *         occurs (errno will be set).
  */
+__neo4j_malloc
 neo4j_config_t *neo4j_new_config(void);
 
 /**
@@ -949,7 +995,7 @@ neo4j_config_t *neo4j_new_config(void);
  *
  * @param [config] A pointer to a neo4j client configuration. This pointer will
  *         be invalid after the function returns.
- * */
+ */
 void neo4j_config_free(neo4j_config_t *config);
 
 /**
@@ -972,6 +1018,7 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
  *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_username(neo4j_config_t *config, const char *username);
 
 /**
@@ -982,6 +1029,7 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username);
  *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_password(neo4j_config_t *config, const char *password);
 
 /**
@@ -994,6 +1042,7 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password);
  *         config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
         const char *path);
 
@@ -1006,6 +1055,7 @@ int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
  * @param [userdata] User data that will be supplied to the callback.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
         neo4j_password_callback_t callback, void *userdata);
 
@@ -1021,6 +1071,7 @@ int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
  *         connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
         const char *password);
 
@@ -1036,6 +1087,7 @@ int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
  *         _or if any connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
 
 /**
@@ -1050,6 +1102,7 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
  *         connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
 
 /**
@@ -1068,6 +1121,7 @@ int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
  *         disable this behaviour.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
 
 /**
@@ -1082,8 +1136,8 @@ int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
  *         connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
-int neo4j_config_set_known_hosts_file(neo4j_config_t *config,
-        const char *path);
+__neo4j_must_check
+int neo4j_config_set_known_hosts_file(neo4j_config_t *config, const char *path);
 
 typedef enum
 {
@@ -1261,6 +1315,7 @@ ssize_t neo4j_basename(const char *path, char *buffer, size_t n);
  * @param [path] The path of the directory to create.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_mkdir_p(const char *path);
 
 
@@ -1288,6 +1343,7 @@ int neo4j_mkdir_p(const char *path);
  * @return A pointer to a `neo4j_connection_t` structure, or `NULL` on error
  *         (errno will be set).
  */
+__neo4j_malloc
 neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
         uint_fast32_t flags);
 
@@ -1301,6 +1357,7 @@ neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
  * @return A pointer to a `neo4j_connection_t` structure, or `NULL` on error
  *         (errno will be set).
  */
+__neo4j_malloc
 neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
         neo4j_config_t *config, uint_fast32_t flags);
 
@@ -1327,7 +1384,8 @@ int neo4j_close(neo4j_connection_t *connection);
  * @param [connection] The connection over which to establish the session.
  * @return A pointer to a `neo4j_session_t` structure, or `NULL` on error
  *         (errno will be set).
- * */
+ */
+__neo4j_malloc
 neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection);
 
 /**
@@ -1356,6 +1414,7 @@ int neo4j_end_session(neo4j_session_t *session);
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
  *         will be set).
  */
+__neo4j_must_check
 neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
         const char *statement, neo4j_value_t params);
 
@@ -1373,6 +1432,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
  *         will be set).
  */
+__neo4j_must_check
 neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
         const char *statement, neo4j_value_t params);
 
@@ -1421,6 +1481,7 @@ const char *neo4j_fieldname(neo4j_result_stream_t *results,
  * @return The next result, or NULL if the stream is exahusted or an
  *         error has occurred (errno will be set).
  */
+__neo4j_malloc
 neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results);
 
 /**
@@ -1611,6 +1672,7 @@ void neo4j_release(neo4j_result_t *result);
  * @param [flags] A bitmask of flags to control rendering.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags);
 
@@ -1625,6 +1687,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
  * @param [flags] A bitmask of flags to control rendering.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
+__neo4j_must_check
 int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
         uint_fast32_t flags);
 
@@ -1669,6 +1732,7 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
  *         command or statement was found, and -1 if an error occurs
  *         (errno will be set).
  */
+__neo4j_must_check
 ssize_t neo4j_cli_uparse(const char *s, size_t n,
         const char **start, size_t *length, bool *complete);
 
@@ -1676,7 +1740,7 @@ ssize_t neo4j_cli_uparse(const char *s, size_t n,
  * Parse a command or statement from a `FILE *` stream.
  *
  * @param [stream] The stream to parse
- * @param [buf] A pointer to a `const char *`, that must either be NULL or
+ * @param [buf] A pointer to a `const char *`, that must either be `NULL` or
  *         point to a malloced buffer. The buffer will be modified as needed
  *         by this function, as if via `realloc()`.
  * @param [bufcap] A pointer to a `size_t` that specifies the capacity of the
@@ -1693,6 +1757,7 @@ ssize_t neo4j_cli_uparse(const char *s, size_t n,
  *         command or statement was found, and -1 if an error occurs
  *         (errno will be set).
  */
+__neo4j_must_check
 ssize_t neo4j_cli_fparse(FILE *stream,
         char ** restrict buf, size_t * restrict bufcap,
         char ** restrict start, size_t * restrict length, bool *complete);
@@ -1735,6 +1800,7 @@ ssize_t neo4j_cli_fparse(FILE *stream,
  *         command or statement was found, and -1 if an error occurs
  *         (errno will be set).
  */
+__neo4j_must_check
 ssize_t neo4j_cli_arg_uparse(const char *s, size_t n,
         const char **start, size_t *length, bool *complete);
 

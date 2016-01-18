@@ -72,6 +72,7 @@ struct neo4j_session
  * @param [job] The job to attach.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_attach_job(neo4j_session_t *session, neo4j_job_t *job);
 
 /**
@@ -98,6 +99,7 @@ int neo4j_detach_job(neo4j_session_t *session, neo4j_job_t *job);
  *         value referenced by the pointer being zero.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition);
 
 /**
@@ -113,6 +115,7 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition);
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
         const char *statement, neo4j_value_t params,
         neo4j_response_recv_t callback, void *cdata);
@@ -128,6 +131,7 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
         neo4j_response_recv_t callback, void *cdata);
 
@@ -142,6 +146,7 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
         neo4j_response_recv_t callback, void *cdata);
 

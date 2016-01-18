@@ -34,7 +34,7 @@ static void setup(void)
     fclose(f);
 
     config = neo4j_new_config();
-    neo4j_config_set_known_hosts_file(config, known_hosts);
+    ck_assert_int_eq(neo4j_config_set_known_hosts_file(config, known_hosts), 0);
 }
 
 
@@ -257,7 +257,7 @@ START_TEST (test_trust_creates_known_hosts_file_and_directory)
     memcpy(path, dir, dirlen);
     strncpy(path + dirlen, kh_path, PATH_MAX - dirlen);
 
-    neo4j_config_set_known_hosts_file(config, path);
+    ck_assert_int_eq(neo4j_config_set_known_hosts_file(config, path), 0);
 
     struct callback_data data;
     neo4j_config_set_unverified_host_callback(config, trust_host, &data);

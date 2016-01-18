@@ -151,6 +151,7 @@ ASSERT_VALUE_ALIGNMENT(struct neo4j_struct);
  * @param [n] The number of fields.
  * @return The neo4j value encoding the struct.
  */
+__neo4j_pure
 neo4j_value_t neo4j_struct(uint8_t signature,
         const neo4j_value_t *fields, uint16_t n);
 
@@ -163,6 +164,7 @@ neo4j_value_t neo4j_struct(uint8_t signature,
  *         node, a List of Strings for labels and a Map of properties.
  * @return The neo4j value encoding the node.
  */
+__neo4j_pure
 neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
 
 /**
@@ -175,6 +177,7 @@ neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
  *         Identity of the end node, a String reltype and a Map of properties.
  * @return The neo4j value encoding the relationship.
  */
+__neo4j_pure
 neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
 
 /**
@@ -186,6 +189,7 @@ neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
  *         identity, a String reltype and a Map of properties.
  * @return The neo4j value encoding the relationship.
  */
+__neo4j_pure
 neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
 
 /**
@@ -198,6 +202,7 @@ neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
  *         Path sequence.
  * @return The neo4j value encoding the path.
  */
+__neo4j_pure
 neo4j_value_t neo4j_path(const neo4j_value_t fields[3]);
 
 /**
@@ -208,6 +213,7 @@ neo4j_value_t neo4j_path(const neo4j_value_t fields[3]);
  * @param [id] The numberic identity value.
  * @return The neo4j value encoding the identity.
  */
+__neo4j_pure
 neo4j_value_t neo4j_identity(long long identity);
 
 /**
@@ -220,6 +226,7 @@ neo4j_value_t neo4j_identity(long long identity);
  * @param [value] The neo4j struct.
  * @return The signature.
  */
+__neo4j_pure
 static inline uint8_t neo4j_struct_signature(neo4j_value_t value)
 {
     return ((const struct neo4j_struct *)&value)->signature;
@@ -235,6 +242,7 @@ static inline uint8_t neo4j_struct_signature(neo4j_value_t value)
  * @param [value] The neo4j struct.
  * @return The size of the struct.
  */
+__neo4j_pure
 static inline uint16_t neo4j_struct_size(neo4j_value_t value)
 {
     return ((const struct neo4j_struct *)&value)->nfields;
@@ -251,6 +259,7 @@ static inline uint16_t neo4j_struct_size(neo4j_value_t value)
  * @param [index] The index of the field.
  * @return The size of the struct.
  */
+__neo4j_pure
 static inline neo4j_value_t neo4j_struct_getfield(neo4j_value_t value,
         unsigned int index)
 {
@@ -272,6 +281,7 @@ static inline neo4j_value_t neo4j_struct_getfield(neo4j_value_t value,
  * @param [value] The neo4j struct.
  * @return A pointer to the array of fields.
  */
+__neo4j_pure
 static inline const neo4j_value_t *neo4j_struct_fields(neo4j_value_t value)
 {
     return ((const struct neo4j_struct *)&value)->fields;

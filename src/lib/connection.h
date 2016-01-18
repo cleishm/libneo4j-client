@@ -45,12 +45,15 @@ struct neo4j_connection
  *
  * This call may block until network buffers have sufficient space.
  *
+ * @internal
+ *
  * @param [connection] The connection to send over.
  * @param [type] The message type.
  * @param [argv] The vector of argument values to send with the message.
  * @param [argc] The length of the argument vector.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_connection_send(neo4j_connection_t *connection,
         neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 
@@ -58,6 +61,8 @@ int neo4j_connection_send(neo4j_connection_t *connection,
  * Receive a message on a connection.
  *
  * This call may block until data is available from the network.
+ *
+ * @internal
  *
  * @param [connection] The connection to receive from.
  * @param [mpool] A memory pool to allocate values and buffer spaces in.
@@ -68,21 +73,27 @@ int neo4j_connection_send(neo4j_connection_t *connection,
  *         length of the received argument vector.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
         neo4j_message_type_t *type, const neo4j_value_t **argv, uint16_t *argc);
 
 /**
  * Attach a session to a connection.
  *
+ * @internal
+ *
  * @param [connection] The connection to attach to.
  * @param [session] The session to attach.
  * @return 0 on success, -1 on failure (errno will be set).
  */
+__neo4j_must_check
 int neo4j_attach_session(neo4j_connection_t *connection,
         neo4j_session_t *session);
 
 /**
  * Detach a session from a connection.
+ *
+ * @internal
  *
  * @param [connection] The connection to detach from.
  * @param [session] The session to detach.

@@ -33,6 +33,7 @@
  * @param [flags] A bitmask of flags for controling connections.
  * @return The SSL iostream, or `NULL` if an error occurred (errno will be set).
  */
+__neo4j_malloc
 neo4j_iostream_t *neo4j_openssl_iostream(neo4j_iostream_t *delegate,
         const char *hostname, int port,
         const neo4j_config_t *config, uint_fast32_t flags);

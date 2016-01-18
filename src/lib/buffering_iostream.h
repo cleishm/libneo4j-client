@@ -26,6 +26,8 @@
  * This iostream buffers reads and writes to the delegate iostream. At least
  * one of the read or the write buffer sizes must be > 0.
  *
+ * @internal
+ *
  * @param [delegate] The iostream that will be buffered.
  * @param [close] If `true` the delegate iostream will also be closed when this
  *         stream is closed.
@@ -33,6 +35,7 @@
  * @param [sndbuf_size] The size of the write buffer.
  * @return The newly created buffering iostream.
  */
+__neo4j_malloc
 neo4j_iostream_t *neo4j_buffering_iostream(neo4j_iostream_t *delegate,
         bool close, size_t rcvbuf_size, size_t sndbuf_size);
 
