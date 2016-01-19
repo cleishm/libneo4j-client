@@ -566,7 +566,7 @@ neo4j_value_t neo4j_map_get(neo4j_value_t value, neo4j_value_t key)
 }
 
 
-neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value)
+neo4j_map_entry_t neo4j_map_kentry(neo4j_value_t key, neo4j_value_t value)
 {
     struct neo4j_map_entry entry = { .key = key, .value = value };
     return entry;

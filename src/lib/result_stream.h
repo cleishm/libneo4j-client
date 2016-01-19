@@ -94,7 +94,7 @@ struct neo4j_result_stream
      * better to exhaust the stream using `neo4j_fetch_next(...)` before
      * invoking this method.
      *
-     * @param [results] The result stream.
+     * @param [self] The result stream.
      * @return The update counts.
      */
     struct neo4j_update_counts (*update_counts)(neo4j_result_stream_t *self);
@@ -115,10 +115,21 @@ struct neo4j_result_stream
      * better to exhaust the stream using `neo4j_fetch_next(...)` before
      * invoking this method.
      *
-     * @param [results] The result stream.
+     * @param [self] The result stream.
      * @return The statement type, or -1 if an error occurs (errno will be set).
      */
     int (*statement_type)(neo4j_result_stream_t *self);
+
+    /**
+     * Return the statement plan for the result stream.
+     *
+     * The returned statement plan, if not `NULL`, must be later released using
+     * `neo4j_statement_plan_release(...)`.
+     *
+     * @param [self] The result stream.
+     * @return The statement plan/profile, or `NULL` if none was provided.
+     */
+    struct neo4j_statement_plan *(*statement_plan)(neo4j_result_stream_t *self);
 
     /**
      * Close a result stream.
@@ -161,7 +172,7 @@ struct neo4j_result
      * retained, the result _must_ later be explicitly released via
      * `neo4j_release(...)`.
      *
-     * @param [result] This result.
+     * @param [self] This result.
      * @return The result.
      */
     neo4j_result_t *(*retain)(neo4j_result_t *self);
@@ -169,7 +180,7 @@ struct neo4j_result
     /**
      * Release a result.
      *
-     * @param [result] This result.
+     * @param [self] This result.
      */
     void (*release)(neo4j_result_t *self);
 };

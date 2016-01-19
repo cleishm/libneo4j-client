@@ -75,6 +75,14 @@ int neo4j_statement_type(neo4j_result_stream_t *results)
 }
 
 
+struct neo4j_statement_plan *neo4j_statement_plan(
+        neo4j_result_stream_t *results)
+{
+    REQUIRE(results != NULL, NULL);
+    return results->statement_plan(results);
+}
+
+
 struct neo4j_update_counts neo4j_update_counts(neo4j_result_stream_t *results)
 {
     if (results == NULL)
@@ -145,6 +153,7 @@ struct run_result_stream
     unsigned int starting;
     unsigned int streaming;
     int statement_type;
+    struct neo4j_statement_plan *statement_plan;
     struct neo4j_update_counts update_counts;
     int failure;
     const char *error_code;
@@ -167,6 +176,8 @@ static const char *run_rs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
 static neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self);
 static int run_rs_statement_type(neo4j_result_stream_t *self);
+static struct neo4j_statement_plan *run_rs_statement_plan(
+        neo4j_result_stream_t *self);
 static struct neo4j_update_counts run_rs_update_counts(
         neo4j_result_stream_t *self);
 static int run_rs_close(neo4j_result_stream_t *self);
@@ -308,6 +319,7 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     result_stream->fieldname = run_rs_fieldname;
     result_stream->fetch_next = run_rs_fetch_next;
     result_stream->statement_type = run_rs_statement_type;
+    result_stream->statement_plan = run_rs_statement_plan;
     result_stream->update_counts = run_rs_update_counts;
     result_stream->close = run_rs_close;
     return results;
@@ -448,10 +460,33 @@ int run_rs_statement_type(neo4j_result_stream_t *self)
     if (results == NULL || results->failure != 0 ||
             await(results, &(results->streaming)))
     {
+        assert(results->failure != 0);
+        errno = results->failure;
         return -1;
     }
 
     return results->statement_type;
+}
+
+
+struct neo4j_statement_plan *run_rs_statement_plan(neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
+    if (results == NULL || results->failure != 0 ||
+            await(results, &(results->streaming)))
+    {
+        assert(results->failure != 0);
+        errno = results->failure;
+        return NULL;
+    }
+
+    if (results->statement_plan == NULL)
+    {
+        errno = NEO4J_NO_PLAN_AVAILABLE;
+        return NULL;
+    }
+    return neo4j_statement_plan_retain(results->statement_plan);
 }
 
 
@@ -463,6 +498,8 @@ struct neo4j_update_counts run_rs_update_counts(neo4j_result_stream_t *self)
     if (results == NULL || results->failure != 0 ||
             await(results, &(results->streaming)))
     {
+        assert(results->failure != 0);
+        errno = results->failure;
         goto failure;
     }
 
@@ -506,6 +543,8 @@ int run_rs_close(neo4j_result_stream_t *self)
         results->records = next;
     }
 
+    neo4j_statement_plan_release(results->statement_plan);
+    results->statement_plan = NULL;
     neo4j_logger_release(results->logger);
     results->logger = NULL;
     neo4j_mpool_drain(&(results->record_mpool));
@@ -610,14 +649,12 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
 
-    int nfields = neo4j_meta_fieldnames(&(results->fields), *metadata,
-            &(results->mpool), description, logger);
-    if (nfields < 0)
+    if (neo4j_meta_fieldnames(&(results->fields), &(results->nfields),
+                *metadata, &(results->mpool), description, logger))
     {
         set_failure(results, errno);
         return -1;
     }
-    results->nfields = nfields;
     return 0;
 }
 
@@ -732,12 +769,27 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     results->statement_type =
         neo4j_meta_statement_type(*metadata, description, logger);
-    if (results->statement_type < 0 || neo4j_meta_update_counts(
-                &(results->update_counts), *metadata, description, logger))
+    if (results->statement_type < 0)
     {
         set_failure(results, errno);
         return -1;
     }
+
+    results->statement_plan = neo4j_meta_plan(*metadata, description,
+            session->config, logger);
+    if (results->statement_plan == NULL && errno != NEO4J_NO_PLAN_AVAILABLE)
+    {
+        set_failure(results, errno);
+        return -1;
+    }
+
+    if (neo4j_meta_update_counts(&(results->update_counts), *metadata,
+                description, logger))
+    {
+        set_failure(results, errno);
+        return -1;
+    }
+
     return 0;
 }
 

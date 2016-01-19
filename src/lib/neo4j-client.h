@@ -386,6 +386,7 @@ struct neo4j_connection_factory
 #define NEO4J_INVALID_PATH_SEQUENCE_LENGTH -32
 #define NEO4J_INVALID_PATH_SEQUENCE_IDX_TYPE -33
 #define NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE -34
+#define NEO4J_NO_PLAN_AVAILABLE -35
 
 /**
  * Print the error message corresponding to an error number.
@@ -835,14 +836,26 @@ __neo4j_pure
 neo4j_value_t neo4j_map_get(neo4j_value_t value, neo4j_value_t key);
 
 /**
- * Constrct a neo4j map entry.
+ * @fn neo4j_map_entry_t neo4j_map_entry(const char *key, neo4j_value_t value);
+ * @brief Constrct a neo4j map entry.
+ *
+ * @param [key] The null terminated string key for the entry.
+ * @param [value] The value for the entry.
+ * @return A neo4j map entry.
+ */
+#define neo4j_map_entry(key, value) neo4j_map_kentry(neo4j_string(key), value)
+
+/**
+ * Constrct a neo4j map entry using a value key.
+ *
+ * The value key must be of type NEO4J_STRING.
  *
  * @param [key] The key for the entry.
  * @param [value] The value for the entry.
  * @return A neo4j map entry.
  */
 __neo4j_pure
-neo4j_map_entry_t neo4j_map_entry(neo4j_value_t key, neo4j_value_t value);
+neo4j_map_entry_t neo4j_map_kentry(neo4j_value_t key, neo4j_value_t value);
 
 
 /**
@@ -1466,6 +1479,9 @@ unsigned int neo4j_nfields(neo4j_result_stream_t *results);
 /**
  * Get the name of a field in a result stream.
  *
+ * @attention Note that the returned pointer is only valid whilst the result
+ * stream has not been closed.
+ *
  * @param [results] The result stream.
  * @param [index] The field index to get the name of.
  * @return The name of the field, as a NULL terminated string,
@@ -1514,6 +1530,9 @@ int neo4j_close_results(neo4j_result_stream_t *results);
  * When `neo4j_check_failure` returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
  * then this function can be used to get the error code sent from neo4j.
  *
+ * @attention Note that the returned pointer is only valid whilst the result
+ * stream has not been closed.
+ *
  * @param [results] The result stream.
  * @return A `NULL` terminated string reprenting the error code, or NULL
  *         if the stream has not failed or the failure was not
@@ -1528,12 +1547,42 @@ const char *neo4j_error_code(neo4j_result_stream_t *results);
  * then this function can be used to get the detailed error message sent
  * from neo4j.
  *
+ * @attention Note that the returned pointer is only valid whilst the result
+ * stream has not been closed.
+ *
  * @param [results] The result stream.
  * @return A `NULL` terminated string containing the error message, or NULL
  *         if the stream has not failed or the failure was not
  *         `NEO4J_STATEMENT_EVALUATION_FAILED`.
  */
 const char *neo4j_error_message(neo4j_result_stream_t *results);
+
+
+#define NEO4J_READ_ONLY_STATEMENT 0
+#define NEO4J_WRITE_ONLY_STATEMENT 1
+#define NEO4J_READ_WRITE_STATEMENT 2
+#define NEO4J_SCHEMA_UPDATE_STATEMENT 3
+
+/**
+ * Return the statement type for the result stream.
+ *
+ * The returned value will either be -1, if an error occurs, or one of the
+ * following values:
+ * - NEO4J_READ_ONLY_STATEMENT
+ * - NEO4J_WRITE_ONLY_STATEMENT
+ * - NEO4J_READ_WRITE_STATEMENT
+ * - NEO4J_SCHEMA_UPDATE_STATEMENT
+ *
+ * @attention As the statement type is only available at the end of the result
+ * stream, invoking this function will will result in any unfetched results
+ * being pulled from the server and held in memory. It is usually better to
+ * exhaust the stream using `neo4j_fetch_next(...)` before invoking this
+ * method.
+ *
+ * @param [results] The result stream.
+ * @return The statement type, or -1 if an error occurs (errno will be set).
+ */
+int neo4j_statement_type(neo4j_result_stream_t *results);
 
 /**
  * Update counts.
@@ -1583,31 +1632,86 @@ struct neo4j_update_counts
 struct neo4j_update_counts neo4j_update_counts(neo4j_result_stream_t *results);
 
 
-#define NEO4J_READ_ONLY_STATEMENT 0
-#define NEO4J_WRITE_ONLY_STATEMENT 1
-#define NEO4J_READ_WRITE_STATEMENT 2
-#define NEO4J_SCHEMA_UPDATE_STATEMENT 3
+struct neo4j_statement_execution_step;
 
 /**
- * Return the statement type for the result stream.
+ * The plan (or profile) for an evaluated statement.
  *
- * The returned value will either be -1, if an error occurs, or one of the
- * following values:
- * - NEO4J_READ_ONLY_STATEMENT
- * - NEO4J_WRITE_ONLY_STATEMENT
- * - NEO4J_READ_WRITE_STATEMENT
- * - NEO4J_SCHEMA_UPDATE_STATEMENT
+ * Plans and profiles differ only in that execution steps do not contain row
+ * and db-hit data.
+ */
+struct neo4j_statement_plan
+{
+    /** The version of the compiler that produced the plan/profile. */
+    const char *version;
+    /** The planner that was used to produce the plan/profile. */
+    const char *planner;
+    /** The runtime that was or would be used for evaluating the statement. */
+    const char *runtime;
+    /** `true` if profile data is included in the execution steps. */
+    bool is_profile;
+    /** The output execution step. */
+    struct neo4j_statement_execution_step *output_step;
+};
+
+/**
+ * An execution step in a plan (or profile) for an evaluated statement.
+ */
+struct neo4j_statement_execution_step
+{
+    /** The name of the operator type applied in this execution step. */
+    const char *operator_type;
+    /** An array of identifier names available in this step. */
+    const char * const *identifiers;
+    /** The number of identifiers. */
+    unsigned int nidentifiers;
+    /** The estimated number of rows to be handled by this step. */
+    double estimated_rows;
+    /** The number of rows handled by this step (for profiled plans only). */
+    long long rows;
+    /** The number of db_hits requied (for profiled plans only). */
+    long long db_hits;
+    /** An array containing the sources for this step. */
+    struct neo4j_statement_execution_step **sources;
+    /** The number of sources. */
+    unsigned int nsources;
+
+    /**
+     * A NEO4J_MAP, containing all the arguments for this step as provided by
+     * the server.
+     */
+    neo4j_value_t arguments;
+};
+
+
+/**
+ * Return the statement plan for the result stream.
  *
- * @attention As the statement type is only available at the end of the result
- * stream, invoking this function will will result in any unfetched results
- * being pulled from the server and held in memory. It is usually better to
- * exhaust the stream using `neo4j_fetch_next(...)` before invoking this
- * method.
+ * The returned statement plan, if not `NULL`, must be later released using
+ * `neo4j_statement_plan_release(...)`.
+ *
+ * If the was no plan (or profile) in the server response, the result of this
+ * function will be `NULL` and errno will be set to NEO4J_NO_PLAN_AVAILABLE.
+ * Note that errno will not be modified when a plan is returned, so error
+ * checking MUST evaluate the return value first.
  *
  * @param [results] The result stream.
- * @return The statement type, or -1 if an error occurs (errno will be set).
+ * @return The statement plan/profile, or `NULL` if a one was not available or
+ *         if an error occurred (errno will be set).
  */
-int neo4j_statement_type(neo4j_result_stream_t *results);
+__neo4j_must_check
+struct neo4j_statement_plan *neo4j_statement_plan(
+        neo4j_result_stream_t *results);
+
+/**
+ * Release a statement plan.
+ *
+ * The pointer will be invalid and should not be used after this function
+ * is called.
+ *
+ * @param [plan] A statment plan.
+ */
+void neo4j_statement_plan_release(struct neo4j_statement_plan *plan);
 
 
 /*

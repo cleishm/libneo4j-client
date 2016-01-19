@@ -37,6 +37,9 @@ static void queue_message(neo4j_iostream_t *ios, neo4j_message_type_t type,
 static void queue_run_success(neo4j_iostream_t *ios);
 static void queue_record(neo4j_iostream_t *ios);
 static void queue_stream_end_success(neo4j_iostream_t *ios);
+static void queue_stream_end_success_with_counts(neo4j_iostream_t *ios);
+static void queue_stream_end_success_with_profile(neo4j_iostream_t *ios);
+static void queue_stream_end_success_with_plan(neo4j_iostream_t *ios);
 static void queue_failure(neo4j_iostream_t *ios);
 
 
@@ -127,8 +130,8 @@ void queue_run_success(neo4j_iostream_t *ios)
 {
     neo4j_value_t result_fields[2] =
             { neo4j_string("field_one"), neo4j_string("field_two") };
-    neo4j_map_entry_t fields = neo4j_map_entry(
-            neo4j_string("fields"), neo4j_list(result_fields, 2));
+    neo4j_map_entry_t fields =
+        neo4j_map_entry("fields", neo4j_list(result_fields, 2));
     neo4j_value_t argv[1] = { neo4j_map(&fields, 1) };
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, argv, 1);
 }
@@ -143,12 +146,94 @@ void queue_record(neo4j_iostream_t *ios)
 
 void queue_stream_end_success(neo4j_iostream_t *ios)
 {
-    neo4j_map_entry_t counts = neo4j_map_entry(
-            neo4j_string("nodes-created"), neo4j_int(99));
+    neo4j_map_entry_t fields[1] =
+        { neo4j_map_entry("type", neo4j_string("rw")) };
+    neo4j_value_t argv[1] = { neo4j_map(fields, 1) };
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, argv, 1);
+}
+
+
+void queue_stream_end_success_with_counts(neo4j_iostream_t *ios)
+{
+    neo4j_map_entry_t counts = neo4j_map_entry("nodes-created", neo4j_int(99));
     neo4j_map_entry_t fields[2] =
-        { neo4j_map_entry(neo4j_string("type"), neo4j_string("rw")),
-          neo4j_map_entry(neo4j_string("stats"), neo4j_map(&counts, 1)) };
+        { neo4j_map_entry("type", neo4j_string("rw")),
+          neo4j_map_entry("stats", neo4j_map(&counts, 1)) };
     neo4j_value_t argv[1] = { neo4j_map(fields, 2) };
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, argv, 1);
+}
+
+
+void queue_stream_end_success_with_profile(neo4j_iostream_t *ios)
+{
+    neo4j_map_entry_t profargs[3] =
+        { neo4j_map_entry("version", neo4j_string("CYPHER 3.0")),
+          neo4j_map_entry("planner", neo4j_string("COST")),
+          neo4j_map_entry("runtime", neo4j_string("INTERPRETTED")) };
+    neo4j_value_t ids[1] = { neo4j_string("n") };
+
+    neo4j_map_entry_t prof[6] =
+        { neo4j_map_entry("args", neo4j_map(profargs, 3)),
+          neo4j_map_entry("identifiers", neo4j_list(ids, 1)),
+          neo4j_map_entry("dbHits", neo4j_int(42)),
+          neo4j_map_entry("children", neo4j_list(NULL, 0)),
+          neo4j_map_entry("rows", neo4j_int(1)),
+          neo4j_map_entry("operatorType", neo4j_string("ProduceResults")),
+        };
+
+    neo4j_map_entry_t fields[2] =
+        { neo4j_map_entry("type", neo4j_string("rw")),
+          neo4j_map_entry("profile", neo4j_map(prof, 6)) };
+    neo4j_value_t argv[1] = { neo4j_map(fields, 2) };
+
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, argv, 1);
+}
+
+
+void queue_stream_end_success_with_plan(neo4j_iostream_t *ios)
+{
+    neo4j_map_entry_t s1_args[1] =
+        { neo4j_map_entry("EstimatedRows", neo4j_float(9.9)) };
+    neo4j_value_t s1_ids[1] = { neo4j_string("n") };
+
+    neo4j_map_entry_t s1[4] =
+        { neo4j_map_entry("args", neo4j_map(s1_args, 1)),
+          neo4j_map_entry("identifiers", neo4j_list(s1_ids, 1)),
+          neo4j_map_entry("children", neo4j_list(NULL, 0)),
+          neo4j_map_entry("operatorType", neo4j_string("AllNodesScan"))
+        };
+
+    neo4j_map_entry_t s2_args[1] =
+        { neo4j_map_entry("EstimatedRows", neo4j_float(10)) };
+    neo4j_value_t s2_ids[1] = { neo4j_string("m") };
+
+    neo4j_map_entry_t s2[4] =
+        { neo4j_map_entry("args", neo4j_map(s2_args, 1)),
+          neo4j_map_entry("identifiers", neo4j_list(s2_ids, 1)),
+          neo4j_map_entry("children", neo4j_list(NULL, 0)),
+          neo4j_map_entry("operatorType", neo4j_string("LabelScan"))
+        };
+
+    neo4j_map_entry_t profargs[4] =
+        { neo4j_map_entry("version", neo4j_string("CYPHER 3.0")),
+          neo4j_map_entry("planner", neo4j_string("RULE")),
+          neo4j_map_entry("runtime", neo4j_string("INTERPRETTED")),
+          neo4j_map_entry("EstimatedRows", neo4j_float(3.45)) };
+    neo4j_value_t ids[2] = { neo4j_string("n"), neo4j_string("m") };
+    neo4j_value_t sources[2] = { neo4j_map(s1, 4), neo4j_map(s2, 4) };
+
+    neo4j_map_entry_t prof[4] =
+        { neo4j_map_entry("args", neo4j_map(profargs, 4)),
+          neo4j_map_entry("identifiers", neo4j_list(ids, 2)),
+          neo4j_map_entry("children", neo4j_list(sources, 2)),
+          neo4j_map_entry("operatorType", neo4j_string("ProduceResults")),
+        };
+
+    neo4j_map_entry_t fields[2] =
+        { neo4j_map_entry("type", neo4j_string("r")),
+          neo4j_map_entry("plan", neo4j_map(prof, 4)) };
+    neo4j_value_t argv[1] = { neo4j_map(fields, 2) };
+
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, argv, 1);
 }
 
@@ -156,10 +241,8 @@ void queue_stream_end_success(neo4j_iostream_t *ios)
 void queue_failure(neo4j_iostream_t *ios)
 {
     neo4j_map_entry_t fields[2] =
-        { neo4j_map_entry(
-                neo4j_string("code"), neo4j_string("Neo.ClientError.Sample")),
-          neo4j_map_entry(
-                neo4j_string("message"), neo4j_string("Sample error")) };
+        { neo4j_map_entry("code", neo4j_string("Neo.ClientError.Sample")),
+          neo4j_map_entry("message", neo4j_string("Sample error")) };
     neo4j_value_t argv[1] = { neo4j_map(fields, 2) };
     queue_message(server_ios, NEO4J_FAILURE_MESSAGE, argv, 1);
 }
@@ -174,7 +257,7 @@ START_TEST (test_run_returns_results_and_completes)
     queue_run_success(server_ios); // RUN
     queue_record(server_ios); // PULL_ALL
     queue_record(server_ios); // PULL_ALL
-    queue_stream_end_success(server_ios); // PULL_ALL
+    queue_stream_end_success_with_counts(server_ios); // PULL_ALL
 
     ck_assert_int_eq(neo4j_check_failure(results), 0);
 
@@ -186,8 +269,7 @@ START_TEST (test_run_returns_results_and_completes)
     ck_assert_int_eq(argc, 2);
     ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
     char buf[128];
-    ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
-            "RETURN 1");
+    ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)), "RETURN 1");
     ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
     ck_assert_int_eq(neo4j_map_size(argv[1]), 0);
 
@@ -201,6 +283,8 @@ START_TEST (test_run_returns_results_and_completes)
     ck_assert_int_eq(neo4j_statement_type(results), NEO4J_READ_WRITE_STATEMENT);
     struct neo4j_update_counts counts = neo4j_update_counts(results);
     ck_assert_int_eq(counts.nodes_created, 99);
+    ck_assert_ptr_eq(neo4j_statement_plan(results), NULL);
+    ck_assert_int_eq(errno, NEO4J_NO_PLAN_AVAILABLE);
 
     ck_assert_int_eq(neo4j_close_results(results), 0);
 
@@ -226,7 +310,7 @@ START_TEST (test_run_can_close_immediately_after_fetch)
 END_TEST
 
 
-START_TEST (test_run_returns_metadata)
+START_TEST (test_run_returns_fieldnames)
 {
     neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
@@ -249,6 +333,89 @@ START_TEST (test_run_returns_metadata)
     ck_assert_int_eq(neo4j_close_results(results), 0);
 
     ck_assert(rb_is_empty(in_rb));
+}
+END_TEST
+
+
+START_TEST (test_run_returns_profile)
+{
+    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    ck_assert_ptr_ne(results, NULL);
+    ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
+
+    queue_run_success(server_ios); // RUN
+    queue_stream_end_success_with_profile(server_ios); // PULL_ALL
+
+    struct neo4j_statement_plan *plan = neo4j_statement_plan(results);
+    ck_assert_ptr_ne(plan, NULL);
+
+    ck_assert_str_eq(plan->version, "CYPHER 3.0");
+    ck_assert_str_eq(plan->planner, "COST");
+    ck_assert_str_eq(plan->runtime, "INTERPRETTED");
+    ck_assert(plan->is_profile);
+    ck_assert_ptr_ne(plan->output_step, NULL);
+    ck_assert_str_eq(plan->output_step->operator_type, "ProduceResults");
+    ck_assert_uint_eq(plan->output_step->nidentifiers, 1);
+    ck_assert_str_eq(plan->output_step->identifiers[0], "n");
+    ck_assert(plan->output_step->estimated_rows == 0.0);
+    ck_assert_int_eq(plan->output_step->rows, 1);
+    ck_assert_int_eq(plan->output_step->db_hits, 42);
+    ck_assert_uint_eq(plan->output_step->nsources, 0);
+
+    neo4j_statement_plan_release(plan);
+    ck_assert_int_eq(neo4j_close_results(results), 0);
+}
+END_TEST
+
+
+START_TEST (test_run_returns_plan)
+{
+    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    ck_assert_ptr_ne(results, NULL);
+    ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
+
+    queue_run_success(server_ios); // RUN
+    queue_stream_end_success_with_plan(server_ios); // PULL_ALL
+
+    struct neo4j_statement_plan *plan = neo4j_statement_plan(results);
+    ck_assert_ptr_ne(plan, NULL);
+
+    ck_assert_str_eq(plan->version, "CYPHER 3.0");
+    ck_assert_str_eq(plan->planner, "RULE");
+    ck_assert_str_eq(plan->runtime, "INTERPRETTED");
+    ck_assert(!plan->is_profile);
+    ck_assert_ptr_ne(plan->output_step, NULL);
+    ck_assert_str_eq(plan->output_step->operator_type, "ProduceResults");
+    ck_assert_uint_eq(plan->output_step->nidentifiers, 2);
+    ck_assert_str_eq(plan->output_step->identifiers[0], "n");
+    ck_assert_str_eq(plan->output_step->identifiers[1], "m");
+    ck_assert(plan->output_step->estimated_rows == 3.45);
+    ck_assert_int_eq(plan->output_step->rows, 0);
+    ck_assert_int_eq(plan->output_step->db_hits, 0);
+    ck_assert_uint_eq(plan->output_step->nsources, 2);
+
+    struct neo4j_statement_execution_step *s1 = plan->output_step->sources[0];
+    ck_assert_ptr_ne(s1, NULL);
+    ck_assert_str_eq(s1->operator_type, "AllNodesScan");
+    ck_assert_uint_eq(s1->nidentifiers, 1);
+    ck_assert_str_eq(s1->identifiers[0], "n");
+    ck_assert(s1->estimated_rows == 9.9);
+    ck_assert_int_eq(s1->rows, 0);
+    ck_assert_int_eq(s1->db_hits, 0);
+    ck_assert_uint_eq(s1->nsources, 0);
+
+    struct neo4j_statement_execution_step *s2 = plan->output_step->sources[1];
+    ck_assert_ptr_ne(s2, NULL);
+    ck_assert_str_eq(s2->operator_type, "LabelScan");
+    ck_assert_uint_eq(s2->nidentifiers, 1);
+    ck_assert_str_eq(s2->identifiers[0], "m");
+    ck_assert(s2->estimated_rows == 10);
+    ck_assert_int_eq(s2->rows, 0);
+    ck_assert_int_eq(s2->db_hits, 0);
+    ck_assert_uint_eq(s2->nsources, 0);
+
+    neo4j_statement_plan_release(plan);
+    ck_assert_int_eq(neo4j_close_results(results), 0);
 }
 END_TEST
 
@@ -374,7 +541,7 @@ START_TEST (test_send_completes)
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
     queue_run_success(server_ios); // RUN
-    queue_stream_end_success(server_ios); // DISCARD_ALL
+    queue_stream_end_success_with_counts(server_ios); // DISCARD_ALL
 
     ck_assert_int_eq(neo4j_check_failure(results), 0);
 
@@ -399,6 +566,8 @@ START_TEST (test_send_completes)
     ck_assert_int_eq(neo4j_statement_type(results), NEO4J_READ_WRITE_STATEMENT);
     struct neo4j_update_counts counts = neo4j_update_counts(results);
     ck_assert_int_eq(counts.nodes_created, 99);
+    ck_assert_ptr_eq(neo4j_statement_plan(results), NULL);
+    ck_assert_int_eq(errno, NEO4J_NO_PLAN_AVAILABLE);
 
     ck_assert_int_eq(neo4j_close_results(results), 0);
 
@@ -407,7 +576,7 @@ START_TEST (test_send_completes)
 END_TEST
 
 
-START_TEST (test_send_returns_metadata)
+START_TEST (test_send_returns_fieldnames)
 {
     neo4j_result_stream_t *results = neo4j_send(session, "RETURN 1",
             neo4j_map(NULL, 0));
@@ -466,13 +635,15 @@ TCase* result_stream_tcase(void)
     tcase_add_checked_fixture(tc, setup, teardown);
     tcase_add_test(tc, test_run_returns_results_and_completes);
     tcase_add_test(tc, test_run_can_close_immediately_after_fetch);
-    tcase_add_test(tc, test_run_returns_metadata);
+    tcase_add_test(tc, test_run_returns_fieldnames);
+    tcase_add_test(tc, test_run_returns_profile);
+    tcase_add_test(tc, test_run_returns_plan);
     tcase_add_test(tc, test_run_returns_failure_when_statement_fails);
     tcase_add_test(tc, test_run_returns_failure_during_streaming);
     tcase_add_test(tc, test_run_skips_results_after_session_close);
     tcase_add_test(tc, test_run_returns_same_failure_after_session_close);
     tcase_add_test(tc, test_send_completes);
-    tcase_add_test(tc, test_send_returns_metadata);
+    tcase_add_test(tc, test_send_returns_fieldnames);
     tcase_add_test(tc, test_send_returns_failure_when_statement_fails);
     return tc;
 }

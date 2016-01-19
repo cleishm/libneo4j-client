@@ -65,7 +65,7 @@ int neo4j_meta_failure_details(const char **code, const char **message,
         neo4j_logger_t *logger);
 
 /**
- * Extract fields from a neo4j map.
+ * Extract fields from a metadata map.
  *
  * Validates that the map contains a "fields" entry, of type List, containing
  * all String values. These strings are extracted into a set of null
@@ -75,18 +75,23 @@ int neo4j_meta_failure_details(const char **code, const char **message,
  *
  * @param [names] A pointer that will be updated to reference an array of
  *         field name strings, or `NULL` if there were zero field names.
+ * @param [nnames] A pointer to an unsigned int that will be updated with
+ *         the total number of strings in the names array.
  * @param [map] The metadata map.
  * @param [mpool] A memory pool to allocate strings in.
  * @param [description] A description of the message from which the metadata
  *         came, for use when logging errors.
  * @param [logger] A logger to emit error messages to.
  * @return The number of fields, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
-int neo4j_meta_fieldnames(const char * const **names, neo4j_value_t map,
-        neo4j_mpool_t *mpool, const char *description, neo4j_logger_t *logger);
+__neo4j_must_check
+int neo4j_meta_fieldnames(const char * const **names, unsigned int *nnames,
+        neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
+        neo4j_logger_t *logger);
 
 /**
- * Extract statement type from a neo4j map.
+ * Extract statement type from a metadata map.
  *
  * Checks for a "type" entry, of type String. If found, the matching
  * statement type is returned. If it is not found, or if the value is not
@@ -105,7 +110,7 @@ int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
         neo4j_logger_t *logger);
 
 /**
- * Extract update counts from a neo4j map.
+ * Extract update counts from a metadata map.
  *
  * Checks for a "stats" entry, of type Map, containing another Map of
  * Integer values. These integers, if found, are used to populate the
@@ -125,6 +130,41 @@ __neo4j_must_check
 int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
         neo4j_value_t map, const char *description,
         neo4j_logger_t *logger);
+
+/**
+ * Extract a statement plan from a metadata map.
+ *
+ * Checks for a "plan" or "profile" entry, and extracts the plan as provided
+ * by the server. The returned plan must be later released using
+ * `neo4j_statment_plan_release(...)`.
+ *
+ * If there is no plan in the metadata, a `NULL` value will be returned
+ * and errno will be set to NEO4J_NO_PLAN_AVAILABLE. Note that errno will not
+ * be modified when a plan is returned, so error checking MUST evaluate the
+ * return value first.
+ *
+ * @internal
+ *
+ * @param [map] The metadata map.
+ * @param [description] A description of the message from which the metadata
+ *         came, for use when logging errors.
+ * @param [config] The client configuration.
+ * @param [logger] A logger to emit error messages to.
+ * @return A pointer to the plan, or `NULL` if the plan is not available or
+ *         if an error occurs (errno will be set).
+ */
+struct neo4j_statement_plan *neo4j_meta_plan(neo4j_value_t map,
+        const char *description, const neo4j_config_t *config,
+        neo4j_logger_t *logger);
+
+/**
+ * Retain a statement plan.
+ *
+ * @param [plan] The plan to retain.
+ * @return The plan.
+ */
+struct neo4j_statement_plan *neo4j_statement_plan_retain(
+        struct neo4j_statement_plan *plan);
 
 
 #endif/*NEO4J_METADATA_H*/

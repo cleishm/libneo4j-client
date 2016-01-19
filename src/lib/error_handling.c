@@ -86,6 +86,8 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Path contains a sequence index of non-Int type";
     case NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE:
         return "Path contains an out-of-range sequence index";
+    case NEO4J_NO_PLAN_AVAILABLE:
+        return "The server did not return a plan or profile";
     default:
 #ifdef STRERROR_R_CHAR_P
         return strerror_r(errnum, buf, buflen);
