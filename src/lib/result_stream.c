@@ -762,7 +762,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     if (neo4j_log_is_enabled(logger, NEO4J_LOG_TRACE))
     {
-        char buf[1024];
+        char buf[4096];
         neo4j_log_trace(logger, "%s SUCCESS metadata: %s", src_message_type,
                 neo4j_tostring(*metadata, buf, sizeof(buf)));
     }

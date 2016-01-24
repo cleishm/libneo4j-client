@@ -56,6 +56,7 @@ AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_FUNC_STRERROR_R
 MACRO_STATIC_ASSERT
+LT_LIB_M
 
 AC_CHECK_TYPE([socklen_t],[],
   [AC_DEFINE([socklen_t],[int],[Substitute for socklen_t.])],

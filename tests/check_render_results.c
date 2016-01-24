@@ -92,14 +92,16 @@ START_TEST (render_empty_table)
 {
     const char *fieldnames[4] =
         { "firstname", "lastname", "role", "title" };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, NULL, 0);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 49, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+-----------+-----------+-----------+-----------+\n"
  "| firstname | lastname  | role      | title     |\n"
@@ -118,14 +120,16 @@ START_TEST (render_simple_table)
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
           { "Hugo", "Weaving", "V", "V for Vendetta" },
           { "Halle", "Berry", "Luisa Rey", "Cloud Atlas" } };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 73, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+-----------------+-----------------+-----------------+-----------------+\n"
  "| firstname       | lastname        | role            | title           |\n"
@@ -147,15 +151,17 @@ START_TEST (render_simple_table_with_quoted_strings)
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
           { "Hugo", "Weaving", "V", "V for Vendetta" },
           { "Halle", "Berry", "Luisa Rey", "Cloud Atlas" } };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 73, 
             NEO4J_RENDER_QUOTE_STRINGS);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect = gstrsub('\'', '"',
+    const char *expect = gstrsub('\'', '"', "\n"
 //1       10        20        30        40        50        60        70
  "+-----------------+-----------------+-----------------+-----------------+\n"
  "| firstname       | lastname        | role            | title           |\n"
@@ -177,14 +183,16 @@ START_TEST (render_narrow_table)
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
           { "Hugo", "Weaving", "V", "V for Vendetta" },
           { "Halle", "Berry", "Luisa Rey", "Cloud Atlas" } };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 53, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+------------+------------+------------+------------+\n"
  "| the first =| lastname   | role       | title      |\n"
@@ -206,14 +214,16 @@ START_TEST (render_very_narrow_table)
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
           { "Hugo", "Weaving", "V", "V for Vendetta" },
           { "", "Berry", "Luisa Rey", "Cloud Atlas" } };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 13, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--+--+--+--+\n"
  "| =| =| =| =|\n"
@@ -235,14 +245,16 @@ START_TEST (render_undersized_table)
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
           { "Hugo", "Weaving", "V", "V for Vendetta" },
           { "", "Berry", "Luisa Rey", "Cloud Atlas" } };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 8, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--+--+=\n"
  "| =| =|=\n"
@@ -264,14 +276,16 @@ START_TEST (render_min_width_table)
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
           { "Hugo", "Weaving", "V", "V for Vendetta" },
           { "", "Berry", "Luisa Rey", "Cloud Atlas" } };
-
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 2, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+=\n"
  "|=\n"
@@ -312,12 +326,14 @@ START_TEST (render_table_with_nulls)
     neo4j_result_stream_t *results =
         neo4j_canned_result_stream(fieldnames, 3, records, 1);
 
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 52, 0);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect =
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+----------------+----------------+----------------+\n"
  "| firstname      | lastname       | born           |\n"
@@ -340,13 +356,15 @@ START_TEST (render_table_with_visible_nulls)
     neo4j_result_stream_t *results =
         neo4j_canned_result_stream(fieldnames, 3, records, 1);
 
+    ck_assert(fputc('\n', memstream) != EOF);
+
     int result = neo4j_render_table(memstream, results, 52,
             NEO4J_RENDER_SHOW_NULLS | NEO4J_RENDER_QUOTE_STRINGS);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
-    const char *expect = gstrsub('\'', '"',
+    const char *expect = gstrsub('\'', '"', "\n"
 //1       10        20        30        40        50        60        70
  "+----------------+----------------+----------------+\n"
  "| firstname      | lastname       | born           |\n"
@@ -455,9 +473,9 @@ START_TEST (render_zero_col_csv)
 END_TEST
 
 
-TCase* render_tcase(void)
+TCase* render_results_tcase(void)
 {
-    TCase *tc = tcase_create("render_table");
+    TCase *tc = tcase_create("render_results");
     tcase_add_checked_fixture(tc, setup, teardown);
     tcase_add_test(tc, render_empty_table);
     tcase_add_test(tc, render_simple_table);

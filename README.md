@@ -85,10 +85,10 @@ inclusion in source code using the libneo4j-client API. The API is described in
 the [API Documentation](#api_documentation).
 
 libneo4j-client can be included in your project by linking the library at
-compile time, typically using the linking flags `-lneo4j-client -lssl -lcrypto`.
-Alternatively, libneo4j-client ships with a [pkg-config](
-https://wiki.freedesktop.org/www/Software/pkg-config/) description file,
-enabling you to obtain the required flags using
+compile time, typically using the linking flags
+`-lneo4j-client -lssl -lcrypto -lm`.  Alternatively, libneo4j-client ships with
+a [pkg-config]( https://wiki.freedesktop.org/www/Software/pkg-config/)
+description file, enabling you to obtain the required flags using
 `pkg-config --libs libneo4j-client`.
 
 

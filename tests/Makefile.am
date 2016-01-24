@@ -24,7 +24,8 @@ check_libneo4j_client_CHECKS = \
 	check_error_handling.c \
 	check_logging.c \
 	check_memory.c \
-	check_render.c \
+	check_render_plan.c \
+	check_render_results.c \
 	check_result_stream.c \
 	check_ring_buffer.c \
 	check_serialization.c \

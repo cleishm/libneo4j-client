@@ -1758,7 +1758,7 @@ void neo4j_release(neo4j_result_t *result);
  * =====================================
  */
 
-#define NEO4J_RENDER_MAX_WIDTH 4096
+#define NEO4J_RENDER_MAX_WIDTH 4095
 
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
@@ -1794,6 +1794,18 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
 __neo4j_must_check
 int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
         uint_fast32_t flags);
+
+/**
+ * Render a statement plan as a table.
+ *
+ * @param [stream] The stream to render to.
+ * @param [plan] The statement plan to render.
+ * @param [width] The width of the table to render.
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
+        unsigned int width);
 
 
 /*

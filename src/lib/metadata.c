@@ -448,6 +448,7 @@ struct neo4j_statement_execution_step *meta_execution_steps(
                 errno = EPROTO;
                 goto failure;
             }
+            // TODO: consider limiting depth of recursion
             step->sources[i] = meta_execution_steps(
                     child, description, subpath, mpool, logger);
             if (step->sources[i] == NULL)

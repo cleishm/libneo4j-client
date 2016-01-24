@@ -33,8 +33,8 @@ struct renderer
 static int terminal_width(shell_state_t *state);
 
 static struct renderer renderers[] =
-    { { "table", render_table },
-      { "csv", render_csv },
+    { { "table", render_results_table },
+      { "csv", render_results_csv },
       { NULL, NULL } };
 
 
@@ -51,13 +51,13 @@ renderer_t find_renderer(const char *name)
 }
 
 
-int render_csv(shell_state_t *state, neo4j_result_stream_t *results)
+int render_results_csv(shell_state_t *state, neo4j_result_stream_t *results)
 {
     return neo4j_render_csv(state->out, results, state->render_flags);
 }
 
 
-int render_table(shell_state_t *state, neo4j_result_stream_t *results)
+int render_results_table(shell_state_t *state, neo4j_result_stream_t *results)
 {
     int width = terminal_width(state);
     if (width < 2)
@@ -132,4 +132,23 @@ int render_update_counts(shell_state_t *state, neo4j_result_stream_t *results)
     }
 
     return 0;
+}
+
+
+int render_plan_table(shell_state_t *state, struct neo4j_statement_plan *plan)
+{
+    int width = terminal_width(state);
+    if (width < 2)
+    {
+        fprintf(state->err, "ERROR: terminal width of %d too narrow "
+                "to render plan/profile\n", width);
+        return -1;
+    }
+    if (fprintf(state->out, "%sCompiler: %s\nPlanner: %s\nRuntime: %s\n%s:\n",
+                plan->is_profile? "\n" : "", plan->version, plan->planner,
+                plan->runtime, plan->is_profile? "Profile":"Plan") < 0)
+    {
+        return -1;
+    }
+    return neo4j_render_plan_table(state->out, plan, width);
 }

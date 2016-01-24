@@ -205,13 +205,13 @@ int main(int argc, char *argv[])
         int (*evaluate)(shell_state_t *state, const char *directive));
     if (state.interactive)
     {
-        state.render = render_table;
+        state.render = render_results_table;
         state.render_flags = NEO4J_RENDER_SHOW_NULLS;
         process = interact;
     }
     else
     {
-        state.render = render_csv;
+        state.render = render_results_csv;
         state.width = 70;
         process = batch;
     }
@@ -282,6 +282,20 @@ int evaluate_statement(shell_state_t *state, const char *statement)
 
     if (render_update_counts(state, results))
     {
+        goto cleanup;
+    }
+
+    struct neo4j_statement_plan *plan = neo4j_statement_plan(results);
+    if (plan != NULL)
+    {
+        if (render_plan_table(state, plan))
+        {
+            goto cleanup;
+        }
+    }
+    else if (errno != NEO4J_NO_PLAN_AVAILABLE)
+    {
+        neo4j_perror(state->err, errno, "unexpected error");
         goto cleanup;
     }
 

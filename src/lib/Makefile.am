@@ -34,6 +34,9 @@ libneo4j_client_la_SOURCES = \
 	posix_iostream.c \
 	posix_iostream.h \
 	render.c \
+	render.h \
+	render_plan.c \
+	render_results.c \
 	result_stream.c \
 	result_stream.h \
 	ring_buffer.c \
@@ -63,9 +66,9 @@ libneo4j_client_la_SOURCES += \
 endif
 endif
 
-libneo4j_client_la_CFLAGS = @PTHREAD_CFLAGS@ @OPENSSL_CFLAGS@ -Wpedantic -Wvla
+libneo4j_client_la_CFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_CFLAGS) -Wpedantic -Wvla
 libneo4j_client_la_LDFLAGS = -version-info 3:0:0
-libneo4j_client_la_LIBADD = @PTHREAD_LIBS@ @OPENSSL_LIBS@
+libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 
 cli_parser.c: cli_parser_leg.c
 

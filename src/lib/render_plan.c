@@ -1,0 +1,608 @@
+/* vi:set ts=4 sw=4 expandtab:
+ *
+ * Copyright 2016, Chris Leishman (http://github.com/cleishm)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include "../../config.h"
+#include "neo4j-client.h"
+#include "render.h"
+#include "util.h"
+#include <assert.h>
+#include <math.h>
+
+static int render_header(FILE *stream, unsigned int col_widths[6]);
+static int render_hr(FILE *stream, unsigned int col_widths[6]);
+static int render_steps(FILE *stream,
+        struct neo4j_statement_execution_step *step, unsigned int depth,
+        char **ids_buffer, size_t *ids_bufcap, char **args_buffer,
+        size_t *args_bufcap, unsigned int col_widths[6]);
+static int render_op(FILE *stream, const char *operator_type,
+        unsigned int op_depth, unsigned int width);
+static ssize_t build_str_list(const char * const *list, unsigned int n,
+        char **buffer, size_t *bufcap);
+static ssize_t build_args_value(neo4j_value_t args, char **buffer,
+        size_t *bufcap);
+static int render_wrap(FILE *stream, unsigned int op_depth,
+        unsigned int col_widths[4]);
+static int render_tr(FILE *stream, unsigned int op_depth, bool branch,
+        unsigned int col_widths[6]);
+static void calculate_widths(unsigned int col_widths[6],
+        struct neo4j_statement_plan *plan, unsigned int render_width);
+static unsigned int operators_width(
+        struct neo4j_statement_execution_step *step);
+static unsigned int identifiers_width(
+        struct neo4j_statement_execution_step *step);
+static unsigned int str_list_len(const char * const *list, unsigned int n);
+
+
+static const char *HEADERS[6] =
+    { "Operator", "Estimated Rows", "Rows", "DB Hits", "Identifiers", "Other" };
+static unsigned int MIN_OPR_WIDTH = 10; // strlen(HEADERS[0]);
+static unsigned int EST_WIDTH = 14; // strlen(HEADERS[1]);
+static unsigned int RWS_WIDTH = 4; // strlen(HEADERS[2]);
+static unsigned int DBH_WIDTH = 7; // strlen(HEADERS[3]);
+static unsigned int MIN_IDS_WIDTH = 11; // strlen(HEADERS[4]);
+static unsigned int MIN_OTH_WIDTH = 5; // strlen(HEADERS[5]);
+
+
+int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
+        unsigned int width)
+{
+    REQUIRE(stream != NULL, -1);
+    REQUIRE(plan != NULL, -1);
+    REQUIRE(width > 1 && width < NEO4J_RENDER_MAX_WIDTH, -1);
+
+    size_t ids_bufcap = NEO4J_FIELD_BUFFER_INITIAL_CAPACITY;
+    char *ids_buffer = malloc(ids_bufcap);
+    if (ids_buffer == NULL)
+    {
+        return -1;
+    }
+    size_t args_bufcap = NEO4J_FIELD_BUFFER_INITIAL_CAPACITY;
+    char *args_buffer = malloc(args_bufcap);
+    if (args_buffer == NULL)
+    {
+        free(ids_buffer);
+        return -1;
+    }
+
+    unsigned int col_widths[6];
+    calculate_widths(col_widths, plan, width);
+
+    if (render_header(stream, col_widths))
+    {
+        goto failure;
+    }
+
+    if (render_steps(stream, plan->output_step, 0, &ids_buffer, &ids_bufcap,
+                &args_buffer, &args_bufcap, col_widths))
+    {
+        goto failure;
+    }
+
+    if (render_hr(stream, col_widths))
+    {
+        goto failure;
+    }
+
+    free(args_buffer);
+    free(ids_buffer);
+    return 0;
+
+    int errsv;
+failure:
+    errsv = errno;
+    fflush(stream);
+    free(args_buffer);
+    free(ids_buffer);
+    errno = errsv;
+    return -1;
+}
+
+
+int render_header(FILE *stream, unsigned int col_widths[6])
+{
+    if (render_hr(stream, col_widths))
+    {
+        return -1;
+    }
+
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        if (col_widths[i] == 0)
+        {
+            continue;
+        }
+        if (fprintf(stream, "| %-*s", col_widths[i]-1, HEADERS[i]) < 0)
+        {
+            return -1;
+        }
+    }
+    if (fputs((col_widths[5] == 0)? "|=\n" : "|\n", stream) == EOF)
+    {
+        return -1;
+    }
+
+    if (render_hr(stream, col_widths))
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+int render_hr(FILE *stream, unsigned int col_widths[6])
+{
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        if (col_widths[i] == 0)
+        {
+            continue;
+        }
+        size_t width = col_widths[i] + 1;
+        assert(width < NEO4J_RENDER_MAX_WIDTH);
+        if (fwrite(NEO4J_RENDER_TABLE_LINE, sizeof(char),
+                    width, stream) < width)
+        {
+            return -1;
+        }
+    }
+    if (fputs((col_widths[5] == 0)? "+=\n" : "+\n", stream) == EOF)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
+        unsigned int depth, char **ids_buffer, size_t *ids_bufcap,
+        char **args_buffer, size_t *args_bufcap, unsigned int col_widths[6])
+{
+    if (col_widths[0] > 0 && render_op(stream, step->operator_type,
+                depth+1, col_widths[0]))
+    {
+        return -1;
+    }
+
+    if (col_widths[1] > 0 && fprintf(stream, "| %*lld ",
+                col_widths[1] - 2, llround(step->estimated_rows)) < 0)
+    {
+        return -1;
+    }
+
+    if (col_widths[2] > 0 && fprintf(stream, "| %*lld ",
+                col_widths[2] - 2, step->rows) < 0)
+    {
+        return -1;
+    }
+
+    if (col_widths[3] > 0 && fprintf(stream, "| %*lld ",
+                col_widths[3] - 2, step->db_hits) < 0)
+    {
+        return -1;
+    }
+
+    ssize_t ids_len = (col_widths[4] == 0)? 0 : build_str_list(
+            step->identifiers, step->nidentifiers, ids_buffer, ids_bufcap);
+    if (ids_len < 0)
+    {
+        return -1;
+    }
+
+    ssize_t args_len = (col_widths[5] == 0)? 0 : build_args_value(
+            step->arguments, args_buffer, args_bufcap);
+    if (args_len < 0)
+    {
+        return -1;
+    }
+
+    unsigned int ids_width = (col_widths[4] > 0)? col_widths[4] - 2 : 0;
+    unsigned int args_width = (col_widths[5] > 0)? col_widths[5] - 2 : 0;
+    const char *ids = *ids_buffer;
+    char *ids_end = (*ids_buffer)+ids_len;
+    assert(ids_end < (*ids_buffer)+(*ids_bufcap));
+    *ids_end = '\0';
+    const char *args = *args_buffer;
+    char *args_end = (*args_buffer)+args_len;
+    assert(args_end < (*args_buffer)+(*args_bufcap));
+    *args_end = '\0';
+    for (;;)
+    {
+        if (col_widths[4] > 0)
+        {
+            if (fprintf(stream, "| %-*.*s ", ids_width, ids_width, ids) < 0)
+            {
+                return -1;
+            }
+            ids += ids_width;
+            if (ids >= ids_end)
+            {
+                ids = ids_end;
+            }
+        }
+
+        if (col_widths[5] > 0)
+        {
+            if (fprintf(stream, "| %-*.*s |\n", args_width,
+                        args_width, args) < 0)
+            {
+                return -1;
+            }
+            args += args_width;
+            if (args >= args_end)
+            {
+                args = args_end;
+            }
+        }
+        else if (fputs("|=\n", stream) == EOF)
+        {
+            return -1;
+        }
+
+        if (ids == ids_end && args == args_end)
+        {
+            break;
+        }
+        if (render_wrap(stream, (step->nsources == 0)? depth : depth+1,
+                    col_widths))
+        {
+            return -1;
+        }
+    }
+
+    struct neo4j_statement_execution_step **sources = step->sources;
+    for (unsigned int i = step->nsources; i-- > 0;)
+    {
+        bool branch = false;
+        unsigned int d = depth;
+        if (i > 0)
+        {
+            branch = true;
+            d = depth + 1;
+        }
+        if (render_tr(stream, depth+1, branch, col_widths))
+        {
+            return -1;
+        }
+        if (render_steps(stream, sources[i], d, ids_buffer, ids_bufcap,
+                    args_buffer, args_bufcap, col_widths))
+        {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
+        unsigned int width)
+{
+    unsigned int offset = 0;
+    do
+    {
+        if (fputs("| ", stream) == EOF)
+        {
+            return -1;
+        }
+        offset += 2;
+    } while (offset < op_depth*2);
+
+    if (fprintf(stream, "+%-*s ", width - offset - 1, operator_type) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+ssize_t build_str_list(const char * const *list, unsigned int n,
+        char **buffer, size_t *bufcap)
+{
+    size_t used = 0;
+    for (unsigned int i = 0; i < n; ++i)
+    {
+        assert(used + 2 < *bufcap);
+        if (i > 0)
+        {
+            memcpy((*buffer)+used, ", ", 2);
+            used += 2;
+        }
+
+        size_t l = strlen(list[i]);
+        if ((used + l) >= *bufcap)
+        {
+            char *newbuf = realloc(*buffer, used + l + 3);
+            if (newbuf == NULL)
+            {
+                return -1;
+            }
+            *bufcap = used + l + 3;
+            *buffer = newbuf;
+        }
+        memcpy((*buffer)+used, list[i], l);
+        used += l;
+    }
+
+    assert(used < *bufcap);
+    (*buffer)[used] = '\0';
+    return used;
+}
+
+
+ssize_t build_args_value(neo4j_value_t args, char **buffer, size_t *bufcap)
+{
+    if (neo4j_type(args) != NEO4J_MAP)
+    {
+        return 0;
+    }
+
+    const neo4j_value_t skip_keys[] =
+        {
+            neo4j_string("version"),
+            neo4j_string("planner"),
+            neo4j_string("planner-impl"),
+            neo4j_string("runtime"),
+            neo4j_string("runtime-impl"),
+            neo4j_string("EstimatedRows"),
+            neo4j_string("DbHits"),
+            neo4j_string("Rows"),
+            neo4j_string("Time")
+        };
+    const unsigned int nskip_keys = sizeof(skip_keys) / sizeof(neo4j_value_t);
+
+    size_t used = 0;
+    unsigned int nargs = neo4j_map_size(args);
+    for (unsigned int i = 0; i < nargs; ++i)
+    {
+        const neo4j_map_entry_t *entry = neo4j_map_getentry(args, i);
+        bool skip = false;
+        for (unsigned int k = 0; k < nskip_keys; ++k)
+        {
+            if (neo4j_eq(entry->key, skip_keys[k]))
+            {
+                skip = true;
+                break;
+            }
+        }
+        if (skip)
+        {
+            continue;
+        }
+
+        assert(used + 2 < *bufcap);
+        if (used > 0)
+        {
+            memcpy((*buffer) + used, "; ", 2);
+            used += 2;
+        }
+
+        for (;;)
+        {
+            size_t l;
+            if (neo4j_type(entry->value) == NEO4J_STRING)
+            {
+                neo4j_string_value(entry->value, (*buffer + used),
+                        (*bufcap) - used);
+                l = neo4j_string_length(entry->value);
+            }
+            else
+            {
+                l = neo4j_ntostring(entry->value, (*buffer) + used,
+                        (*bufcap) - used);
+            }
+            if ((used + l) <= *bufcap)
+            {
+                used += l;
+                break;
+            }
+            char *newbuf = realloc(*buffer, used + l + 3);
+            if (newbuf == NULL)
+            {
+                return -1;
+            }
+            *bufcap = used + l + 3;
+            *buffer = newbuf;
+        }
+    }
+
+    assert(used < *bufcap);
+    (*buffer)[used] = '\0';
+    return used;
+}
+
+
+int render_wrap(FILE *stream, unsigned int op_depth, unsigned int col_widths[4])
+{
+    size_t width = 0;
+    while (width < op_depth*2)
+    {
+        if (fputs("| ", stream) == EOF)
+        {
+            return -1;
+        }
+        width += 2;
+    }
+
+    width = col_widths[0] - (width - 1);
+    assert(width < NEO4J_RENDER_MAX_WIDTH);
+    if (fwrite(NEO4J_RENDER_CELL_LINE, sizeof(char), width, stream) < width)
+    {
+        return -1;
+    }
+
+    for (unsigned int i = 1; i < 4; ++i)
+    {
+        if (col_widths[i] == 0)
+        {
+            continue;
+        }
+        size_t width = col_widths[i] + 1;
+        assert(width < NEO4J_RENDER_MAX_WIDTH);
+        if (fwrite(NEO4J_RENDER_CELL_LINE, sizeof(char), width, stream) < width)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+
+int render_tr(FILE *stream, unsigned int op_depth, bool branch,
+        unsigned int col_widths[6])
+{
+    if (col_widths[0] == 0)
+    {
+        if (fputs("|=\n", stream) == EOF)
+        {
+            return -1;
+        }
+        return 0;
+    }
+
+    size_t width = 0;
+    assert(width < NEO4J_RENDER_MAX_WIDTH);
+    do
+    {
+        if (fputs("| ", stream) == EOF)
+        {
+            return -1;
+        }
+        width += 2;
+    } while (width < op_depth*2);
+
+    if (fputs(branch? "|\\" : "|", stream) == EOF)
+    {
+        return -1;
+    }
+
+    width = col_widths[0] - width - (branch? 1 : 0);
+    assert(width < NEO4J_RENDER_MAX_WIDTH-1);
+    if (fwrite(NEO4J_RENDER_CELL_LINE+1, sizeof(char), width, stream) < width)
+    {
+        return -1;
+    }
+
+    for (unsigned int i = 1; i < 6; ++i)
+    {
+        if (col_widths[i] == 0)
+        {
+            continue;
+        }
+        size_t width = col_widths[i] + 1;
+        assert(width < NEO4J_RENDER_MAX_WIDTH);
+        if (fwrite(NEO4J_RENDER_TABLE_LINE, sizeof(char), width, stream) < width)
+        {
+            return -1;
+        }
+    }
+
+    if (fputs((col_widths[5] == 0)? "+=\n" : "+\n", stream) == EOF)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+void calculate_widths(unsigned int col_widths[6],
+        struct neo4j_statement_plan *plan, unsigned int render_width)
+{
+    unsigned int opr_width = operators_width(plan->output_step);
+
+    unsigned int accum = 1;
+    col_widths[0] = maxu(opr_width, MIN_OPR_WIDTH) + 2;
+    col_widths[1] = EST_WIDTH + 2;
+    accum += col_widths[0] + col_widths[1] + 2;
+    if (plan->is_profile)
+    {
+        col_widths[2] = RWS_WIDTH + 2;
+        col_widths[3] = DBH_WIDTH + 2;
+        accum += col_widths[2] + col_widths[3] + 2;
+    }
+    else
+    {
+        col_widths[2] = 0;
+        col_widths[3] = 0;
+    }
+
+    col_widths[4] = MIN_IDS_WIDTH + 2;
+    col_widths[5] = MIN_OTH_WIDTH + 2;
+    if ((accum + col_widths[4] + col_widths[5] + 2) < render_width)
+    {
+        unsigned int half = ((render_width - accum) / 2) - 1;
+        if (half > col_widths[4])
+        {
+            unsigned int max = maxu(col_widths[4],
+                    identifiers_width(plan->output_step) + 2);
+            col_widths[4] = minu(half, max);
+        }
+        accum += col_widths[4] + 1;
+        col_widths[5] = (render_width - accum) - 1;
+    }
+
+    accum = 1;
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        if (col_widths[i] == 0)
+        {
+            continue;
+        }
+        accum += col_widths[i] + 1;
+        if (accum > render_width)
+        {
+            col_widths[i] = 0;
+        }
+    }
+}
+
+
+unsigned int operators_width(struct neo4j_statement_execution_step *step)
+{
+    assert(step != NULL);
+    assert(step->operator_type != NULL);
+
+    unsigned int width = 1+strlen(step->operator_type);
+    for (unsigned int i = step->nsources; i-- > 0;)
+    {
+        unsigned int swidth = operators_width(step->sources[i]);
+        width = maxu(width, (i > 0)? 2 + swidth : swidth);
+    }
+    return width;
+}
+
+
+unsigned int identifiers_width(struct neo4j_statement_execution_step *step)
+{
+    assert(step != NULL);
+
+    unsigned int width = 1+str_list_len(step->identifiers, step->nidentifiers);
+    for (unsigned int i = step->nsources; i-- > 0;)
+    {
+        width = maxu(width, identifiers_width(step->sources[i]));
+    }
+    return width;
+}
+
+
+unsigned int str_list_len(const char * const *list, unsigned int n)
+{
+    unsigned int w = 0;
+    for (unsigned int i = 0; i < n; ++i)
+    {
+        w += strlen(list[i]) + 2;
+    }
+    return w-2;
+}

@@ -17,17 +17,11 @@
 #ifndef NEO4J_RENDER_H
 #define NEO4J_RENDER_H
 
-#include "state.h"
+#include "neo4j-client.h"
 
-typedef int (*renderer_t)(shell_state_t *state, neo4j_result_stream_t *results);
+#define NEO4J_FIELD_BUFFER_INITIAL_CAPACITY 1024
 
-renderer_t find_renderer(const char *name);
-
-int render_results_csv(shell_state_t *state, neo4j_result_stream_t *results);
-int render_results_table(shell_state_t *state, neo4j_result_stream_t *results);
-
-int render_update_counts(shell_state_t *state, neo4j_result_stream_t *results);
-
-int render_plan_table(shell_state_t *state, struct neo4j_statement_plan *plan);
+extern const char NEO4J_RENDER_TABLE_LINE[NEO4J_RENDER_MAX_WIDTH];
+extern const char NEO4J_RENDER_CELL_LINE[NEO4J_RENDER_MAX_WIDTH];
 
 #endif/*NEO4J_RENDER_H*/
