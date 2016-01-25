@@ -288,7 +288,11 @@ int evaluate_statement(shell_state_t *state, const char *statement)
     struct neo4j_statement_plan *plan = neo4j_statement_plan(results);
     if (plan != NULL)
     {
-        if (render_plan_table(state, plan))
+        int err = render_plan_table(state, plan);
+        int errsv = errno;
+        neo4j_statement_plan_release(plan);
+        errno = errsv;
+        if (err)
         {
             goto cleanup;
         }
