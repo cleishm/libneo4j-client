@@ -29,3 +29,9 @@
    ...
    obj:*/libcrypto.so.*
 }
+{
+    ignore_libedit_el_set
+    Memcheck:Leak
+    ...
+    obj:*/libedit.so.*
+}
