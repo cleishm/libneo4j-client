@@ -5,14 +5,14 @@ libneo4j-client
 About
 -----
 
-libneo4j-client is a client library written in C for Neo4j. It is not intended
-as a complete driver, but rather as a foundation on which basic tools and
-drivers for various languages may be built. libneo4j-client takes care of all
-the detail of establishing a session with a Neo4j server, sending statements
-for evaluation, and retrieving results.
+libneo4j-client is a client library and command line shell for Neo4j. The
+client library is written in C, and is intended as a foundation on which basic
+tools and drivers for various languages may be built. libneo4j-client takes
+care of all the detail of establishing a session with a Neo4j server, sending
+statements for evaluation, and retrieving results.
 
-Included with libneo4j-client is neo4j-client, a small command shell for
-Neo4j that uses libneo4j-client for all interaction with Neo4j server.
+neo4j-client, the command line shell, is included with the libneo4j-client
+distribution and uses libneo4j-client for all interaction with Neo4j server.
 
 For more details, see [the project page](
 https://cleishm.github.io/libneo4j-client/) and the [FAQ](
