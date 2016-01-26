@@ -17,6 +17,8 @@ src/.doc/neo4j-client.h: src/lib/neo4j-client.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = neo4j-client.pc
 
+EXTRA_DIST = doxygen.cfg
+
 docker-check:
 	$(MAKE) dist
 	id=`docker create -i debian-dev \
