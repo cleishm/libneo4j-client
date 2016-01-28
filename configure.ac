@@ -202,6 +202,7 @@ DX_INIT_DOXYGEN(libneo4j-client, doxygen.cfg, doc)
 AC_SUBST([REQUIRES], [`echo "$REQUIRES" | cut -c3-`])
 
 AC_CONFIG_FILES([
+    neo4j-client.1 \
     neo4j-client.pc \
     Makefile \
     m4/Makefile \

@@ -3,6 +3,8 @@ include aminclude.am
 SUBDIRS = m4 src .
 ACLOCAL_AMFLAGS = -I m4
 
+man1_MANS = neo4j-client.1
+
 if HAVE_CHECK
 SUBDIRS += tests
 endif
@@ -17,7 +19,9 @@ src/.doc/neo4j-client.h: src/lib/neo4j-client.h
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = neo4j-client.pc
 
-EXTRA_DIST = doxygen.cfg
+EXTRA_DIST = \
+	doxygen.cfg \
+	neo4j-client.1.in
 
 docker-check:
 	$(MAKE) dist

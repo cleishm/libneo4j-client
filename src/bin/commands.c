@@ -165,7 +165,7 @@ int help(shell_state_t *state, const char *args)
 ":disconnect            Disconnect the client from the server\n"
 ":help                  Show usage information\n"
 ":output (table|csv)    Set the output format\n"
-":width <n>             Set the number of columns in the table output\n");
+":width (<n>|auto)      Set the number of columns in the table output\n");
     fflush(state->out);
     return 0;
 }
