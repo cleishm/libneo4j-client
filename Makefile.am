@@ -27,6 +27,7 @@ docker-check:
 	$(MAKE) dist
 	id=`docker create -i debian-dev \
 		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check'` && \
+	trap "docker rm $$id" EXIT && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker start -i $$id
 
@@ -34,6 +35,7 @@ docker-valgrind:
 	$(MAKE) dist
 	id=`docker create -i debian-dev \
 		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check && CK_FORK=no valgrind --suppressions=valgrind.suppressions --leak-check=full ./tests/check_libneo4j-client'` && \
+	trap "docker rm $$id" EXIT && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker cp valgrind.suppressions $$id:/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
 	docker start -i $$id
