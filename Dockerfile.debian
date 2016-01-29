@@ -8,6 +8,9 @@ RUN apt-get update && \
         check \
         debhelper \
         devscripts \
+        doxygen \
+        git \
+        git-buildpackage \
         libedit-dev \
         libssl-dev \
         libtool \
