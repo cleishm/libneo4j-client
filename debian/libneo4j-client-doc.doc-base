@@ -1,0 +1,9 @@
+Document: libneo4j-client
+Title: libneo4j-client API documentation
+Abstract: Documentation of the API provided by libneo4j-client
+Author: Chris Leishman
+Section: Programming/C
+
+Format: HTML
+Index: /usr/share/doc/libneo4j-client/index.html
+Files: /usr/share/doc/libneo4j-client/*

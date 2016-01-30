@@ -1,0 +1,4 @@
+usr/lib/*/libneo4j-client.so
+usr/lib/*/libneo4j-client.a
+usr/lib/*/pkgconfig
+usr/include/neo4j-client.h

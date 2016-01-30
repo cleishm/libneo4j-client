@@ -1,0 +1,7 @@
+version=3
+
+#/cleishm/libneo4j-client/archive/v0.7.0.tar.gz
+#/cleishm/libneo4j-client/releases/download/v0.7.0/libneo4j-client-0.7.0.tar.gz
+
+opts=downloadurlmangle=s/archive\/v([\d\.]+)\.tar\.gz/releases\/download\/v$1\/libneo4j-client-$1.tar.gz/,pgpsigurlmangle=s/$/.asc/,filenamemangle=s/.+\/v([\d\.]+)\.tar\.gz/libneo4j-client-$1\.tar\.gz/ \
+  http://github.com/cleishm/libneo4j-client/tags .*/v(\d\S*)\.tar\.gz

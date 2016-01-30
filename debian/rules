@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+DH_VERBOSE = 1
+
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+%:
+	dh $@  --with autotools-dev
+
+override_dh_auto_build-indep:
+	$(MAKE) doc

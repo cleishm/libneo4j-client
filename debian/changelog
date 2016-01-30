@@ -1,0 +1,5 @@
+libneo4j-client (0.7.1-1) unstable; urgency=low
+
+  * Initial packaging. Closes: #813443
+
+ -- Chris Leishman <chris@leishman.org>  Tue, 02 Feb 2016 02:13:38 +0000
