@@ -24,10 +24,6 @@
 #include <neo4j-client.h>
 
 
-// FIXME: internal to libedit
-unsigned char ed_newline(EditLine *el, int ch);
-
-
 static int editline_setup(shell_state_t *state,
         EditLine **el, History **el_history);
 static int setup_history(shell_state_t *state, History *el_history);
@@ -54,6 +50,7 @@ int interact(shell_state_t *state,
     int length;
     while ((input = el_gets(el, &length)) != NULL)
     {
+        fputc('\n', state->out);
         const char *end;
         int r = process_input(state, input, length, &end, evaluate);
         if (r < 0)
@@ -70,7 +67,10 @@ int interact(shell_state_t *state,
             ;
         if (c != end)
         {
-            const char *entry = temp_copy(state, input, end - input);
+            size_t n = end - input;
+            for (; isspace(input[n-1]); --n)
+                    ;
+            const char *entry = temp_copy(state, input, n);
             if (entry == NULL)
             {
                 neo4j_perror(state->err, errno, "unexpected error");
@@ -254,13 +254,15 @@ unsigned char check_line(EditLine *el, int ch)
     {
         return CC_FATAL;
     }
+    if (literal_newline(el, ch) == CC_ERROR)
+    {
+        return CC_ERROR;
+    }
     if (complete || length == 0)
     {
-        ed_newline(el, ch);
         return CC_NEWLINE;
     }
-
-    return literal_newline(el, ch);
+    return CC_REFRESH;
 }
 
 
