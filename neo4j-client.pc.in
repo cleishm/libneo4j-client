@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Neo4j Client
+Description: A client library for the neo4j graph database
+URL: http://github.com/cleishm/neo4j-client
+Version: @VERSION@
+Requires: @REQUIRES@
+Libs: -L${libdir} -lneo4j-client
+Cflags: -I${includedir}
