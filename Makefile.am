@@ -21,7 +21,9 @@ pkgconfig_DATA = neo4j-client.pc
 
 EXTRA_DIST = \
 	doxygen.cfg \
-	neo4j-client.1.in
+	LICENSE \
+	neo4j-client.1.in \
+	README.md
 
 docker-check:
 	$(MAKE) dist
