@@ -2,9 +2,12 @@
 .doc
 .libs
 *~
+*.1
 *.o
+*.o-*
 *.lo
 *.la
+*.sig
 *.swp
 *.dSYM
 neo4j-client.pc
@@ -19,8 +22,7 @@ TAGS
 /config.*
 /configure
 /depcomp
-/doc/man
-/doc/*.tag
+/doc
 /install-sh
 /libtool
 /ltmain.sh
