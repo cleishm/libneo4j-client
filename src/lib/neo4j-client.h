@@ -218,6 +218,7 @@ struct neo4j_logger_provider
             const char *name);
 };
 
+#define NEO4J_STD_LOGGER_DEFAULT 0
 #define NEO4J_STD_LOGGER_NO_PREFIX (1<<0)
 
 /**
@@ -227,6 +228,8 @@ struct neo4j_logger_provider
  *
  * A bitmask of flags may be supplied, which may include:
  * - NEO4J_STD_LOGGER_NO_PREFIX - don't output a prefix on each logline
+ *
+ * If no flags are required, pass 0 or `NEO4J_STD_LOGGER_DEFAULT`.
  *
  * @param [stream] The stream to output to.
  * @param [level] The default level to log at.
@@ -1340,6 +1343,7 @@ int neo4j_mkdir_p(const char *path);
 
 #define NEO4J_DEFAULT_TCP_PORT 7687
 
+#define NEO4J_CONNECT_DEFAULT 0
 #define NEO4J_INSECURE (1<<0)
 
 /**
@@ -1347,6 +1351,8 @@ int neo4j_mkdir_p(const char *path);
  *
  * A bitmask of flags may be supplied, which may include:
  * - NEO4J_INSECURE - do not attempt to establish a secure connection
+ *
+ * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
  * @param [uri] A URI describing the server to connect to, which may also
  *         include authentication data (which will override any provided
@@ -1362,6 +1368,11 @@ neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
 
 /**
  * Establish a connection to a neo4j server.
+ *
+ * A bitmask of flags may be supplied, which may include:
+ * - NEO4J_INSECURE - do not attempt to establish a secure connection
+ *
+ * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
  * @param [hostname] The hostname to connect to.
  * @param [port] The port to connect to.
@@ -1760,6 +1771,7 @@ void neo4j_release(neo4j_result_t *result);
 
 #define NEO4J_RENDER_MAX_WIDTH 4095
 
+#define NEO4J_RENDER_DEFAULT 0
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
 
@@ -1769,6 +1781,8 @@ void neo4j_release(neo4j_result_t *result);
  * Flags can be specified, as a bitmask, to control rendering. This rendering
  * method respects the flags `NEO4J_RENDER_SHOW_NULL` and
  * `NEO4J_RENDER_QUOTE_STRINGS`.
+ *
+ * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
@@ -1786,6 +1800,8 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
  * Flags can be specified, as a bitmask, to control rendering. This rendering
  * method respects the flag `NEO4J_RENDER_SHOW_NULL`.
  *
+ * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ *
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
  * @param [flags] A bitmask of flags to control rendering.
@@ -1798,14 +1814,19 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
 /**
  * Render a statement plan as a table.
  *
+ * Flags can be specified, as a bitmask, to control rendering. There are
+ * no flags that currently affect this function and a value of 0 or
+ * `NEO4J_RENDER_DEFAULT` should be specified.
+ *
  * @param [stream] The stream to render to.
  * @param [plan] The statement plan to render.
  * @param [width] The width of the table to render.
+ * @param [flags] A bitmask of flags to control rendering.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 __neo4j_must_check
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
-        unsigned int width);
+        unsigned int width, uint_fast32_t flags);
 
 
 /*
