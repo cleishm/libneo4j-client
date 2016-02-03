@@ -38,6 +38,14 @@ If you're using Mac OS X, libneo4j-client can be installed using homebrew:
 $ brew install cleishm/neo4j/libneo4j-client
 ```
 
+If you're using Ubuntu, neo4j-client can be install using APT:
+
+```console
+$ sudo add-apt-repository ppa:cleishm/libneo4j-client
+$ sudo apt-get update
+$ sudo apt-get install neo4j-client
+```
+
 For other platforms, please see [Building](#building) below.
 
 
