@@ -273,7 +273,7 @@ START_TEST (test_session_awaits_inflight_requests_on_close)
 END_TEST
 
 
-START_TEST (test_session_drains_requests_and_acks_after_failure)
+START_TEST (test_session_drains_requests_and_resets_after_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
@@ -309,7 +309,7 @@ START_TEST (test_session_drains_requests_and_acks_after_failure)
     ck_assert(type == NEO4J_PULL_ALL_MESSAGE);
 
     type = recv_message(server_ios, &mpool, NULL, NULL);
-    ck_assert(type == NEO4J_ACK_FAILURE_MESSAGE);
+    ck_assert(type == NEO4J_RESET_MESSAGE);
 
     neo4j_end_session(session);
 }
@@ -352,7 +352,7 @@ START_TEST (test_session_cant_start_after_eproto_in_failure)
 END_TEST
 
 
-START_TEST (test_session_cant_start_after_eproto_in_ack_failure)
+START_TEST (test_session_cant_start_after_eproto_in_reset)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
@@ -389,7 +389,7 @@ START_TEST (test_session_cant_start_after_eproto_in_ack_failure)
 END_TEST
 
 
-START_TEST (test_session_drains_acks_when_closed)
+START_TEST (test_session_drains_resets_when_closed)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
@@ -412,7 +412,7 @@ START_TEST (test_session_drains_acks_when_closed)
 
     queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0);
-    // no queued response for the ACK_FAILURE => connection closed
+    // no queued response for the RESET => connection closed
 
     result = neo4j_session_sync(session, &(resp1.condition));
     ck_assert_int_eq(result, -1);
@@ -427,7 +427,7 @@ START_TEST (test_session_drains_acks_when_closed)
     ck_assert(type == NEO4J_PULL_ALL_MESSAGE);
 
     type = recv_message(server_ios, &mpool, NULL, NULL);
-    ck_assert(type == NEO4J_ACK_FAILURE_MESSAGE);
+    ck_assert(type == NEO4J_RESET_MESSAGE);
 
     neo4j_end_session(session);
 }
@@ -446,9 +446,9 @@ TCase* session_tcase(void)
     tcase_add_test(tc, test_session_cant_start_after_previous_init_failure);
     tcase_add_test(tc, test_session_drains_outstanding_requests_on_close);
     tcase_add_test(tc, test_session_awaits_inflight_requests_on_close);
-    tcase_add_test(tc, test_session_drains_requests_and_acks_after_failure);
+    tcase_add_test(tc, test_session_drains_requests_and_resets_after_failure);
     tcase_add_test(tc, test_session_cant_start_after_eproto_in_failure);
-    tcase_add_test(tc, test_session_cant_start_after_eproto_in_ack_failure);
-    tcase_add_test(tc, test_session_drains_acks_when_closed);
+    tcase_add_test(tc, test_session_cant_start_after_eproto_in_reset);
+    tcase_add_test(tc, test_session_drains_resets_when_closed);
     return tc;
 }
