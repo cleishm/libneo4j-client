@@ -1403,7 +1403,7 @@ int neo4j_close(neo4j_connection_t *connection);
  */
 
 /**
- * Create a new session for the given connection
+ * Create a new session for the given connection.
  *
  * @param [connection] The connection over which to establish the session.
  * @return A pointer to a `neo4j_session_t` structure, or `NULL` on error
@@ -1420,6 +1420,18 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection);
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 int neo4j_end_session(neo4j_session_t *session);
+
+/**
+ * Reset a session.
+ *
+ * Invoking this function causes all server-held state for the session to be
+ * cleared, including rolling back any open transactions, and causes any
+ * existing result stream to be terminated.
+ *
+ * @param [session] The session to reset.
+ * @return 0 on sucess, or -1 if an error occurs (errno will be set).
+ */
+int neo4j_reset_session(neo4j_session_t *session);
 
 
 /*

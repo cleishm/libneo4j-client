@@ -503,6 +503,32 @@ START_TEST (test_run_skips_results_after_session_close)
 END_TEST
 
 
+START_TEST (test_run_skips_results_after_session_reset)
+{
+    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    ck_assert_ptr_ne(results, NULL);
+
+    queue_run_success(server_ios); // RUN
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_stream_end_success(server_ios); // PULL_ALL
+
+    ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
+    ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
+
+    neo4j_reset_session(session);
+
+    ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
+    ck_assert_int_eq(errno, NEO4J_SESSION_ENDED);
+    ck_assert_int_eq(neo4j_check_failure(results), NEO4J_SESSION_ENDED);
+
+    ck_assert_int_eq(neo4j_close_results(results), 0);
+    ck_assert(rb_is_empty(in_rb));
+}
+END_TEST
+
+
 START_TEST (test_run_returns_same_failure_after_session_close)
 {
     queue_failure(server_ios); // RUN
@@ -641,6 +667,7 @@ TCase* result_stream_tcase(void)
     tcase_add_test(tc, test_run_returns_failure_when_statement_fails);
     tcase_add_test(tc, test_run_returns_failure_during_streaming);
     tcase_add_test(tc, test_run_skips_results_after_session_close);
+    tcase_add_test(tc, test_run_skips_results_after_session_reset);
     tcase_add_test(tc, test_run_returns_same_failure_after_session_close);
     tcase_add_test(tc, test_send_completes);
     tcase_add_test(tc, test_send_returns_fieldnames);

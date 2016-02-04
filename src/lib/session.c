@@ -31,6 +31,7 @@ static_assert(NEO4J_REQUEST_ARGV_PREALLOC >= 2,
 
 
 static int session_start(neo4j_session_t *session);
+static int session_clear(neo4j_session_t *session);
 static int send_requests(neo4j_session_t *session);
 static int receive_responses(neo4j_session_t *session,
         const unsigned int *condition);
@@ -122,7 +123,7 @@ failure:
 }
 
 
-int neo4j_end_session(neo4j_session_t *session)
+static int session_clear(neo4j_session_t *session)
 {
     REQUIRE(session != NULL, -1);
     REQUIRE(session->connection != NULL, -1);
@@ -149,6 +150,24 @@ int neo4j_end_session(neo4j_session_t *session)
     }
     assert(session->request_queue_depth == 0);
 
+    errno = errsv;
+    return err;
+}
+
+
+int neo4j_end_session(neo4j_session_t *session)
+{
+    REQUIRE(session != NULL, -1);
+    REQUIRE(session->connection != NULL, -1);
+    int err = 0;
+    int errsv = errno;
+
+    if (session_clear(session))
+    {
+        err = -1;
+        errsv = errno;
+    }
+
     int result = neo4j_detach_session(session->connection, session,
             !session->failed);
     if (result && err == 0)
@@ -166,6 +185,21 @@ int neo4j_end_session(neo4j_session_t *session)
     free(session);
     errno = errsv;
     return err;
+}
+
+
+int neo4j_reset_session(neo4j_session_t *session)
+{
+    if (session_clear(session))
+    {
+        return -1;
+    }
+    if (reset(session))
+    {
+        return -1;
+    }
+    neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
+    return 0;
 }
 
 
