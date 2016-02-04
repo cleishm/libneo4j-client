@@ -1585,6 +1585,7 @@ const char *neo4j_error_message(neo4j_result_stream_t *results);
 #define NEO4J_WRITE_ONLY_STATEMENT 1
 #define NEO4J_READ_WRITE_STATEMENT 2
 #define NEO4J_SCHEMA_UPDATE_STATEMENT 3
+#define NEO4J_CONTROL_STATEMENT 4
 
 /**
  * Return the statement type for the result stream.
@@ -1595,6 +1596,7 @@ const char *neo4j_error_message(neo4j_result_stream_t *results);
  * - NEO4J_WRITE_ONLY_STATEMENT
  * - NEO4J_READ_WRITE_STATEMENT
  * - NEO4J_SCHEMA_UPDATE_STATEMENT
+ * - NEO4J_CONTROL_STATEMENT
  *
  * @attention As the statement type is only available at the end of the result
  * stream, invoking this function will will result in any unfetched results
