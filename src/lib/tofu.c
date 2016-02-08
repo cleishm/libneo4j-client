@@ -25,10 +25,10 @@
 #include <sys/file.h>
 #include <unistd.h>
 
-#define NEO4J_KNOWN_HOSTS "neo4j_known_certs"
+#define NEO4J_KNOWN_HOSTS "known_hosts"
 #define NEO4J_MAX_HOST_LENGTH 512
-#define NEO4J_MAX_FINGERPRINT_LENGTH 60
-#define NEO4J_MAX_KNOWN_HOSTS_LINE_LENGTH 1024
+#define NEO4J_MAX_FINGERPRINT_LENGTH 512
+#define NEO4J_MAX_KNOWN_HOSTS_LINE_LENGTH 2048
 #define NEO4J_TEMP_FILE_SUFFIX ".tmpXXXXXX"
 
 static int retrieve_stored_fingerprint(const char * restrict file,
@@ -126,16 +126,23 @@ int retrieve_stored_fingerprint(const char * restrict file,
     size_t hostlen = strlen(host);
     while (fgets(line, sizeof(line), stream) != NULL)
     {
-        if (strncmp(line, host, hostlen) == 0 && isspace(line[hostlen]))
+        const char *entry = line;
+        for (; isspace(*entry); ++entry)
+            ;
+        if (*entry == '\0' || *entry == '#')
         {
-            char *p = line + hostlen + 1;
-            for (; isspace(*p); ++p)
+            continue;
+        }
+        if (strncmp(entry, host, hostlen) == 0 && isspace(entry[hostlen]))
+        {
+            const char *f = entry + hostlen + 1;
+            for (; isspace(*f); ++f)
                 ;
-            size_t l = strlen(p);
-            for (; l > 0 && isspace(p[l-1]); --l)
+            size_t l = strlen(f);
+            for (; l > 0 && isspace(f[l-1]); --l)
                 ;
             l = min(l, n - 1);
-            memcpy(buf, p, l);
+            memcpy(buf, f, l);
             buf[l] = '\0';
             result = 0;
             goto cleanup;
