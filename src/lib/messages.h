@@ -33,7 +33,7 @@ extern const neo4j_message_type_t NEO4J_INIT_MESSAGE;
 extern const neo4j_message_type_t NEO4J_RUN_MESSAGE;
 extern const neo4j_message_type_t NEO4J_DISCARD_ALL_MESSAGE;
 extern const neo4j_message_type_t NEO4J_PULL_ALL_MESSAGE;
-extern const neo4j_message_type_t NEO4J_ACK_FAILURE_MESSAGE;
+extern const neo4j_message_type_t NEO4J_RESET_MESSAGE;
 extern const neo4j_message_type_t NEO4J_RECORD_MESSAGE;
 extern const neo4j_message_type_t NEO4J_SUCCESS_MESSAGE;
 extern const neo4j_message_type_t NEO4J_FAILURE_MESSAGE;

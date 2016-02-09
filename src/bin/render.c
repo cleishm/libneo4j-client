@@ -150,5 +150,5 @@ int render_plan_table(shell_state_t *state, struct neo4j_statement_plan *plan)
     {
         return -1;
     }
-    return neo4j_render_plan_table(state->out, plan, width);
+    return neo4j_render_plan_table(state->out, plan, width, 0);
 }
