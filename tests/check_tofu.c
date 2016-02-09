@@ -31,6 +31,8 @@ static void setup(void)
             "known_hosts_XXXXXX");
     ck_assert_ptr_ne(f, NULL);
     fputs("host.local:6546 aa7b6261e21d7b2950e044453543bce3840429e2\r\n", f);
+    fputs("  host2.local:6546   aa7b6261e21d7b2950e044453543bce3840429e2\r\n", f);
+    fputs("#host3.local:6546 aa7b6261e21d7b2950e044453543bce3840429e2\r\n", f);
     fclose(f);
 
     config = neo4j_new_config();
@@ -100,9 +102,27 @@ START_TEST (test_finds_trusted_host)
 END_TEST
 
 
+START_TEST (test_finds_trusted_host_with_indent)
+{
+    int r = neo4j_check_known_hosts("host2.local", 6546,
+            "aa7b6261e21d7b2950e044453543bce3840429e2", config, 0);
+    ck_assert_int_eq(r, 0);
+}
+END_TEST
+
+
 START_TEST (test_unfound_host_with_no_callback_registered)
 {
     int r = neo4j_check_known_hosts("unknown.local", 6546,
+            "aa7b6261e21d7b2950e044453543bce3840429e2", config, 0);
+    ck_assert_int_eq(r, 1);
+}
+END_TEST
+
+
+START_TEST (test_commented_host)
+{
+    int r = neo4j_check_known_hosts("host3.local", 6546,
             "aa7b6261e21d7b2950e044453543bce3840429e2", config, 0);
     ck_assert_int_eq(r, 1);
 }
@@ -283,7 +303,9 @@ TCase* tofu_tcase(void)
     TCase *tc = tcase_create("tofu");
     tcase_add_checked_fixture(tc, setup, teardown);
     tcase_add_test(tc, test_finds_trusted_host);
+    tcase_add_test(tc, test_finds_trusted_host_with_indent);
     tcase_add_test(tc, test_unfound_host_with_no_callback_registered);
+    tcase_add_test(tc, test_commented_host);
     tcase_add_test(tc, test_mismatch_host_with_no_callback_registered);
     tcase_add_test(tc, test_unfound_host_invokes_callback_and_rejects);
     tcase_add_test(tc, test_mismatch_host_invokes_callback_and_rejects);

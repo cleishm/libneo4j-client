@@ -31,6 +31,7 @@ static_assert(NEO4J_REQUEST_ARGV_PREALLOC >= 2,
 
 
 static int session_start(neo4j_session_t *session);
+static int session_clear(neo4j_session_t *session);
 static int send_requests(neo4j_session_t *session);
 static int receive_responses(neo4j_session_t *session,
         const unsigned int *condition);
@@ -42,8 +43,8 @@ static void pop_request(neo4j_session_t* session);
 static int initialize(neo4j_session_t *session);
 static int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
-static int ack_failure(neo4j_session_t *session);
-static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
+static int reset(neo4j_session_t *session);
+static int reset_callback(void *cdata, neo4j_message_type_t type,
        const neo4j_value_t *argv, uint16_t argc);
 
 
@@ -122,17 +123,21 @@ failure:
 }
 
 
-int neo4j_end_session(neo4j_session_t *session)
+static int session_clear(neo4j_session_t *session)
 {
     REQUIRE(session != NULL, -1);
     REQUIRE(session->connection != NULL, -1);
     int err = 0;
     int errsv = errno;
 
-    for (neo4j_job_t *job = session->jobs; job != NULL; job = job->next)
+    for (neo4j_job_t *job = session->jobs; job != NULL;)
     {
         neo4j_job_notify_session_ending(job);
+        neo4j_job_t *next = job->next;
+        job->next = NULL;
+        job = next;
     }
+    session->jobs = NULL;
 
     if (!session->failed && receive_responses(session, NULL))
     {
@@ -148,6 +153,24 @@ int neo4j_end_session(neo4j_session_t *session)
         session->failed = true;
     }
     assert(session->request_queue_depth == 0);
+
+    errno = errsv;
+    return err;
+}
+
+
+int neo4j_end_session(neo4j_session_t *session)
+{
+    REQUIRE(session != NULL, -1);
+    REQUIRE(session->connection != NULL, -1);
+    int err = 0;
+    int errsv = errno;
+
+    if (session_clear(session))
+    {
+        err = -1;
+        errsv = errno;
+    }
 
     int result = neo4j_detach_session(session->connection, session,
             !session->failed);
@@ -166,6 +189,21 @@ int neo4j_end_session(neo4j_session_t *session)
     free(session);
     errno = errsv;
     return err;
+}
+
+
+int neo4j_reset_session(neo4j_session_t *session)
+{
+    if (session_clear(session))
+    {
+        return -1;
+    }
+    if (reset(session))
+    {
+        return -1;
+    }
+    neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
+    return 0;
 }
 
 
@@ -239,7 +277,7 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
                 return -1;
             }
             assert(session->request_queue_depth == 0);
-            return ack_failure(session);
+            return reset(session);
         }
 
         if (send_requests(session))
@@ -518,7 +556,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 }
 
 
-int ack_failure(neo4j_session_t *session)
+int reset(neo4j_session_t *session)
 {
     assert(session != NULL);
 
@@ -527,19 +565,19 @@ int ack_failure(neo4j_session_t *session)
     {
         return -1;
     }
-    req->type = NEO4J_ACK_FAILURE_MESSAGE;
+    req->type = NEO4J_RESET_MESSAGE;
     req->argc = 0;
-    req->receive = ack_failure_callback;
+    req->receive = reset_callback;
     req->cdata = session;
 
-    neo4j_log_trace(session->logger, "enqu ACK_FAILURE (%p) in %p",
+    neo4j_log_trace(session->logger, "enqu RESET (%p) in %p",
             (void *)req, (void *)session);
 
     return neo4j_session_sync(session, NULL);
 }
 
 
-int ack_failure_callback(void *cdata, neo4j_message_type_t type,
+int reset_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
 {
     assert(cdata != NULL);
@@ -554,13 +592,13 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     {
         neo4j_log_error(session->logger,
                 "unexpected %s message received in %p"
-                " (expected SUCCESS in response to ACK_FAILURE)",
+                " (expected SUCCESS in response to RESET)",
                 neo4j_message_type_str(type), (void *)session);
         errno = EPROTO;
         return -1;
     }
 
-    neo4j_log_trace(session->logger, "ACK_FAILURE complete in %p",
+    neo4j_log_trace(session->logger, "RESET complete in %p",
             (void *)session);
     return 0;
 }

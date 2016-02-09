@@ -74,20 +74,6 @@ static struct neo4j_statement_execution_step *labelScanStep(void)
 }
 
 
-static const char *gstrsub(char from, char to, const char *s)
-{
-    size_t n = strlen(s);
-    char *buf = neo4j_mpool_alloc(&mpool, n+1);
-    ck_assert(buf != NULL);
-    for (size_t i = 0; i < n; ++i)
-    {
-        buf[i] = (s[i] == from)? to : s[i];
-    }
-    buf[n] = '\0';
-    return buf;
-}
-
-
 static void setup(void)
 {
     mpool = neo4j_mpool(&neo4j_std_memory_allocator, 1024);
@@ -119,7 +105,7 @@ START_TEST (render_simple_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 73);
+    int result = neo4j_render_plan_table(memstream, plan, 73, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
@@ -128,9 +114,9 @@ START_TEST (render_simple_plan)
  "+------------------+----------------+-------------+---------------------+\n"
  "| Operator         | Estimated Rows | Identifiers | Other               |\n"
  "+------------------+----------------+-------------+---------------------+\n"
- "| +ProduceResults  |              5 | n, m        |                     |\n"
- "| |                +----------------+-------------+---------------------+\n"
  "| +NodeByLabelScan |             10 | n           | :Person             |\n"
+ "| |                +----------------+-------------+---------------------+\n"
+ "| +ProduceResults  |              5 | n, m        |                     |\n"
  "+------------------+----------------+-------------+---------------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
@@ -156,22 +142,22 @@ START_TEST (render_branched_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 73);
+    int result = neo4j_render_plan_table(memstream, plan, 73, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--------------------+----------------+----------------+----------------+\n"
  "| Operator           | Estimated Rows | Identifiers    | Other          |\n"
  "+--------------------+----------------+----------------+----------------+\n"
- "| +ProduceResults    |              5 | n, m, l        |                |\n"
- "| |~                 +----------------+----------------+----------------+\n"
- "| | +NodeByLabelScan |             10 | n, m, l, k, j, | :City; n.age > |\n"
- "| |                  |                |  i, h, g       |  { AUTOINT0 }  |\n"
- "| |                  +----------------+----------------+----------------+\n"
  "| +NodeByLabelScan   |             10 | n              | :Person        |\n"
- "+--------------------+----------------+----------------+----------------+\n");
+ "| |                  +----------------+----------------+----------------+\n"
+ "| | +NodeByLabelScan |             10 | n, m, l, k, j, | :City; n.age > |\n"
+ "| | |                |                |  i, h, g       |  { AUTOINT0 }  |\n"
+ "| |/                 +----------------+----------------+----------------+\n"
+ "| +ProduceResults    |              5 | n, m, l        |                |\n"
+ "+--------------------+----------------+----------------+----------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -200,25 +186,25 @@ START_TEST (render_multi_branched_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 73);
+    int result = neo4j_render_plan_table(memstream, plan, 73, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--------------------+----------------+----------------+----------------+\n"
  "| Operator           | Estimated Rows | Identifiers    | Other          |\n"
  "+--------------------+----------------+----------------+----------------+\n"
- "| +ProduceResults    |              5 | n, m           |                |\n"
- "| |~                 +----------------+----------------+----------------+\n"
- "| | +NodeByLabelScan |             10 | l              | :Person        |\n"
- "| |~                 +----------------+----------------+----------------+\n"
- "| | +NodeByLabelScan |             10 | m              | :City; n.age > |\n"
- "| |                  |                |                |  { AUTOINT0 }  |\n"
- "| |                  +----------------+----------------+----------------+\n"
  "| +NodeByLabelScan   |             10 | n, m, l, k, j, | :Person        |\n"
- "|                    |                |  i, h, g       |                |\n"
- "+--------------------+----------------+----------------+----------------+\n");
+ "| |                  |                |  i, h, g       |                |\n"
+ "| |                  +----------------+----------------+----------------+\n"
+ "| | +NodeByLabelScan |             10 | m              | :City; n.age > |\n"
+ "| | |                |                |                |  { AUTOINT0 }  |\n"
+ "| |/                 +----------------+----------------+----------------+\n"
+ "| | +NodeByLabelScan |             10 | l              | :Person        |\n"
+ "| |/                 +----------------+----------------+----------------+\n"
+ "| +ProduceResults    |              5 | n, m           |                |\n"
+ "+--------------------+----------------+----------------+----------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -245,25 +231,25 @@ START_TEST (render_deep_branched_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 73);
+    int result = neo4j_render_plan_table(memstream, plan, 73, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('>', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+----------------------+----------------+-------------+-----------------+\n"
  "| Operator             | Estimated Rows | Identifiers | Other           |\n"
  "+----------------------+----------------+-------------+-----------------+\n"
- "| +ProduceResults      |              5 | n, m        |                 |\n"
- "| |>                   +----------------+-------------+-----------------+\n"
- "| | +NodeByLabelScan   |             10 | m           | :Person         |\n"
- "| | |>                 +----------------+-------------+-----------------+\n"
- "| | | +NodeByLabelScan |             10 | k           | :Person         |\n"
- "| | |                  +----------------+-------------+-----------------+\n"
- "| | +NodeByLabelScan   |             10 | l           | :Person         |\n"
- "| |                    +----------------+-------------+-----------------+\n"
  "| +NodeByLabelScan     |             10 | n           | :Person         |\n"
- "+----------------------+----------------+-------------+-----------------+\n");
+ "| |                    +----------------+-------------+-----------------+\n"
+ "| | +NodeByLabelScan   |             10 | l           | :Person         |\n"
+ "| | |                  +----------------+-------------+-----------------+\n"
+ "| | | +NodeByLabelScan |             10 | k           | :Person         |\n"
+ "| | |/                 +----------------+-------------+-----------------+\n"
+ "| | +NodeByLabelScan   |             10 | m           | :Person         |\n"
+ "| |/                   +----------------+-------------+-----------------+\n"
+ "| +ProduceResults      |              5 | n, m        |                 |\n"
+ "+----------------------+----------------+-------------+-----------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -289,27 +275,27 @@ START_TEST (render_narrow_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 61);
+    int result = neo4j_render_plan_table(memstream, plan, 61, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--------------------+----------------+-------------+-------+\n"
  "| Operator           | Estimated Rows | Identifiers | Other |\n"
  "+--------------------+----------------+-------------+-------+\n"
- "| +ProduceResults    |              5 | n, m, l     |       |\n"
- "| |~                 +----------------+-------------+-------+\n"
- "| | +NodeByLabelScan |             10 | m           | :City |\n"
- "| |                  |                |             | ; n.a |\n"
- "| |                  |                |             | ge >  |\n"
- "| |                  |                |             | { AUT |\n"
- "| |                  |                |             | OINT0 |\n"
- "| |                  |                |             |  }    |\n"
- "| |                  +----------------+-------------+-------+\n"
  "| +NodeByLabelScan   |             10 | n, m, l, k, | :Pers |\n"
- "|                    |                |  j, i, h, g | on    |\n"
- "+--------------------+----------------+-------------+-------+\n");
+ "| |                  |                |  j, i, h, g | on    |\n"
+ "| |                  +----------------+-------------+-------+\n"
+ "| | +NodeByLabelScan |             10 | m           | :City |\n"
+ "| | |                |                |             | ; n.a |\n"
+ "| | |                |                |             | ge >  |\n"
+ "| | |                |                |             | { AUT |\n"
+ "| | |                |                |             | OINT0 |\n"
+ "| | |                |                |             |  }    |\n"
+ "| |/                 +----------------+-------------+-------+\n"
+ "| +ProduceResults    |              5 | n, m, l     |       |\n"
+ "+--------------------+----------------+-------------+-------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -328,22 +314,22 @@ START_TEST (render_undersized_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 60);
+    int result = neo4j_render_plan_table(memstream, plan, 60, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--------------------+----------------+-------------+=\n"
  "| Operator           | Estimated Rows | Identifiers |=\n"
  "+--------------------+----------------+-------------+=\n"
- "| +ProduceResults    |              5 | n, m, l, k, |=\n"
- "| |                  |                |  j, i, h, g |=\n"
- "| |~                 +----------------+-------------+=\n"
- "| | +NodeByLabelScan |             10 | m           |=\n"
- "| |                  +----------------+-------------+=\n"
  "| +NodeByLabelScan   |             10 | n           |=\n"
- "+--------------------+----------------+-------------+=\n");
+ "| |                  +----------------+-------------+=\n"
+ "| | +NodeByLabelScan |             10 | m           |=\n"
+ "| |/                 +----------------+-------------+=\n"
+ "| +ProduceResults    |              5 | n, m, l, k, |=\n"
+ "|                    |                |  j, i, h, g |=\n"
+ "+--------------------+----------------+-------------+=\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -362,21 +348,21 @@ START_TEST (render_very_undersized_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 50);
+    int result = neo4j_render_plan_table(memstream, plan, 50, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--------------------+----------------+=\n"
  "| Operator           | Estimated Rows |=\n"
  "+--------------------+----------------+=\n"
- "| +ProduceResults    |              5 |=\n"
- "| |~                 +----------------+=\n"
- "| | +NodeByLabelScan |             10 |=\n"
- "| |                  +----------------+=\n"
  "| +NodeByLabelScan   |             10 |=\n"
- "+--------------------+----------------+=\n");
+ "| |                  +----------------+=\n"
+ "| | +NodeByLabelScan |             10 |=\n"
+ "| |/                 +----------------+=\n"
+ "| +ProduceResults    |              5 |=\n"
+ "+--------------------+----------------+=\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -395,21 +381,21 @@ START_TEST (render_vvery_undersized_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 38);
+    int result = neo4j_render_plan_table(memstream, plan, 38, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+--------------------+=\n"
  "| Operator           |=\n"
  "+--------------------+=\n"
- "| +ProduceResults    |=\n"
- "| |~                 +=\n"
- "| | +NodeByLabelScan |=\n"
- "| |                  +=\n"
  "| +NodeByLabelScan   |=\n"
- "+--------------------+=\n");
+ "| |                  +=\n"
+ "| | +NodeByLabelScan |=\n"
+ "| |/                 +=\n"
+ "| +ProduceResults    |=\n"
+ "+--------------------+=\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -428,11 +414,11 @@ START_TEST (render_vvvery_undersized_plan)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 21);
+    int result = neo4j_render_plan_table(memstream, plan, 21, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
-    const char *expect = gstrsub('~', '\\', "\n"
+    const char *expect = "\n"
 //1       10        20        30        40        50        60        70
  "+=\n"
  "|=\n"
@@ -442,7 +428,7 @@ START_TEST (render_vvvery_undersized_plan)
  "|=\n"
  "|=\n"
  "|=\n"
- "+=\n");
+ "+=\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -459,7 +445,7 @@ START_TEST (render_simple_profile)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 78);
+    int result = neo4j_render_plan_table(memstream, plan, 78, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
@@ -468,9 +454,9 @@ START_TEST (render_simple_profile)
  "+------------------+----------------+------+---------+-------------+---------+\n"
  "| Operator         | Estimated Rows | Rows | DB Hits | Identifiers | Other   |\n"
  "+------------------+----------------+------+---------+-------------+---------+\n"
- "| +ProduceResults  |              5 |    8 |     935 | n, m        |         |\n"
- "| |                +----------------+------+---------+-------------+---------+\n"
  "| +NodeByLabelScan |             10 |    5 |      42 | n           | :Person |\n"
+ "| |                +----------------+------+---------+-------------+---------+\n"
+ "| +ProduceResults  |              5 |    8 |     935 | n, m        |         |\n"
  "+------------------+----------------+------+---------+-------------+---------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
@@ -488,7 +474,7 @@ START_TEST (render_narrow_profile)
 
     fputc('\n', memstream);
 
-    int result = neo4j_render_plan_table(memstream, plan, 60);
+    int result = neo4j_render_plan_table(memstream, plan, 60, 0);
     ck_assert(result == 0);
     fflush(memstream);
 
@@ -497,9 +483,9 @@ START_TEST (render_narrow_profile)
  "+------------------+----------------+------+---------+=\n"
  "| Operator         | Estimated Rows | Rows | DB Hits |=\n"
  "+------------------+----------------+------+---------+=\n"
- "| +ProduceResults  |              5 |    8 |     935 |=\n"
- "| |                +----------------+------+---------+=\n"
  "| +NodeByLabelScan |             10 |    5 |      42 |=\n"
+ "| |                +----------------+------+---------+=\n"
+ "| +ProduceResults  |              5 |    8 |     935 |=\n"
  "+------------------+----------------+------+---------+=\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
