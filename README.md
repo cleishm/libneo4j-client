@@ -38,6 +38,14 @@ If you're using Mac OS X, libneo4j-client can be installed using homebrew:
 $ brew install cleishm/neo4j/libneo4j-client
 ```
 
+If you're using Ubuntu, neo4j-client can be install using APT:
+
+```console
+$ sudo add-apt-repository ppa:cleishm/libneo4j-client
+$ sudo apt-get update
+$ sudo apt-get install neo4j-client
+```
+
 For other platforms, please see [Building](#building) below.
 
 
@@ -53,7 +61,7 @@ Basic usage:
 ```console
 $ neo4j-client -v neo4j://localhost:7687
 The authenticity of host 'localhost:7687' could not be established.
-TLS certificate fingerprint is BD:3D:65:E2:7C:94:C6:79:45:92:F9:47:91:DA:8E:07:93:45:69:78.
+TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.
 Would you like to trust this host (NO/yes/once)? yes
 neo4j> :help
 :quit                  Exit the shell

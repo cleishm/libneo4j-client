@@ -25,7 +25,7 @@ static int render_header(FILE *stream, unsigned int col_widths[6]);
 static int render_hr(FILE *stream, unsigned int col_widths[6]);
 static int render_steps(FILE *stream,
         struct neo4j_statement_execution_step *step, unsigned int depth,
-        char **ids_buffer, size_t *ids_bufcap, char **args_buffer,
+        bool last, char **ids_buffer, size_t *ids_bufcap, char **args_buffer,
         size_t *args_bufcap, unsigned int col_widths[6]);
 static int render_op(FILE *stream, const char *operator_type,
         unsigned int op_depth, unsigned int width);
@@ -57,7 +57,7 @@ static unsigned int MIN_OTH_WIDTH = 5; // strlen(HEADERS[5]);
 
 
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
-        unsigned int width)
+        unsigned int width, uint_fast32_t flags)
 {
     REQUIRE(stream != NULL, -1);
     REQUIRE(plan != NULL, -1);
@@ -85,8 +85,8 @@ int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         goto failure;
     }
 
-    if (render_steps(stream, plan->output_step, 0, &ids_buffer, &ids_bufcap,
-                &args_buffer, &args_bufcap, col_widths))
+    if (render_steps(stream, plan->output_step, 0, true, &ids_buffer,
+                &ids_bufcap, &args_buffer, &args_bufcap, col_widths))
     {
         goto failure;
     }
@@ -167,9 +167,30 @@ int render_hr(FILE *stream, unsigned int col_widths[6])
 
 
 int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
-        unsigned int depth, char **ids_buffer, size_t *ids_bufcap,
+        unsigned int depth, bool last, char **ids_buffer, size_t *ids_bufcap,
         char **args_buffer, size_t *args_bufcap, unsigned int col_widths[6])
 {
+    struct neo4j_statement_execution_step **sources = step->sources;
+    for (unsigned int i = 0; i < step->nsources; ++i)
+    {
+        bool branch = false;
+        unsigned int d = depth;
+        if (i > 0)
+        {
+            branch = true;
+            d = depth + 1;
+        }
+        if (render_steps(stream, sources[i], d, false, ids_buffer, ids_bufcap,
+                    args_buffer, args_bufcap, col_widths))
+        {
+            return -1;
+        }
+        if (render_tr(stream, depth+1, branch, col_widths))
+        {
+            return -1;
+        }
+    }
+
     if (col_widths[0] > 0 && render_op(stream, step->operator_type,
                 depth+1, col_widths[0]))
     {
@@ -255,33 +276,12 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
         {
             break;
         }
-        if (render_wrap(stream, (step->nsources == 0)? depth : depth+1,
-                    col_widths))
+        if (render_wrap(stream, last? 0 : depth+1, col_widths))
         {
             return -1;
         }
     }
 
-    struct neo4j_statement_execution_step **sources = step->sources;
-    for (unsigned int i = step->nsources; i-- > 0;)
-    {
-        bool branch = false;
-        unsigned int d = depth;
-        if (i > 0)
-        {
-            branch = true;
-            d = depth + 1;
-        }
-        if (render_tr(stream, depth+1, branch, col_widths))
-        {
-            return -1;
-        }
-        if (render_steps(stream, sources[i], d, ids_buffer, ids_bufcap,
-                    args_buffer, args_bufcap, col_widths))
-        {
-            return -1;
-        }
-    }
     return 0;
 }
 
@@ -483,7 +483,7 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         width += 2;
     } while (width < op_depth*2);
 
-    if (fputs(branch? "|\\" : "|", stream) == EOF)
+    if (fputs(branch? "|/" : "|", stream) == EOF)
     {
         return -1;
     }

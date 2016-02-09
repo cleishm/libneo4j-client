@@ -254,15 +254,11 @@ unsigned char check_line(EditLine *el, int ch)
     {
         return CC_FATAL;
     }
-    if (literal_newline(el, ch) == CC_ERROR)
-    {
-        return CC_ERROR;
-    }
     if (complete || length == 0)
     {
         return CC_NEWLINE;
     }
-    return CC_REFRESH;
+    return literal_newline(el, ch);
 }
 
 

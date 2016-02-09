@@ -118,11 +118,15 @@ int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
 
     neo4j_value_t stype;
     if (map_get_typed(&stype, map, NULL, "type", NEO4J_STRING,
-            false, description, logger))
+            true, description, logger))
     {
         return -1;
     }
 
+    if (neo4j_is_null(stype))
+    {
+        return NEO4J_CONTROL_STATEMENT;
+    }
     if (neo4j_eq(neo4j_string("r"), stype))
     {
         return NEO4J_READ_ONLY_STATEMENT;

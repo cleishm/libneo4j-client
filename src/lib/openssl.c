@@ -24,8 +24,6 @@
 #include <assert.h>
 #include <openssl/err.h>
 
-#define SHA1_FINGERPRINT_BUFFER_SIZE 60
-
 static neo4j_mutex_t *thread_locks;
 
 static void locking_callback(int mode, int type, const char *file, int line);
@@ -40,7 +38,7 @@ static int verify(SSL *ssl, const char *hostname, int port,
         neo4j_logger_t *logger);
 static int cert_fingerprint(X509* cert, char *buf, size_t n,
         neo4j_logger_t *logger);
-static int sha1_digest(unsigned char *buf, unsigned int *np,
+static int sha512_digest(unsigned char *buf, unsigned int *np,
         const void *s, size_t n, neo4j_logger_t *logger);
 static int openssl_error(neo4j_logger_t *logger, uint_fast8_t level,
         const char *file, unsigned int line);
@@ -298,7 +296,7 @@ int verify(SSL *ssl, const char *hostname, int port,
 
     int result = -1;
 
-    char fingerprint[SHA1_FINGERPRINT_BUFFER_SIZE];
+    char fingerprint[SHA512_DIGEST_LENGTH * 2];
     if (cert_fingerprint(cert, fingerprint, sizeof(fingerprint), logger))
     {
         goto cleanup;
@@ -350,7 +348,7 @@ int cert_fingerprint(X509* cert, char *buf, size_t n, neo4j_logger_t *logger)
 
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int dlen;
-    if (sha1_digest(digest, &dlen, der, derlen, logger))
+    if (sha512_digest(digest, &dlen, der, derlen, logger))
     {
         free(der);
         return -1;
@@ -360,22 +358,22 @@ int cert_fingerprint(X509* cert, char *buf, size_t n, neo4j_logger_t *logger)
     size_t c = 0;
     for (unsigned int i = 0; i < dlen && c < n; i++)
     {
-        snprintf(buf + c, n - c, "%02X:", digest[i]);
-        c += 3;
+        snprintf(buf + c, n - c, "%02x", digest[i]);
+        c += 2;
     }
 
     return 0;
 }
 
 
-int sha1_digest(unsigned char *buf, unsigned int *np, const void *s, size_t n,
+int sha512_digest(unsigned char *buf, unsigned int *np, const void *s, size_t n,
         neo4j_logger_t *logger)
 {
-    const EVP_MD *md = EVP_get_digestbyname("SHA1");
+    const EVP_MD *md = EVP_get_digestbyname("SHA512");
     assert(md != NULL);
     if (md == NULL)
     {
-        neo4j_log_error(logger, "OpenSSL failed to load digest SHA1");
+        neo4j_log_error(logger, "OpenSSL failed to load digest SHA512");
         errno = NEO4J_UNEXPECTED_ERROR;
         return -1;
     }
