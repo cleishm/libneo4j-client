@@ -130,10 +130,14 @@ static int session_clear(neo4j_session_t *session)
     int err = 0;
     int errsv = errno;
 
-    for (neo4j_job_t *job = session->jobs; job != NULL; job = job->next)
+    for (neo4j_job_t *job = session->jobs; job != NULL;)
     {
         neo4j_job_notify_session_ending(job);
+        neo4j_job_t *next = job->next;
+        job->next = NULL;
+        job = next;
     }
+    session->jobs = NULL;
 
     if (!session->failed && receive_responses(session, NULL))
     {
