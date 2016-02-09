@@ -1,3 +1,9 @@
+libneo4j-client (0.8.0-1) unstable; urgency=low
+
+  * Upstream release 0.8.0
+
+ -- Chris Leishman <chris@leishman.org>  Tue, 09 Feb 2016 05:00:35 +0000
+
 libneo4j-client (0.7.1-1) unstable; urgency=low
 
   * Initial packaging. Closes: #813443

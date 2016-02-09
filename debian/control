@@ -20,7 +20,7 @@ Description: Command line shell for the Neo4j graph database
  statements (including multiline statements), persistent command history, and
  rendering of results to tables or CSV.
 
-Package: libneo4j-client4
+Package: libneo4j-client5
 Provides: libneo4j-client
 Section: libs
 Architecture: any
@@ -31,11 +31,11 @@ Description: Client library for the Neo4j graph database
  libneo4j-client takes care of all the detail of establishing a session with a
  Neo4j server, sending statements for evaluation, and retrieving results.
 
-Package: libneo4j-client4-dev
+Package: libneo4j-client5-dev
 Provides: libneo4j-client-dev
 Section: libdevel
 Architecture: any
-Depends: libneo4j-client4 (= ${binary:Version}), libc6-dev, ${misc:Depends}
+Depends: libneo4j-client5 (= ${binary:Version}), libc6-dev, ${misc:Depends}
 Suggests: pkg-config
 Description: Development files for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.
@@ -49,7 +49,7 @@ Package: libneo4j-client-doc
 Section: doc
 Architecture: all
 Depends: libjs-jquery, ${misc:Depends}
-Recommends: libneo4j-client4
+Recommends: libneo4j-client5
 Description: Documentation for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.
  .
