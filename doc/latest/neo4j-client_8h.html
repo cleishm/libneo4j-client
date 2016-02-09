@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>libneo4j-client-0.7.0: neo4j-client.h File Reference</title>
+<title>libneo4j-client-0.8.0: neo4j-client.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.7.0
+   <div id="projectname">libneo4j-client-0.8.0
    </div>
   </td>
  </tr>
@@ -332,6 +332,9 @@ __neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a 
 <tr class="memitem:a1a2c063a87ba026e719d425927586fdb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a1a2c063a87ba026e719d425927586fdb">neo4j_end_session</a> (<a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session)</td></tr>
 <tr class="memdesc:a1a2c063a87ba026e719d425927586fdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">End a session with a neo4j server.  <a href="#a1a2c063a87ba026e719d425927586fdb">More...</a><br /></td></tr>
 <tr class="separator:a1a2c063a87ba026e719d425927586fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e178f378c9e7f967357121c07a0d349"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a5e178f378c9e7f967357121c07a0d349">neo4j_reset_session</a> (<a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session)</td></tr>
+<tr class="memdesc:a5e178f378c9e7f967357121c07a0d349"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset a session.  <a href="#a5e178f378c9e7f967357121c07a0d349">More...</a><br /></td></tr>
+<tr class="separator:a5e178f378c9e7f967357121c07a0d349"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0b08d0ab91477e48260767f86a86c8e"><td class="memItemLeft" align="right" valign="top">__neo4j_must_check <a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#aa0b08d0ab91477e48260767f86a86c8e">neo4j_run</a> (<a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session, const char *statement, neo4j_value_t params)</td></tr>
 <tr class="memdesc:aa0b08d0ab91477e48260767f86a86c8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate a statement.  <a href="#aa0b08d0ab91477e48260767f86a86c8e">More...</a><br /></td></tr>
 <tr class="separator:aa0b08d0ab91477e48260767f86a86c8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -386,9 +389,9 @@ __neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a 
 <tr class="memitem:af8e167dc66eacf80a72eb20fea655af3"><td class="memItemLeft" align="right" valign="top">__neo4j_must_check int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#af8e167dc66eacf80a72eb20fea655af3">neo4j_render_csv</a> (FILE *stream, <a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *results, uint_fast32_t flags)</td></tr>
 <tr class="memdesc:af8e167dc66eacf80a72eb20fea655af3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render a result stream as comma separated value.  <a href="#af8e167dc66eacf80a72eb20fea655af3">More...</a><br /></td></tr>
 <tr class="separator:af8e167dc66eacf80a72eb20fea655af3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a3dd9006ebe08503e0df8a7982407b0"><td class="memItemLeft" align="right" valign="top">__neo4j_must_check int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7a3dd9006ebe08503e0df8a7982407b0">neo4j_render_plan_table</a> (FILE *stream, struct <a class="el" href="structneo4j__statement__plan.html">neo4j_statement_plan</a> *plan, unsigned int width)</td></tr>
-<tr class="memdesc:a7a3dd9006ebe08503e0df8a7982407b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render a statement plan as a table.  <a href="#a7a3dd9006ebe08503e0df8a7982407b0">More...</a><br /></td></tr>
-<tr class="separator:a7a3dd9006ebe08503e0df8a7982407b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ad8b62239e866f4690d5bcbc8dbbb19"><td class="memItemLeft" align="right" valign="top">__neo4j_must_check int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a5ad8b62239e866f4690d5bcbc8dbbb19">neo4j_render_plan_table</a> (FILE *stream, struct <a class="el" href="structneo4j__statement__plan.html">neo4j_statement_plan</a> *plan, unsigned int width, uint_fast32_t flags)</td></tr>
+<tr class="memdesc:a5ad8b62239e866f4690d5bcbc8dbbb19"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render a statement plan as a table.  <a href="#a5ad8b62239e866f4690d5bcbc8dbbb19">More...</a><br /></td></tr>
+<tr class="separator:a5ad8b62239e866f4690d5bcbc8dbbb19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abc5a714f7033c1d31f4f21ce1efd41d9"><td class="memItemLeft" align="right" valign="top">__neo4j_must_check ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#abc5a714f7033c1d31f4f21ce1efd41d9">neo4j_cli_uparse</a> (const char *s, size_t n, const char **start, size_t *length, bool *complete)</td></tr>
 <tr class="memdesc:abc5a714f7033c1d31f4f21ce1efd41d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse a command or statement from a string.  <a href="#abc5a714f7033c1d31f4f21ce1efd41d9">More...</a><br /></td></tr>
 <tr class="separator:abc5a714f7033c1d31f4f21ce1efd41d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1728,6 +1731,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <p>A bitmask of flags may be supplied, which may include:</p><ul>
 <li>NEO4J_INSECURE - do not attempt to establish a secure connection</li>
 </ul>
+<p>If no flags are required, pass 0 or <code>NEO4J_CONNECT_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[uri]</td><td>A URI describing the server to connect to, which may also include authentication data (which will override any provided in the config). </td></tr>
@@ -3051,6 +3055,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Render a result stream as comma separated value. </p>
 <p>Flags can be specified, as a bitmask, to control rendering. This rendering method respects the flag <code>NEO4J_RENDER_SHOW_NULL</code>.</p>
+<p>If no flags are specified, pass 0 or <code>NEO4J_RENDER_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[stream]</td><td>The stream to render to. </td></tr>
@@ -3063,7 +3068,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
-<a class="anchor" id="a7a3dd9006ebe08503e0df8a7982407b0"></a>
+<a class="anchor" id="a5ad8b62239e866f4690d5bcbc8dbbb19"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -3083,7 +3088,13 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>width</em>&#160;</td>
+          <td class="paramname"><em>width</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uint_fast32_t&#160;</td>
+          <td class="paramname"><em>flags</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -3094,11 +3105,13 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Render a statement plan as a table. </p>
+<p>Flags can be specified, as a bitmask, to control rendering. There are no flags that currently affect this function and a value of 0 or <code>NEO4J_RENDER_DEFAULT</code> should be specified.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[stream]</td><td>The stream to render to. </td></tr>
     <tr><td class="paramname">[plan]</td><td>The statement plan to render. </td></tr>
     <tr><td class="paramname">[width]</td><td>The width of the table to render. </td></tr>
+    <tr><td class="paramname">[flags]</td><td>A bitmask of flags to control rendering. </td></tr>
   </table>
   </dd>
 </dl>
@@ -3144,6 +3157,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Render a result stream as a table. </p>
 <p>Flags can be specified, as a bitmask, to control rendering. This rendering method respects the flags <code>NEO4J_RENDER_SHOW_NULL</code> and <code>NEO4J_RENDER_QUOTE_STRINGS</code>.</p>
+<p>If no flags are specified, pass 0 or <code>NEO4J_RENDER_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[stream]</td><td>The stream to render to. </td></tr>
@@ -3154,6 +3168,32 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a5e178f378c9e7f967357121c07a0d349"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int neo4j_reset_session </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *&#160;</td>
+          <td class="paramname"><em>session</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Reset a session. </p>
+<p>Invoking this function causes all server-held state for the session to be cleared, including rolling back any open transactions, and causes any existing result stream to be terminated.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[session]</td><td>The session to reset. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on sucess, or -1 if an error occurs (errno will be set). </dd></dl>
 
 </div>
 </div>
@@ -3378,6 +3418,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <li>NEO4J_WRITE_ONLY_STATEMENT</li>
 <li>NEO4J_READ_WRITE_STATEMENT</li>
 <li>NEO4J_SCHEMA_UPDATE_STATEMENT</li>
+<li>NEO4J_CONTROL_STATEMENT</li>
 </ul>
 <dl class="section attention"><dt>Attention</dt><dd>As the statement type is only available at the end of the result stream, invoking this function will will result in any unfetched results being pulled from the server and held in memory. It is usually better to exhaust the stream using <code>neo4j_fetch_next(...)</code> before invoking this method.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -3425,6 +3466,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <p>A bitmask of flags may be supplied, which may include:</p><ul>
 <li>NEO4J_STD_LOGGER_NO_PREFIX - don't output a prefix on each logline</li>
 </ul>
+<p>If no flags are required, pass 0 or <code>NEO4J_STD_LOGGER_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[stream]</td><td>The stream to output to. </td></tr>
@@ -3638,6 +3680,10 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Establish a connection to a neo4j server. </p>
+<p>A bitmask of flags may be supplied, which may include:</p><ul>
+<li>NEO4J_INSECURE - do not attempt to establish a secure connection</li>
+</ul>
+<p>If no flags are required, pass 0 or <code>NEO4J_CONNECT_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[hostname]</td><td>The hostname to connect to. </td></tr>

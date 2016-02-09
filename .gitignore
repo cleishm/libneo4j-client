@@ -22,7 +22,8 @@ TAGS
 /config.*
 /configure
 /depcomp
-/doc
+/doc/man
+/doc/*.tag
 /install-sh
 /libtool
 /ltmain.sh
