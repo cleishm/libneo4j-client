@@ -68,7 +68,14 @@ int evaluate_command(shell_state_t *state, const char *command)
             return shell_commands[i].action(state, args);
         }
     }
-    fprintf(state->err, "Unknown command '%s'\n", command);
+    char buf[256];
+    if (wlen >= sizeof(buf))
+    {
+        wlen = sizeof(buf)-1;
+    }
+    memcpy(buf, command, wlen);
+    buf[wlen] = '\0';
+    fprintf(state->err, "Unknown command '%s'\n", buf);
     return 0;
 }
 
