@@ -372,19 +372,6 @@ YY_ACTION(void) yy_1_statement(yycontext *yy, char *yytext, int yyleng)
 #undef yypos
 #undef yy
 }
-YY_ACTION(void) yy_2_command(yycontext *yy, char *yytext, int yyleng)
-{
-#define __ yy->__
-#define yypos yy->__pos
-#define yythunkpos yy->__thunkpos
-  yyprintf((stderr, "do yy_2_command\n"));
-  {
-   capture(yy, yypos, false); ;
-  }
-#undef yythunkpos
-#undef yypos
-#undef yy
-}
 YY_ACTION(void) yy_1_command(yycontext *yy, char *yytext, int yyleng)
 {
 #define __ yy->__
@@ -755,21 +742,7 @@ if (!(YY_END)) goto l89;
 }
 YY_RULE(int) yy_command(yycontext *yy)
 {  int yypos0= yy->__pos, yythunkpos0= yy->__thunkpos;
-  yyprintf((stderr, "%s\n", "command"));
-  {  int yypos93= yy->__pos, yythunkpos93= yy->__thunkpos;  yyText(yy, yy->__begin, yy->__end);  {
-#define yytext yy->__text
-#define yyleng yy->__textlen
-if (!(YY_BEGIN)) goto l94;
-#undef yytext
-#undef yyleng
-  }  if (!yy_command_body(yy)) goto l94;  yyText(yy, yy->__begin, yy->__end);  {
-#define yytext yy->__text
-#define yyleng yy->__textlen
-if (!(YY_END)) goto l94;
-#undef yytext
-#undef yyleng
-  }  if (!yy_line_end(yy)) goto l94;  yyDo(yy, yy_1_command, yy->__begin, yy->__end);  goto l93;
-  l94:;	  yy->__pos= yypos93; yy->__thunkpos= yythunkpos93;  yyText(yy, yy->__begin, yy->__end);  {
+  yyprintf((stderr, "%s\n", "command"));  yyText(yy, yy->__begin, yy->__end);  {
 #define yytext yy->__text
 #define yyleng yy->__textlen
 if (!(YY_BEGIN)) goto l92;
@@ -781,9 +754,11 @@ if (!(YY_BEGIN)) goto l92;
 if (!(YY_END)) goto l92;
 #undef yytext
 #undef yyleng
-  }  if (!yy_EOF(yy)) goto l92;  yyDo(yy, yy_2_command, yy->__begin, yy->__end);
   }
-  l93:;	
+  {  int yypos93= yy->__pos, yythunkpos93= yy->__thunkpos;  if (!yy_line_end(yy)) goto l94;  goto l93;
+  l94:;	  yy->__pos= yypos93; yy->__thunkpos= yythunkpos93;  if (!yy_EOF(yy)) goto l92;
+  }
+  l93:;	  yyDo(yy, yy_1_command, yy->__begin, yy->__end);
   yyprintf((stderr, "  ok   %s @ %s\n", "command", yy->__buf+yy->__pos));
   return 1;
   l92:;	  yy->__pos= yypos0; yy->__thunkpos= yythunkpos0;
