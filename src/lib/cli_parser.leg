@@ -18,8 +18,7 @@ __entry_points = directive | argument
 
 directive = - (command | statement)
 
-command = < command-body > line-end            { capture(yy, yypos, true); }
-        | < command-body > EOF                 { capture(yy, yypos, false); }
+command = < command-body > (line-end | EOF)    { capture(yy, yypos, true); }
 command-body = ':' (quoted | !line-end .)*
 line-end = (HWS | block-comment)* (line-comment | EOL)
 
