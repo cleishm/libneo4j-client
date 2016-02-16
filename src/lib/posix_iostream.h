@@ -28,7 +28,7 @@
  * @param [fd] The file descriptor to create an iostream for.
  * @return The newly created iostream.
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_iostream_t *neo4j_posix_iostream(int fd);
 
 #endif/*NEO4J_POSIX_IOSTREAM_H*/

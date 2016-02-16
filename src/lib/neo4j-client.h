@@ -236,7 +236,7 @@ struct neo4j_logger_provider
  * @param [flags] A bitmask of flags for the standard logger output.
  * @return A `neo4j_logger_provider`, or `NULL` on error (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 struct neo4j_logger_provider *neo4j_std_logger_provider(FILE *stream,
         uint_fast8_t level, uint_fast32_t flags);
 
@@ -1003,7 +1003,7 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
  * @return A pointer to a new neo4j client configuration, or `NULL` if an error
  *         occurs (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_config_t *neo4j_new_config(void);
 
 /**
@@ -1362,7 +1362,7 @@ int neo4j_mkdir_p(const char *path);
  * @return A pointer to a `neo4j_connection_t` structure, or `NULL` on error
  *         (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
         uint_fast32_t flags);
 
@@ -1381,7 +1381,7 @@ neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
  * @return A pointer to a `neo4j_connection_t` structure, or `NULL` on error
  *         (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
         neo4j_config_t *config, uint_fast32_t flags);
 
@@ -1409,7 +1409,7 @@ int neo4j_close(neo4j_connection_t *connection);
  * @return A pointer to a `neo4j_session_t` structure, or `NULL` on error
  *         (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection);
 
 /**
@@ -1520,7 +1520,7 @@ const char *neo4j_fieldname(neo4j_result_stream_t *results,
  * @return The next result, or NULL if the stream is exahusted or an
  *         error has occurred (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results);
 
 /**
