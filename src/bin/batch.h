@@ -19,7 +19,6 @@
 
 #include "state.h"
 
-int batch(shell_state_t *state,
-        int (*evaluate)(shell_state_t *state, const char *directive));
+int batch(shell_state_t *state);
 
 #endif/*NEO4J_BATCH_H*/

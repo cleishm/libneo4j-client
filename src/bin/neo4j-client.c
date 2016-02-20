@@ -16,7 +16,7 @@
  */
 #include "../../config.h"
 #include "batch.h"
-#include "commands.h"
+#include "evaluate.h"
 #include "interactive.h"
 #include "render.h"
 #include "state.h"
@@ -61,7 +61,7 @@ static void usage(FILE *s, const char *prog_name)
 " --insecure          Do not attempt to establish a secure connection.\n"
 " --known-hosts=file  Set the path to the known-hosts file.\n"
 " --verbose, -v       Increase logging verbosity.\n"
-" --version           Output the version of neo4j-client and libneo4j-client\n"
+" --version           Output the version of neo4j-client and dependencies.\n"
 "\n"
 "If URL is supplied then a connection is first made to the specified Neo4j\n"
 "graph database.\n"
@@ -71,10 +71,6 @@ static void usage(FILE *s, const char *prog_name)
 "directives are read from stdin.\n",
         prog_name);
 }
-
-
-static int evaluate(shell_state_t *state, const char *directive);
-static int evaluate_statement(shell_state_t *state, const char *statement);
 
 
 int main(int argc, char *argv[])
@@ -202,24 +198,23 @@ int main(int argc, char *argv[])
         }
     }
 
-    int (*process)(shell_state_t *state,
-        int (*evaluate)(shell_state_t *state, const char *directive));
     if (state.interactive)
     {
         state.render = render_results_table;
         state.render_flags = NEO4J_RENDER_SHOW_NULLS;
-        process = interact;
+        if (interact(&state))
+        {
+            goto cleanup;
+        }
     }
     else
     {
         state.render = render_results_csv;
         state.width = 70;
-        process = batch;
-    }
-
-    if (process(&state, evaluate))
-    {
-        goto cleanup;
+        if (batch(&state))
+        {
+            goto cleanup;
+        }
     }
 
     result = EXIT_SUCCESS;
@@ -239,78 +234,5 @@ cleanup:
         fclose(tty);
     }
     neo4j_client_cleanup();
-    return result;
-}
-
-
-int evaluate(shell_state_t *state, const char *directive)
-{
-    return ((directive[0] == ':') ? evaluate_command : evaluate_statement)
-        (state, directive);
-}
-
-
-int evaluate_statement(shell_state_t *state, const char *statement)
-{
-    if (state->session == NULL)
-    {
-        fprintf(state->err, "ERROR: not connected\n");
-        return -1;
-    }
-
-    neo4j_result_stream_t *results = neo4j_run(state->session,
-            statement, neo4j_map(NULL, 0));
-    if (results == NULL)
-    {
-        neo4j_perror(state->err, errno, "failed to run statement");
-        return -1;
-    }
-
-    int result = -1;
-    if (state->render(state, results))
-    {
-        int error = errno;
-        if (error == NEO4J_STATEMENT_EVALUATION_FAILED)
-        {
-            fprintf(state->err, "%s\n", neo4j_error_message(results));
-        }
-        else
-        {
-            neo4j_perror(state->err, errno, "unexpected error");
-        }
-        goto cleanup;
-    }
-
-    if (render_update_counts(state, results))
-    {
-        goto cleanup;
-    }
-
-    struct neo4j_statement_plan *plan = neo4j_statement_plan(results);
-    if (plan != NULL)
-    {
-        int err = render_plan_table(state, plan);
-        int errsv = errno;
-        neo4j_statement_plan_release(plan);
-        errno = errsv;
-        if (err)
-        {
-            goto cleanup;
-        }
-    }
-    else if (errno != NEO4J_NO_PLAN_AVAILABLE)
-    {
-        neo4j_perror(state->err, errno, "unexpected error");
-        goto cleanup;
-    }
-
-    result = 0;
-
-cleanup:
-    if (neo4j_close_results(results) && result == 0)
-    {
-        neo4j_perror(state->err, errno, "failed to close results");
-        return -1;
-    }
     return result;
 }

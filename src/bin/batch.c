@@ -16,12 +16,12 @@
  */
 #include "../../config.h"
 #include "batch.h"
+#include "evaluate.h"
 #include <errno.h>
 #include <neo4j-client.h>
 
 
-int batch(shell_state_t *state,
-        int (*evaluate)(shell_state_t *state, const char *directive))
+int batch(shell_state_t *state)
 {
     char *buffer = NULL;
     size_t capacity = 0;
@@ -51,7 +51,18 @@ int batch(shell_state_t *state,
             goto cleanup;
         }
 
-        int r = evaluate(state, directive);
+        int r;
+        if (is_command(directive))
+        {
+            r = evaluate_command(state, directive);
+        }
+        else
+        {
+            evaluation_continuation_t continuation =
+                evaluate_statement(state, directive);
+            r = continuation.complete(&continuation, state);
+        }
+
         if (r < 0)
         {
             goto cleanup;
