@@ -17,14 +17,47 @@
 #include "../../config.h"
 #include "batch.h"
 #include "evaluate.h"
+#include <assert.h>
 #include <errno.h>
 #include <neo4j-client.h>
+
+
+struct evaluation
+{
+    char *buffer;
+    size_t buffer_capacity;
+    evaluation_continuation_t continuation;
+};
+
+
+typedef struct evaluation_queue
+{
+    unsigned int next;
+    unsigned int depth;
+    unsigned int capacity;
+    struct evaluation directives[];
+} evaluation_queue_t;
+
+
+static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
+        const char *directive, size_t n);
+static int finalize(shell_state_t *state, evaluation_queue_t *queue,
+        unsigned int n);
 
 
 int batch(shell_state_t *state)
 {
     char *buffer = NULL;
-    size_t capacity = 0;
+    size_t bufcap = 0;
+
+    evaluation_queue_t *queue = calloc(1, sizeof(evaluation_queue_t) +
+            (state->pipeline_max * sizeof(struct evaluation)));
+    if (queue == NULL)
+    {
+        return -1;
+    }
+    queue->capacity = state->pipeline_max;
+
     int result = -1;
 
     for (;;)
@@ -32,7 +65,7 @@ int batch(shell_state_t *state)
         char *start;
         size_t length;
         bool complete;
-        ssize_t n = neo4j_cli_fparse(state->in, &buffer, &capacity,
+        ssize_t n = neo4j_cli_fparse(state->in, &buffer, &bufcap,
                 &start, &length, &complete);
         if (n < 0)
         {
@@ -44,25 +77,7 @@ int batch(shell_state_t *state)
             break;
         }
 
-        const char *directive = temp_copy(state, start, length);
-        if (directive == NULL)
-        {
-            neo4j_perror(state->err, errno, "unexpected error");
-            goto cleanup;
-        }
-
-        int r;
-        if (is_command(directive))
-        {
-            r = evaluate_command(state, directive);
-        }
-        else
-        {
-            evaluation_continuation_t continuation =
-                evaluate_statement(state, directive);
-            r = continuation.complete(&continuation, state);
-        }
-
+        int r = evaluate(state, queue, start, length);
         if (r < 0)
         {
             goto cleanup;
@@ -73,12 +88,91 @@ int batch(shell_state_t *state)
         }
     }
 
+    if (finalize(state, queue, queue->depth))
+    {
+        goto cleanup;
+    }
+
     result = 0;
 
+    int errsv;
 cleanup:
-    if (buffer != NULL)
+    errsv = errno;
+    for (unsigned int i = queue->capacity; i-- > 0; )
     {
-        free(buffer);
+        free(queue->directives[i].buffer);
     }
+    free(queue);
+    free(buffer);
+    errno = errsv;
     return result;
+}
+
+
+int evaluate(shell_state_t *state, evaluation_queue_t *queue,
+        const char *directive, size_t n)
+{
+    if (n > 0 && is_command(directive))
+    {
+        if (finalize(state, queue, queue->depth))
+        {
+            neo4j_perror(state->err, errno, "unexpected error");
+            return -1;
+        }
+        const char *command = temp_copy(state, directive, n);
+        if (command == NULL)
+        {
+            neo4j_perror(state->err, errno, "unexpected error");
+            return -1;
+        }
+        return evaluate_command(state, command);
+    }
+
+    assert (queue->depth <= queue->capacity);
+    if ((queue->depth >= queue->capacity) && finalize(state, queue, 1))
+    {
+        neo4j_perror(state->err, errno, "unexpected error");
+        return -1;
+    }
+    assert (queue->depth < queue->capacity);
+
+    unsigned int i = queue->next + queue->depth;
+    if (i >= queue->capacity)
+    {
+        i -= queue->capacity;
+    }
+    ++(queue->depth);
+
+    struct evaluation *e = &(queue->directives[i]);
+    const char *statement = strncpy_alloc(&(e->buffer), &(e->buffer_capacity),
+            directive, n);
+    if (statement == NULL)
+    {
+        neo4j_perror(state->err, errno, "unexpected error");
+        return -1;
+    }
+    e->continuation = evaluate_statement(state, statement);
+    return 0;
+}
+
+
+int finalize(shell_state_t *state, evaluation_queue_t *queue, unsigned int n)
+{
+    assert(n <= queue->depth);
+    while (n-- > 0)
+    {
+        assert(queue->next < queue->capacity);
+        evaluation_continuation_t *continuation =
+            &(queue->directives[queue->next].continuation);
+        if (++(queue->next) >= queue->capacity)
+        {
+            queue->next = 0;
+        }
+        --(queue->depth);
+        if (continuation->complete(continuation, state))
+        {
+            return -1;
+        }
+    }
+    return 0;
 }

@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
+#include <neo4j-client.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -39,6 +40,7 @@ const char *shortopts = "hv";
 #define KNOWN_HOSTS_OPT 1002
 #define NOHIST_OPT 1003
 #define VERSION_OPT 1004
+#define PIPELINE_MAX_OPT 1005
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -46,6 +48,7 @@ static struct option longopts[] =
       { "no-history", no_argument, NULL, NOHIST_OPT },
       { "insecure", no_argument, NULL, INSECURE_OPT },
       { "known-hosts", required_argument, NULL, KNOWN_HOSTS_OPT },
+      { "pipeline-max", required_argument, NULL, PIPELINE_MAX_OPT },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
       { NULL, 0, NULL, 0 } };
@@ -149,6 +152,18 @@ int main(int argc, char *argv[])
             break;
         case NOHIST_OPT:
             state.histfile = NULL;
+            break;
+        case PIPELINE_MAX_OPT:
+            {
+                int arg = atoi(optarg);
+                if (arg < 1)
+                {
+                    fprintf(state.err, "Invalid pipeline-max '%s'\n", optarg);
+                    goto cleanup;
+                }
+                state.pipeline_max = arg;
+                neo4j_config_set_max_pipelined_requests(config, arg * 2);
+            }
             break;
         case VERSION_OPT:
             fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);

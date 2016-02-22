@@ -15,40 +15,24 @@
  * limitations under the License.
  */
 #include "../../config.h"
-#include "state.h"
+#include "util.h"
 #include <assert.h>
-#include <stdlib.h>
 #include <string.h>
 
 
-int shell_state_init(shell_state_t *state, const char *prog_name,
-        FILE *in, FILE *out, FILE *err, FILE *tty)
+char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n)
 {
-    memset(state, 0, sizeof(shell_state_t));
-    state->prog_name = prog_name;
-    state->in = in;
-    state->out = out;
-    state->err = err;
-    state->tty = tty;
-    state->pipeline_max = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS / 2;
-    return 0;
-}
-
-
-void shell_state_destroy(shell_state_t *state)
-{
-    assert(state != NULL);
-
-    if (state->temp_buffer != NULL)
+    if (*cap < n+1)
     {
-        free(state->temp_buffer);
+        char *updated = realloc(*dest, n+1);
+        if (updated == NULL)
+        {
+            return NULL;
+        }
+        *dest = updated;
+        *cap = n+1;
     }
-    if (state->session != NULL)
-    {
-        neo4j_end_session(state->session);
-    }
-    if (state->connection != NULL)
-    {
-        neo4j_close(state->connection);
-    }
+    memcpy(*dest, s, n+1);
+    (*dest)[n] = '\0';
+    return *dest;
 }

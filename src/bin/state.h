@@ -17,6 +17,7 @@
 #ifndef NEO4J_STATE_H
 #define NEO4J_STATE_H
 
+#include "util.h"
 #include <neo4j-client.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,12 +32,13 @@ struct shell_state
     FILE *tty;
     bool interactive;
     const char *histfile;
+    unsigned int pipeline_max;
     neo4j_config_t *config;
     uint_fast32_t connect_flags;
     neo4j_connection_t *connection;
     neo4j_session_t *session;
     char *temp_buffer;
-    size_t temp_buffer_size;
+    size_t temp_buffer_capacity;
     int (*render)(shell_state_t *state, neo4j_result_stream_t *results);
     int width;
     uint_fast16_t render_flags;
@@ -46,6 +48,13 @@ struct shell_state
 int shell_state_init(shell_state_t *state, const char *prog_name,
         FILE *in, FILE *out, FILE *err, FILE *tty);
 void shell_state_destroy(shell_state_t *state);
-char *temp_copy(shell_state_t *state, const char *s, size_t n);
+
+
+static inline char *temp_copy(shell_state_t *state, const char *s, size_t n)
+{
+    return strncpy_alloc(&(state->temp_buffer), &(state->temp_buffer_capacity),
+            s, n);
+}
+
 
 #endif/*NEO4J_STATE_H*/
