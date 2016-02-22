@@ -14,14 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_COMMANDS_H
-#define NEO4J_COMMANDS_H
+#include "../../config.h"
+#include "util.h"
+#include <assert.h>
+#include <string.h>
 
-#include "state.h"
 
-int evaluate_command(shell_state_t *state, const char *command);
-
-int db_connect(shell_state_t *state, const char *args);
-int db_disconnect(shell_state_t *state, const char *args);
-
-#endif/*NEO4J_COMMANDS_H*/
+char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n)
+{
+    if (*cap < n+1)
+    {
+        char *updated = realloc(*dest, n+1);
+        if (updated == NULL)
+        {
+            return NULL;
+        }
+        *dest = updated;
+        *cap = n+1;
+    }
+    memcpy(*dest, s, n+1);
+    (*dest)[n] = '\0';
+    return *dest;
+}

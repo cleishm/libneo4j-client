@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "interactive.h"
+#include "evaluate.h"
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -30,13 +31,11 @@ static int setup_history(shell_state_t *state, History *el_history);
 static char *prompt(EditLine *el);
 static unsigned char literal_newline(EditLine *el, int ch);
 static unsigned char check_line(EditLine *el, int ch);
-static int process_input(shell_state_t *state,
-        const char *input, size_t length, const char **end,
-        int (*evaluate)(shell_state_t *state, const char *directive));
+static int process_input(shell_state_t *state, const char *input, size_t length,
+        const char **end);
 
 
-int interact(shell_state_t *state,
-        int (*evaluate)(shell_state_t *state, const char *directive))
+int interact(shell_state_t *state)
 {
     EditLine *el = NULL;
     History *el_history = NULL;
@@ -52,7 +51,7 @@ int interact(shell_state_t *state,
     {
         fputc('\n', state->out);
         const char *end;
-        int r = process_input(state, input, length, &end, evaluate);
+        int r = process_input(state, input, length, &end);
         if (r < 0)
         {
             goto cleanup;
@@ -262,9 +261,8 @@ unsigned char check_line(EditLine *el, int ch)
 }
 
 
-int process_input(shell_state_t *state,
-        const char *input, size_t length, const char **end,
-        int (*evaluate)(shell_state_t *state, const char *directive))
+int process_input(shell_state_t *state, const char *input, size_t length,
+        const char **end)
 {
     const char *input_end = input + length;
     while (input < input_end)
@@ -290,7 +288,18 @@ int process_input(shell_state_t *state,
             return -1;
         }
 
-        int r = evaluate(state, directive);
+        int r;
+        if (is_command(directive))
+        {
+            r = evaluate_command(state, directive);
+        }
+        else
+        {
+            evaluation_continuation_t continuation =
+                evaluate_statement(state, directive);
+            r = continuation.complete(&continuation, state);
+        }
+
         if (r < 0)
         {
             *end = input_end;

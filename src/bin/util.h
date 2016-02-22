@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_BATCH_H
-#define NEO4J_BATCH_H
+#ifndef NEO4J_UTIL_H
+#define NEO4J_UTIL_H
 
-#include "state.h"
+#include <stdlib.h>
 
-int batch(shell_state_t *state);
+char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
 
-#endif/*NEO4J_BATCH_H*/
+#endif/*NEO4J_UTIL_H*/
