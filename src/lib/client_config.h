@@ -70,7 +70,7 @@ struct neo4j_config
  * @param [config] The config to duplicate.
  * @return A newly allocated `neo4j_config_t`.
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
 
 

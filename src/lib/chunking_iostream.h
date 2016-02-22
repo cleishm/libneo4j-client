@@ -32,7 +32,7 @@
  * @param [snd_max_chunk] The maximum chunk size.
  * @return A newly created iostream.
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_iostream_t *neo4j_chunking_iostream(neo4j_iostream_t *delegate,
         uint16_t snd_min_chunk, uint16_t snd_max_chunk);
 

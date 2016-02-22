@@ -35,7 +35,7 @@
  * @param [sndbuf_size] The size of the write buffer.
  * @return The newly created buffering iostream.
  */
-__neo4j_malloc
+__neo4j_must_check
 neo4j_iostream_t *neo4j_buffering_iostream(neo4j_iostream_t *delegate,
         bool close, size_t rcvbuf_size, size_t sndbuf_size);
 
