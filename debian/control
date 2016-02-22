@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Chris Leishman <chris@leishman.org>
 Build-Depends: debhelper (>= 9), autotools-dev, pkg-config, libssl-dev, libedit-dev
 Build-Depends-Indep: doxygen
-Standards-Version: 3.9.6
+Standards-Version: 3.9.5
 Homepage: https://cleishm.github.io/libneo4j-client/
 Vcs-Git: https://github.com/cleishm/libneo4j-client.git
 Vcs-Browser: https://github.com/cleishm/libneo4j-client
