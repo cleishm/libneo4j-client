@@ -1276,6 +1276,23 @@ extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
 void neo4j_config_set_memory_allocator(neo4j_config_t *config,
         struct neo4j_memory_allocator *allocator);
 
+#define NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS 10
+
+/**
+ * Set the maximum number of requests that can be pipelined to the
+ * server.
+ *
+ * @attention Setting this value too high could result in deadlocking within
+ * the client, as the client will block when trying to send statements
+ * to a server with a full queue, instead of reading results that would drain
+ * the queue.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [n] The new maximum.
+ */
+void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
+        unsigned int n);
+
 /**
  * Return a path within the neo4j dot directory.
  *
@@ -1442,6 +1459,9 @@ int neo4j_reset_session(neo4j_session_t *session);
 
 /**
  * Evaluate a statement.
+ *
+ * @attention The statement and the params must remain valid until the returned
+ * result stream is closed.
  *
  * @param [session] The session to evaluate the statement in.
  * @param [statement] The statement to be evaluated.

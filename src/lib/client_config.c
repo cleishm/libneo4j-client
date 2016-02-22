@@ -57,7 +57,7 @@ neo4j_config_t *neo4j_new_config()
     config->snd_min_chunk_size = 1024;
     config->snd_max_chunk_size = UINT16_MAX;
     config->session_request_queue_size = 256;
-    config->max_pipelined_requests = 10;
+    config->max_pipelined_requests = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS;
     config->trust_known = true;
     return config;
 }
@@ -321,4 +321,11 @@ void neo4j_config_set_memory_allocator(neo4j_config_t *config,
         struct neo4j_memory_allocator *allocator)
 {
     config->allocator = allocator;
+}
+
+
+void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
+        unsigned int n)
+{
+    config->max_pipelined_requests = n;
 }
