@@ -34,6 +34,7 @@ libneo4j-client.so.5 libneo4j-client #MINVER#
  neo4j_config_set_connection_factory@Base 0.7.1
  neo4j_config_set_known_hosts_file@Base 0.7.1
  neo4j_config_set_logger_provider@Base 0.7.1
+ neo4j_config_set_max_pipelined_requests@Base 0.8.2
  neo4j_config_set_memory_allocator@Base 0.7.1
  neo4j_config_set_password@Base 0.7.1
  neo4j_config_set_rcvbuf_size@Base 0.7.1

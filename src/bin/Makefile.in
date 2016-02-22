@@ -110,9 +110,10 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_neo4j_client_OBJECTS = neo4j_client-neo4j-client.$(OBJEXT) \
-	neo4j_client-batch.$(OBJEXT) neo4j_client-commands.$(OBJEXT) \
+	neo4j_client-batch.$(OBJEXT) neo4j_client-evaluate.$(OBJEXT) \
 	neo4j_client-interactive.$(OBJEXT) \
 	neo4j_client-render.$(OBJEXT) neo4j_client-state.$(OBJEXT) \
+	neo4j_client-util.$(OBJEXT) \
 	neo4j_client-verification.$(OBJEXT)
 neo4j_client_OBJECTS = $(am_neo4j_client_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -344,14 +345,16 @@ top_srcdir = @top_srcdir@
 neo4j_client_SOURCES = neo4j-client.c \
 	batch.c \
 	batch.h \
-	commands.c \
-	commands.h \
+	evaluate.c \
+	evaluate.h \
 	interactive.c \
 	interactive.h \
 	render.c \
 	render.h \
 	state.c \
 	state.h \
+	util.c \
+	util.h \
 	verification.c \
 	verification.h
 
@@ -451,11 +454,12 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-batch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-commands.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-evaluate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-interactive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-neo4j-client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-render.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-state.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neo4j_client-verification.Po@am__quote@
 
 .c.o:
@@ -507,19 +511,19 @@ neo4j_client-batch.obj: batch.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-batch.obj `if test -f 'batch.c'; then $(CYGPATH_W) 'batch.c'; else $(CYGPATH_W) '$(srcdir)/batch.c'; fi`
 
-neo4j_client-commands.o: commands.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-commands.o -MD -MP -MF $(DEPDIR)/neo4j_client-commands.Tpo -c -o neo4j_client-commands.o `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/neo4j_client-commands.Tpo $(DEPDIR)/neo4j_client-commands.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='commands.c' object='neo4j_client-commands.o' libtool=no @AMDEPBACKSLASH@
+neo4j_client-evaluate.o: evaluate.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-evaluate.o -MD -MP -MF $(DEPDIR)/neo4j_client-evaluate.Tpo -c -o neo4j_client-evaluate.o `test -f 'evaluate.c' || echo '$(srcdir)/'`evaluate.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/neo4j_client-evaluate.Tpo $(DEPDIR)/neo4j_client-evaluate.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='evaluate.c' object='neo4j_client-evaluate.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-commands.o `test -f 'commands.c' || echo '$(srcdir)/'`commands.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-evaluate.o `test -f 'evaluate.c' || echo '$(srcdir)/'`evaluate.c
 
-neo4j_client-commands.obj: commands.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-commands.obj -MD -MP -MF $(DEPDIR)/neo4j_client-commands.Tpo -c -o neo4j_client-commands.obj `if test -f 'commands.c'; then $(CYGPATH_W) 'commands.c'; else $(CYGPATH_W) '$(srcdir)/commands.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/neo4j_client-commands.Tpo $(DEPDIR)/neo4j_client-commands.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='commands.c' object='neo4j_client-commands.obj' libtool=no @AMDEPBACKSLASH@
+neo4j_client-evaluate.obj: evaluate.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-evaluate.obj -MD -MP -MF $(DEPDIR)/neo4j_client-evaluate.Tpo -c -o neo4j_client-evaluate.obj `if test -f 'evaluate.c'; then $(CYGPATH_W) 'evaluate.c'; else $(CYGPATH_W) '$(srcdir)/evaluate.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/neo4j_client-evaluate.Tpo $(DEPDIR)/neo4j_client-evaluate.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='evaluate.c' object='neo4j_client-evaluate.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-commands.obj `if test -f 'commands.c'; then $(CYGPATH_W) 'commands.c'; else $(CYGPATH_W) '$(srcdir)/commands.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-evaluate.obj `if test -f 'evaluate.c'; then $(CYGPATH_W) 'evaluate.c'; else $(CYGPATH_W) '$(srcdir)/evaluate.c'; fi`
 
 neo4j_client-interactive.o: interactive.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-interactive.o -MD -MP -MF $(DEPDIR)/neo4j_client-interactive.Tpo -c -o neo4j_client-interactive.o `test -f 'interactive.c' || echo '$(srcdir)/'`interactive.c
@@ -562,6 +566,20 @@ neo4j_client-state.obj: state.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='state.c' object='neo4j_client-state.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-state.obj `if test -f 'state.c'; then $(CYGPATH_W) 'state.c'; else $(CYGPATH_W) '$(srcdir)/state.c'; fi`
+
+neo4j_client-util.o: util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-util.o -MD -MP -MF $(DEPDIR)/neo4j_client-util.Tpo -c -o neo4j_client-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/neo4j_client-util.Tpo $(DEPDIR)/neo4j_client-util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='util.c' object='neo4j_client-util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-util.o `test -f 'util.c' || echo '$(srcdir)/'`util.c
+
+neo4j_client-util.obj: util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-util.obj -MD -MP -MF $(DEPDIR)/neo4j_client-util.Tpo -c -o neo4j_client-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/neo4j_client-util.Tpo $(DEPDIR)/neo4j_client-util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='util.c' object='neo4j_client-util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o neo4j_client-util.obj `if test -f 'util.c'; then $(CYGPATH_W) 'util.c'; else $(CYGPATH_W) '$(srcdir)/util.c'; fi`
 
 neo4j_client-verification.o: verification.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(neo4j_client_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT neo4j_client-verification.o -MD -MP -MF $(DEPDIR)/neo4j_client-verification.Tpo -c -o neo4j_client-verification.o `test -f 'verification.c' || echo '$(srcdir)/'`verification.c
