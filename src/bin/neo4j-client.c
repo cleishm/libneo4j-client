@@ -33,7 +33,7 @@
 #define NEO4J_HISTORY_FILE "client-history"
 
 
-const char *shortopts = "hv";
+const char *shortopts = "hp:u:v";
 
 #define HISTFILE_OPT 1000
 #define INSECURE_OPT 1001
@@ -47,6 +47,8 @@ static struct option longopts[] =
       { "history-file", required_argument, NULL, HISTFILE_OPT },
       { "no-history", no_argument, NULL, NOHIST_OPT },
       { "insecure", no_argument, NULL, INSECURE_OPT },
+      { "username", required_argument, NULL, 'u' },
+      { "password", required_argument, NULL, 'p' },
       { "known-hosts", required_argument, NULL, KNOWN_HOSTS_OPT },
       { "pipeline-max", required_argument, NULL, PIPELINE_MAX_OPT },
       { "verbose", no_argument, NULL, 'v' },
@@ -62,6 +64,10 @@ static void usage(FILE *s, const char *prog_name)
 " --history=file      Use the specified file for saving history.\n"
 " --no-history        Do not save history.\n"
 " --insecure          Do not attempt to establish a secure connection.\n"
+" --username=name, -u name\n"
+"                     Connect using the specified username.\n"
+" --password=pass, -p pass\n"
+"                     Connect using the specified password.\n"
 " --known-hosts=file  Set the path to the known-hosts file.\n"
 " --verbose, -v       Increase logging verbosity.\n"
 " --version           Output the version of neo4j-client and dependencies.\n"
@@ -142,6 +148,20 @@ int main(int argc, char *argv[])
             break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;
+            break;
+        case 'u':
+            if (neo4j_config_set_username(config, optarg))
+            {
+                neo4j_perror(state.err, errno, "unexpected error");
+                goto cleanup;
+            }
+            break;
+        case 'p':
+            if (neo4j_config_set_password(config, optarg))
+            {
+                neo4j_perror(state.err, errno, "unexpected error");
+                goto cleanup;
+            }
             break;
         case KNOWN_HOSTS_OPT:
             if (neo4j_config_set_known_hosts_file(config, optarg))
