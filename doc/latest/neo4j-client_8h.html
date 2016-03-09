@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>libneo4j-client-0.8.2: neo4j-client.h File Reference</title>
+<title>libneo4j-client-0.9.0: neo4j-client.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.8.2
+   <div id="projectname">libneo4j-client-0.9.0
    </div>
   </td>
  </tr>
@@ -143,9 +143,9 @@ __neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a 
 <tr class="memitem:a906bd541a5213eb44d9b9881a2c04373"><td class="memItemLeft" align="right" valign="top">__neo4j_must_check const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a906bd541a5213eb44d9b9881a2c04373">neo4j_strerror</a> (int errnum, char *buf, size_t buflen)</td></tr>
 <tr class="memdesc:a906bd541a5213eb44d9b9881a2c04373"><td class="mdescLeft">&#160;</td><td class="mdescRight">Look up the error message corresponding to an error number.  <a href="#a906bd541a5213eb44d9b9881a2c04373">More...</a><br /></td></tr>
 <tr class="separator:a906bd541a5213eb44d9b9881a2c04373"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8131a68640ebbeaedcae58283283b556"><td class="memItemLeft" align="right" valign="top">__neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a8131a68640ebbeaedcae58283283b556">neo4j_type_str</a> (const <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a> t)</td></tr>
-<tr class="memdesc:a8131a68640ebbeaedcae58283283b556"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of the neo4j type.  <a href="#a8131a68640ebbeaedcae58283283b556">More...</a><br /></td></tr>
-<tr class="separator:a8131a68640ebbeaedcae58283283b556"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac502e8e0c55f21df682c1d8d1da91fbe"><td class="memItemLeft" align="right" valign="top">__neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ac502e8e0c55f21df682c1d8d1da91fbe">neo4j_type_str</a> (<a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a> t)</td></tr>
+<tr class="memdesc:ac502e8e0c55f21df682c1d8d1da91fbe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of the neo4j type.  <a href="#ac502e8e0c55f21df682c1d8d1da91fbe">More...</a><br /></td></tr>
+<tr class="separator:ac502e8e0c55f21df682c1d8d1da91fbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61f578018b0de5cb4e19dbd07fab96a5"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a61f578018b0de5cb4e19dbd07fab96a5">neo4j_tostring</a> (neo4j_value_t value, char *strbuf, size_t n)</td></tr>
 <tr class="memdesc:a61f578018b0de5cb4e19dbd07fab96a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string representation of a neo4j value.  <a href="#a61f578018b0de5cb4e19dbd07fab96a5">More...</a><br /></td></tr>
 <tr class="separator:a61f578018b0de5cb4e19dbd07fab96a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -206,9 +206,9 @@ __neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a 
 <tr class="memitem:ab2b2fc2ac99c7f9100fe02d90ab4fad6"><td class="memItemLeft" align="right" valign="top">__neo4j_pure const neo4j_map_entry_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ab2b2fc2ac99c7f9100fe02d90ab4fad6">neo4j_map_getentry</a> (neo4j_value_t value, unsigned int index)</td></tr>
 <tr class="memdesc:ab2b2fc2ac99c7f9100fe02d90ab4fad6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return an entry from a neo4j map.  <a href="#ab2b2fc2ac99c7f9100fe02d90ab4fad6">More...</a><br /></td></tr>
 <tr class="separator:ab2b2fc2ac99c7f9100fe02d90ab4fad6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a49c41d35386da43e2392ee924472e12c"><td class="memItemLeft" align="right" valign="top">__neo4j_pure neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a49c41d35386da43e2392ee924472e12c">neo4j_map_get</a> (neo4j_value_t value, neo4j_value_t key)</td></tr>
-<tr class="memdesc:a49c41d35386da43e2392ee924472e12c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a value from a neo4j map.  <a href="#a49c41d35386da43e2392ee924472e12c">More...</a><br /></td></tr>
-<tr class="separator:a49c41d35386da43e2392ee924472e12c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44c12e5cae711222b5f646ebdf022f04"><td class="memItemLeft" align="right" valign="top">__neo4j_pure neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a44c12e5cae711222b5f646ebdf022f04">neo4j_map_kget</a> (neo4j_value_t value, neo4j_value_t key)</td></tr>
+<tr class="memdesc:a44c12e5cae711222b5f646ebdf022f04"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a value from a neo4j map.  <a href="#a44c12e5cae711222b5f646ebdf022f04">More...</a><br /></td></tr>
+<tr class="separator:a44c12e5cae711222b5f646ebdf022f04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84df43e9e2c468264bcc1033ef929be3"><td class="memItemLeft" align="right" valign="top">__neo4j_pure neo4j_map_entry_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a84df43e9e2c468264bcc1033ef929be3">neo4j_map_kentry</a> (neo4j_value_t key, neo4j_value_t value)</td></tr>
 <tr class="memdesc:a84df43e9e2c468264bcc1033ef929be3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constrct a neo4j map entry using a value key.  <a href="#a84df43e9e2c468264bcc1033ef929be3">More...</a><br /></td></tr>
 <tr class="separator:a84df43e9e2c468264bcc1033ef929be3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -249,7 +249,7 @@ __neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a 
 <tr class="memdesc:a1a299dd23de1cb063f9c4a411cd1538b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate a new neo4j client configuration.  <a href="#a1a299dd23de1cb063f9c4a411cd1538b">More...</a><br /></td></tr>
 <tr class="separator:a1a299dd23de1cb063f9c4a411cd1538b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ce12c3f1093992d58c9feda91e48bf7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7ce12c3f1093992d58c9feda91e48bf7">neo4j_config_free</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config)</td></tr>
-<tr class="memdesc:a7ce12c3f1093992d58c9feda91e48bf7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release a reference to the neo4j client configuration.  <a href="#a7ce12c3f1093992d58c9feda91e48bf7">More...</a><br /></td></tr>
+<tr class="memdesc:a7ce12c3f1093992d58c9feda91e48bf7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release a neo4j client configuration.  <a href="#a7ce12c3f1093992d58c9feda91e48bf7">More...</a><br /></td></tr>
 <tr class="separator:a7ce12c3f1093992d58c9feda91e48bf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b44aae989a6301439bc83bb0638bc2d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7b44aae989a6301439bc83bb0638bc2d">neo4j_config_set_client_id</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *client_id)</td></tr>
 <tr class="memdesc:a7b44aae989a6301439bc83bb0638bc2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the client ID.  <a href="#a7b44aae989a6301439bc83bb0638bc2d">More...</a><br /></td></tr>
@@ -413,6 +413,9 @@ __neo4j_pure const char *&#160;</td><td class="memItemRight" valign="bottom"><a 
 <tr class="memitem:abad22fb0ad90d3a4771a4b7fcdc448a5"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#abad22fb0ad90d3a4771a4b7fcdc448a5">neo4j_string</a> (const char *s)</td></tr>
 <tr class="memdesc:abad22fb0ad90d3a4771a4b7fcdc448a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a neo4j value encoding a string.  <a href="#abad22fb0ad90d3a4771a4b7fcdc448a5">More...</a><br /></td></tr>
 <tr class="separator:abad22fb0ad90d3a4771a4b7fcdc448a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4d1e4a516b5735778812e250726799a"><td class="memItemLeft" align="right" valign="top">neo4j_value_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ac4d1e4a516b5735778812e250726799a">neo4j_map_get</a> (neo4j_value_t value, const char *key)</td></tr>
+<tr class="memdesc:ac4d1e4a516b5735778812e250726799a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a value from a neo4j map.  <a href="#ac4d1e4a516b5735778812e250726799a">More...</a><br /></td></tr>
+<tr class="separator:ac4d1e4a516b5735778812e250726799a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c83a47ac2e9b17bbd5b25c516e6c039"><td class="memItemLeft" align="right" valign="top">neo4j_map_entry_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9c83a47ac2e9b17bbd5b25c516e6c039">neo4j_map_entry</a> (const char *key, neo4j_value_t value)</td></tr>
 <tr class="memdesc:a9c83a47ac2e9b17bbd5b25c516e6c039"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constrct a neo4j map entry.  <a href="#a9c83a47ac2e9b17bbd5b25c516e6c039">More...</a><br /></td></tr>
 <tr class="separator:a9c83a47ac2e9b17bbd5b25c516e6c039"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1023,7 +1026,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Release a reference to the neo4j client configuration. </p>
+<p>Release a neo4j client configuration. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[config]</td><td>A pointer to a neo4j client configuration. This pointer will be invalid after the function returns. </td></tr>
@@ -2407,12 +2410,12 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
-<a class="anchor" id="a49c41d35386da43e2392ee924472e12c"></a>
+<a class="anchor" id="ac4d1e4a516b5735778812e250726799a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">__neo4j_pure neo4j_value_t neo4j_map_get </td>
+          <td class="memname">neo4j_value_t neo4j_map_get </td>
           <td>(</td>
           <td class="paramtype">neo4j_value_t&#160;</td>
           <td class="paramname"><em>value</em>, </td>
@@ -2420,7 +2423,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">neo4j_value_t&#160;</td>
+          <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>key</em>&#160;</td>
         </tr>
         <tr>
@@ -2436,7 +2439,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[value]</td><td>The neo4j map. </td></tr>
-    <tr><td class="paramname">[key]</td><td>The map key. </td></tr>
+    <tr><td class="paramname">[key]</td><td>The null terminated string key for the entry. </td></tr>
   </table>
   </dd>
 </dl>
@@ -2518,6 +2521,43 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
+<a class="anchor" id="a44c12e5cae711222b5f646ebdf022f04"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">__neo4j_pure neo4j_value_t neo4j_map_kget </td>
+          <td>(</td>
+          <td class="paramtype">neo4j_value_t&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">neo4j_value_t&#160;</td>
+          <td class="paramname"><em>key</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Return a value from a neo4j map. </p>
+<p>Note that the result is undefined if the value is not of type NEO4J_MAP.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[value]</td><td>The neo4j map. </td></tr>
+    <tr><td class="paramname">[key]</td><td>The map key. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The value stored under the specified key, or <code>NULL</code> if the key is not known. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a8b1fc27c3c3a9fa0134eb010dd33fda5"></a>
 <div class="memitem">
 <div class="memproto">
@@ -2585,7 +2625,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Generate a new neo4j client configuration. </p>
-<p>The lifecycle of the neo4j client configuration is managed by reference counting.</p>
+<p>The returned configuration must be later released using <code>neo4j_config_free(...)</code>.</p>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a new neo4j client configuration, or <code>NULL</code> if an error occurs (errno will be set). </dd></dl>
 
 </div>
@@ -3806,14 +3846,14 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
-<a class="anchor" id="a8131a68640ebbeaedcae58283283b556"></a>
+<a class="anchor" id="ac502e8e0c55f21df682c1d8d1da91fbe"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">__neo4j_pure const char* neo4j_type_str </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td>
           <td class="paramname"><em>t</em></td><td>)</td>
           <td></td>
         </tr>
