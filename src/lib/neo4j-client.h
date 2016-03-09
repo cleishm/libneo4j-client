@@ -554,7 +554,7 @@ struct neo4j_map_entry
  * @return A pointer to a `NULL` terminated string containing the type name.
  */
 __neo4j_pure
-const char *neo4j_type_str(const neo4j_type_t t);
+const char *neo4j_type_str(neo4j_type_t t);
 
 /**
  * Get a string representation of a neo4j value.
@@ -1010,8 +1010,8 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
 /**
  * Generate a new neo4j client configuration.
  *
- * The lifecycle of the neo4j client configuration is managed by
- * reference counting.
+ * The returned configuration must be later released using
+ * `neo4j_config_free(...)`.
  *
  * @return A pointer to a new neo4j client configuration, or `NULL` if an error
  *         occurs (errno will be set).
@@ -1020,7 +1020,7 @@ __neo4j_must_check
 neo4j_config_t *neo4j_new_config(void);
 
 /**
- * Release a reference to the neo4j client configuration.
+ * Release a neo4j client configuration.
  *
  * @param [config] A pointer to a neo4j client configuration. This pointer will
  *         be invalid after the function returns.
