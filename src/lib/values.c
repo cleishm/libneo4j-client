@@ -549,7 +549,7 @@ const neo4j_map_entry_t *neo4j_map_getentry(neo4j_value_t value,
 }
 
 
-neo4j_value_t neo4j_map_get(neo4j_value_t value, neo4j_value_t key)
+neo4j_value_t neo4j_map_kget(neo4j_value_t value, neo4j_value_t key)
 {
     REQUIRE(neo4j_type(value) == NEO4J_MAP, neo4j_null);
     const struct neo4j_map *map = (const struct neo4j_map *)&value;

@@ -826,6 +826,19 @@ const neo4j_map_entry_t *neo4j_map_getentry(neo4j_value_t value,
         unsigned int index);
 
 /**
+ * @fn neo4j_value_t neo4j_map_get(neo4j_value_t value, const char *key);
+ * @brief Return a value from a neo4j map.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_MAP.
+ *
+ * @param [value] The neo4j map.
+ * @param [key] The null terminated string key for the entry.
+ * @return The value stored under the specified key, or `NULL` if the key is
+ *         not known.
+ */
+#define neo4j_map_get(value, key) neo4j_map_kget(value, neo4j_string(key))
+
+/**
  * Return a value from a neo4j map.
  *
  * Note that the result is undefined if the value is not of type NEO4J_MAP.
@@ -836,7 +849,7 @@ const neo4j_map_entry_t *neo4j_map_getentry(neo4j_value_t value,
  *         not known.
  */
 __neo4j_pure
-neo4j_value_t neo4j_map_get(neo4j_value_t value, neo4j_value_t key);
+neo4j_value_t neo4j_map_kget(neo4j_value_t value, neo4j_value_t key);
 
 /**
  * @fn neo4j_map_entry_t neo4j_map_entry(const char *key, neo4j_value_t value);
