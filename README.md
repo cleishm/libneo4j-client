@@ -59,7 +59,7 @@ persistent command history, and rendering of results to tables or CSV.
 Basic usage:
 
 ```console
-$ neo4j-client -v neo4j://localhost:7687
+$ neo4j-client -v neo4j://user:pass@localhost:7687
 The authenticity of host 'localhost:7687' could not be established.
 TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.
 Would you like to trust this host (NO/yes/once)? yes

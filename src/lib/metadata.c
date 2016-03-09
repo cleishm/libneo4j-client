@@ -477,7 +477,7 @@ int map_get_typed(neo4j_value_t *value, neo4j_value_t map, const char *path,
         const char *key, neo4j_type_t expected, bool allow_null,
         const char *description, neo4j_logger_t *logger)
 {
-    neo4j_value_t val = neo4j_map_get(map, neo4j_string(key));
+    neo4j_value_t val = neo4j_map_get(map, key);
     if (neo4j_is_null(val))
     {
         if (allow_null)
