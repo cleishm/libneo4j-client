@@ -19,7 +19,6 @@
 
 #include "state.h"
 
-int interact(shell_state_t *state,
-        int (*evaluate)(shell_state_t *state, const char *directive));
+int interact(shell_state_t *state);
 
-#endif/*NEO4J_RENDER_H*/
+#endif/*NEO4J_INTERACTIVE_H*/

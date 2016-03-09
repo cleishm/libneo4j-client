@@ -479,6 +479,8 @@ int initialize(neo4j_session_t *session)
     assert(session != NULL);
     const neo4j_config_t *config = session->config;
     const char *client_id = config->client_id;
+    const char *principal = config->username? config->username : "";
+    const char *credentials = config->password? config->password : "";
 
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
@@ -487,8 +489,13 @@ int initialize(neo4j_session_t *session)
     }
     req->type = NEO4J_INIT_MESSAGE;
     req->_argv[0] = neo4j_string(client_id);
+    neo4j_map_entry_t auth_token[3] =
+        { neo4j_map_entry("scheme", neo4j_string("basic")),
+          neo4j_map_entry("principal", neo4j_string(principal)),
+          neo4j_map_entry("credentials", neo4j_string(credentials)) };
+    req->_argv[1] = neo4j_map(auth_token, 3);
     req->argv = req->_argv;
-    req->argc = 1;
+    req->argc = 2;
     req->receive = initialize_callback;
     req->cdata = session;
 

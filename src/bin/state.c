@@ -30,6 +30,7 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->out = out;
     state->err = err;
     state->tty = tty;
+    state->pipeline_max = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS / 2;
     return 0;
 }
 
@@ -50,22 +51,4 @@ void shell_state_destroy(shell_state_t *state)
     {
         neo4j_close(state->connection);
     }
-}
-
-
-char *temp_copy(shell_state_t *state, const char *s, size_t n)
-{
-    if (state->temp_buffer_size < n+1)
-    {
-        char *updated = realloc(state->temp_buffer, n+1);
-        if (updated == NULL)
-        {
-            return NULL;
-        }
-        state->temp_buffer = updated;
-        state->temp_buffer_size = n+1;
-    }
-    memcpy(state->temp_buffer, s, n+1);
-    state->temp_buffer[n] = '\0';
-    return state->temp_buffer;
 }

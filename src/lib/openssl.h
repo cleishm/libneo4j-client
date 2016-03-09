@@ -56,7 +56,7 @@ int neo4j_openssl_cleanup(void);
  * @param [flags] A bitmask of flags to control connections.
  * @return An SSL BIO, or `NULL` on failure (errno will be set).
  */
-__neo4j_malloc
+__neo4j_must_check
 BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
         const neo4j_config_t *config, uint_fast32_t flags);
 

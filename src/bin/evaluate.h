@@ -14,11 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_BATCH_H
-#define NEO4J_BATCH_H
+#ifndef NEO4J_EVALUATE_H
+#define NEO4J_EVALUATE_H
 
 #include "state.h"
 
-int batch(shell_state_t *state);
 
-#endif/*NEO4J_BATCH_H*/
+typedef struct evaluation_continuation evaluation_continuation_t;
+struct evaluation_continuation
+{
+    int (*complete)(evaluation_continuation_t *self, shell_state_t *state);
+    void *data;
+};
+
+
+static inline bool is_command(const char *directive)
+{
+    return (directive[0] == ':');
+}
+
+int evaluate_command(shell_state_t *state, const char *command);
+evaluation_continuation_t evaluate_statement(shell_state_t *state,
+        const char *statement);
+
+int db_connect(shell_state_t *state, const char *args);
+int db_disconnect(shell_state_t *state, const char *args);
+
+#endif/*NEO4J_EVALUATE_H*/
