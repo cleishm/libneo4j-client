@@ -253,8 +253,18 @@ unsigned char check_line(EditLine *el, int ch)
     {
         return CC_FATAL;
     }
-    if (complete || length == 0)
+    if (complete)
     {
+        return CC_NEWLINE;
+    }
+    if (length == 0)
+    {
+        // There has to be at least one char in the line to avoid having it
+        // interpretted as EOF
+        if (literal_newline(el, ch) == CC_ERROR)
+        {
+            return CC_ERROR;
+        }
         return CC_NEWLINE;
     }
     return literal_newline(el, ch);

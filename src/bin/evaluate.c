@@ -223,7 +223,7 @@ int width(shell_state_t *state, const char *args)
         if (!isatty(fileno(state->out)))
         {
             fprintf(state->err, "Setting width to auto is only possible"
-                    " when outputing to a tty\n");
+                    " when outputting to a tty\n");
             return -1;
         }
         state->width = 0;

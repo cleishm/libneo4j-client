@@ -435,7 +435,7 @@ START_TEST (map_get)
           { .key = neo4j_string("sanders"), .value = neo4j_int(2) } };
     neo4j_value_t value = neo4j_map(map_entries, 2);
 
-    const neo4j_value_t v = neo4j_map_get(value, neo4j_string("bernie"));
+    const neo4j_value_t v = neo4j_map_get(value, "bernie");
     ck_assert(neo4j_type(v) == NEO4J_INT);
     ck_assert(neo4j_eq(v, neo4j_int(1)));
 }

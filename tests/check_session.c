@@ -74,7 +74,7 @@ static void setup(void)
     uint32_t version = htonl(1);
     rb_append(in_rb, &version, sizeof(version));
 
-    connection = neo4j_connect("neo4j://localhost:7687", config, 0);
+    connection = neo4j_connect("neo4j://user:pass@localhost:7687", config, 0);
     ck_assert_ptr_ne(connection, NULL);
     rb_discard(out_rb, 4 + (4 * sizeof(uint32_t)));
 }
@@ -128,7 +128,7 @@ int response_recv_callback(void *cdata, neo4j_message_type_t type,
 }
 
 
-START_TEST (test_new_session_sends_init_containing_clientid)
+START_TEST (test_new_session_sends_init_with_clientid_and_auth)
 {
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
     neo4j_session_t *session = neo4j_new_session(connection);
@@ -138,12 +138,23 @@ START_TEST (test_new_session_sends_init_containing_clientid)
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_INIT_MESSAGE);
-    ck_assert_int_eq(argc, 1);
+    ck_assert_int_eq(argc, 2);
 
     char buf[256];
     ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
     ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
             config->client_id);
+
+    ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+    ck_assert_str_eq(neo4j_string_value(
+                neo4j_map_get(argv[1], "scheme"), buf, sizeof(buf)),
+            "basic");
+    ck_assert_str_eq(neo4j_string_value(
+                neo4j_map_get(argv[1], "principal"), buf, sizeof(buf)),
+            "user");
+    ck_assert_str_eq(neo4j_string_value(
+                neo4j_map_get(argv[1], "credentials"), buf, sizeof(buf)),
+            "pass");
 
     neo4j_end_session(session);
 }
@@ -287,7 +298,7 @@ START_TEST (test_session_sends_reset_on_reset)
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_INIT_MESSAGE);
-    ck_assert_int_eq(argc, 1);
+    ck_assert_int_eq(argc, 2);
 
     type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_RESET_MESSAGE);
@@ -518,7 +529,7 @@ TCase* session_tcase(void)
 {
     TCase *tc = tcase_create("session");
     tcase_add_checked_fixture(tc, setup, teardown);
-    tcase_add_test(tc, test_new_session_sends_init_containing_clientid);
+    tcase_add_test(tc, test_new_session_sends_init_with_clientid_and_auth);
     tcase_add_test(tc, test_new_session_fails_on_init_failure);
     tcase_add_test(tc, test_new_session_fails_if_connection_is_dead);
     tcase_add_test(tc, test_new_session_fails_if_session_active);
