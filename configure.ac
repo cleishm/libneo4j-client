@@ -134,10 +134,15 @@ AC_CHECK_FUNCS([open_memstream],[],[],
   ])
 
 
+dnl Threading
 AX_THREAD_LOCAL()
 AX_PTHREAD([has_pthreads=yes])
 AS_IF([test "X$has_pthreads" = "Xyes"],
   [AC_DEFINE([HAVE_PTHREADS], [1], [Define to 1 if you have pthreads.])])
+
+AC_ARG_ENABLE([thread_local_iovectors], AS_HELP_STRING([--disable-thread-local-iovectors], [Disable thread local IO vectors]))
+AS_IF([test "X$enable_thread_local_iovectors" = "Xno"],
+  [AC_DEFINE([NO_THREAD_LOCAL_IOV], [1], [Define to 1 to disable thread local IO vectors.])])
 
 
 dnl Check for TLS support
