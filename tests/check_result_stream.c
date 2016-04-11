@@ -424,7 +424,7 @@ START_TEST (test_run_returns_failure_when_statement_fails)
 {
     queue_failure(server_ios); // RUN
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
     neo4j_result_stream_t *results = neo4j_run(session, "badquery", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
@@ -453,7 +453,7 @@ START_TEST (test_run_returns_failure_during_streaming)
     queue_run_success(server_ios); // RUN
     queue_record(server_ios); // PULL_ALL
     queue_failure(server_ios); // PULL_ALL
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
     ck_assert_int_eq(neo4j_check_failure(results), 0);
 
@@ -533,7 +533,7 @@ START_TEST (test_run_returns_same_failure_after_session_close)
 {
     queue_failure(server_ios); // RUN
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
     neo4j_result_stream_t *results = neo4j_run(session, "bad query",
             neo4j_map(NULL, 0));
@@ -634,7 +634,7 @@ START_TEST (test_send_returns_failure_when_statement_fails)
 {
     queue_failure(server_ios); // RUN
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // DISCARD_ALL
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
     neo4j_result_stream_t *results = neo4j_send(session, "bad query",
             neo4j_map(NULL, 0));
