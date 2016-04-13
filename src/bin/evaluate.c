@@ -37,6 +37,7 @@ static int help(shell_state_t *state, const char *args);
 static int output(shell_state_t *state, const char *args);
 static int width(shell_state_t *state, const char *args);
 static int quit(shell_state_t *state, const char *args);
+static int reset(shell_state_t *state, const char *args);
 static int not_connected_error(evaluation_continuation_t *self,
         shell_state_t *state);
 static int run_failure(evaluation_continuation_t *self, shell_state_t *state);
@@ -47,6 +48,7 @@ static shell_command_t shell_commands[] =
       { "quit", quit },
       { "connect", db_connect },
       { "disconnect", db_disconnect },
+      { "reset", reset },
       { "help", help },
       { "output", output },
       { "width", width },
@@ -168,12 +170,25 @@ int db_disconnect(shell_state_t *state, const char *args)
 }
 
 
+int reset(shell_state_t *state, const char *args)
+{
+    if (state->session == NULL)
+    {
+        fprintf(state->err, "ERROR: not connected\n");
+        return -1;
+    }
+    neo4j_reset_session(state->session);
+    return 0;
+}
+
+
 int help(shell_state_t *state, const char *args)
 {
     fprintf(state->out,
 ":quit                  Exit the shell\n"
 ":connect '<url>'       Connect to the specified URL\n"
 ":disconnect            Disconnect the client from the server\n"
+":reset                 Reset the session with the server\n"
 ":help                  Show usage information\n"
 ":output (table|csv)    Set the output format\n"
 ":width (<n>|auto)      Set the number of columns in the table output\n");
