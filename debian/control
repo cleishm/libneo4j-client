@@ -2,7 +2,7 @@ Source: libneo4j-client
 Section: devel
 Priority: optional
 Maintainer: Chris Leishman <chris@leishman.org>
-Build-Depends: debhelper (>= 9), autotools-dev, pkg-config, libssl-dev, libedit-dev
+Build-Depends: debhelper (>= 9), dh-autoreconf, autotools-dev, pkg-config, libssl-dev, libedit-dev
 Build-Depends-Indep: doxygen
 Standards-Version: 3.9.5
 Homepage: https://cleishm.github.io/libneo4j-client/
@@ -35,7 +35,7 @@ Package: libneo4j-client7-dev
 Provides: libneo4j-client-dev
 Section: libdevel
 Architecture: any
-Depends: libneo4j-client7 (= ${binary:Version}), libc6-dev, ${misc:Depends}
+Depends: libneo4j-client7 (= ${binary:Version}), ${misc:Depends}
 Suggests: pkg-config
 Description: Development files for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.

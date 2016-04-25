@@ -108,6 +108,9 @@
 /* Define to 1 to disable assertions. */
 #undef NDEBUG
 
+/* Define to 1 to disable thread local IO vectors. */
+#undef NO_THREAD_LOCAL_IOV
+
 /* Name of package */
 #undef PACKAGE
 

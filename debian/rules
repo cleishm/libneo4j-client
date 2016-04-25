@@ -8,7 +8,7 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
 %:
-	dh $@  --with autotools-dev
+	dh $@  --with autoreconf --with autotools-dev
 
 override_dh_auto_build-indep:
 	$(MAKE) doc
