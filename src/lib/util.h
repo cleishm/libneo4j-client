@@ -288,7 +288,7 @@ static inline size_t maxzu(size_t a, size_t b)
 #define IOV_STACK_MAX 8
 #endif
 
-#ifdef THREAD_LOCAL
+#if defined THREAD_LOCAL && !(defined NO_THREAD_LOCAL_IOV)
 struct _local_iovec
 {
     struct iovec iov[IOV_MAX];
