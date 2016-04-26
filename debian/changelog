@@ -1,3 +1,9 @@
+libneo4j-client (0.9.1-2) unstable; urgency=low
+
+  * Correct dependency from neo4j-client to libneo4j-client7
+
+ -- Chris Leishman <chris@leishman.org>  Tue, 26 Apr 2016 13:43:01 +0000
+
 libneo4j-client (0.9.1-1) unstable; urgency=low
 
   * Upstream release 0.9.1

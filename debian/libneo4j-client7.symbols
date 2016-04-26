@@ -1,4 +1,4 @@
-libneo4j-client.so.7 libneo4j-client #MINVER#
+libneo4j-client.so.7 libneo4j-client7 #MINVER#
  NEO4J_BOOL@Base 0.9.0
  NEO4J_FLOAT@Base 0.9.0
  NEO4J_IDENTITY@Base 0.9.0
