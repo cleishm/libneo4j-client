@@ -4,11 +4,10 @@
 # Uncomment this to turn on verbose mode.
 DH_VERBOSE = 1
 
-DPKG_EXPORT_BUILDFLAGS = 1
-include /usr/share/dpkg/default.mk
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 %:
-	dh $@  --with autoreconf --with autotools-dev
+	dh $@  --with autoreconf
 
 override_dh_auto_build-indep:
 	$(MAKE) doc
