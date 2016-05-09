@@ -43,7 +43,7 @@ If you're using Ubuntu, neo4j-client can be install using APT:
 ```console
 $ sudo add-apt-repository ppa:cleishm/libneo4j-client
 $ sudo apt-get update
-$ sudo apt-get install neo4j-client
+$ sudo apt-get install neo4j-client libneo4j-client-dev
 ```
 
 For other platforms, please see [Building](#building) below.
