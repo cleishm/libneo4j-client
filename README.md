@@ -46,7 +46,14 @@ $ sudo apt-get update
 $ sudo apt-get install neo4j-client libneo4j-client-dev
 ```
 
-For other platforms, please see [Building](#building) below.
+There are also packages available for other platforms, including
+[Debian](https://packages.debian.org/unstable/database/neo4j-client),
+[Ubuntu](https://launchpad.net/~cleishm/+archive/ubuntu/libneo4j-client),
+[Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
+[CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
+[openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed).
+
+Otherwise, please see [Building](#building) below.
 
 
 neo4j-client Usage
@@ -172,8 +179,13 @@ Building
 --------
 
 To build software using libneo4j-client, consider installing libneo4j-client
-using the package management system for your operating system (currently only
-Mac OS X).
+using the package management system for your operating system (currently
+Mac OS X,
+[Debian](https://packages.debian.org/unstable/database/neo4j-client),
+[Ubuntu](https://launchpad.net/~cleishm/+archive/ubuntu/libneo4j-client),
+[Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
+[CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
+[openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed)).
 
 If libneo4j-client is not available via your package management system,
 please [download the latest release](
