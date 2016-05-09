@@ -47,7 +47,7 @@ $ sudo apt-get install neo4j-client libneo4j-client-dev
 ```
 
 There are also packages available for other platforms, including
-[Debian](https://packages.debian.org/unstable/database/neo4j-client),
+[Debian](https://packages.debian.org/source/sid/libneo4j-client),
 [Ubuntu](https://launchpad.net/~cleishm/+archive/ubuntu/libneo4j-client),
 [Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
 [CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
@@ -181,7 +181,7 @@ Building
 To build software using libneo4j-client, consider installing libneo4j-client
 using the package management system for your operating system (currently
 Mac OS X,
-[Debian](https://packages.debian.org/unstable/database/neo4j-client),
+[Debian](https://packages.debian.org/source/sid/libneo4j-client),
 [Ubuntu](https://launchpad.net/~cleishm/+archive/ubuntu/libneo4j-client),
 [Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
 [CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
