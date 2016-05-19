@@ -1943,8 +1943,8 @@ ssize_t neo4j_cli_uparse(const char *s, size_t n,
  */
 __neo4j_must_check
 ssize_t neo4j_cli_fparse(FILE *stream,
-        char ** restrict buf, size_t * restrict bufcap,
-        char ** restrict start, size_t * restrict length, bool *complete);
+        char ** __restrict__ buf, size_t * __restrict__ bufcap,
+        char ** __restrict__ start, size_t * __restrict__ length, bool *complete);
 
 
 /**
