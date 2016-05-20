@@ -39,6 +39,15 @@
 #define __neo4j_must_check /*must check*/
 #endif
 
+#if (__STDC_VERSION__ >= 199901L)
+#elif __GNUC__ >= 3
+#define restrict __restrict
+#elif _MSC_VER >= 1500
+#define restrict __restrict
+#else
+#define restrict
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
