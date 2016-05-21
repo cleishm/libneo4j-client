@@ -14,7 +14,7 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[0.9.1])
+AC_INIT([libneo4j-client],[0.9.2])
 AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -39,6 +39,9 @@ AC_PROG_MAKE_SET
 AC_ARG_VAR([LEG], [leg parser generator command])
 AC_CHECK_PROG([LEG], [leg], [leg])
 AM_CONDITIONAL([HAVE_LEG], [test -n "$LEG"])
+
+AS_IF([test -n "$LEG" -o -f ./src/lib/cli_parser_leg.c], [],
+  [AC_MSG_ERROR([leg is required: please install http://piumarta.com/software/peg/])])
 
 AC_C_CONST
 AC_C_INLINE

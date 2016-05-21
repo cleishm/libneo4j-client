@@ -149,11 +149,11 @@ libneo4j_client_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 am__libneo4j_client_la_SOURCES_DIST = error_handling.c \
 	buffering_iostream.c buffering_iostream.h chunking_iostream.c \
 	chunking_iostream.h client_config.c client_config.h \
-	connection.c connection.h deserialization.c deserialization.h \
-	dotdir.c init.c iostream.c iostream.h job.h logging.c \
-	logging.h memory.c memory.h messages.c messages.h metadata.c \
-	metadata.h network.c network.h cli_parser.c print.c print.h \
-	posix_iostream.c posix_iostream.h render.c render.h \
+	cli_parser.leg connection.c connection.h deserialization.c \
+	deserialization.h dotdir.c init.c iostream.c iostream.h job.h \
+	logging.c logging.h memory.c memory.h messages.c messages.h \
+	metadata.c metadata.h network.c network.h cli_parser.c print.c \
+	print.h posix_iostream.c posix_iostream.h render.c render.h \
 	render_plan.c render_results.c result_stream.c result_stream.h \
 	ring_buffer.c ring_buffer.h serialization.c serialization.h \
 	session.c session.h thread.c thread.h tofu.c tofu.h uri.c \
@@ -414,18 +414,18 @@ lib_LTLIBRARIES = libneo4j-client.la
 include_HEADERS = neo4j-client.h
 libneo4j_client_la_SOURCES = error_handling.c buffering_iostream.c \
 	buffering_iostream.h chunking_iostream.c chunking_iostream.h \
-	client_config.c client_config.h connection.c connection.h \
-	deserialization.c deserialization.h dotdir.c init.c iostream.c \
-	iostream.h job.h logging.c logging.h memory.c memory.h \
-	messages.c messages.h metadata.c metadata.h network.c \
-	network.h cli_parser.c print.c print.h posix_iostream.c \
-	posix_iostream.h render.c render.h render_plan.c \
-	render_results.c result_stream.c result_stream.h ring_buffer.c \
-	ring_buffer.h serialization.c serialization.h session.c \
-	session.h thread.c thread.h tofu.c tofu.h uri.c uri.h util.c \
-	util.h values.c values.h $(am__append_1)
+	client_config.c client_config.h cli_parser.leg connection.c \
+	connection.h deserialization.c deserialization.h dotdir.c \
+	init.c iostream.c iostream.h job.h logging.c logging.h \
+	memory.c memory.h messages.c messages.h metadata.c metadata.h \
+	network.c network.h cli_parser.c print.c print.h \
+	posix_iostream.c posix_iostream.h render.c render.h \
+	render_plan.c render_results.c result_stream.c result_stream.h \
+	ring_buffer.c ring_buffer.h serialization.c serialization.h \
+	session.c session.h thread.c thread.h tofu.c tofu.h uri.c \
+	uri.h util.c util.h values.c values.h $(am__append_1)
 libneo4j_client_la_CFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_CFLAGS) -Wpedantic -Wvla
-libneo4j_client_la_LDFLAGS = -version-info 7:1:0
+libneo4j_client_la_LDFLAGS = -version-info 7:2:0
 libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 EXTRA_DIST = cli_parser_leg.c
 MAINTAINERCLEANFILES = cli_parser_leg.c
@@ -1020,6 +1020,8 @@ cli_parser.c: cli_parser_leg.c
 
 @HAVE_LEG_TRUE@%_leg.c: %.leg
 @HAVE_LEG_TRUE@	$(LEG) -o $@ $<
+@HAVE_LEG_FALSE@%_leg.c: %.leg
+@HAVE_LEG_FALSE@	$(error Cannot compile .leg source file, as the leg compiler was not found by the configure script: please install http://piumarta.com/software/peg/ and re-run the configure script)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
