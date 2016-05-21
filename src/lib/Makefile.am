@@ -9,6 +9,7 @@ libneo4j_client_la_SOURCES = \
 	chunking_iostream.h \
 	client_config.c \
 	client_config.h \
+	cli_parser.leg \
 	connection.c \
 	connection.h \
 	deserialization.c \
@@ -67,7 +68,7 @@ endif
 endif
 
 libneo4j_client_la_CFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_CFLAGS) -Wpedantic -Wvla
-libneo4j_client_la_LDFLAGS = -version-info 7:1:0
+libneo4j_client_la_LDFLAGS = -version-info 7:2:0
 libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 
 cli_parser.c: cli_parser_leg.c
@@ -75,6 +76,9 @@ cli_parser.c: cli_parser_leg.c
 if HAVE_LEG
 %_leg.c: %.leg
 	$(LEG) -o $@ $<
+else
+%_leg.c: %.leg
+	$(error Cannot compile .leg source file, as the leg compiler was not found by the configure script: please install http://piumarta.com/software/peg/ and re-run the configure script)
 endif
 
 EXTRA_DIST = cli_parser_leg.c
