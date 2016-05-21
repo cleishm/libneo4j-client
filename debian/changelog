@@ -1,3 +1,9 @@
+libneo4j-client (0.9.2-1ubuntu1) xenial; urgency=low
+
+  * New upstream release 0.9.2.
+
+ -- Chris Leishman <chris@leishman.org>  Sat, 21 May 2016 13:37:40 +0000
+
 libneo4j-client (0.9.1-1ubuntu1) xenial; urgency=low
 
   * Initial packaging. Closes: #813443

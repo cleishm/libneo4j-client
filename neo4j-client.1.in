@@ -29,7 +29,7 @@ CSV.
 \fBneo4j\-client\fR requires Neo4j Server version 3.0 or later.
 .SH OPTIONS
 .TP
-.I \-h, \-\-help
+.I \-\-help, \-h
 Display a brief help listing.
 .TP
 .I \-\-history=file
@@ -42,6 +42,18 @@ Do not save the command history.
 .TP
 .I \-\-insecure
 Do not attempt to establish a secure (TLS) connection to Neo4j.
+.TP
+.I \-\-username=name, \-u name
+Use the specified username when connecting.
+
+The username (and password) can also be supplied in the connection URL, and will
+override what is set here.
+.TP
+.I \-\-password=pass, \-p pass
+Use the specified password when connecting.
+
+The password (and username) can also be supplied in the connection URL, and will
+override what is set here.
 .TP
 .I \-\-known-hosts=file
 When using secure (TLS) connections, the certificate signatures of previously
