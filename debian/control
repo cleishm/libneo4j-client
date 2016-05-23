@@ -43,13 +43,13 @@ Description: Development files for libneo4j-client, a client library for Neo4j
  libneo4j-client takes care of all the detail of establishing a session with a
  Neo4j server, sending statements for evaluation, and retrieving results.
  .
- This package contains the development files (headers, static libraries)
+ This package contains the development files (headers, static libraries).
 
 Package: libneo4j-client-doc
 Section: doc
 Architecture: all
 Depends: libjs-jquery, ${misc:Depends}
-Recommends: libneo4j-client7
+Recommends: libneo4j-client7-dev
 Description: Documentation for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.
  .
