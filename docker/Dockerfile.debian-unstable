@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM debian:unstable
 RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y \
@@ -17,7 +17,9 @@ RUN apt-get update && \
         libtool \
         man \
         pkg-config \
-        software-properties-common \
         valgrind \
         vim
 
+ADD dput.cf /root/.dput.cf
+ENV DEBEMAIL=chris@leishman.org DEBNAME="Chris Leishman"
+ADD bashrc /root/.bashrc
