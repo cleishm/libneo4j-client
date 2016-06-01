@@ -69,6 +69,23 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
 }
 
 
+void neo4j_metadata_log(neo4j_logger_t *logger, uint_fast8_t level,
+        const char *msg, neo4j_value_t metadata)
+{
+    char detail[1024];
+    size_t n = neo4j_ntostring(metadata, detail, sizeof(detail));
+    if (n >= sizeof(detail))
+    {
+        // TODO: dynamically allocate `detail` if static size is insufficient
+        detail[sizeof(detail)-1] = '\0';
+        detail[sizeof(detail)-2] = '.';
+        detail[sizeof(detail)-3] = '.';
+        detail[sizeof(detail)-4] = '.';
+    }
+    neo4j_log(logger, level, "%s: %s", msg, detail);
+}
+
+
 int neo4j_meta_failure_details(const char **code, const char **message, const
         neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
         neo4j_logger_t *logger)

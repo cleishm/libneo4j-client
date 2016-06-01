@@ -630,8 +630,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     }
 
     char description[128];
-    snprintf(description, sizeof(description),
-            "%s message received in %p (in response to RUN)",
+    snprintf(description, sizeof(description), "%s in %p (response to RUN)",
             neo4j_message_type_str(type), (void *)session);
 
     if (type != NEO4J_SUCCESS_MESSAGE)
@@ -647,6 +646,11 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     {
         set_failure(results, errno);
         return -1;
+    }
+
+    if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+    {
+        neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
 
     if (neo4j_meta_fieldnames(&(results->fields), &(results->nfields),
@@ -748,8 +752,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     }
 
     char description[128];
-    snprintf(description, sizeof(description),
-            "SUCCESS message received in %p (in response to %s)",
+    snprintf(description, sizeof(description), "SUCCESS in %p (response to %s)",
             (void *)session, src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
@@ -762,9 +765,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     if (neo4j_log_is_enabled(logger, NEO4J_LOG_TRACE))
     {
-        char buf[4096];
-        neo4j_log_trace(logger, "%s SUCCESS metadata: %s", src_message_type,
-                neo4j_tostring(*metadata, buf, sizeof(buf)));
+        neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
 
     results->statement_type =
@@ -910,8 +911,7 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
     set_failure(results, NEO4J_STATEMENT_EVALUATION_FAILED);
 
     char description[128];
-    snprintf(description, sizeof(description),
-            "FAILURE message received in %p (in response to %s)",
+    snprintf(description, sizeof(description), "FAILURE in %p (response to %s)",
             (void *)(results->session), src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
@@ -920,6 +920,12 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
     {
         set_failure(results, errno);
         return -1;
+    }
+
+    if (neo4j_log_is_enabled(results->logger, NEO4J_LOG_TRACE))
+    {
+        neo4j_metadata_log(results->logger, NEO4J_LOG_TRACE, description,
+                *metadata);
     }
 
     if (neo4j_meta_failure_details(&(results->error_code),

@@ -399,6 +399,7 @@ struct neo4j_connection_factory
 #define NEO4J_INVALID_PATH_SEQUENCE_IDX_TYPE -33
 #define NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE -34
 #define NEO4J_NO_PLAN_AVAILABLE -35
+#define NEO4J_AUTH_RATE_LIMIT -36
 
 /**
  * Print the error message corresponding to an error number.

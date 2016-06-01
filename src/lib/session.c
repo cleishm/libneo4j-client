@@ -515,8 +515,23 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     assert(cdata != NULL);
     neo4j_session_t *session = (neo4j_session_t *)cdata;
 
+    char description[128];
+
     if (type == NEO4J_SUCCESS_MESSAGE)
     {
+        if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+        {
+            snprintf(description, sizeof(description),
+                    "SUCCESS in %p (response to INIT)", (void *)session);
+            const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+                    description, session->logger);
+            if (metadata == NULL)
+            {
+                return -1;
+            }
+            neo4j_metadata_log(session->logger, NEO4J_LOG_TRACE, description,
+                    *metadata);
+        }
         return 0;
     }
 
@@ -531,15 +546,19 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     }
 
     // handle failure
-    char description[128];
     snprintf(description, sizeof(description),
-            "FAILURE message received in %p (in response to INIT)",
-            (void *)session);
+            "FAILURE in %p (response to INIT)", (void *)session);
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
             description, session->logger);
     if (metadata == NULL)
     {
         return -1;
+    }
+
+    if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+    {
+        neo4j_metadata_log(session->logger, NEO4J_LOG_TRACE, description,
+                *metadata);
     }
 
     const neo4j_config_t *config = session->config;
@@ -556,6 +575,16 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     if (strcmp(code, "Neo.ClientError.Security.EncryptionRequired") == 0)
     {
         errno = NEO4J_SERVER_REQUIRES_SECURE_CONNECTION;
+        return -1;
+    }
+    if (strcmp(code, "Neo.ClientError.Security.Unauthorized") == 0)
+    {
+        errno = NEO4J_INVALID_CREDENTIALS;
+        return -1;
+    }
+    if (strcmp(code, "Neo.ClientError.Security.AuthenticationRateLimit") == 0)
+    {
+        errno = NEO4J_AUTH_RATE_LIMIT;
         return -1;
     }
 
