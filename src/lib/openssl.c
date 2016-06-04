@@ -132,6 +132,7 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
     SSL_CTX *ctx = new_ctx(config, logger);
     if (ctx == NULL)
     {
+        neo4j_logger_release(logger);
         return NULL;
     }
 
@@ -172,12 +173,14 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
         goto failure;
     }
 
+    neo4j_logger_release(logger);
     return ssl_bio;
 
     int errsv;
 failure:
     errsv = errno;
     BIO_free(ssl_bio);
+    neo4j_logger_release(logger);
     errno = errsv;
     return NULL;
 }
