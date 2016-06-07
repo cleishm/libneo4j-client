@@ -16,7 +16,6 @@ check_libneo4j_client_SOURCES = \
 check_libneo4j_client_CHECKS = \
 	check_buffering_iostream.c \
 	check_chunking_iostream.c \
-	check_cli_parser.c \
 	check_config.c \
 	check_connection.c \
 	check_deserialization.c \
