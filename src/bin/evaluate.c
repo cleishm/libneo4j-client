@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "evaluate.h"
 #include "render.h"
+#include <cypher-parser.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -29,89 +30,98 @@ typedef struct shell_command shell_command_t;
 struct shell_command
 {
     const char *name;
-    int (*action)(shell_state_t *state, const char *args);
+    int (*action)(shell_state_t *state, const cypher_astnode_t *command);
 };
 
 
-static int help(shell_state_t *state, const char *args);
-static int output(shell_state_t *state, const char *args);
-static int width(shell_state_t *state, const char *args);
-static int quit(shell_state_t *state, const char *args);
-static int reset(shell_state_t *state, const char *args);
+static int eval_connect(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_help(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
+
 static int not_connected_error(evaluation_continuation_t *self,
         shell_state_t *state);
 static int run_failure(evaluation_continuation_t *self, shell_state_t *state);
 static int render_result(evaluation_continuation_t *self, shell_state_t *state);
 
 static shell_command_t shell_commands[] =
-    { { "exit", quit },
-      { "quit", quit },
-      { "connect", db_connect },
-      { "disconnect", db_disconnect },
-      { "reset", reset },
-      { "help", help },
-      { "output", output },
-      { "width", width },
+    { { "connect", eval_connect },
+      { "disconnect", eval_disconnect },
+      { "exit", eval_quit },
+      { "help", eval_help },
+      { "output", eval_output },
+      { "quit", eval_quit },
+      { "reset", eval_reset },
+      { "width", eval_width },
       { NULL, NULL } };
 
 
-int evaluate_command(shell_state_t *state, const char *command)
+int evaluate_command_string(shell_state_t *state, const char *command)
 {
-    assert(command[0] == ':');
-    command++;
-    size_t wlen = strcspn(command, " ");
-    const char *args = command + wlen;
-    while (isspace(*args))
+    cypher_parse_result_t *result = cypher_parse(command, NULL, NULL,
+            CYPHER_PARSE_SINGLE);
+    if (result == NULL)
     {
-        ++args;
+        return -1;
     }
 
-    for (unsigned int i = 0; shell_commands[i].name != NULL; ++i)
-    {
-        if (strlen(shell_commands[i].name) == wlen &&
-            strncmp(shell_commands[i].name, command, wlen) == 0)
-        {
-            return shell_commands[i].action(state, args);
-        }
-    }
-    char buf[256];
-    if (wlen >= sizeof(buf))
-    {
-        wlen = sizeof(buf)-1;
-    }
-    memcpy(buf, command, wlen);
-    buf[wlen] = '\0';
-    fprintf(state->err, "Unknown command '%s'\n", buf);
-    return 0;
+    assert(cypher_parse_result_ndirectives(result) == 1);
+    const cypher_astnode_t *directive = cypher_parse_result_get_directive(result, 0);
+    int r = evaluate_command(state, directive);
+    cypher_parse_result_free(result);
+    return r;
 }
 
 
-int db_connect(shell_state_t *state, const char *args)
+int evaluate_command(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const char *s;
-    size_t n;
-    bool complete;
-    if (neo4j_cli_arg_parse(args, &s, &n, &complete) < 0 || !complete)
+    assert(cypher_astnode_instanceof(command, CYPHER_AST_COMMAND));
+    const cypher_astnode_t *node = cypher_ast_command_get_name(command);
+    assert(node != NULL);
+    assert(cypher_astnode_instanceof(node, CYPHER_AST_STRING));
+    const char *name = cypher_ast_string_get_value(node);
+
+    for (unsigned int i = 0; shell_commands[i].name != NULL; ++i)
+    {
+        if (strcmp(shell_commands[i].name, name) == 0)
+        {
+            return shell_commands[i].action(state, command);
+        }
+    }
+
+    fprintf(state->err, "Unknown command '%s'\n", name);
+    return -1;
+}
+
+
+int eval_connect(shell_state_t *state, const cypher_astnode_t *command)
+{
+    const cypher_astnode_t *arg =
+            cypher_ast_command_get_argument(command, 0);
+
+    if (arg == NULL)
     {
         fprintf(state->err, ":connect requires a URI to connect to\n");
         return -1;
     }
 
-    assert(n > 0);
-    char *uri_string = strndup(s, n);
-    if (uri_string == NULL)
-    {
-        neo4j_perror(state->err, errno, "unexpected error");
-        return -1;
-    }
+    assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+    const char *uri_string = cypher_ast_string_get_value(arg);
 
-    int result = -1;
+    return db_connect(state, uri_string);
+}
 
+
+int db_connect(shell_state_t *state, const char *uri_string)
+{
     if (state->session != NULL)
     {
-        if (db_disconnect(state, NULL))
+        if (db_disconnect(state))
         {
-            goto cleanup;
+            return -1;
         }
     }
     assert(state->session == NULL);
@@ -132,7 +142,7 @@ int db_connect(shell_state_t *state, const char *args)
             fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
                     neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         }
-        goto cleanup;
+        return -1;
     }
 
     neo4j_session_t *session = neo4j_new_session(connection);
@@ -142,20 +152,28 @@ int db_connect(shell_state_t *state, const char *args)
         fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         neo4j_close(connection);
-        goto cleanup;
+        return -1;
     }
 
     state->connection = connection;
     state->session = session;
-    result = 0;
-
-cleanup:
-    free(uri_string);
-    return result;
+    return 0;
 }
 
 
-int db_disconnect(shell_state_t *state, const char *args)
+int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        fprintf(state->err, ":disconnect does not take any arguments\n");
+        return -1;
+    }
+
+    return db_disconnect(state);
+}
+
+
+int db_disconnect(shell_state_t *state)
 {
     if (state->session == NULL)
     {
@@ -170,8 +188,14 @@ int db_disconnect(shell_state_t *state, const char *args)
 }
 
 
-int reset(shell_state_t *state, const char *args)
+int eval_reset(shell_state_t *state, const cypher_astnode_t *command)
 {
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        fprintf(state->err, ":reset does not take any arguments\n");
+        return -1;
+    }
+
     if (state->session == NULL)
     {
         fprintf(state->err, "ERROR: not connected\n");
@@ -182,8 +206,14 @@ int reset(shell_state_t *state, const char *args)
 }
 
 
-int help(shell_state_t *state, const char *args)
+int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 {
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        fprintf(state->err, ":help does not take any arguments\n");
+        return -1;
+    }
+
     fprintf(state->out,
 ":quit                  Exit the shell\n"
 ":connect '<url>'       Connect to the specified URL\n"
@@ -197,23 +227,23 @@ int help(shell_state_t *state, const char *args)
 }
 
 
-int output(shell_state_t *state, const char *args)
+int eval_output(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const char *s;
-    size_t n;
-    bool complete;
-    if (neo4j_cli_arg_parse(args, &s, &n, &complete) < 0 || !complete)
+    const cypher_astnode_t *arg =
+            cypher_ast_command_get_argument(command, 0);
+    if (arg == NULL)
     {
-        fprintf(state->err, ":output requires a rendering format "
+        fprintf(state->err, ":connect requires a rendering format "
                 "(table or csv)\n");
         return -1;
     }
 
-    const char *name = temp_copy(state, s, n);
+    assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+    const char *name = cypher_ast_string_get_value(arg);
     renderer_t renderer = find_renderer(name);
     if (renderer == NULL)
     {
-        fprintf(state->err, "Unknown output format '%s'\n", args);
+        fprintf(state->err, "Unknown output format '%s'\n", name);
         return -1;
     }
     state->render = renderer;
@@ -221,19 +251,20 @@ int output(shell_state_t *state, const char *args)
 }
 
 
-int width(shell_state_t *state, const char *args)
+int eval_width(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const char *s;
-    size_t n;
-    bool complete;
-    if (neo4j_cli_arg_parse(args, &s, &n, &complete) < 0 || !complete)
+    const cypher_astnode_t *arg =
+            cypher_ast_command_get_argument(command, 0);
+    if (arg == NULL)
     {
         fprintf(state->err, ":width requires an integer value, or 'auto'\n");
         return -1;
     }
 
-    const char *arg = temp_copy(state, s, n);
-    if (strcmp(arg, "auto") == 0)
+    assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+    const char *value = cypher_ast_string_get_value(arg);
+
+    if (strcmp(value, "auto") == 0)
     {
         if (!isatty(fileno(state->out)))
         {
@@ -245,7 +276,7 @@ int width(shell_state_t *state, const char *args)
         return 0;
     }
 
-    long width = strtol(arg, NULL, 10);
+    long width = strtol(value, NULL, 10);
     if (width < 2 || width >= NEO4J_RENDER_MAX_WIDTH)
     {
         fprintf(state->err, "Width value (%ld) out of range [1,%d)\n",
@@ -258,8 +289,14 @@ int width(shell_state_t *state, const char *args)
 }
 
 
-int quit(shell_state_t *state, const char *args)
+int eval_quit(shell_state_t *state, const cypher_astnode_t *command)
 {
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        fprintf(state->err, ":quit does not take any arguments\n");
+        return -1;
+    }
+
     return 1;
 }
 

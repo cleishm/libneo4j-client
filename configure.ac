@@ -174,16 +174,20 @@ dnl Check for check test support
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [has_check=yes], [has_check=no])
 AM_CONDITIONAL([HAVE_CHECK], [test "X$has_check" = "Xyes"])
 
-PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
-
 
 dnl Check if command line tools should be built
 AC_ARG_ENABLE([tools],
   AS_HELP_STRING([--disable-tools], [Do not build command line tools]))
 AM_CONDITIONAL([WANT_TOOLS], [test "X$enable_tools" != "Xno"])
 
+dnl Check for required libraries for tools
+PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_libedit" != "Xyes"],
   [AC_MSG_ERROR([libedit is required for building command line tools (specify --disable-tools to ignore)])])
+
+PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.3.1], [has_cypher_parser=yes], [has_cypher_parser=no])
+AS_IF([test "X$enable_tools" != "Xno" -a "X$has_cypher_parser" != "Xyes"],
+  [AC_MSG_ERROR([libcypher-parser is required for building command line tools (specify --disable-tools to ignore)])])
 
 
 dnl Check if assertions should be disabled

@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_UTIL_H
-#define NEO4J_UTIL_H
+#ifndef NEO4J_BATCH_PARSER_H
+#define NEO4J_BATCH_PARSER_H
 
-#include <stdlib.h>
+#include <stdio.h>
 
-char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
+typedef int (*batch_parse_callback_t)(void *data, const char *s, size_t n);
 
-void trim_statement(const char **s, size_t *n);
+int batch_parse(FILE *stream,
+        int (*callback)(void *d, const char *s, size_t n), void *data);
 
-#endif/*NEO4J_UTIL_H*/
+#endif/*NEO4J_BATCH_PARSER_H*/

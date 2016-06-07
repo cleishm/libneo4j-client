@@ -20,6 +20,14 @@ RUN apt-get update && \
         valgrind \
         vim
 
+RUN apt-get install -y peg
+RUN (curl -L -o - https://github.com/cleishm/libcypher-parser/archive/master.tar.gz | tar xz) && \
+    cd libcypher-parser-master && \
+    ./autogen.sh && \
+    ./configure && \
+    make install &&
+    ldconfig
+
 ADD dput.cf /root/.dput.cf
 ENV DEBEMAIL=chris@leishman.org DEBNAME="Chris Leishman"
 ADD bashrc /root/.bashrc

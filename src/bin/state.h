@@ -19,6 +19,7 @@
 
 #include "util.h"
 #include <neo4j-client.h>
+#include <cypher-parser.h>
 #include <stdint.h>
 #include <stdio.h>
 
