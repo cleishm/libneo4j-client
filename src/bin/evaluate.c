@@ -130,17 +130,26 @@ int db_connect(shell_state_t *state, const char *uri_string)
         neo4j_connect(uri_string, state->config, state->connect_flags);
     if (connection == NULL)
     {
-        if (errno == NEO4J_NO_SERVER_TLS_SUPPORT)
+        char ebuf[512];
+        const char *hint = "";
+        switch (errno)
         {
+        case NEO4J_NO_SERVER_TLS_SUPPORT:
             fprintf(state->err, "connection to '%s' failed: A secure"
                     " connection could not be esablished (try --insecure)\n",
                     uri_string);
-        }
-        else
-        {
-            char ebuf[512];
+            break;
+        case NEO4J_INVALID_URI:
+            if (strchr(uri_string, '/') == NULL)
+            {
+                hint = " (hint: you need to put quotes around the URI)";
+            }
+            fprintf(state->err, "invalid URI '%s'%s\n", uri_string, hint);
+            break;
+        default:
             fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
                     neo4j_strerror(errno, ebuf, sizeof(ebuf)));
+            break;
         }
         return -1;
     }
