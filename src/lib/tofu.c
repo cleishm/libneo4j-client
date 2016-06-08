@@ -26,7 +26,6 @@
 #include <unistd.h>
 
 #define NEO4J_KNOWN_HOSTS "known_hosts"
-#define NEO4J_MAX_HOST_LENGTH 512
 #define NEO4J_MAX_FINGERPRINT_LENGTH 512
 #define NEO4J_MAX_KNOWN_HOSTS_LINE_LENGTH 2048
 #define NEO4J_TEMP_FILE_SUFFIX ".tmpXXXXXX"
@@ -63,9 +62,11 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
         file = buf;
     }
 
-    char host[NEO4J_MAX_HOST_LENGTH];
-    int n = snprintf(host, sizeof(host), "%s:%d", hostname, port);
-    assert(n > 0 && n < NEO4J_MAX_HOST_LENGTH);
+    char host[NEO4J_MAXHOSTLEN];
+    if (describe_host(host, sizeof(host), hostname, port))
+    {
+        goto cleanup;
+    }
 
     char existing[NEO4J_MAX_FINGERPRINT_LENGTH];
     result = retrieve_stored_fingerprint(file, host,

@@ -154,12 +154,12 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
         return NULL;
     }
 
-    char namebuf[1024];
-    if (snprintf(namebuf, sizeof(namebuf), "%s:%u", hostname, port) <= 0)
+    char host[NEO4J_MAXHOSTLEN];
+    if (describe_host(host, sizeof(host), hostname, port))
     {
         return NULL;
     }
-    return establish_connection(hostname, port, namebuf, config, flags);
+    return establish_connection(hostname, port, host, config, flags);
 }
 
 
@@ -279,7 +279,7 @@ neo4j_iostream_t *std_tcp_connect(struct neo4j_connection_factory *factory,
     REQUIRE(hostname != NULL, NULL);
     REQUIRE(port <= UINT16_MAX, NULL);
 
-    char servname[16];
+    char servname[MAXSERVNAMELEN];
     snprintf(servname, sizeof(servname), "%u", port);
     int fd = neo4j_connect_tcp_socket(hostname, servname, config, logger);
     if (fd < 0)

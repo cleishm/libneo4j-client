@@ -647,3 +647,20 @@ int neo4j_mkdir_p(const char *path)
 
     return 0;
 }
+
+
+int describe_host(char *buf, size_t cap, const char *hostname,
+        unsigned int port)
+{
+    int r = snprintf(buf, cap, "%s:%u", hostname, port);
+    if (r < 0)
+    {
+        return r;
+    }
+    if ((size_t)r >= cap)
+    {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+    return 0;
+}

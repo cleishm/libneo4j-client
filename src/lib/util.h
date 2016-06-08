@@ -25,6 +25,125 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/uio.h>
+#include <sys/param.h>
+
+
+/**
+ * Get the containing structure address.
+ *
+ * @internal
+ */
+#define container_of(ptr, type, member) \
+        (type *)(void *)( (uint8_t *)(uintptr_t)(ptr) - offsetof(type,member) )
+
+
+/**
+ * Ensure the condition is true, or return the specified result value.
+ *
+ * @internal
+ */
+#define REQUIRE(cond, res) \
+    if (!(cond)) { errno = EINVAL; return (res); }
+
+
+/**
+ * Check if the named value is null, and if so then update it to point to a
+ * stack variable of the specified type.
+ *
+ * @internal
+ */
+#define ENSURE_NOT_NULL(type, name, val) \
+    type _##name = (val); \
+    if (name == NULL) \
+    { \
+        name = &_##name; \
+    }
+
+
+/**
+ * Determine the minimum of two integers.
+ *
+ * @internal
+ *
+ * @param [a] The first integer.
+ * @param [b] The second integer.
+ * @return The smaller of the two integers.
+ */
+static inline int min(int a, int b)
+{
+    return (a <= b)? a : b;
+}
+
+/**
+ * Determine the minimum of two unsigned integers.
+ *
+ * @internal
+ *
+ * @param [a] The first integer.
+ * @param [b] The second integer.
+ * @return The smaller of the two integers.
+ */
+static inline unsigned int minu(unsigned int a, unsigned int b)
+{
+    return (a <= b)? a : b;
+}
+
+/**
+ * Determine the minimum of two size_t values.
+ *
+ * @internal
+ *
+ * @param [a] The first size_t value.
+ * @param [b] The second size_t value.
+ * @return The smaller of the two size_t values.
+ */
+static inline size_t minzu(size_t a, size_t b)
+{
+    return (a <= b)? a : b;
+}
+
+/**
+ * The maximum of two integers.
+ *
+ * @internal
+ *
+ * @param [a] The first integer.
+ * @param [b] The second integer.
+ * @return The larger of the two integers.
+ */
+static inline int max(int a, int b)
+{
+    return (a >= b)? a : b;
+}
+
+/**
+ * The maximum of two unsigned integers.
+ *
+ * @internal
+ *
+ * @param [a] The first integer.
+ * @param [b] The second integer.
+ * @return The larger of the two integers.
+ */
+static inline unsigned int maxu(unsigned int a, unsigned int b)
+{
+    return (a >= b)? a : b;
+}
+
+/**
+ * Determine the maximum of two size_t values.
+ *
+ * @internal
+ *
+ * @param [a] The first size_t value.
+ * @param [b] The second size_t value.
+ * @return The larger of the two size_t values.
+ */
+static inline size_t maxzu(size_t a, size_t b)
+{
+    return (a >= b)? a : b;
+}
+
 
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
@@ -37,34 +156,39 @@
 #endif
 
 
-/**
- * Get the containing structure address.
- */
-#define container_of(ptr, type, member) \
-        (type *)(void *)( (uint8_t *)(uintptr_t)(ptr) - offsetof(type,member) )
+#ifndef HAVE_HTOBE64
+#  ifdef HAVE_HTONLL
+#    define htobe64(l) htonll(l)
+#  elif HAVE_OSSWAPHOSTTOBIGINT64
+#    define htobe64(l) OSSwapHostToBigInt64(l)
+#  elif WORDS_BIGENDIAN
+#    define htobe64(l) (l)
+#  elif HAVE_BSWAP_64
+#    define htobe64(l) bswap_64(l)
+#  else
+#    error "No htobe64 or alternative"
+#  endif
+#endif
 
-
-/**
- * Ensure the condition is true, or return the specified result value.
- */
-#define REQUIRE(cond, res) \
-    if (!(cond)) { errno = EINVAL; return (res); }
-
-
-/**
- * Check if the named value is null, and if so then update it to point to a
- * stack variable of the specified type.
- */
-#define ENSURE_NOT_NULL(type, name, val) \
-    type _##name = (val); \
-    if (name == NULL) \
-    { \
-        name = &_##name; \
-    }
+#ifndef HAVE_BE64TOH
+#  ifdef HAVE_NTOHLL
+#    define be64toh(l) ntohll(l)
+#  elif HAVE_OSSWAPBIGTOHOSTINT64
+#    define be64toh(l) OSSwapBigToHostInt64(l)
+#  elif WORDS_BIGENDIAN
+#    define be64toh(l) (l)
+#  elif HAVE_BSWAP_64
+#    define be64toh(l) bswap_64(l)
+#  else
+#    error "No be64toh or alternative"
+#  endif
+#endif
 
 
 /**
  * Duplicate a string, if it's not null.
+ *
+ * @internal
  *
  * @param [dptr] A pointer to where the address of the duplicated string, or
  *         `NULL`, should be written.
@@ -93,6 +217,8 @@ static inline int strdup_null(char **dptr, const char *s)
  *
  * If the existing pointer is not `NULL`, it will be passed to free(3).
  *
+ * @internal
+ *
  * @param [dptr] A pointer to the address of the existing string.
  * @param [s] The replacement string pointer.
  */
@@ -110,6 +236,8 @@ static inline void replace_strptr(char **dptr, char *s)
  * Replace a string pointer with a duplicate.
  *
  * If the existing pointer is not `NULL`, it will be passed to free(3).
+ *
+ * @internal
  *
  * @param [dptr] A pointer to the address of the existing string.
  * @param [s] The replacement string pointer, which will be duplicated unless
@@ -142,6 +270,8 @@ static inline int replace_strptr_ndup(char **dptr, const char *s, size_t n)
  *
  * If the existing pointer is not `NULL`, it will be passed to free(3).
  *
+ * @internal
+ *
  * @param [dptr] A pointer to the address of the existing string.
  * @param [s] The replacement string pointer, which must be null terminated
  *         and will be duplicated unless it is `NULL`.
@@ -172,6 +302,8 @@ static inline int replace_strptr_dup(char **dptr, const char *s)
  *
  * The new string will be allocated using malloc(3).
  *
+ * @internal
+ *
  * @param [s1] The string for the start of the concatenated string.
  * @param [s2] The string for the end of the concatenated string.
  * @return The newly allocated string containing the concatenation. This must
@@ -183,6 +315,8 @@ char *strcat_alloc(const char *s1, const char *s2);
 /**
  * @fn bool contains_null(void *ptrs[], int n)
  * @brief Check if an array of pointers contains any `NULL` pointer.
+ *
+ * @internal
  *
  * @param [ptrs] The array of pointers to check.
  * @param [n] The length of the pointer array.
@@ -200,79 +334,6 @@ static inline bool _contains_null(void *ptrs[], int n)
         }
     }
     return false;
-}
-
-
-/**
- * Determine the minimum of two integers.
- *
- * @param [a] The first integer.
- * @param [b] The second integer.
- * @return The smaller of the two integers.
- */
-static inline int min(int a, int b)
-{
-    return (a <= b)? a : b;
-}
-
-/**
- * Determine the minimum of two unsigned integers.
- *
- * @param [a] The first integer.
- * @param [b] The second integer.
- * @return The smaller of the two integers.
- */
-static inline unsigned int minu(unsigned int a, unsigned int b)
-{
-    return (a <= b)? a : b;
-}
-
-/**
- * Determine the minimum of two size_t values.
- *
- * @param [a] The first size_t value.
- * @param [b] The second size_t value.
- * @return The smaller of the two size_t values.
- */
-static inline size_t minzu(size_t a, size_t b)
-{
-    return (a <= b)? a : b;
-}
-
-/**
- * The maximum of two integers.
- *
- * @param [a] The first integer.
- * @param [b] The second integer.
- * @return The larger of the two integers.
- */
-static inline int max(int a, int b)
-{
-    return (a >= b)? a : b;
-}
-
-/**
- * The maximum of two unsigned integers.
- *
- * @param [a] The first integer.
- * @param [b] The second integer.
- * @return The larger of the two integers.
- */
-static inline unsigned int maxu(unsigned int a, unsigned int b)
-{
-    return (a >= b)? a : b;
-}
-
-/**
- * Determine the maximum of two size_t values.
- *
- * @param [a] The first size_t value.
- * @param [b] The second size_t value.
- * @return The larger of the two size_t values.
- */
-static inline size_t maxzu(size_t a, size_t b)
-{
-    return (a >= b)? a : b;
 }
 
 
@@ -312,6 +373,8 @@ struct _local_iovec
 /**
  * Obtain the total length of an I/O vector.
  *
+ * @internal
+ *
  * @param [iov] The I/O vector.
  * @param [iovcnt] The length of the vector.
  * @return The total size of all buffers in the vector.
@@ -328,37 +391,9 @@ static inline size_t iovlen(const struct iovec *iov, unsigned int iovcnt)
 
 
 /**
- * Span the complement of a set of characters.
- *
- * Span the initial part of a memory region, as long as the characters from
- * `reject` do no occur. In other words, it returns the distance into the
- * memory region of the first character in `reject`, else the total length
- * of the memory region.
- *
- * @param [s] The memory region to span.
- * @param [n] The size of the memory region.
- * @param [reject] An array of characters to reject.
- * @param [rlen] The number of characters in the reject array.
- * @return The offset of the first character in `reject`, or `n`.
- */
-size_t memcspn(const void *s, size_t n, const unsigned char *reject,
-        size_t rlen);
-
-/**
- * Span identifier characters.
- *
- * Equivalent to `memcspn`, with reject containing characters that are not
- * valid in an identifier [a-zA-Z0-9_].
- *
- * @param [s] The memory region to span.
- * @param [n] The size of the memory region.
- * @return The offset of the first non-identifier character, or `n`.
- */
-size_t memspn_ident(const void *s, size_t n);
-
-
-/**
  * Copy from an I/O vector to a buffer.
+ *
+ * @internal
  *
  * @param [dst] The destination buffer.
  * @param [n] The size of the destination buffer.
@@ -372,6 +407,8 @@ size_t memcpy_from_iov(void *dst, size_t n,
 /**
  * Copy from a buffer to an I/O vector.
  *
+ * @internal
+ *
  * @param [iov] The vector of buffers to copy from.
  * @param [iovcnt] The length of the vector.
  * @param [src] The source buffer.
@@ -383,6 +420,8 @@ size_t memcpy_to_iov(const struct iovec *iov, unsigned int iovcnt,
 
 /**
  * Copy from an I/O vector to an I/O vector.
+ *
+ * @internal
  *
  * @param [diov] The destination I/O vector.
  * @param [diovcnt] The size of the destination I/O vector.
@@ -399,6 +438,8 @@ size_t memcpy_from_iov_to_iov(const struct iovec *diov,
  * The source and destination vector may refer to the same memory, in
  * which case the modification is done in place.
  *
+ * @internal
+ *
  * @param [diov] The destination I/O vector.
  * @param [siov] The source I/O vector.
  * @param [iovcnt] The size of the vectors.
@@ -411,6 +452,8 @@ unsigned int iov_skip(struct iovec *diov, const struct iovec *siov,
 /**
  * Copy an I/O vector, limiting to a given number of bytes.
  *
+ * @internal
+ *
  * @param [diov] The destination I/O vector.
  * @param [siov] The source I/O vector.
  * @param [iovcnt] The size of the vectors.
@@ -421,32 +464,71 @@ unsigned int iov_limit(struct iovec *diov, const struct iovec *siov,
         unsigned int siovcnt, size_t nbyte);
 
 
-#ifndef HAVE_HTOBE64
-#  ifdef HAVE_HTONLL
-#    define htobe64(l) htonll(l)
-#  elif HAVE_OSSWAPHOSTTOBIGINT64
-#    define htobe64(l) OSSwapHostToBigInt64(l)
-#  elif WORDS_BIGENDIAN
-#    define htobe64(l) (l)
-#  elif HAVE_BSWAP_64
-#    define htobe64(l) bswap_64(l)
+/**
+ * Span the complement of a set of characters.
+ *
+ * Span the initial part of a memory region, as long as the characters from
+ * `reject` do no occur. In other words, it returns the distance into the
+ * memory region of the first character in `reject`, else the total length
+ * of the memory region.
+ *
+ * @internal
+ *
+ * @param [s] The memory region to span.
+ * @param [n] The size of the memory region.
+ * @param [reject] An array of characters to reject.
+ * @param [rlen] The number of characters in the reject array.
+ * @return The offset of the first character in `reject`, or `n`.
+ */
+size_t memcspn(const void *s, size_t n, const unsigned char *reject,
+        size_t rlen);
+
+/**
+ * Span identifier characters.
+ *
+ * Equivalent to `memcspn`, with reject containing characters that are not
+ * valid in an identifier [a-zA-Z0-9_].
+ *
+ * @internal
+ *
+ * @param [s] The memory region to span.
+ * @param [n] The size of the memory region.
+ * @return The offset of the first non-identifier character, or `n`.
+ */
+size_t memspn_ident(const void *s, size_t n);
+
+
+#ifndef MAXSERVNAMELEN
+#  ifdef NI_MAXSERV
+#    define MAXSERVNAMELEN NI_MAXSERV
 #  else
-#    error "No htobe64 or alternative"
+#    define MAXSERVNAMELEN 32
 #  endif
 #endif
 
-#ifndef HAVE_BE64TOH
-#  ifdef HAVE_NTOHLL
-#    define be64toh(l) ntohll(l)
-#  elif HAVE_OSSWAPBIGTOHOSTINT64
-#    define be64toh(l) OSSwapBigToHostInt64(l)
-#  elif WORDS_BIGENDIAN
-#    define be64toh(l) (l)
-#  elif HAVE_BSWAP_64
-#    define be64toh(l) bswap_64(l)
+#ifndef MAXHOSTNAMELEN
+#  ifdef NI_MAXHOST
+#    define MAXHOSTNAMELEN NI_MAXHOST
 #  else
-#    error "No be64toh or alternative"
+#    define MAXHOSTNAMELEN 1025
 #  endif
 #endif
+
+#define NEO4J_MAXHOSTLEN (MAXHOSTNAMELEN + 1 + MAXSERVNAMELEN)
+
+/**
+ * Describe a hostname and port.
+ *
+ * @internal
+ *
+ * @param [buf] The buffer to write the description into.
+ * @param [cap] The capacity of the buffer.
+ * @param [hostname] The hostname.
+ * @param [port] The port.
+ * @return 0 on success, of -1 if an error occurs (errno will be set).
+ */
+int describe_host(char *buf, size_t cap, const char *hostname,
+        unsigned int port);
+
 
 #endif/*NEO4J_UTIL_H*/
