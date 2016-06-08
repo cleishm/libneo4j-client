@@ -161,6 +161,22 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 }
 
 
+void neo4j_config_allow_empty_password(neo4j_config_t *config, bool allow)
+{
+    config->allow_empty_password = allow;
+}
+
+
+int neo4j_config_set_authentication_reattempt_callback(neo4j_config_t *config,
+        neo4j_authentication_reattempt_callback_t callback, void *userdata)
+{
+    REQUIRE(config != NULL, -1);
+    config->auth_reattempt_callback = callback;
+    config->auth_reattempt_callback_userdata = userdata;
+    return 0;
+}
+
+
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config, const char *path)
 {
     REQUIRE(config != NULL, -1);

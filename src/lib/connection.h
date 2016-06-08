@@ -29,6 +29,9 @@ struct neo4j_connection
     neo4j_config_t *config;
     neo4j_logger_t *logger;
 
+    char *hostname;
+    unsigned int port;
+
     neo4j_iostream_t *iostream;
     uint32_t version;
     bool insecure;

@@ -228,6 +228,12 @@ neo4j_connection_t *establish_connection(const char *hostname,
 
     connection->config = config;
     connection->logger = logger;
+    connection->hostname = strdup(hostname);
+    if (connection->hostname == NULL)
+    {
+        goto failure;
+    }
+    connection->port = port;
     connection->iostream = iostream;
     connection->version = protocol_version;
 #ifdef HAVE_TLS
@@ -359,11 +365,8 @@ int neo4j_close(neo4j_connection_t *connection)
     neo4j_config_free(connection->config);
     free(connection->request_queue);
     free(connection->snd_buffer);
-    connection->logger = NULL;
-    connection->config = NULL;
-    connection->request_queue = NULL;
-    connection->snd_buffer = NULL;
-    connection->iostream = NULL;
+    free(connection->hostname);
+    memset(connection, 0, sizeof(neo4j_connection_t));
     free(connection);
     errno = errsv;
     return result;
