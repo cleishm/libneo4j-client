@@ -575,22 +575,25 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     if (strcmp(code, "Neo.ClientError.Security.EncryptionRequired") == 0)
     {
         errno = NEO4J_SERVER_REQUIRES_SECURE_CONNECTION;
-        return -1;
+        goto cleanup;
     }
     if (strcmp(code, "Neo.ClientError.Security.Unauthorized") == 0)
     {
         errno = NEO4J_INVALID_CREDENTIALS;
-        return -1;
+        goto cleanup;
     }
     if (strcmp(code, "Neo.ClientError.Security.AuthenticationRateLimit") == 0)
     {
         errno = NEO4J_AUTH_RATE_LIMIT;
-        return -1;
+        goto cleanup;
     }
 
     neo4j_log_error(session->logger, "session initalization failed: %s",
             message);
     errno = NEO4J_UNEXPECTED_ERROR;
+
+cleanup:
+    neo4j_mpool_drain(&mpool);
     return -1;
 }
 
