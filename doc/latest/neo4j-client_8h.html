@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>libneo4j-client-0.9.1: neo4j-client.h File Reference</title>
+<title>libneo4j-client-1.0.0: neo4j-client.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.9.1
+   <div id="projectname">libneo4j-client-1.0.0
    </div>
   </td>
  </tr>
@@ -108,6 +108,9 @@ typedef uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el"
 <tr class="memitem:a885919ac7c56e71207481ecac36b0149"><td class="memItemLeft" align="right" valign="top">typedef size_t(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a885919ac7c56e71207481ecac36b0149">neo4j_password_callback_t</a>) (void *userdata, char *buf, size_t len)</td></tr>
 <tr class="memdesc:a885919ac7c56e71207481ecac36b0149"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function type for callback when passwords are required.  <a href="#a885919ac7c56e71207481ecac36b0149">More...</a><br /></td></tr>
 <tr class="separator:a885919ac7c56e71207481ecac36b0149"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a622266493d752a1738038328c7a5f801"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a622266493d752a1738038328c7a5f801">neo4j_authentication_reattempt_callback_t</a>) (void *userdata, const char *host, unsigned int attempts, int error, char *username, size_t usize, char *password, size_t psize)</td></tr>
+<tr class="memdesc:a622266493d752a1738038328c7a5f801"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function type for callback when password authentication has failed.  <a href="#a622266493d752a1738038328c7a5f801">More...</a><br /></td></tr>
+<tr class="separator:a622266493d752a1738038328c7a5f801"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a954aab71776ba3e9397d08454ba831db"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a954aab71776ba3e9397d08454ba831db">neo4j_unverified_host_callback_t</a>) (void *userdata, const char *host, const char *fingerprint, neo4j_unverified_host_reason_t reason)</td></tr>
 <tr class="memdesc:a954aab71776ba3e9397d08454ba831db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function type for callback when host verification has failed.  <a href="#a954aab71776ba3e9397d08454ba831db">More...</a><br /></td></tr>
 <tr class="separator:a954aab71776ba3e9397d08454ba831db"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -143,9 +146,12 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a9504ad227134450386d8dbb4a1564e78"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9504ad227134450386d8dbb4a1564e78">neo4j_strerror</a> (int errnum, char *buf, size_t buflen)</td></tr>
 <tr class="memdesc:a9504ad227134450386d8dbb4a1564e78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Look up the error message corresponding to an error number.  <a href="#a9504ad227134450386d8dbb4a1564e78">More...</a><br /></td></tr>
 <tr class="separator:a9504ad227134450386d8dbb4a1564e78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a636ff348e2a9e02793d9dd21032cfd22"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a636ff348e2a9e02793d9dd21032cfd22">neo4j_type_str</a> (<a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a> t)</td></tr>
-<tr class="memdesc:a636ff348e2a9e02793d9dd21032cfd22"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of the neo4j type.  <a href="#a636ff348e2a9e02793d9dd21032cfd22">More...</a><br /></td></tr>
-<tr class="separator:a636ff348e2a9e02793d9dd21032cfd22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9dbf7f4374b109cf24a0ea77f4f9aa7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ab9dbf7f4374b109cf24a0ea77f4f9aa7">neo4j_instanceof</a> (neo4j_value_t value, <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a> type)</td></tr>
+<tr class="memdesc:ab9dbf7f4374b109cf24a0ea77f4f9aa7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check the type of a neo4j value.  <a href="#ab9dbf7f4374b109cf24a0ea77f4f9aa7">More...</a><br /></td></tr>
+<tr class="separator:ab9dbf7f4374b109cf24a0ea77f4f9aa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3bf024a4f426d4fef143abb85edf697"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ad3bf024a4f426d4fef143abb85edf697">neo4j_typestr</a> (<a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a> t)</td></tr>
+<tr class="memdesc:ad3bf024a4f426d4fef143abb85edf697"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string description of the neo4j type.  <a href="#ad3bf024a4f426d4fef143abb85edf697">More...</a><br /></td></tr>
+<tr class="separator:ad3bf024a4f426d4fef143abb85edf697"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61f578018b0de5cb4e19dbd07fab96a5"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a61f578018b0de5cb4e19dbd07fab96a5">neo4j_tostring</a> (neo4j_value_t value, char *strbuf, size_t n)</td></tr>
 <tr class="memdesc:a61f578018b0de5cb4e19dbd07fab96a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a string representation of a neo4j value.  <a href="#a61f578018b0de5cb4e19dbd07fab96a5">More...</a><br /></td></tr>
 <tr class="separator:a61f578018b0de5cb4e19dbd07fab96a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -251,15 +257,33 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a7ce12c3f1093992d58c9feda91e48bf7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7ce12c3f1093992d58c9feda91e48bf7">neo4j_config_free</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config)</td></tr>
 <tr class="memdesc:a7ce12c3f1093992d58c9feda91e48bf7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release a neo4j client configuration.  <a href="#a7ce12c3f1093992d58c9feda91e48bf7">More...</a><br /></td></tr>
 <tr class="separator:a7ce12c3f1093992d58c9feda91e48bf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04435b26707f50591c92815853620ca2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a04435b26707f50591c92815853620ca2">neo4j_config_dup</a> (const <a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config)</td></tr>
+<tr class="memdesc:a04435b26707f50591c92815853620ca2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Duplicate a neo4j client configuration.  <a href="#a04435b26707f50591c92815853620ca2">More...</a><br /></td></tr>
+<tr class="separator:a04435b26707f50591c92815853620ca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b44aae989a6301439bc83bb0638bc2d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7b44aae989a6301439bc83bb0638bc2d">neo4j_config_set_client_id</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *client_id)</td></tr>
 <tr class="memdesc:a7b44aae989a6301439bc83bb0638bc2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the client ID.  <a href="#a7b44aae989a6301439bc83bb0638bc2d">More...</a><br /></td></tr>
 <tr class="separator:a7b44aae989a6301439bc83bb0638bc2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dd3cbe0f630f8118535a2fdad49c12e"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a4dd3cbe0f630f8118535a2fdad49c12e">neo4j_config_get_client_id</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config)</td></tr>
+<tr class="memdesc:a4dd3cbe0f630f8118535a2fdad49c12e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the client ID in the neo4j client configuration.  <a href="#a4dd3cbe0f630f8118535a2fdad49c12e">More...</a><br /></td></tr>
+<tr class="separator:a4dd3cbe0f630f8118535a2fdad49c12e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b314a005997c9ee7137a256157ee9fb"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a7b314a005997c9ee7137a256157ee9fb">neo4j_config_set_username</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *username)</td></tr>
 <tr class="memdesc:a7b314a005997c9ee7137a256157ee9fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the username in the neo4j client configuration.  <a href="#a7b314a005997c9ee7137a256157ee9fb">More...</a><br /></td></tr>
 <tr class="separator:a7b314a005997c9ee7137a256157ee9fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac516abf42165605ab0259861e603fab9"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ac516abf42165605ab0259861e603fab9">neo4j_config_get_username</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config)</td></tr>
+<tr class="memdesc:ac516abf42165605ab0259861e603fab9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the username in the neo4j client configuration.  <a href="#ac516abf42165605ab0259861e603fab9">More...</a><br /></td></tr>
+<tr class="separator:ac516abf42165605ab0259861e603fab9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96d0f4f8dfc137ed50feb3b300eacded"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a96d0f4f8dfc137ed50feb3b300eacded">neo4j_config_set_password</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *password)</td></tr>
 <tr class="memdesc:a96d0f4f8dfc137ed50feb3b300eacded"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the password in the neo4j client configuration.  <a href="#a96d0f4f8dfc137ed50feb3b300eacded">More...</a><br /></td></tr>
 <tr class="separator:a96d0f4f8dfc137ed50feb3b300eacded"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4675201d0963523c59eb6d79d2e8f33e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a4675201d0963523c59eb6d79d2e8f33e">neo4j_config_set_attempt_empty_password</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, bool value)</td></tr>
+<tr class="memdesc:a4675201d0963523c59eb6d79d2e8f33e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Attempt initial authentication with an empty password.  <a href="#a4675201d0963523c59eb6d79d2e8f33e">More...</a><br /></td></tr>
+<tr class="separator:a4675201d0963523c59eb6d79d2e8f33e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c3290b5b3e71ab7d1fe2fa4181d4b1e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a0c3290b5b3e71ab7d1fe2fa4181d4b1e">neo4j_config_will_attempt_empty_password</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config)</td></tr>
+<tr class="memdesc:a0c3290b5b3e71ab7d1fe2fa4181d4b1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the configuration allows for auth attempts using an empty password.  <a href="#a0c3290b5b3e71ab7d1fe2fa4181d4b1e">More...</a><br /></td></tr>
+<tr class="separator:a0c3290b5b3e71ab7d1fe2fa4181d4b1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08c9ac2ef3a00668e5707c379af2c960"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a08c9ac2ef3a00668e5707c379af2c960">neo4j_config_set_authentication_reattempt_callback</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, <a class="el" href="neo4j-client_8h.html#a622266493d752a1738038328c7a5f801">neo4j_authentication_reattempt_callback_t</a> callback, void *userdata)</td></tr>
+<tr class="memdesc:a08c9ac2ef3a00668e5707c379af2c960"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the authentication re-attempt callback.  <a href="#a08c9ac2ef3a00668e5707c379af2c960">More...</a><br /></td></tr>
+<tr class="separator:a08c9ac2ef3a00668e5707c379af2c960"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac380f77eae1e0b24f31153a1e3e263f9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ac380f77eae1e0b24f31153a1e3e263f9">neo4j_config_set_TLS_private_key</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *path)</td></tr>
 <tr class="memdesc:ac380f77eae1e0b24f31153a1e3e263f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the location of a TLS private key and certificate chain.  <a href="#ac380f77eae1e0b24f31153a1e3e263f9">More...</a><br /></td></tr>
 <tr class="separator:ac380f77eae1e0b24f31153a1e3e263f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -270,10 +294,10 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memdesc:a0ee7f5d4cb0dd7305f82cc7924d23f3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the password for the TLS private key file.  <a href="#a0ee7f5d4cb0dd7305f82cc7924d23f3d">More...</a><br /></td></tr>
 <tr class="separator:a0ee7f5d4cb0dd7305f82cc7924d23f3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8363cca7d40d34132fb159c84d74d028"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a8363cca7d40d34132fb159c84d74d028">neo4j_config_set_TLS_ca_file</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *path)</td></tr>
-<tr class="memdesc:a8363cca7d40d34132fb159c84d74d028"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the location of a TLS certificate authority file.  <a href="#a8363cca7d40d34132fb159c84d74d028">More...</a><br /></td></tr>
+<tr class="memdesc:a8363cca7d40d34132fb159c84d74d028"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the location of a file containing TLS certificate authorities (and CRLs).  <a href="#a8363cca7d40d34132fb159c84d74d028">More...</a><br /></td></tr>
 <tr class="separator:a8363cca7d40d34132fb159c84d74d028"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a294ec60e4bb902339b4934124872ae05"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a294ec60e4bb902339b4934124872ae05">neo4j_config_set_TLS_ca_dir</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, const char *path)</td></tr>
-<tr class="memdesc:a294ec60e4bb902339b4934124872ae05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the location of a directory of TLS certificates.  <a href="#a294ec60e4bb902339b4934124872ae05">More...</a><br /></td></tr>
+<tr class="memdesc:a294ec60e4bb902339b4934124872ae05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the location of a directory of TLS certificate authorities (and CRLs).  <a href="#a294ec60e4bb902339b4934124872ae05">More...</a><br /></td></tr>
 <tr class="separator:a294ec60e4bb902339b4934124872ae05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcf4208f08f40fbd7adec519d200b82e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#afcf4208f08f40fbd7adec519d200b82e">neo4j_config_set_trust_known_hosts</a> (<a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *config, bool enable)</td></tr>
 <tr class="memdesc:afcf4208f08f40fbd7adec519d200b82e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable or disable trusting of known hosts.  <a href="#afcf4208f08f40fbd7adec519d200b82e">More...</a><br /></td></tr>
@@ -329,6 +353,15 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a411b2f468fe060c4a8dd5c01d6e85bd6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a411b2f468fe060c4a8dd5c01d6e85bd6">neo4j_close</a> (<a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *connection)</td></tr>
 <tr class="memdesc:a411b2f468fe060c4a8dd5c01d6e85bd6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close a connection to a neo4j server.  <a href="#a411b2f468fe060c4a8dd5c01d6e85bd6">More...</a><br /></td></tr>
 <tr class="separator:a411b2f468fe060c4a8dd5c01d6e85bd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed44012964b2a43020c14cd556c29ada"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#aed44012964b2a43020c14cd556c29ada">neo4j_connection_hostname</a> (const <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *connection)</td></tr>
+<tr class="memdesc:aed44012964b2a43020c14cd556c29ada"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the hostname for a connection.  <a href="#aed44012964b2a43020c14cd556c29ada">More...</a><br /></td></tr>
+<tr class="separator:aed44012964b2a43020c14cd556c29ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1251006bd222777b795c55a0f2d7aa46"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a1251006bd222777b795c55a0f2d7aa46">neo4j_connection_port</a> (const <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *connection)</td></tr>
+<tr class="memdesc:a1251006bd222777b795c55a0f2d7aa46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the port for a connection.  <a href="#a1251006bd222777b795c55a0f2d7aa46">More...</a><br /></td></tr>
+<tr class="separator:a1251006bd222777b795c55a0f2d7aa46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d73ab2f33b53f60928248850182ad28"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a0d73ab2f33b53f60928248850182ad28">neo4j_connection_username</a> (const <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *connection)</td></tr>
+<tr class="memdesc:a0d73ab2f33b53f60928248850182ad28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the username for a connection.  <a href="#a0d73ab2f33b53f60928248850182ad28">More...</a><br /></td></tr>
+<tr class="separator:a0d73ab2f33b53f60928248850182ad28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5aa84b059f804cedd3f851e9117b601a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a5aa84b059f804cedd3f851e9117b601a">neo4j_new_session</a> (<a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *connection)</td></tr>
 <tr class="memdesc:a5aa84b059f804cedd3f851e9117b601a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new session for the given connection.  <a href="#a5aa84b059f804cedd3f851e9117b601a">More...</a><br /></td></tr>
 <tr class="separator:a5aa84b059f804cedd3f851e9117b601a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -338,6 +371,12 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a5e178f378c9e7f967357121c07a0d349"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a5e178f378c9e7f967357121c07a0d349">neo4j_reset_session</a> (<a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session)</td></tr>
 <tr class="memdesc:a5e178f378c9e7f967357121c07a0d349"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reset a session.  <a href="#a5e178f378c9e7f967357121c07a0d349">More...</a><br /></td></tr>
 <tr class="separator:a5e178f378c9e7f967357121c07a0d349"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f1824378a40f720ddfb9af10e238211"><td class="memItemLeft" align="right" valign="top"><a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a8f1824378a40f720ddfb9af10e238211">neo4j_session_connection</a> (<a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session)</td></tr>
+<tr class="memdesc:a8f1824378a40f720ddfb9af10e238211"><td class="mdescLeft">&#160;</td><td class="mdescRight">Obtain the connection associated with a session.  <a href="#a8f1824378a40f720ddfb9af10e238211">More...</a><br /></td></tr>
+<tr class="separator:a8f1824378a40f720ddfb9af10e238211"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a559cc7c80d0f79fbf37fc9bee2732a4a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a559cc7c80d0f79fbf37fc9bee2732a4a">neo4j_credentials_expired</a> (const <a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session)</td></tr>
+<tr class="memdesc:a559cc7c80d0f79fbf37fc9bee2732a4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the server indicated that credentials have expired.  <a href="#a559cc7c80d0f79fbf37fc9bee2732a4a">More...</a><br /></td></tr>
+<tr class="separator:a559cc7c80d0f79fbf37fc9bee2732a4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae975ef8a6ba72d3cc98dfcc7b96f4f30"><td class="memItemLeft" align="right" valign="top"><a class="el" href="neo4j-client_8h.html#a0e726c5c4dfe02a5c621a9ab4b3d69a9">neo4j_result_stream_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ae975ef8a6ba72d3cc98dfcc7b96f4f30">neo4j_run</a> (<a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *session, const char *statement, neo4j_value_t params)</td></tr>
 <tr class="memdesc:ae975ef8a6ba72d3cc98dfcc7b96f4f30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Evaluate a statement.  <a href="#ae975ef8a6ba72d3cc98dfcc7b96f4f30">More...</a><br /></td></tr>
 <tr class="separator:ae975ef8a6ba72d3cc98dfcc7b96f4f30"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -395,15 +434,6 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a158d7a7bb769b7912b354ff78f5a2989"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a158d7a7bb769b7912b354ff78f5a2989">neo4j_render_plan_table</a> (FILE *stream, struct <a class="el" href="structneo4j__statement__plan.html">neo4j_statement_plan</a> *plan, unsigned int width, uint_fast32_t flags)</td></tr>
 <tr class="memdesc:a158d7a7bb769b7912b354ff78f5a2989"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render a statement plan as a table.  <a href="#a158d7a7bb769b7912b354ff78f5a2989">More...</a><br /></td></tr>
 <tr class="separator:a158d7a7bb769b7912b354ff78f5a2989"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a475e6aad7eea01886a22d32aae15c1"><td class="memItemLeft" align="right" valign="top">ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a4a475e6aad7eea01886a22d32aae15c1">neo4j_cli_uparse</a> (const char *s, size_t n, const char **start, size_t *length, bool *complete)</td></tr>
-<tr class="memdesc:a4a475e6aad7eea01886a22d32aae15c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse a command or statement from a string.  <a href="#a4a475e6aad7eea01886a22d32aae15c1">More...</a><br /></td></tr>
-<tr class="separator:a4a475e6aad7eea01886a22d32aae15c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe072689b1334f73aad7a2db22b4eb7f"><td class="memItemLeft" align="right" valign="top">ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#abe072689b1334f73aad7a2db22b4eb7f">neo4j_cli_fparse</a> (FILE *stream, char **restrict buf, size_t *restrict bufcap, char **restrict start, size_t *restrict length, bool *complete)</td></tr>
-<tr class="memdesc:abe072689b1334f73aad7a2db22b4eb7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse a command or statement from a <code>FILE *</code> stream.  <a href="#abe072689b1334f73aad7a2db22b4eb7f">More...</a><br /></td></tr>
-<tr class="separator:abe072689b1334f73aad7a2db22b4eb7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a555aec1ddd2cd561a84d1bf86eb39cef"><td class="memItemLeft" align="right" valign="top">ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a555aec1ddd2cd561a84d1bf86eb39cef">neo4j_cli_arg_uparse</a> (const char *s, size_t n, const char **start, size_t *length, bool *complete)</td></tr>
-<tr class="memdesc:a555aec1ddd2cd561a84d1bf86eb39cef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse an argument from a string.  <a href="#a555aec1ddd2cd561a84d1bf86eb39cef">More...</a><br /></td></tr>
-<tr class="separator:a555aec1ddd2cd561a84d1bf86eb39cef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ac01584449aafb49d0c1a315c44a51b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a1ac01584449aafb49d0c1a315c44a51b">neo4j_type</a> (neo4j_value_t value)</td></tr>
 <tr class="memdesc:a1ac01584449aafb49d0c1a315c44a51b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the type of a neo4j value.  <a href="#a1ac01584449aafb49d0c1a315c44a51b">More...</a><br /></td></tr>
 <tr class="separator:a1ac01584449aafb49d0c1a315c44a51b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -419,12 +449,6 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 <tr class="memitem:a9c83a47ac2e9b17bbd5b25c516e6c039"><td class="memItemLeft" align="right" valign="top">neo4j_map_entry_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#a9c83a47ac2e9b17bbd5b25c516e6c039">neo4j_map_entry</a> (const char *key, neo4j_value_t value)</td></tr>
 <tr class="memdesc:a9c83a47ac2e9b17bbd5b25c516e6c039"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constrct a neo4j map entry.  <a href="#a9c83a47ac2e9b17bbd5b25c516e6c039">More...</a><br /></td></tr>
 <tr class="separator:a9c83a47ac2e9b17bbd5b25c516e6c039"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adc06da7ccde9dd5a1d43cb08a5d77505"><td class="memItemLeft" align="right" valign="top">ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#adc06da7ccde9dd5a1d43cb08a5d77505">neo4j_cli_parse</a> (const char *s, const char **start, size_t *length, bool *complete)</td></tr>
-<tr class="memdesc:adc06da7ccde9dd5a1d43cb08a5d77505"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse a command or statement from a string.  <a href="#adc06da7ccde9dd5a1d43cb08a5d77505">More...</a><br /></td></tr>
-<tr class="separator:adc06da7ccde9dd5a1d43cb08a5d77505"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac29629f65b2a10f06ec2eb43abd2f096"><td class="memItemLeft" align="right" valign="top">ssize_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="neo4j-client_8h.html#ac29629f65b2a10f06ec2eb43abd2f096">neo4j_cli_arg_parse</a> (const char *s, const char **start, size_t *length, bool *complete)</td></tr>
-<tr class="memdesc:ac29629f65b2a10f06ec2eb43abd2f096"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parse an argument from a string.  <a href="#ac29629f65b2a10f06ec2eb43abd2f096">More...</a><br /></td></tr>
-<tr class="separator:ac29629f65b2a10f06ec2eb43abd2f096"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -471,6 +495,34 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <tr class="separator:adada0d69bedd364ed1f0607d41dcd2a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
+<a class="anchor" id="a622266493d752a1738038328c7a5f801"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef int(* neo4j_authentication_reattempt_callback_t) (void *userdata, const char *host, unsigned int attempts, int error, char *username, size_t usize, char *password, size_t psize)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Function type for callback when password authentication has failed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[userdata]</td><td>The user data for the callback. </td></tr>
+    <tr><td class="paramname">[host]</td><td>The host description (typically "&lt;hostname&gt;:&lt;port&gt;"). </td></tr>
+    <tr><td class="paramname">[attempts]</td><td>The number of previous attempts. </td></tr>
+    <tr><td class="paramname">[error]</td><td>The errno for the authentication failure. </td></tr>
+    <tr><td class="paramname">[username]</td><td>A buffer containing the null terminated username for which authentication was attempted. </td></tr>
+    <tr><td class="paramname">[usize]</td><td>The size of the username buffer. </td></tr>
+    <tr><td class="paramname">[password]</td><td>A buffer containing the null terminated password for which authentication was attempted. </td></tr>
+    <tr><td class="paramname">[usize]</td><td>The size of the password buffer. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>NEO4J_AUTHENTICATION_REATTEMPT</code> if the credentials have been updated and authentication should be re-attempted, <code>NEO4J_AUTHENTICATION_FAIL</code> if authentication should fail, and -1 if an error occurs (errno should be set). </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a885919ac7c56e71207481ecac36b0149"></a>
 <div class="memitem">
 <div class="memproto">
@@ -629,7 +681,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Check if a results stream has failed. </p>
-<p>Note: if the error is <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then additional error information will be available via <code>neo4j_error_message(...)</code>.</p>
+<p>Note: if the error is <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then additional error information will be available via <a class="el" href="neo4j-client_8h.html#aa66af2d7635746626a24d71bfe2471b4" title="Return the error message sent from neo4j. ">neo4j_error_message()</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[results]</td><td>The result stream. </td></tr>
@@ -637,286 +689,6 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>0 if no failure has occurred, and an error number otherwise. </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="ac29629f65b2a10f06ec2eb43abd2f096"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ssize_t neo4j_cli_arg_parse </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>s</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char **&#160;</td>
-          <td class="paramname"><em>start</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *&#160;</td>
-          <td class="paramname"><em>length</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>complete</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Parse an argument from a string. </p>
-<p>Parses a single argument from a string, which may be quoted.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[s]</td><td>The <code>NULL</code> terminated string to parse. </td></tr>
-    <tr><td class="paramname">[start]</td><td>Either <code>NULL</code>, or a pointer that will be set to the start of the argument within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[length]</td><td>Either <code>NULL</code> or a pointer to a <code>size_t</code> that will be set to the length of the argument within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[complete]</td><td>A pointer to a boolean that will be set to <code>true</code> if the parsed argument was read completely, or <code>false</code> otherwise. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The number of bytes consumed from the input string, 0 if no command or statement was found, and -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a555aec1ddd2cd561a84d1bf86eb39cef"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ssize_t neo4j_cli_arg_uparse </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>s</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>n</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char **&#160;</td>
-          <td class="paramname"><em>start</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *&#160;</td>
-          <td class="paramname"><em>length</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>complete</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Parse an argument from a string. </p>
-<p>Parses a single argument from a string, which may be quoted.</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[s]</td><td>The string to parse. </td></tr>
-    <tr><td class="paramname">[n]</td><td>The size of the string. </td></tr>
-    <tr><td class="paramname">[start]</td><td>Either <code>NULL</code>, or a pointer that will be set to the start of the argument within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[length]</td><td>Either <code>NULL</code> or a pointer to a <code>size_t</code> that will be set to the length of the argument within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[complete]</td><td>A pointer to a boolean that will be set to <code>true</code> if the parsed argument was read completely, or <code>false</code> otherwise. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The number of bytes consumed from the input string, 0 if no command or statement was found, and -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="abe072689b1334f73aad7a2db22b4eb7f"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ssize_t neo4j_cli_fparse </td>
-          <td>(</td>
-          <td class="paramtype">FILE *&#160;</td>
-          <td class="paramname"><em>stream</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">char **restrict&#160;</td>
-          <td class="paramname"><em>buf</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *restrict&#160;</td>
-          <td class="paramname"><em>bufcap</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">char **restrict&#160;</td>
-          <td class="paramname"><em>start</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *restrict&#160;</td>
-          <td class="paramname"><em>length</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>complete</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Parse a command or statement from a <code>FILE *</code> stream. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[stream]</td><td>The stream to parse </td></tr>
-    <tr><td class="paramname">[buf]</td><td>A pointer to a <code>const char *</code>, that must either be <code>NULL</code> or point to a malloced buffer. The buffer will be modified as needed by this function, as if via <code>realloc()</code>. </td></tr>
-    <tr><td class="paramname">[bufcap]</td><td>A pointer to a <code>size_t</code> that specifies the capacity of the buffer supplied via <code>*buf</code>. The value will be updated if the buffer is reallocated. </td></tr>
-    <tr><td class="paramname">[start]</td><td>Either <code>NULL</code>, or a pointer that will be set to the start of the command or statement within <code>buf</code>. </td></tr>
-    <tr><td class="paramname">[length]</td><td>Either <code>NULL</code> or a pointer to a <code>size_t</code> that will be set to the length of the command or statement within <code>buf</code>. </td></tr>
-    <tr><td class="paramname">[complete]</td><td>A pointer to a boolean that will be set to <code>true</code> if the parsed command or statement was read completely, or <code>false</code> otherwise. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The number of bytes consumed from the stream, 0 if no command or statement was found, and -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="adc06da7ccde9dd5a1d43cb08a5d77505"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ssize_t neo4j_cli_parse </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>s</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char **&#160;</td>
-          <td class="paramname"><em>start</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *&#160;</td>
-          <td class="paramname"><em>length</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>complete</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Parse a command or statement from a string. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[s]</td><td>The <code>NULL</code> terminated string to parse. </td></tr>
-    <tr><td class="paramname">[start]</td><td>Either <code>NULL</code>, or a pointer that will be set to the start of the command or statement within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[length]</td><td>Either <code>NULL</code> or a pointer to a <code>size_t</code> that will be set to the length of the command or statement within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[complete]</td><td>A pointer to a boolean that will be set to <code>true</code> if the parsed command or statement was read completely, or <code>false</code> otherwise. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The number of bytes consumed from the input string, 0 if no command or statement was found, and -1 if an error occurs (errno will be set). </dd></dl>
-
-</div>
-</div>
-<a class="anchor" id="a4a475e6aad7eea01886a22d32aae15c1"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">ssize_t neo4j_cli_uparse </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>s</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>n</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char **&#160;</td>
-          <td class="paramname"><em>start</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *&#160;</td>
-          <td class="paramname"><em>length</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool *&#160;</td>
-          <td class="paramname"><em>complete</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Parse a command or statement from a string. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">[s]</td><td>The string to parse. </td></tr>
-    <tr><td class="paramname">[n]</td><td>The size of the string. </td></tr>
-    <tr><td class="paramname">[start]</td><td>Either <code>NULL</code>, or a pointer that will be set to the start of the command or statement within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[length]</td><td>Either <code>NULL</code> or a pointer to a <code>size_t</code> that will be set to the length of the command or statement within <code>s</code>. </td></tr>
-    <tr><td class="paramname">[complete]</td><td>A pointer to a boolean that will be set to <code>true</code> if the parsed command or statement was read completely, or <code>false</code> otherwise. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>The number of bytes consumed from the input string, 0 if no command or statement was found, and -1 if an error occurs (errno will be set). </dd></dl>
 
 </div>
 </div>
@@ -1012,6 +784,32 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
+<a class="anchor" id="a04435b26707f50591c92815853620ca2"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a>* neo4j_config_dup </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Duplicate a neo4j client configuration. </p>
+<p>The returned configuration must be later released using <a class="el" href="neo4j-client_8h.html#a7ce12c3f1093992d58c9feda91e48bf7" title="Release a neo4j client configuration. ">neo4j_config_free()</a>.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[config]</td><td>A pointer to a neo4j client configuration. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A duplicate configuration. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a7ce12c3f1093992d58c9feda91e48bf7"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1033,6 +831,136 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a class="anchor" id="a4dd3cbe0f630f8118535a2fdad49c12e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* neo4j_config_get_client_id </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the client ID in the neo4j client configuration. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[config]</td><td>The neo4j client configuration. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to the client ID, or <code>NULL</code> if one is not set. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ac516abf42165605ab0259861e603fab9"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* neo4j_config_get_username </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the username in the neo4j client configuration. </p>
+<p>The returned username will only be valid whilst the configuration is unchanged.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[config]</td><td>The neo4j client configuration. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to the username, or <code>NULL</code> if one is not set. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a4675201d0963523c59eb6d79d2e8f33e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void neo4j_config_set_attempt_empty_password </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Attempt initial authentication with an empty password. </p>
+<p>If an authentication re-attempt callback has been provided (see <a class="el" href="neo4j-client_8h.html#a08c9ac2ef3a00668e5707c379af2c960" title="Set the authentication re-attempt callback. ">neo4j_config_set_authentication_reattempt_callback()</a>), and a password has not been set in the config, or a connection URL does not contain a password, then the default behaviour is to immediately call the authentication re-attempt callback. If, however, this config property is set to true, then authentication using an empty password will be attempted first.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
+    <tr><td class="paramname">[value]</td><td>Allow attempting to use an empty password for the first authentiation attempt. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a class="anchor" id="a08c9ac2ef3a00668e5707c379af2c960"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int neo4j_config_set_authentication_reattempt_callback </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a622266493d752a1738038328c7a5f801">neo4j_authentication_reattempt_callback_t</a>&#160;</td>
+          <td class="paramname"><em>callback</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>userdata</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the authentication re-attempt callback. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
+    <tr><td class="paramname">[callback]</td><td>The callback to be invoked whenever a authentication fails. </td></tr>
+    <tr><td class="paramname">[userdata]</td><td>User data that will be supplied to the callback. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>0 on success, or -1 if an error occurs (errno will be set). </dd></dl>
 
 </div>
 </div>
@@ -1456,12 +1384,12 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Set the location of a directory of TLS certificates. </p>
-<p>The specified directory should contain certificate files named by hash according to the <code>c_rehash</code> tool.</p>
+<p>Set the location of a directory of TLS certificate authorities (and CRLs). </p>
+<p>The specified directory should contain the certificates of the trusted CAs and CRLs, named by hash according to the <code>c_rehash</code> tool.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[path]</td><td>The path to the directory of certificates. This string should remain allocated whilst the config is allocated <em>or if any connections opened with the config remain active</em>. </td></tr>
+    <tr><td class="paramname">[path]</td><td>The path to the directory of CAs and CRLs. This string should remain allocated whilst the config is allocated <em>or if any connections opened with the config remain active</em>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1493,12 +1421,12 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
       </table>
 </div><div class="memdoc">
 
-<p>Set the location of a TLS certificate authority file. </p>
-<p>The file, in PEM format, should contain any needed root certificates that may be needed to authenticate that returned by a peer.</p>
+<p>Set the location of a file containing TLS certificate authorities (and CRLs). </p>
+<p>The file should contain the certificates of the trusted CAs and CRLs. The file must be in base64 privacy enhanced mail (PEM) format.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
-    <tr><td class="paramname">[path]</td><td>The path to the PEM file containing the root certificates. This string should remain allocated whilst the config is allocated <em>or if any connections opened with the config remain active</em>. </td></tr>
+    <tr><td class="paramname">[path]</td><td>The path to the PEM file containing the trusted CAs and CRLs. This string should remain allocated whilst the config is allocated <em>or if any connections opened with the config remain active</em>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -1567,7 +1495,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Set the password for the TLS private key file. </p>
-<p>This is a simpler alternative to using <code>neo4j_config_set_TLS_private_key_password_callback</code>.</p>
+<p>This is a simpler alternative to using <a class="el" href="neo4j-client_8h.html#a4c1d5ac22412fbdb03048c09681d1170" title="Set the password callback for the TLS private key file. ">neo4j_config_set_TLS_private_key_password_callback()</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
@@ -1648,7 +1576,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Enable or disable trusting of known hosts. </p>
 <p>When enabled, the neo4j client will check if a host has been previously trusted and stored into the "known hosts" file, and that the host fingerprint still matches the previously accepted value. This is enabled by default.</p>
-<p>If verification fails, the callback set with <code>neo4j_config_set_unverified_host_callback</code> will be invoked.</p>
+<p>If verification fails, the callback set with <a class="el" href="neo4j-client_8h.html#a42d38599eecccaf1527277341e35d923" title="Set the unverified host callback. ">neo4j_config_set_unverified_host_callback()</a> will be invoked.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[config]</td><td>The neo4j client configuration to update. </td></tr>
@@ -1739,6 +1667,31 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
+<a class="anchor" id="a0c3290b5b3e71ab7d1fe2fa4181d4b1e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool neo4j_config_will_attempt_empty_password </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j_config_t</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check if the configuration allows for auth attempts using an empty password. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[config]</td><td>The neo4j client configuration. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if an attempt will be made, or <code>false</code> otherwise. </dd></dl>
+
+</div>
+</div>
 <a class="anchor" id="a84dff5eae1df5b5b27cc160ca867d467"></a>
 <div class="memitem">
 <div class="memproto">
@@ -1771,7 +1724,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Establish a connection to a neo4j server. </p>
 <p>A bitmask of flags may be supplied, which may include:</p><ul>
-<li>NEO4J_INSECURE - do not attempt to establish a secure connection</li>
+<li>NEO4J_INSECURE - do not attempt to establish a secure connection. If a secure connection is required, then connect will fail with errno set to <code>NEO4J_SERVER_REQUIRES_SECURE_CONNECTION</code>.</li>
 </ul>
 <p>If no flags are required, pass 0 or <code>NEO4J_CONNECT_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -1783,6 +1736,106 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a <code>neo4j_connection_t</code> structure, or <code>NULL</code> on error (errno will be set). </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="aed44012964b2a43020c14cd556c29ada"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* neo4j_connection_hostname </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *&#160;</td>
+          <td class="paramname"><em>connection</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the hostname for a connection. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[connection]</td><td>The neo4j connection. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a hostname string, which will remain valid only whilst the connection remains open. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a1251006bd222777b795c55a0f2d7aa46"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned int neo4j_connection_port </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *&#160;</td>
+          <td class="paramname"><em>connection</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the port for a connection. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[connection]</td><td>The neo4j connection. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The port of the connection. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a0d73ab2f33b53f60928248850182ad28"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* neo4j_connection_username </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a> *&#160;</td>
+          <td class="paramname"><em>connection</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the username for a connection. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[connection]</td><td>The neo4j connection. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A pointer to a username string, which will remain valid only whilst the connection remains open, or NULL if no username was associated with the connection. </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a559cc7c80d0f79fbf37fc9bee2732a4a"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool neo4j_credentials_expired </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *&#160;</td>
+          <td class="paramname"><em>session</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check if the server indicated that credentials have expired. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[session]</td><td>The session. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the server indicated that credentials have expired, and <code>false</code> otherwise. </dd></dl>
 
 </div>
 </div>
@@ -1950,7 +2003,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Return the error code sent from neo4j. </p>
-<p>When <code>neo4j_check_failure</code> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the error code sent from neo4j.</p>
+<p>When <a class="el" href="neo4j-client_8h.html#a0da896e6da7f9dbad19a8a7091f60c2a" title="Check if a results stream has failed. ">neo4j_check_failure()</a> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the error code sent from neo4j.</p>
 <dl class="section attention"><dt>Attention</dt><dd>Note that the returned pointer is only valid whilst the result stream has not been closed.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -1977,7 +2030,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Return the error message sent from neo4j. </p>
-<p>When <code>neo4j_check_failure</code> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the detailed error message sent from neo4j.</p>
+<p>When <a class="el" href="neo4j-client_8h.html#a0da896e6da7f9dbad19a8a7091f60c2a" title="Check if a results stream has failed. ">neo4j_check_failure()</a> returns <code>NEO4J_STATEMENT_EVALUATION_FAILED</code>, then this function can be used to get the detailed error message sent from neo4j.</p>
 <dl class="section attention"><dt>Attention</dt><dd>Note that the returned pointer is only valid whilst the result stream has not been closed.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -2135,6 +2188,42 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The number of bytes written to the stream, or -1 if an error occurs (errno will be set). </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="ab9dbf7f4374b109cf24a0ea77f4f9aa7"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool neo4j_instanceof </td>
+          <td>(</td>
+          <td class="paramtype">neo4j_value_t&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td>
+          <td class="paramname"><em>type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Check the type of a neo4j value. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[value]</td><td>The neo4j value. </td></tr>
+    <tr><td class="paramname">[type]</td><td>The neo4j type. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd><code>true</code> if the node is of the specified type and <code>false</code> otherwise. </dd></dl>
 
 </div>
 </div>
@@ -2625,7 +2714,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Generate a new neo4j client configuration. </p>
-<p>The returned configuration must be later released using <code>neo4j_config_free(...)</code>.</p>
+<p>The returned configuration must be later released using <a class="el" href="neo4j-client_8h.html#a7ce12c3f1093992d58c9feda91e48bf7" title="Release a neo4j client configuration. ">neo4j_config_free()</a>.</p>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a new neo4j client configuration, or <code>NULL</code> if an error occurs (errno will be set). </dd></dl>
 
 </div>
@@ -3308,7 +3397,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>The field from the result, or <code>neo4j_null</code> if index is out of bounds. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>The field from the result, or <a class="el" href="neo4j-client_8h.html#a1a46210f793cefbe6936e91f88392635" title="The neo4j null value. ">neo4j_null</a> if index is out of bounds. </dd></dl>
 
 </div>
 </div>
@@ -3327,7 +3416,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Retain a result. </p>
-<p>This retains the result and all values contained within it, preventing them from being deallocated on the next call to <code>neo4j_fetch_next(...)</code> or when the result stream is closed via <code>neo4j_close_results(...)</code>. Once retained, the result <em>must</em> later be explicitly released via <code>neo4j_release(...)</code>.</p>
+<p>This retains the result and all values contained within it, preventing them from being deallocated on the next call to <a class="el" href="neo4j-client_8h.html#a25186e637ef83e7bd77cc089be1822c8" title="Fetch the next record from the result stream. ">neo4j_fetch_next()</a> or when the result stream is closed via <a class="el" href="neo4j-client_8h.html#adc16b4d0d0085968c421ff39cd57bad9" title="Close a result stream. ">neo4j_close_results()</a>. Once retained, the result <em>must</em> later be explicitly released via <a class="el" href="neo4j-client_8h.html#a7ebaee4ed7627594fda0305666444c2f" title="Release a result. ">neo4j_release()</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[result]</td><td>A result. </td></tr>
@@ -3374,7 +3463,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
   <table class="params">
     <tr><td class="paramname">[session]</td><td>The session to evaluate the statement in. </td></tr>
     <tr><td class="paramname">[statement]</td><td>The statement to be evaluated. </td></tr>
-    <tr><td class="paramname">[params]</td><td>The parameters for the statement, which must be a value of type NEO4J_MAP or <code>neo4j_null</code>. </td></tr>
+    <tr><td class="paramname">[params]</td><td>The parameters for the statement, which must be a value of type NEO4J_MAP or <a class="el" href="neo4j-client_8h.html#a1a46210f793cefbe6936e91f88392635" title="The neo4j null value. ">neo4j_null</a>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -3413,16 +3502,41 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Evaluate a statement, ignoring any results. </p>
-<p>The <code>neo4j_result_stream_t</code> returned from this function will not provide any results. It can be used to check for evaluation errors using <code>neo4j_check_failure</code>.</p>
+<p>The <code>neo4j_result_stream_t</code> returned from this function will not provide any results. It can be used to check for evaluation errors using <a class="el" href="neo4j-client_8h.html#a0da896e6da7f9dbad19a8a7091f60c2a" title="Check if a results stream has failed. ">neo4j_check_failure()</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[session]</td><td>The session to evaluate the statement in. </td></tr>
     <tr><td class="paramname">[statement]</td><td>The statement to be evaluated. </td></tr>
-    <tr><td class="paramname">[params]</td><td>The parameters for the statement, which must be a value of type NEO4J_MAP or <code>neo4j_null</code>. </td></tr>
+    <tr><td class="paramname">[params]</td><td>The parameters for the statement, which must be a value of type NEO4J_MAP or <a class="el" href="neo4j-client_8h.html#a1a46210f793cefbe6936e91f88392635" title="The neo4j null value. ">neo4j_null</a>. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A <code>neo4j_result_stream_t</code>, or <code>NULL</code> if an error occurs (errno will be set). </dd></dl>
+
+</div>
+</div>
+<a class="anchor" id="a8f1824378a40f720ddfb9af10e238211"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j_connection_t</a>* neo4j_session_connection </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j_session_t</a> *&#160;</td>
+          <td class="paramname"><em>session</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Obtain the connection associated with a session. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">[session]</td><td>The session. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The connection for the session. </dd></dl>
 
 </div>
 </div>
@@ -3441,7 +3555,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Return the statement plan for the result stream. </p>
-<p>The returned statement plan, if not <code>NULL</code>, must be later released using <code>neo4j_statement_plan_release(...)</code>.</p>
+<p>The returned statement plan, if not <code>NULL</code>, must be later released using <a class="el" href="neo4j-client_8h.html#ae6b9965a33555ecfcb9213380292a129" title="Release a statement plan. ">neo4j_statement_plan_release()</a>.</p>
 <p>If the was no plan (or profile) in the server response, the result of this function will be <code>NULL</code> and errno will be set to NEO4J_NO_PLAN_AVAILABLE. Note that errno will not be modified when a plan is returned, so error checking MUST evaluate the return value first.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
@@ -3500,7 +3614,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 <li>NEO4J_SCHEMA_UPDATE_STATEMENT</li>
 <li>NEO4J_CONTROL_STATEMENT</li>
 </ul>
-<dl class="section attention"><dt>Attention</dt><dd>As the statement type is only available at the end of the result stream, invoking this function will will result in any unfetched results being pulled from the server and held in memory. It is usually better to exhaust the stream using <code>neo4j_fetch_next(...)</code> before invoking this method.</dd></dl>
+<dl class="section attention"><dt>Attention</dt><dd>As the statement type is only available at the end of the result stream, invoking this function will will result in any unfetched results being pulled from the server and held in memory. It is usually better to exhaust the stream using <a class="el" href="neo4j-client_8h.html#a25186e637ef83e7bd77cc089be1822c8" title="Fetch the next record from the result stream. ">neo4j_fetch_next()</a> before invoking this method.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[results]</td><td>The result stream. </td></tr>
@@ -3574,7 +3688,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Free a standard logger provider. </p>
-<p>Provider must have been obtained via <code>neo4j_std_logger_provider(...)</code>.</p>
+<p>Provider must have been obtained via <a class="el" href="neo4j-client_8h.html#a6aee8e1c9ab0375a8000b674bef9ddcb" title="Obtain a standard logger provider. ">neo4j_std_logger_provider()</a>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[provider]</td><td>The provider to free. </td></tr>
@@ -3761,7 +3875,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 <p>Establish a connection to a neo4j server. </p>
 <p>A bitmask of flags may be supplied, which may include:</p><ul>
-<li>NEO4J_INSECURE - do not attempt to establish a secure connection</li>
+<li>NEO4J_INSECURE - do not attempt to establish a secure connection. If a secure connection is required, then connect will fail with errno set to <code>NEO4J_SERVER_REQUIRES_SECURE_CONNECTION</code>.</li>
 </ul>
 <p>If no flags are required, pass 0 or <code>NEO4J_CONNECT_DEFAULT</code>.</p>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -3846,12 +3960,12 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 
 </div>
 </div>
-<a class="anchor" id="a636ff348e2a9e02793d9dd21032cfd22"></a>
+<a class="anchor" id="ad3bf024a4f426d4fef143abb85edf697"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const char* neo4j_type_str </td>
+          <td class="memname">const char* neo4j_typestr </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j_type_t</a>&#160;</td>
           <td class="paramname"><em>t</em></td><td>)</td>
@@ -3886,7 +4000,7 @@ struct <a class="el" href="structneo4j__connection__factory.html">neo4j_connecti
 </div><div class="memdoc">
 
 <p>Return the update counts for the result stream. </p>
-<dl class="section attention"><dt>Attention</dt><dd>As the update counts are only available at the end of the result stream, invoking this function will will result in any unfetched results being pulled from the server and held in memory. It is usually better to exhaust the stream using <code>neo4j_fetch_next(...)</code> before invoking this method.</dd></dl>
+<dl class="section attention"><dt>Attention</dt><dd>As the update counts are only available at the end of the result stream, invoking this function will will result in any unfetched results being pulled from the server and held in memory. It is usually better to exhaust the stream using <a class="el" href="neo4j-client_8h.html#a25186e637ef83e7bd77cc089be1822c8" title="Fetch the next record from the result stream. ">neo4j_fetch_next()</a> before invoking this method.</dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">[results]</td><td>The result stream. </td></tr>

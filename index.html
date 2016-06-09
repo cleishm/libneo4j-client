@@ -65,10 +65,7 @@ distribution and uses libneo4j-client for all interaction with Neo4j server.</p>
 <a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h2>
 
 <p>libneo4j-client is known to work on GNU/Linux, Mac OS X and FreeBSD. It
-requires neo4j 3.0.0-M02 or later.</p>
-
-<p>Note that libneo4j-client is still an alpha release, and may change in
-incompatible ways before a stable release is made.</p>
+requires neo4j 3.0.0 or later.</p>
 
 <p>For more details, see the <a href="https://github.com/cleishm/libneo4j-client/wiki/FAQ">FAQ</a>.</p>
 
@@ -84,7 +81,7 @@ $ <span class="pl-s1">brew install cleishm/neo4j/libneo4j-client</span>
 <p>If you're using Ubuntu, neo4j-client can be installed using APT:</p>
 
 <div class="highlight highlight-text-shell-session"><pre>
-$ <span class="pl-s1">sudo add-apt-repository ppa:cleishm/libneo4j-client</span>
+$ <span class="pl-s1">sudo add-apt-repository ppa:cleishm/neo4j</span>
 $ <span class="pl-s1">sudo apt-get update</span>
 $ <span class="pl-s1">sudo apt-get install neo4j-client libneo4j-client-dev</span>
 </pre></div>
@@ -100,10 +97,12 @@ persistent command history, and rendering of results to tables or CSV.</p>
 
 <p>Basic usage:</p>
 
-<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">neo4j-client -v neo4j://user:pass@localhost:7687</span>
+<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">neo4j-client -v neo4j://localhost:7687</span>
 <span class="pl-mo">The authenticity of host 'localhost:7687' could not be established.</span>
 <span class="pl-mo">TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.</span>
 <span class="pl-mo">Would you like to trust this host (NO/yes/once)? </span><span class="pl-mb">yes</span>
+<span class="pl-mo">Username: </span><span class="pl-mb">neo4j</span>
+<span class="pl-mo">Password: </span><span class="pl-mb">*****</span>
 <span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:help</span>
 <span class="pl-mo">:quit                    Exit the shell</span>
 <span class="pl-mo">:connect '&lt;url&gt;'         Connect to the specified URL</span>
@@ -156,7 +155,7 @@ enabling you to obtain the required flags using
 
     <span class="pl-c">/* use NEO4J_INSECURE when connecting to disable TLS */</span>
     <span class="pl-c1">neo4j_connection_t</span> *connection =
-            <span class="pl-c1">neo4j_connect</span>(<span class="pl-s"><span class="pl-pds">"</span>neo4j://localhost:7687<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, NEO4J_INSECURE);
+            <span class="pl-c1">neo4j_connect</span>(<span class="pl-s"><span class="pl-pds">"</span>neo4j://user:pass@localhost:7687<span class="pl-pds">"</span></span>, <span class="pl-c1">NULL</span>, NEO4J_INSECURE);
     <span class="pl-k">if</span> (connection == <span class="pl-c1">NULL</span>)
     {
         <span class="pl-c1">neo4j_perror</span>(stderr, errno, <span class="pl-s"><span class="pl-pds">"</span>Connection failed<span class="pl-pds">"</span></span>);
@@ -216,16 +215,20 @@ $ <span class="pl-s1">make clean check</span>
 $ <span class="pl-s1">sudo make install</span>
 </pre></div>
 
-<p>libneo4j-client requires some dependencies to build, including OpenSSL and
-<a href="http://thrysoee.dk/editline/">libedit</a>. The need for these can be
-disabled by invoking configure with <code>--without-tls</code> or
-<code>--disable-tools</code> respectively.
+<p>libneo4j-client requires OpenSSL, although this can be disabled by invoking
+configure with <code>--without-tls</code>.</p>
+
+<p>neo4j-client also requires some dependencies to build, including
+<a href="http://thrysoee.dk/editline/">libedit</a> and
+<a href="https://git.io/libcypher-parser">libcypher-parser</a>. If these are not
+available, the library can be built without neo4j-client, by invoking configure
+with <code>--disable-tools</code>.</p>
 
 <h2>
 <a id="support" class="anchor" href="#support" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support</h2>
 
-<p>Having trouble with libneo4j-client? Please raise any issues with usage on
-<a href="http://stackoverflow.com/questions/tagged/libneo4j-client">StackOverflow</a>. If
+<p>Having trouble with libneo4j-client or neo4j-client? Please raise any issues with usage on
+<a href="http://stackoverflow.com/questions/tagged/neo4j-client">StackOverflow</a>. If
 you've found a bug in the code for libneo4j-client, please raise an issue on
 <a href="https://github.com/cleishm/libneo4j-client">GitHub</a> and include details of how
 to reproduce the bug.</p>

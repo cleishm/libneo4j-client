@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.11"/>
-<title>libneo4j-client-0.9.1: Globals</title>
+<title>libneo4j-client-1.0.0: Globals</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -17,7 +17,7 @@
  <tbody>
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
-   <div id="projectname">libneo4j-client-0.9.1
+   <div id="projectname">libneo4j-client-1.0.0
    </div>
   </td>
  </tr>
@@ -41,6 +41,9 @@
 
 
 <h3><a class="anchor" id="index_n"></a>- n -</h3><ul>
+<li>neo4j_authentication_reattempt_callback_t
+: <a class="el" href="neo4j-client_8h.html#a622266493d752a1738038328c7a5f801">neo4j-client.h</a>
+</li>
 <li>neo4j_basename()
 : <a class="el" href="neo4j-client_8h.html#a177fa2c84a64922cdee5091052d4a764">neo4j-client.h</a>
 </li>
@@ -56,21 +59,6 @@
 <li>neo4j_check_failure()
 : <a class="el" href="neo4j-client_8h.html#a0da896e6da7f9dbad19a8a7091f60c2a">neo4j-client.h</a>
 </li>
-<li>neo4j_cli_arg_parse()
-: <a class="el" href="neo4j-client_8h.html#ac29629f65b2a10f06ec2eb43abd2f096">neo4j-client.h</a>
-</li>
-<li>neo4j_cli_arg_uparse()
-: <a class="el" href="neo4j-client_8h.html#a555aec1ddd2cd561a84d1bf86eb39cef">neo4j-client.h</a>
-</li>
-<li>neo4j_cli_fparse()
-: <a class="el" href="neo4j-client_8h.html#abe072689b1334f73aad7a2db22b4eb7f">neo4j-client.h</a>
-</li>
-<li>neo4j_cli_parse()
-: <a class="el" href="neo4j-client_8h.html#adc06da7ccde9dd5a1d43cb08a5d77505">neo4j-client.h</a>
-</li>
-<li>neo4j_cli_uparse()
-: <a class="el" href="neo4j-client_8h.html#a4a475e6aad7eea01886a22d32aae15c1">neo4j-client.h</a>
-</li>
 <li>neo4j_client_cleanup()
 : <a class="el" href="neo4j-client_8h.html#a670948caaf1de414e489ca09a4b5397c">neo4j-client.h</a>
 </li>
@@ -83,8 +71,23 @@
 <li>neo4j_close_results()
 : <a class="el" href="neo4j-client_8h.html#adc16b4d0d0085968c421ff39cd57bad9">neo4j-client.h</a>
 </li>
+<li>neo4j_config_dup()
+: <a class="el" href="neo4j-client_8h.html#a04435b26707f50591c92815853620ca2">neo4j-client.h</a>
+</li>
 <li>neo4j_config_free()
 : <a class="el" href="neo4j-client_8h.html#a7ce12c3f1093992d58c9feda91e48bf7">neo4j-client.h</a>
+</li>
+<li>neo4j_config_get_client_id()
+: <a class="el" href="neo4j-client_8h.html#a4dd3cbe0f630f8118535a2fdad49c12e">neo4j-client.h</a>
+</li>
+<li>neo4j_config_get_username()
+: <a class="el" href="neo4j-client_8h.html#ac516abf42165605ab0259861e603fab9">neo4j-client.h</a>
+</li>
+<li>neo4j_config_set_attempt_empty_password()
+: <a class="el" href="neo4j-client_8h.html#a4675201d0963523c59eb6d79d2e8f33e">neo4j-client.h</a>
+</li>
+<li>neo4j_config_set_authentication_reattempt_callback()
+: <a class="el" href="neo4j-client_8h.html#a08c9ac2ef3a00668e5707c379af2c960">neo4j-client.h</a>
 </li>
 <li>neo4j_config_set_client_id()
 : <a class="el" href="neo4j-client_8h.html#a7b44aae989a6301439bc83bb0638bc2d">neo4j-client.h</a>
@@ -146,11 +149,26 @@
 <li>neo4j_config_t
 : <a class="el" href="neo4j-client_8h.html#a7fcff58dad01c2140d036a0860863aa1">neo4j-client.h</a>
 </li>
+<li>neo4j_config_will_attempt_empty_password()
+: <a class="el" href="neo4j-client_8h.html#a0c3290b5b3e71ab7d1fe2fa4181d4b1e">neo4j-client.h</a>
+</li>
 <li>neo4j_connect()
 : <a class="el" href="neo4j-client_8h.html#a84dff5eae1df5b5b27cc160ca867d467">neo4j-client.h</a>
 </li>
+<li>neo4j_connection_hostname()
+: <a class="el" href="neo4j-client_8h.html#aed44012964b2a43020c14cd556c29ada">neo4j-client.h</a>
+</li>
+<li>neo4j_connection_port()
+: <a class="el" href="neo4j-client_8h.html#a1251006bd222777b795c55a0f2d7aa46">neo4j-client.h</a>
+</li>
 <li>neo4j_connection_t
 : <a class="el" href="neo4j-client_8h.html#a470c230006d9a66af9898971f1cde093">neo4j-client.h</a>
+</li>
+<li>neo4j_connection_username()
+: <a class="el" href="neo4j-client_8h.html#a0d73ab2f33b53f60928248850182ad28">neo4j-client.h</a>
+</li>
+<li>neo4j_credentials_expired()
+: <a class="el" href="neo4j-client_8h.html#a559cc7c80d0f79fbf37fc9bee2732a4a">neo4j-client.h</a>
 </li>
 <li>neo4j_dirname()
 : <a class="el" href="neo4j-client_8h.html#a9ca013c7c2d09bb2c4a7e61f0a5bb464">neo4j-client.h</a>
@@ -190,6 +208,9 @@
 </li>
 <li>NEO4J_IDENTITY
 : <a class="el" href="neo4j-client_8h.html#add980ee1efad88733a6586f0b7f49beb">neo4j-client.h</a>
+</li>
+<li>neo4j_instanceof()
+: <a class="el" href="neo4j-client_8h.html#ab9dbf7f4374b109cf24a0ea77f4f9aa7">neo4j-client.h</a>
 </li>
 <li>NEO4J_INT
 : <a class="el" href="neo4j-client_8h.html#a23d7a901eed0c0306fe2123b2bc33f40">neo4j-client.h</a>
@@ -344,6 +365,9 @@
 <li>neo4j_send()
 : <a class="el" href="neo4j-client_8h.html#a3a462cd2449de9490b1bfd038dba9dc6">neo4j-client.h</a>
 </li>
+<li>neo4j_session_connection()
+: <a class="el" href="neo4j-client_8h.html#a8f1824378a40f720ddfb9af10e238211">neo4j-client.h</a>
+</li>
 <li>neo4j_session_t
 : <a class="el" href="neo4j-client_8h.html#a6abf7e2653dc3c8e999f3de8b54c117a">neo4j-client.h</a>
 </li>
@@ -389,11 +413,11 @@
 <li>neo4j_type()
 : <a class="el" href="neo4j-client_8h.html#a1ac01584449aafb49d0c1a315c44a51b">neo4j-client.h</a>
 </li>
-<li>neo4j_type_str()
-: <a class="el" href="neo4j-client_8h.html#a636ff348e2a9e02793d9dd21032cfd22">neo4j-client.h</a>
-</li>
 <li>neo4j_type_t
 : <a class="el" href="neo4j-client_8h.html#a31bc86591910c439ff0403374ad2c91c">neo4j-client.h</a>
+</li>
+<li>neo4j_typestr()
+: <a class="el" href="neo4j-client_8h.html#ad3bf024a4f426d4fef143abb85edf697">neo4j-client.h</a>
 </li>
 <li>neo4j_unverified_host_callback_t
 : <a class="el" href="neo4j-client_8h.html#a954aab71776ba3e9397d08454ba831db">neo4j-client.h</a>
