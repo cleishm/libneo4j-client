@@ -27,7 +27,6 @@
 int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
         int error, char *username, size_t usize, char *password, size_t psize)
 {
-    assert(psize > 1);
     shell_state_t *state = (shell_state_t *)userdata;
     if (error != 0)
     {
@@ -38,6 +37,7 @@ int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
         return NEO4J_AUTHENTICATION_FAIL;
     }
 
+    assert(usize > 1);
     if (username[0] == '\0' && readpassphrase("Username: ", username, usize,
             RPP_REQUIRE_TTY | RPP_ECHO_ON) == NULL)
     {

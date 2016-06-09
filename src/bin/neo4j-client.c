@@ -169,6 +169,7 @@ int main(int argc, char *argv[])
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
+            neo4j_config_allow_empty_password(config, true);
             break;
         case 'P':
             if (state.tty == NULL)
