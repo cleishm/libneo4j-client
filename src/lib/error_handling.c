@@ -26,7 +26,7 @@ void neo4j_perror(FILE *stream, int errnum, const char *message)
     char buf[1024];
     fprintf(stream, "%s%s%s\n", (message != NULL)? message : "",
         (message != NULL)? ": " : "",
-        neo4j_strerror(errno, buf, sizeof(buf)));
+        neo4j_strerror(errnum, buf, sizeof(buf)));
 }
 
 
