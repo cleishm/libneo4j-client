@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
     /* use NEO4J_INSECURE when connecting to disable TLS */
     neo4j_connection_t *connection =
-            neo4j_connect("neo4j://neo4j:password@localhost:7687", NULL, NEO4J_INSECURE);
+            neo4j_connect("neo4j://user:pass@localhost:7687", NULL, NEO4J_INSECURE);
     if (connection == NULL)
     {
         neo4j_perror(stderr, errno, "Connection failed");
@@ -200,7 +200,7 @@ configure with `--without-tls`.
 neo4j-client also requires some dependencies to build, including
 [libedit](http://thrysoee.dk/editline/) and
 [libcypher-parser](https://git.io/libcypher-parser). If these are not available,
-the library can be built without neo4j-client, but invoking configure with
+the library can be built without neo4j-client, by invoking configure with
 `--disable-tools`.
 
 Building from the GitHub repository requires a few extra steps. Firstly, some
