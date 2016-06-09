@@ -252,7 +252,7 @@ struct neo4j_logger_provider *neo4j_std_logger_provider(FILE *stream,
 /**
  * Free a standard logger provider.
  *
- * Provider must have been obtained via `neo4j_std_logger_provider(...)`.
+ * Provider must have been obtained via neo4j_std_logger_provider().
  *
  * @param [provider] The provider to free.
  */
@@ -1021,7 +1021,7 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
  * Generate a new neo4j client configuration.
  *
  * The returned configuration must be later released using
- * `neo4j_config_free(...)`.
+ * neo4j_config_free().
  *
  * @return A pointer to a new neo4j client configuration, or `NULL` if an error
  *         occurs (errno will be set).
@@ -1156,7 +1156,7 @@ int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
  * Set the password for the TLS private key file.
  *
  * This is a simpler alternative to using
- * `neo4j_config_set_TLS_private_key_password_callback`.
+ * neo4j_config_set_TLS_private_key_password_callback().
  *
  * @param [config] The neo4j client configuration to update.
  * @param [password] The password for the certificate file. This string should
@@ -1207,7 +1207,7 @@ int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
  * default.
  *
  * If verification fails, the callback set with
- * `neo4j_config_set_unverified_host_callback` will be invoked.
+ * neo4j_config_set_unverified_host_callback() will be invoked.
  *
  * @param [config] The neo4j client configuration to update.
  * @param [enable] `true` to enable trusting of known hosts, and `false` to
@@ -1543,7 +1543,7 @@ int neo4j_reset_session(neo4j_session_t *session);
  * @param [session] The session to evaluate the statement in.
  * @param [statement] The statement to be evaluated.
  * @param [params] The parameters for the statement, which must be a value of
- *         type NEO4J_MAP or `neo4j_null`.
+ *         type NEO4J_MAP or #neo4j_null.
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
  *         will be set).
  */
@@ -1556,12 +1556,12 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  *
  * The `neo4j_result_stream_t` returned from this function will not
  * provide any results. It can be used to check for evaluation errors using
- * `neo4j_check_failure`.
+ * neo4j_check_failure().
  *
  * @param [session] The session to evaluate the statement in.
  * @param [statement] The statement to be evaluated.
  * @param [params] The parameters for the statement, which must be a value of
- *         type NEO4J_MAP or `neo4j_null`.
+ *         type NEO4J_MAP or #neo4j_null.
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
  *         will be set).
  */
@@ -1580,7 +1580,7 @@ neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
  * Check if a results stream has failed.
  *
  * Note: if the error is `NEO4J_STATEMENT_EVALUATION_FAILED`, then additional
- * error information will be available via `neo4j_error_message(...)`.
+ * error information will be available via neo4j_error_message().
  *
  * @param [results] The result stream.
  * @return 0 if no failure has occurred, and an error number otherwise.
@@ -1647,7 +1647,7 @@ int neo4j_close_results(neo4j_result_stream_t *results);
 /**
  * Return the error code sent from neo4j.
  *
- * When `neo4j_check_failure` returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
+ * When neo4j_check_failure() returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
  * then this function can be used to get the error code sent from neo4j.
  *
  * @attention Note that the returned pointer is only valid whilst the result
@@ -1663,7 +1663,7 @@ const char *neo4j_error_code(neo4j_result_stream_t *results);
 /**
  * Return the error message sent from neo4j.
  *
- * When `neo4j_check_failure` returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
+ * When neo4j_check_failure() returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
  * then this function can be used to get the detailed error message sent
  * from neo4j.
  *
@@ -1698,7 +1698,7 @@ const char *neo4j_error_message(neo4j_result_stream_t *results);
  * @attention As the statement type is only available at the end of the result
  * stream, invoking this function will will result in any unfetched results
  * being pulled from the server and held in memory. It is usually better to
- * exhaust the stream using `neo4j_fetch_next(...)` before invoking this
+ * exhaust the stream using neo4j_fetch_next() before invoking this
  * method.
  *
  * @param [results] The result stream.
@@ -1744,7 +1744,7 @@ struct neo4j_update_counts
  * @attention As the update counts are only available at the end of the result
  * stream, invoking this function will will result in any unfetched results
  * being pulled from the server and held in memory. It is usually better to
- * exhaust the stream using `neo4j_fetch_next(...)` before invoking this
+ * exhaust the stream using neo4j_fetch_next() before invoking this
  * method.
  *
  * @param [results] The result stream.
@@ -1810,7 +1810,7 @@ struct neo4j_statement_execution_step
  * Return the statement plan for the result stream.
  *
  * The returned statement plan, if not `NULL`, must be later released using
- * `neo4j_statement_plan_release(...)`.
+ * neo4j_statement_plan_release().
  *
  * If the was no plan (or profile) in the server response, the result of this
  * function will be `NULL` and errno will be set to NEO4J_NO_PLAN_AVAILABLE.
@@ -1847,7 +1847,7 @@ void neo4j_statement_plan_release(struct neo4j_statement_plan *plan);
  *
  * @param [result] A result.
  * @param [index] The field index to get.
- * @return The field from the result, or `neo4j_null` if index is out of bounds.
+ * @return The field from the result, or #neo4j_null if index is out of bounds.
  */
 neo4j_value_t neo4j_result_field(const neo4j_result_t *result,
         unsigned int index);
@@ -1856,10 +1856,10 @@ neo4j_value_t neo4j_result_field(const neo4j_result_t *result,
  * Retain a result.
  *
  * This retains the result and all values contained within it, preventing
- * them from being deallocated on the next call to `neo4j_fetch_next(...)`
- * or when the result stream is closed via `neo4j_close_results(...)`. Once
+ * them from being deallocated on the next call to neo4j_fetch_next()
+ * or when the result stream is closed via neo4j_close_results(). Once
  * retained, the result _must_ later be explicitly released via
- * `neo4j_release(...)`.
+ * neo4j_release().
  *
  * @param [result] A result.
  * @return The result.
