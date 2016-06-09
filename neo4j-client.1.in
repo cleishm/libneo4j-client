@@ -54,6 +54,11 @@ Use the specified password when connecting.
 
 The password (and username) can also be supplied in the connection URL, and will
 override what is set here.
+.TO
+.I \-P
+Prompt for a password, even in non-interactive (batch) mode. This option
+requires that neo4j-client is being run with a controlling TTY, which will
+be used for password prompting and input.
 .TP
 .I \-\-known-hosts=file
 When using secure (TLS) connections, the certificate signatures of previously
@@ -118,8 +123,8 @@ Set the output format to either table or CSV.
 .I ":width <n>"
 Set the output width for table rendering. \fIn\fR is either an integer between
 2 and 4095, or \fIauto\fR. In interactive mode, the default is \fIauto\fR,
-which sets the output width to match the width of the terminal. In batch
-(non-interactive) mode, the default is 70.
+which sets the output width to match the width of the terminal. In 
+non-interactive (batch) mode, the default is 70.
 .SH EXAMPLES
 Start \fBneo4j\-client\fR in interactive mode, and run a query:
 
@@ -136,7 +141,7 @@ Start \fBneo4j\-client\fR in interactive mode, and run a query:
     neo4j> :quit
     $
 
-Evaluate a query using \fBneo4j\-client\fR in batch (non-interactive) mode,
+Evaluate a query using \fBneo4j\-client\fR in non-interactive (batch) mode,
 saving the output to a csv file:
 
     $ echo "MATCH (n:Person) RETURN n.name, n.born LIMIT 4;" | \\
@@ -152,7 +157,7 @@ saving the output to a csv file:
 In interactive mode, \fBneo4j\-client\fR attempts to exit cleanly (with
 \fI$?\fR set to 0) when the session is terminated via the use of \fI:quit\fR,
 \fI:exit\fR or \fIctrl-D\fR, and to use a non-zero exit code otherwise.
-In batch (non-interactive) mode, \fBneo4j\-client\fR will exit cleanly if all
+In non-interactive (batch) mode, \fBneo4j\-client\fR will exit cleanly if all
 statements read from stdin evaluate successfully.
 .SH VERSION
 This man page is current for version @VERSION@ of neo4j\-client.

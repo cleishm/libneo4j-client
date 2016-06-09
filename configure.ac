@@ -136,6 +136,17 @@ AC_CHECK_FUNCS([open_memstream],[],[],
 #include <stdio.h>
   ])
 
+AC_CHECK_HEADERS([readpassphrase.h bsd/readpassphrase.h])
+AC_SEARCH_LIBS([readpassphrase],[bsd])
+AC_CHECK_FUNCS([readpassphrase],[],[],
+  [
+#ifdef HAVE_READPASSPHRASE_H
+#include <readpassphrase.h>
+#elif HAVE_BSD_READPASSPHRASE_H
+#include <bsd/readpassphrase.h>
+#endif
+  ])
+
 
 dnl Threading
 AX_THREAD_LOCAL()

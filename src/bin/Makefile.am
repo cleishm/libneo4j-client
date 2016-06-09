@@ -1,6 +1,8 @@
 bin_PROGRAMS = neo4j-client
 
 neo4j_client_SOURCES = neo4j-client.c \
+	authentication.c \
+	authentication.h \
 	batch.c \
 	batch.h \
 	batch_parser.c \
@@ -10,6 +12,8 @@ neo4j_client_SOURCES = neo4j-client.c \
 	evaluate.h \
 	interactive.c \
 	interactive.h \
+	readpass.c \
+	readpass.h \
 	render.c \
 	render.h \
 	state.c \

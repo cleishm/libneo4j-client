@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include "../../config.h"
+#include "authentication.h"
 #include "batch.h"
 #include "evaluate.h"
 #include "interactive.h"
@@ -29,11 +30,15 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef _PATH_TTY
+#  define _PATH_TTY "/dev/tty"
+#endif
+
 
 #define NEO4J_HISTORY_FILE "client-history"
 
 
-const char *shortopts = "hp:u:v";
+const char *shortopts = "hp:Pu:v";
 
 #define HISTFILE_OPT 1000
 #define INSECURE_OPT 1001
@@ -68,6 +73,7 @@ static void usage(FILE *s, const char *prog_name)
 "                     Connect using the specified username.\n"
 " --password=pass, -p pass\n"
 "                     Connect using the specified password.\n"
+" -P                  Prompt for a password, even in non-interactive mode.\n"
 " --known-hosts=file  Set the path to the known-hosts file.\n"
 " --verbose, -v       Increase logging verbosity.\n"
 " --version           Output the version of neo4j-client and dependencies.\n"
@@ -84,10 +90,10 @@ static void usage(FILE *s, const char *prog_name)
 
 int main(int argc, char *argv[])
 {
-    FILE *tty = fopen("/dev/tty", "r+");
+    FILE *tty = fopen(_PATH_TTY, "r+");
     if (tty == NULL && errno != ENOENT)
     {
-        perror("can't open /dev/tty");
+        perror("can't open " _PATH_TTY);
         exit(EXIT_FAILURE);
     }
 
@@ -121,6 +127,7 @@ int main(int argc, char *argv[])
     }
     state.config = config;
     state.interactive = isatty(STDIN_FILENO);
+    bool force_password_prompt = false;
 
     char histfile[PATH_MAX];
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
@@ -162,6 +169,15 @@ int main(int argc, char *argv[])
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
+            break;
+        case 'P':
+            if (state.tty == NULL)
+            {
+                fprintf(state.err,
+                        "Cannot prompt for a password without a tty\n");
+                goto cleanup;
+            }
+            force_password_prompt = true;
             break;
         case KNOWN_HOSTS_OPT:
             if (neo4j_config_set_known_hosts_file(config, optarg))
@@ -223,6 +239,12 @@ int main(int argc, char *argv[])
     {
         neo4j_config_set_unverified_host_callback(config,
                 host_verification, &state);
+
+        if (state.interactive || force_password_prompt)
+        {
+            neo4j_config_set_authentication_reattempt_callback(config,
+                    auth_reattempt, &state);
+        }
     }
 
     if (argc >= 1)
