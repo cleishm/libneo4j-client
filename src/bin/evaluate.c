@@ -35,22 +35,26 @@ struct shell_command
 
 static int eval_connect(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_export(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_help(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_set(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
 
 static struct shell_command shell_commands[] =
     { { "connect", eval_connect },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
+      { "export", eval_export },
       { "help", eval_help },
       { "output", eval_output },
       { "quit", eval_quit },
       { "reset", eval_reset },
       { "set", eval_set },
+      { "unexport", eval_unexport },
       { "width", eval_width },
       { NULL, NULL } };
 
@@ -219,6 +223,76 @@ int db_disconnect(shell_state_t *state)
 }
 
 
+int eval_export(shell_state_t *state, const cypher_astnode_t *command)
+{
+    if (cypher_ast_command_narguments(command) == 0)
+    {
+        for (unsigned int i = 0; i < state->nexports; ++i)
+        {
+            fprintf(state->out, " %.*s=",
+                neo4j_string_length(state->exports[i].key),
+                neo4j_ustring_value(state->exports[i].key));
+            neo4j_fprint(state->exports[i].value, state->out);
+            fputc('\n', state->out);
+        }
+        return 0;
+    }
+
+    const cypher_astnode_t *arg;
+    for (unsigned int i = 0;
+        (arg = cypher_ast_command_get_argument(command, i)) != NULL; ++i)
+    {
+        assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+        const char *argvalue = cypher_ast_string_get_value(arg);
+        for (; isspace(*argvalue); ++argvalue)
+            ;
+        char *export = strdup(argvalue);
+        if (export == NULL)
+        {
+            return -1;
+        }
+        const char *eq = strchr(export, '=');
+        size_t elen = eq - export;
+        for (; elen > 0 && isspace(export[elen-1]); --elen)
+            ;
+        neo4j_value_t name = neo4j_ustring(export, elen);
+        neo4j_value_t value = neo4j_string(eq + 1);
+        if (shell_state_add_export(state, name, value, export))
+        {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+
+int eval_unexport(shell_state_t *state, const cypher_astnode_t *command)
+{
+    if (cypher_ast_command_narguments(command) == 0)
+    {
+        fprintf(state->err, ":unexport requires parameter name(s) "
+                "to stop exporting\n");
+        return -1;
+    }
+
+    const cypher_astnode_t *arg;
+    for (unsigned int i = 0;
+        (arg = cypher_ast_command_get_argument(command, i)) != NULL; ++i)
+    {
+        assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+        const char *argvalue = cypher_ast_string_get_value(arg);
+        for (; isspace(*argvalue); ++argvalue)
+            ;
+        size_t len = strlen(argvalue);
+        for (; isspace(argvalue[len-1]); --len)
+            ;
+        neo4j_value_t name = neo4j_ustring(argvalue, len);
+        shell_state_unexport(state, name);
+    }
+    return 0;
+}
+
+
 int eval_reset(shell_state_t *state, const cypher_astnode_t *command)
 {
     if (cypher_ast_command_narguments(command) != 0)
@@ -249,6 +323,8 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 ":quit                  Exit the shell\n"
 ":connect '<url>'       Connect to the specified URL\n"
 ":disconnect            Disconnect the client from the server\n"
+":export name=val ...   Export parameters for queries\n"
+":unexport name ...     Unexport parameters for queries\n"
 ":reset                 Reset the session with the server\n"
 ":help                  Show usage information\n"
 ":output (table|csv)    Set the output format\n"
@@ -449,7 +525,7 @@ evaluation_continuation_t evaluate_statement(shell_state_t *state,
     }
 
     neo4j_result_stream_t *results = neo4j_run(state->session,
-            statement, neo4j_map(NULL, 0));
+            statement, shell_state_get_exports(state));
     if (results == NULL)
     {
         evaluation_continuation_t continuation =

@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+
 typedef struct shell_state shell_state_t;
 struct shell_state
 {
@@ -43,12 +44,28 @@ struct shell_state
     int (*render)(shell_state_t *state, neo4j_result_stream_t *results);
     int width;
     uint_fast16_t render_flags;
+
+    neo4j_map_entry_t *exports;
+    void **exports_storage;
+    size_t exports_cap;
+    unsigned int nexports;
 };
 
 
 int shell_state_init(shell_state_t *state, const char *prog_name,
         FILE *in, FILE *out, FILE *err, FILE *tty);
 void shell_state_destroy(shell_state_t *state);
+
+
+int shell_state_add_export(shell_state_t *state, neo4j_value_t name,
+        neo4j_value_t value, void *storage);
+
+void shell_state_unexport(shell_state_t *state, neo4j_value_t name);
+
+static inline neo4j_value_t shell_state_get_exports(shell_state_t *state)
+{
+    return neo4j_map(state->exports, state->nexports);
+}
 
 
 static inline char *temp_copy(shell_state_t *state, const char *s, size_t n)
