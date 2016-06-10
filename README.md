@@ -204,9 +204,8 @@ the library can be built without neo4j-client, by invoking configure with
 `--disable-tools`.
 
 Building from the GitHub repository requires a few extra steps. Firstly, some
-additional tooling is required, including autoconf, automake, libtool and
-[peg/leg](http://piumarta.com/software/peg/). Assuming these are available,
-to checkout from GitHub and build:
+additional tooling is required, including autoconf, automake and libtool.
+Assuming these are available, to checkout from GitHub and build:
 
 ```console
 $ git clone https://github.com/cleishm/libneo4j-client.git

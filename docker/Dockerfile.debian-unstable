@@ -25,7 +25,7 @@ RUN (curl -L -o - https://github.com/cleishm/libcypher-parser/archive/master.tar
     cd libcypher-parser-master && \
     ./autogen.sh && \
     ./configure && \
-    make install &&
+    make install && \
     ldconfig
 
 ADD dput.cf /root/.dput.cf

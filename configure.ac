@@ -36,12 +36,6 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_ARG_VAR([LEG], [leg parser generator command])
-AC_CHECK_PROG([LEG], [leg], [leg])
-AM_CONDITIONAL([HAVE_LEG], [test -n "$LEG"])
-
-AS_IF([test -n "$LEG" -o -f ./src/lib/cli_parser_leg.c], [],
-  [AC_MSG_ERROR([leg is required: please install http://piumarta.com/software/peg/])])
 
 AC_C_CONST
 AC_C_INLINE
@@ -196,9 +190,9 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_libedit" != "Xyes"],
   [AC_MSG_ERROR([libedit is required for building command line tools (specify --disable-tools to ignore)])])
 
-PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.3.1], [has_cypher_parser=yes], [has_cypher_parser=no])
+PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.3.2], [has_cypher_parser=yes], [has_cypher_parser=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_cypher_parser" != "Xyes"],
-  [AC_MSG_ERROR([libcypher-parser is required for building command line tools (specify --disable-tools to ignore)])])
+  [AC_MSG_ERROR([libcypher-parser (>= 0.3.2) is required for building command line tools (specify --disable-tools to ignore)])])
 
 
 dnl Check if assertions should be disabled

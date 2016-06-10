@@ -16,11 +16,11 @@
  */
 #include "../../config.h"
 #include "batch.h"
-#include "batch_parser.h"
 #include "evaluate.h"
+#include <neo4j-client.h>
+#include <cypher-parser.h>
 #include <assert.h>
 #include <errno.h>
-#include <neo4j-client.h>
 
 
 struct evaluation
@@ -47,7 +47,7 @@ struct parse_callback_data
 };
 
 
-static int parse_callback(void *data, const char *s, size_t n);
+static int parse_callback(void *data, const char *s, size_t n, bool eof);
 static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
@@ -66,7 +66,7 @@ int batch(shell_state_t *state)
 
     int result = -1;
     struct parse_callback_data cbdata = { .state = state, .queue = queue };
-    if (batch_parse(state->in, parse_callback, &cbdata))
+    if (cypher_quick_fparse(state->in, parse_callback, &cbdata, 0))
     {
         goto cleanup;
     }
@@ -91,7 +91,7 @@ cleanup:
 }
 
 
-int parse_callback(void *data, const char *s, size_t n)
+int parse_callback(void *data, const char *s, size_t n, bool eof)
 {
     struct parse_callback_data *cbdata = (struct parse_callback_data *)data;
     return evaluate(cbdata->state, cbdata->queue, s, n);
