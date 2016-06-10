@@ -26,7 +26,6 @@
 #include <unistd.h>
 
 
-typedef struct shell_command shell_command_t;
 struct shell_command
 {
     const char *name;
@@ -40,14 +39,10 @@ static int eval_help(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_set(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
 
-static int not_connected_error(evaluation_continuation_t *self,
-        shell_state_t *state);
-static int run_failure(evaluation_continuation_t *self, shell_state_t *state);
-static int render_result(evaluation_continuation_t *self, shell_state_t *state);
-
-static shell_command_t shell_commands[] =
+static struct shell_command shell_commands[] =
     { { "connect", eval_connect },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
@@ -55,8 +50,35 @@ static shell_command_t shell_commands[] =
       { "output", eval_output },
       { "quit", eval_quit },
       { "reset", eval_reset },
+      { "set", eval_set },
       { "width", eval_width },
       { NULL, NULL } };
+
+
+static int set_variable(shell_state_t *state, const char *name,
+        const char *value);
+static int set_output(shell_state_t *state, const char *value);
+static const char *get_output(shell_state_t *state, char *buf, size_t n);
+static int set_width(shell_state_t *state, const char *value);
+static const char * get_width(shell_state_t *state, char *buf, size_t n);
+
+struct variables
+{
+    const char *name;
+    int (*set)(shell_state_t *state, const char *value);
+    const char *(*get)(shell_state_t *state, char *buf, size_t n);
+};
+
+static struct variables variables[] =
+    { { "output", set_output, get_output },
+      { "width", set_width, get_width },
+      { NULL, NULL } };
+
+
+static int not_connected_error(evaluation_continuation_t *self,
+        shell_state_t *state);
+static int run_failure(evaluation_continuation_t *self, shell_state_t *state);
+static int render_result(evaluation_continuation_t *self, shell_state_t *state);
 
 
 int evaluate_command_string(shell_state_t *state, const char *command)
@@ -248,14 +270,46 @@ int eval_output(shell_state_t *state, const cypher_astnode_t *command)
     }
 
     assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
-    const char *name = cypher_ast_string_get_value(arg);
-    renderer_t renderer = find_renderer(name);
-    if (renderer == NULL)
+    const char *value = cypher_ast_string_get_value(arg);
+    return set_output(state, value);
+}
+
+
+int eval_set(shell_state_t *state, const cypher_astnode_t *command)
+{
+    if (cypher_ast_command_narguments(command) == 0)
     {
-        fprintf(state->err, "Unknown output format '%s'\n", name);
-        return -1;
+        char buf[64];
+        for (unsigned int i = 0; variables[i].name != NULL; ++i)
+        {
+            fprintf(state->out, " %s=%s\n", variables[i].name, 
+                variables[i].get(state, buf, sizeof(buf)));
+        }
+        return 0;
     }
-    state->render = renderer;
+
+    char name[32];
+    const cypher_astnode_t *arg;
+    for (unsigned int i = 0;
+        (arg = cypher_ast_command_get_argument(command, i)) != NULL; ++i)
+    {
+        assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+        const char *variable = cypher_ast_string_get_value(arg);
+        const char *eq = strchr(variable, '=');
+        size_t varlen = eq - variable;
+        if (varlen > sizeof(name))
+        {
+            varlen = sizeof(name) - 1;
+        }
+        strncpy(name, variable, varlen);
+        name[varlen] = '\0';
+
+        if (set_variable(state, name, eq + 1))
+        {
+            return -1;
+        }
+    }
+
     return 0;
 }
 
@@ -307,6 +361,80 @@ int eval_quit(shell_state_t *state, const cypher_astnode_t *command)
     }
 
     return 1;
+}
+
+
+int set_variable(shell_state_t *state, const char *name,
+        const char *value)
+{
+    for (unsigned int i = 0; variables[i].name != NULL; ++i)
+    {
+        if (strcmp(variables[i].name, name) == 0)
+        {
+            return variables[i].set(state, value);
+        }
+    }
+
+    fprintf(state->err, "Unknown variable '%s'\n", name);
+    return -1;
+}
+
+
+int set_output(shell_state_t *state, const char *value)
+{
+    renderer_t renderer = find_renderer(value);
+    if (renderer == NULL)
+    {
+        fprintf(state->err, "Unknown output format '%s'\n", value);
+        return -1;
+    }
+    state->render = renderer;
+    return 0;
+}
+
+
+const char *get_output(shell_state_t *state, char *buf, size_t n)
+{
+    const char *name = renderer_name(state->render);
+    return (name != NULL)? name : "unknown";
+}
+
+
+int set_width(shell_state_t *state, const char *value)
+{
+    if (strcmp(value, "auto") == 0)
+    {
+        if (!isatty(fileno(state->out)))
+        {
+            fprintf(state->err, "Setting width to auto is only possible"
+                    " when outputting to a tty\n");
+            return -1;
+        }
+        state->width = 0;
+        return 0;
+    }
+
+    long width = strtol(value, NULL, 10);
+    if (width < 2 || width >= NEO4J_RENDER_MAX_WIDTH)
+    {
+        fprintf(state->err, "Width value (%ld) out of range [1,%d)\n",
+                width, NEO4J_RENDER_MAX_WIDTH);
+        return -1;
+    }
+
+    state->width = (unsigned int)width;
+    return 0;
+}
+
+
+const char *get_width(shell_state_t *state, char *buf, size_t n)
+{
+    if (state->width == 0)
+    {
+        return "auto";
+    }
+    snprintf(buf, n, "%d", state->width);
+    return buf;
 }
 
 
