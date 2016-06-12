@@ -17,7 +17,7 @@ Name: libneo4j-client
 Version: 0.9.2
 Release: 1%{?dist}
 Group: System Environment/Libraries
-License: Apache License, Version 2.0
+License: Apache-2.0
 URL: https://github.com/cleishm/libneo4j-client
 Source0: https://github.com/cleishm/libneo4j-client/releases/download/%{version}/%{name}-%{version}.tar.gz
 BuildRequires: openssl-devel libedit-devel doxygen pkgconfig
@@ -33,8 +33,11 @@ libneo4j-client is a client library and command line shell for Neo4j.
 
 %build
 %configure --disable-static
-make check
+make
 make doc
+
+%check
+make check
 
 %install
 %make_install
@@ -55,6 +58,7 @@ Neo4j server, sending statements for evaluation, and retrieving results.
 %postun -n %{libname} -p /sbin/ldconfig
 
 %files -n %{libname}
+%defattr(-, root, root)
 %doc README.md
 %{_libdir}/*.so.*
 
@@ -73,6 +77,7 @@ Neo4j server, sending statements for evaluation, and retrieving results.
 This package contains the development files (headers, static libraries)
 
 %files -n %{libname}-devel
+%defattr(-, root, root)
 %{_includedir}/neo4j-client.h
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*.pc
@@ -92,6 +97,7 @@ This package contains the API documentation that is also available on the
 libneo4j-client website (https://github.com/cleishm/libneo4j-client).
 
 %files -n %{libname}-devel-doc
+%defattr(-, root, root)
 %doc doc/html
 
 #------------------------------------------------------------------------------
@@ -99,7 +105,6 @@ libneo4j-client website (https://github.com/cleishm/libneo4j-client).
 %package -n neo4j-client
 Summary: Command line shell for Neo4j
 Group: Applications/Databases
-Requires: %{libname}%{?_isa}
 
 %description -n neo4j-client
 neo4j-client supports secure connections to Neo4j server, sending of statements
@@ -107,6 +112,7 @@ neo4j-client supports secure connections to Neo4j server, sending of statements
 of results to tables or CSV.
 
 %files -n neo4j-client
+%defattr(-, root, root)
 %{_bindir}/neo4j-client
 %{_mandir}/man1/neo4j-client.1*
 
