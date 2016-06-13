@@ -67,8 +67,8 @@ static int neo4j_string_cmp(neo4j_value_t s1, neo4j_value_t s2)
 int shell_state_add_export(shell_state_t *state, neo4j_value_t name,
         neo4j_value_t value, void *storage)
 {
-    int cmp;
     unsigned int i;
+    int cmp = -1;
     for (i = 0; i < state->nexports &&
             (cmp = neo4j_string_cmp(state->exports[i].key, name)) < 0; ++i)
         ;
