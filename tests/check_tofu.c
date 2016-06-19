@@ -148,7 +148,7 @@ START_TEST (test_unfound_host_invokes_callback_and_rejects)
     ck_assert_str_eq(data.fingerprint,
             "aa7b6261e21d7b2950e044453543bce3840429e2");
     ck_assert_int_eq(data.reason, NEO4J_HOST_VERIFICATION_UNRECOGNIZED);
-    ck_assert_int_eq(r, 1);
+    ck_assert_int_eq(r, 2);
 }
 END_TEST
 
@@ -163,7 +163,7 @@ START_TEST (test_mismatch_host_invokes_callback_and_rejects)
     ck_assert_str_eq(data.fingerprint,
             "ffffff61e21d7b2950e044453543bce3840429e2");
     ck_assert_int_eq(data.reason, NEO4J_HOST_VERIFICATION_MISMATCH);
-    ck_assert_int_eq(r, 1);
+    ck_assert_int_eq(r, 2);
 }
 END_TEST
 

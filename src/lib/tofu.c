@@ -80,6 +80,7 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
         result = 1;
         if (config->unverified_host_callback != NULL)
         {
+            result = 2;
             int action = config->unverified_host_callback(
                     config->unverified_host_callback_userdata, host,
                     fingerprint, reason);
