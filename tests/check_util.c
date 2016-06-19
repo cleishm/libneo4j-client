@@ -16,6 +16,7 @@
  */
 #include "../config.h"
 #include "../src/lib/neo4j-client.h"
+#include "../src/lib/util.h"
 #include <check.h>
 #include <errno.h>
 #include <limits.h>
@@ -81,10 +82,69 @@ START_TEST (test_neo4j_basename)
 END_TEST
 
 
+START_TEST (test_strcasecmp_indep)
+{
+    ck_assert_int_eq(strcasecmp_indep(
+                "Fear and loathing",
+                "Fear and loathing"), 0);
+    ck_assert_int_eq(strcasecmp_indep(
+                "the rum diary",
+                "THE rum DIARY"), 0);
+    ck_assert_int_lt(strcasecmp_indep(
+                "She rum diary",
+                "the rum DIARY"), 0);
+    ck_assert_int_gt(strcasecmp_indep(
+                "the sum diary",
+                "THe rum DIARY"), 0);
+    ck_assert_int_lt(strcasecmp_indep(
+                "Fear and loathing",
+                "Fear and loathing2"), 0);
+    ck_assert_int_gt(strcasecmp_indep(
+                "Fear and loathing ",
+                "Fear and loathing"), 0);
+}
+END_TEST
+
+
+START_TEST (test_strncasecmp_indep)
+{
+    ck_assert_int_eq(strncasecmp_indep(
+                "Fear and loathing",
+                "Fear and loathing", 99), 0);
+    ck_assert_int_eq(strncasecmp_indep(
+                "the rum diary",
+                "THE rum DIARY", 99), 0);
+    ck_assert_int_lt(strncasecmp_indep(
+                "She rum diary",
+                "the rum DIARY", 99), 0);
+    ck_assert_int_gt(strncasecmp_indep(
+                "the sum diary",
+                "THe rum DIARY", 99), 0);
+    ck_assert_int_lt(strncasecmp_indep(
+                "Fear and loathing",
+                "Fear and loathing2", 99), 0);
+    ck_assert_int_gt(strncasecmp_indep(
+                "Fear and loathing ",
+                "Fear and loathing", 99), 0);
+    ck_assert_int_eq(strncasecmp_indep(
+                "Fear and loathing",
+                "The RUM diary", 0), 0);
+    ck_assert_int_eq(strncasecmp_indep(
+                "Fear and loathing",
+                "Fear and loathing on the campaign trail", 17), 0);
+    ck_assert_int_eq(strncasecmp_indep(
+                "Fear and loathing in las vegas",
+                "Fear and loathing on the campaign trail", 5), 0);
+}
+END_TEST
+
+
 TCase* util_tcase(void)
 {
     TCase *tc = tcase_create("util");
     tcase_add_test(tc, test_neo4j_dirname);
     tcase_add_test(tc, test_neo4j_basename);
+    tcase_add_test(tc, test_strcasecmp_indep);
+    tcase_add_test(tc, test_strncasecmp_indep);
     return tc;
 }

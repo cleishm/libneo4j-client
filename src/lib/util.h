@@ -313,6 +313,33 @@ char *strcat_alloc(const char *s1, const char *s2);
 
 
 /**
+ * Locale-independent case-insensitive string comparison.
+ *
+ * @internal
+ *
+ * @param [s1] The first string to compare.
+ * @param [s2] The second string to compare.
+ * @return An integer greater than, equal to, or less than 0, according as the
+ *         string `s1` is greater than, equal to, or less than the string `s2`.
+ */
+int strcasecmp_indep(const char *s1, const char *s2);
+
+
+/**
+ * Locale-independent case-insensitive string comparison.
+ *
+ * @internal
+ *
+ * @param [s1] The first string to compare.
+ * @param [s2] The second string to compare.
+ * @param [n] The maximum number of characters to compare.
+ * @return An integer greater than, equal to, or less than 0, according as the
+ *         string `s1` is greater than, equal to, or less than the string `s2`.
+ */
+int strncasecmp_indep(const char *s1, const char *s2, size_t n);
+
+
+/**
  * @fn bool contains_null(void *ptrs[], int n)
  * @brief Check if an array of pointers contains any `NULL` pointer.
  *
