@@ -139,6 +139,23 @@ START_TEST (test_strncasecmp_indep)
 END_TEST
 
 
+START_TEST (test_hostname_matching)
+{
+    ck_assert(hostname_matches("neo4j.com", "neo4j.com"));
+    ck_assert(hostname_matches("test.neo4j.com", "*.neo4j.com"));
+    ck_assert(hostname_matches("test.neo4j.com", "*st.neo4j.com"));
+    ck_assert(hostname_matches("test.neo4j.com", "te*.neo4j.com"));
+    ck_assert(hostname_matches("test.neo4j.com", "t*t.neo4j.com"));
+    ck_assert(!hostname_matches("neo4j.com", "google.com"));
+    ck_assert(!hostname_matches("test.neo4j.com", "*.google.com"));
+    ck_assert(!hostname_matches("neo4j.com", "neo4j.net"));
+    ck_assert(!hostname_matches("status.neo4j.com", "*st.neo4j.com"));
+    ck_assert(!hostname_matches("status.neo4j.com", "te*.neo4j.com"));
+    ck_assert(!hostname_matches("test.neo4j.com", "tes*t.neo4j.com"));
+}
+END_TEST
+
+
 TCase* util_tcase(void)
 {
     TCase *tc = tcase_create("util");
@@ -146,5 +163,6 @@ TCase* util_tcase(void)
     tcase_add_test(tc, test_neo4j_basename);
     tcase_add_test(tc, test_strcasecmp_indep);
     tcase_add_test(tc, test_strncasecmp_indep);
+    tcase_add_test(tc, test_hostname_matching);
     return tc;
 }

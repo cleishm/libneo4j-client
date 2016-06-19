@@ -441,6 +441,58 @@ size_t memspn_ident(const void *s, size_t n)
 }
 
 
+bool hostname_matches(const char *hostname, const char *pattern)
+{
+    if (strncasecmp_indep(pattern, "xn--", 4) == 0)
+    {
+        // no wildcards in internationalized domain names
+        return (strcasecmp_indep(hostname, pattern) == 0);
+    }
+
+    const char *wildcard = strchr(pattern, '*');
+    if (wildcard == NULL)
+    {
+        // no wildcard
+        return (strcasecmp_indep(hostname, pattern) == 0);
+    }
+
+    const char *pattern_tail = strchr(pattern, '.');
+    if (pattern_tail == NULL || pattern_tail < wildcard)
+    {
+        // wildcard is not in the first label (or there is only one label)
+        return (strcasecmp_indep(hostname, pattern) == 0);
+    }
+
+    const char *host_tail = strchr(hostname, '.');
+    if (host_tail == NULL || strcasecmp_indep(host_tail, pattern_tail) != 0)
+    {
+        // does not match after the wildcard label
+        return false;
+    }
+
+    if ((host_tail - hostname) < (pattern_tail - pattern))
+    {
+        // the wildcard can't match anything
+        return false;
+    }
+
+    if (strncasecmp(hostname, pattern, wildcard - pattern) != 0)
+    {
+        // does not match before the wildcard
+        return false;
+    }
+
+    size_t len = pattern_tail - (wildcard + 1);
+    if (strncasecmp(host_tail - len, wildcard + 1, len) != 0)
+    {
+        // does not match before the wildcard
+        return false;
+    }
+
+    return true;
+}
+
+
 int describe_host(char *buf, size_t cap, const char *hostname,
         unsigned int port)
 {

@@ -543,6 +543,22 @@ size_t memspn_ident(const void *s, size_t n);
 
 #define NEO4J_MAXHOSTLEN (MAXHOSTNAMELEN + 1 + MAXSERVNAMELEN)
 
+
+/**
+ * Check if a hostname matches a pattern.
+ *
+ * The pattern may be a complete DNS name, or may contain a wildcard
+ * (as described in https://tools.ietf.org/html/rfc6125#section-6.4.3).
+ *
+ * @internal
+ *
+ * @param [hostname] The hostname to check.
+ * @param [pattern] The pattern to check against.
+ * @return `true` if the hostname matches the pattern, and `false` otherwise.
+ */
+bool hostname_matches(const char *hostname, const char *pattern);
+
+
 /**
  * Describe a hostname and port.
  *
