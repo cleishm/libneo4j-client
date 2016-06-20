@@ -35,8 +35,7 @@
 
 static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config);
 static neo4j_connection_t *establish_connection(const char *hostname,
-        unsigned int port, const char *connection_name, neo4j_config_t *config,
-        uint_fast32_t flags);
+        unsigned int port, neo4j_config_t *config, uint_fast32_t flags);
 static neo4j_iostream_t *std_tcp_connect(
         struct neo4j_connection_factory *factory, const char *hostname,
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags,
@@ -91,8 +90,7 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
     }
 
     unsigned int port = (uri->port > 0)? uri->port : NEO4J_DEFAULT_TCP_PORT;
-    connection = establish_connection(
-            uri->hostname, port, uri_string, config, flags);
+    connection = establish_connection(uri->hostname, port, config, flags);
 
     int errsv;
 cleanup:
@@ -154,18 +152,12 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
         return NULL;
     }
 
-    char host[NEO4J_MAXHOSTLEN];
-    if (describe_host(host, sizeof(host), hostname, port))
-    {
-        return NULL;
-    }
-    return establish_connection(hostname, port, host, config, flags);
+    return establish_connection(hostname, port, config, flags);
 }
 
 
 neo4j_connection_t *establish_connection(const char *hostname,
-        unsigned int port, const char *connection_name, neo4j_config_t *config,
-        uint_fast32_t flags)
+        unsigned int port, neo4j_config_t *config, uint_fast32_t flags)
 {
     neo4j_logger_t *logger = neo4j_get_logger(config, "connection");
 
@@ -176,17 +168,12 @@ neo4j_connection_t *establish_connection(const char *hostname,
     neo4j_connection_t *connection = calloc(1, sizeof(neo4j_connection_t));
     if (connection == NULL)
     {
-        neo4j_log_error_errno(logger, "malloc of neo4j_connection_t failed");
         goto failure;
     }
 
     snd_buffer = malloc(config->snd_min_chunk_size);
     if (snd_buffer == NULL)
     {
-        char ebuf[256];
-        neo4j_log_error(logger, "malloc of buffer[%u] failed: %s",
-                config->snd_min_chunk_size,
-                neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         goto failure;
     }
 
@@ -194,10 +181,6 @@ neo4j_connection_t *establish_connection(const char *hostname,
             sizeof(struct neo4j_request));
     if (request_queue == NULL)
     {
-        char ebuf[256];
-        neo4j_log_error(logger, "malloc of request_queue[%d] failed: %s",
-                config->session_request_queue_size,
-                neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         goto failure;
     }
 
@@ -211,18 +194,12 @@ neo4j_connection_t *establish_connection(const char *hostname,
     uint32_t protocol_version;
     if (negotiate_protocol_version(iostream, &protocol_version))
     {
-        char ebuf[256];
-        neo4j_log_error(logger,
-                "failed to negotiate a protocol version with '%s': %s",
-                connection_name, neo4j_strerror(errno, ebuf, sizeof(ebuf)));
+        errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
     if (protocol_version != 1)
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
-        neo4j_log_error(logger,
-                "unable to agree on a protocol version with '%s'",
-                connection_name);
         goto failure;
     }
 
@@ -244,8 +221,8 @@ neo4j_connection_t *establish_connection(const char *hostname,
     connection->snd_buffer = snd_buffer;
     connection->request_queue = request_queue;
 
-    neo4j_log_info(logger, "connected (%p) to '%s'%s", (void *)connection,
-            connection_name, connection->insecure? " (insecure)" : "");
+    neo4j_log_info(logger, "connected (%p) to %s:%u%s", (void *)connection,
+            hostname, port, connection->insecure? " (insecure)" : "");
     neo4j_log_debug(logger, "connection %p using protocol version %d",
             (void *)connection, protocol_version);
 
