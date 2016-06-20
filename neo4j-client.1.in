@@ -40,8 +40,23 @@ By default, history is saved to \fI$(HOME)/.neo4j/client-history\fR.
 .I \-\-no-history
 Do not save the command history.
 .TP
+.I \-\-ca\-file=cert.pem
+Specify a file containing trusted certificates (and CRLs). The file should
+contain one or more certificates in PEM format.
+.TP
+.I \-\-ca\-directory=dir
+Specify a directory containing trusted certificates (and CRLs). The
+certificates should have names of the form: hash.0 or have symbolic links to
+them of this form ("hash" is the hashed certificate subject name: see the -hash
+option of the x509 utility). Under Unix the c_rehash script will automatically
+create symbolic links to a directory of certificates.
+.TP
 .I \-\-insecure
 Do not attempt to establish a secure (TLS) connection to Neo4j.
+.TP
+.I \-\-non-interactive
+Use non-interactive (batch) mode and do not prompt for credentials when
+connecting.
 .TP
 .I \-\-username=name, \-u name
 Use the specified username when connecting.
@@ -66,6 +81,9 @@ verified hosts is persisted to the known hosts file. This setting specifies
 the location of that file.
 
 By default, the file is \fI$(HOME)/.neo4j/neo4j_known_certs\fR.
+.TP
+.I \-\-no-known-hosts
+Do not do host checking via known-hosts (use only TLS certificate verification).
 .TP
 .I \-v, \-\-verbose
 Increase the logging verbosity. Each invocation increases the verbosity. Each
