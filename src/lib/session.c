@@ -30,10 +30,6 @@ static_assert(NEO4J_REQUEST_ARGV_PREALLOC >= 2,
         "NEO4J_REQUEST_ARGV_PREALLOC too small");
 
 
-#define NEO4J_MAXUSERNAMELEN 1024
-#define NEO4J_MAXPASSWORDLEN 1024
-
-
 static int session_start(neo4j_session_t *session);
 static int session_clear(neo4j_session_t *session);
 static int send_requests(neo4j_session_t *session);

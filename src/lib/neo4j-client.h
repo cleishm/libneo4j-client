@@ -1060,6 +1060,8 @@ void neo4j_config_free(neo4j_config_t *config);
  */
 void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
 
+#define NEO4J_MAXUSERNAMELEN 1024
+
 /**
  * Set the username in the neo4j client configuration.
  *
@@ -1070,6 +1072,8 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
  */
 __neo4j_must_check
 int neo4j_config_set_username(neo4j_config_t *config, const char *username);
+
+#define NEO4J_MAXPASSWORDLEN 1024
 
 /**
  * Set the password in the neo4j client configuration.
