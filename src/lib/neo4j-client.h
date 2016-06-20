@@ -1501,6 +1501,39 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
 int neo4j_close(neo4j_connection_t *connection);
 
 
+/**
+ * Get the hostname for a connection.
+ *
+ * @param [connection] The neo4j connection.
+ * @return A pointer to a hostname string, which will remain valid only whilst
+ *         the connection remains open.
+ */
+__neo4j_pure
+const char *neo4j_connection_hostname(const neo4j_connection_t *connection);
+
+
+/**
+ * Get the port for a connection.
+ *
+ * @param [connection] The neo4j connection.
+ * @return The port of the connection.
+ */
+__neo4j_pure
+unsigned int neo4j_connection_port(const neo4j_connection_t *connection);
+
+
+/**
+ * Get the username for a connection.
+ *
+ * @param [connection] The neo4j connection.
+ * @return A pointer to a username string, which will remain valid only whilst
+ *         the connection remains open, or NULL if no username was associated
+ *         with the connection.
+ */
+__neo4j_pure
+const char *neo4j_connection_username(const neo4j_connection_t *connection);
+
+
 /*
  * =====================================
  * session

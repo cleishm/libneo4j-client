@@ -398,6 +398,24 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
 }
 
 
+const char *neo4j_connection_hostname(const neo4j_connection_t *connection)
+{
+    return connection->hostname;
+}
+
+
+unsigned int neo4j_connection_port(const neo4j_connection_t *connection)
+{
+    return connection->port;
+}
+
+
+const char *neo4j_connection_username(const neo4j_connection_t *connection)
+{
+    return connection->config->username;
+}
+
+
 int neo4j_connection_send(neo4j_connection_t *connection,
         neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc)
 {
