@@ -1571,6 +1571,16 @@ int neo4j_end_session(neo4j_session_t *session);
  */
 int neo4j_reset_session(neo4j_session_t *session);
 
+/**
+ * Check if the server indicated that credentials have expired.
+ *
+ * @param [session] The session.
+ * @return `true` if the server indicated that credentials have expired,
+ *         and `false` otherwise.
+ */
+__neo4j_pure
+bool neo4j_credentials_expired(const neo4j_session_t *session);
+
 
 /*
  * =====================================

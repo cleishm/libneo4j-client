@@ -232,6 +232,12 @@ int neo4j_reset_session(neo4j_session_t *session)
 }
 
 
+bool neo4j_credentials_expired(const neo4j_session_t *session)
+{
+    return session->credentials_expired;
+}
+
+
 int neo4j_attach_job(neo4j_session_t *session, neo4j_job_t *job)
 {
     REQUIRE(session != NULL, -1);
@@ -601,19 +607,22 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 
     if (type == NEO4J_SUCCESS_MESSAGE)
     {
+        snprintf(description, sizeof(description),
+                "SUCCESS in %p (response to INIT)", (void *)session);
+        const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+                description, session->logger);
+        if (metadata == NULL)
+        {
+            return -1;
+        }
         if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
         {
-            snprintf(description, sizeof(description),
-                    "SUCCESS in %p (response to INIT)", (void *)session);
-            const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
-                    description, session->logger);
-            if (metadata == NULL)
-            {
-                return -1;
-            }
             neo4j_metadata_log(session->logger, NEO4J_LOG_TRACE, description,
                     *metadata);
         }
+        neo4j_value_t ce = neo4j_map_get(*metadata, "credentials_expired");
+        session->credentials_expired =
+                (neo4j_type(ce) == NEO4J_BOOL && neo4j_bool_value(ce));
         return 0;
     }
 

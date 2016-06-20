@@ -50,6 +50,7 @@ struct neo4j_session
     const neo4j_config_t *config;
     neo4j_logger_t *logger;
 
+    bool credentials_expired;
     bool failed;
 
     struct neo4j_request *request_queue;
