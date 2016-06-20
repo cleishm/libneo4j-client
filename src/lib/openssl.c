@@ -22,6 +22,7 @@
 #include "tofu.h"
 #include "util.h"
 #include <assert.h>
+#include <openssl/x509v3.h>
 #include <openssl/err.h>
 
 static neo4j_mutex_t *thread_locks;
@@ -40,6 +41,12 @@ static int cert_fingerprint(X509* cert, char *buf, size_t n,
         neo4j_logger_t *logger);
 static int sha512_digest(unsigned char *buf, unsigned int *np,
         const void *s, size_t n, neo4j_logger_t *logger);
+static int verify_hostname(X509* cert, const char *hostname,
+        neo4j_logger_t *logger);
+static int check_subject_alt_name(X509* cert, const char *hostname,
+        neo4j_logger_t *logger);
+static int check_common_name(X509 *cert, const char *hostname,
+        neo4j_logger_t *logger);
 static int openssl_error(neo4j_logger_t *logger, uint_fast8_t level,
         const char *file, unsigned int line);
 
@@ -293,6 +300,7 @@ int verify(SSL *ssl, const char *hostname, int port,
     X509 *cert = SSL_get_peer_certificate(ssl);
     if (cert == NULL)
     {
+        neo4j_log_error(logger, "server did not present a TLS certificate");
         errno = NEO4J_TLS_VERIFICATION_FAILED;
         return -1;
     }
@@ -308,33 +316,68 @@ int verify(SSL *ssl, const char *hostname, int port,
     neo4j_log_debug(logger, "server cert fingerprint: %s", fingerprint);
 
     long verification = SSL_get_verify_result(ssl);
+    const char *verification_msg = X509_verify_cert_error_string(verification);
     switch (verification)
     {
     case X509_V_OK:
-        // TODO: verify that the certificate matches hostname/port
-        neo4j_log_debug(logger, "certificate verified using CA");
-        result = 0;
+        result = verify_hostname(cert, hostname, logger);
+        if (result < 0)
+        {
+            goto cleanup;
+        }
+        if (result == 0)
+        {
+            neo4j_log_debug(logger, "certificate verified using CA");
+            break;
+        }
+        verification_msg = "certificate does not match hostname";
+        // fall through
+    case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+    case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+        if (!config->trust_known)
+        {
+            break;
+        }
+        neo4j_log_debug(logger, "TLS certificate verification failed: %s",
+                verification_msg);
+        // attempt use of TOFU
+        result = neo4j_check_known_hosts(hostname, port,
+                fingerprint, config, flags);
+        if (result == 1)
+        {
+            neo4j_log_error(logger,
+                    "server fingerprint not in known hosts and "
+                    "TLS certificate verification failed: %s",
+                    verification_msg);
+        }
+        if (result > 0)
+        {
+            result = -1;
+            errno = NEO4J_TLS_VERIFICATION_FAILED;
+        }
         goto cleanup;
-    // TODO: check other verification codes for unacceptable certificates
+    case X509_V_ERR_OUT_OF_MEM:
+        errno = ENOMEM;
+        goto cleanup;
     default:
         break;
     }
 
-    if (!(config->trust_known))
+    if (result)
     {
+        neo4j_log_error(logger, "TLS certificate verification failed: %s",
+                verification_msg);
         errno = NEO4J_TLS_VERIFICATION_FAILED;
-        goto cleanup;
     }
 
-    result = neo4j_check_known_hosts(hostname, port, fingerprint, config, flags);
-    if (result > 0)
-    {
-        errno = NEO4J_TLS_VERIFICATION_FAILED;
-        result = -1;
-    }
-
+    int errsv;
 cleanup:
+    errsv = errno;
     X509_free(cert);
+    errno = errsv;
     return result;
 }
 
@@ -416,6 +459,92 @@ failure:
     EVP_MD_CTX_destroy(mdctx);
     errno = errsv;
     return -1;
+}
+
+
+int verify_hostname(X509* cert, const char *hostname,
+        neo4j_logger_t *logger)
+{
+    int result = check_subject_alt_name(cert, hostname, logger);
+    if (result <= 0)
+    {
+        return result;
+    }
+    return check_common_name(cert, hostname, logger);
+}
+
+
+int check_subject_alt_name(X509* cert, const char *hostname,
+        neo4j_logger_t *logger)
+{
+    STACK_OF(GENERAL_NAME) *names = X509_get_ext_d2i(cert,
+            NID_subject_alt_name, NULL, NULL);
+    if (names == NULL)
+    {
+        return 1;
+    }
+
+    int result = 1;
+
+    int nnames = sk_GENERAL_NAME_num(names);
+    for (int i = 0; i < nnames; ++i)
+    {
+        const GENERAL_NAME *name = sk_GENERAL_NAME_value(names, i);
+        if (name->type != GEN_DNS)
+        {
+            continue;
+        }
+
+        char *name_str = (char *)ASN1_STRING_data(name->d.dNSName);
+        // check that there isn't a null in the asn1 string
+        if (strlen(name_str) != (size_t)ASN1_STRING_length(name->d.dNSName))
+        {
+            result = -1;
+            errno = NEO4J_TLS_MALFORMED_CERTIFICATE;
+            goto cleanup;
+        }
+        neo4j_log_trace(logger, "checking against certificate "
+                "subject alt name '%s'", name_str);
+        if (hostname_matches(hostname, name_str))
+        {
+            result = 0;
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
+    return result;
+}
+
+
+int check_common_name(X509 *cert, const char *hostname, neo4j_logger_t *logger)
+{
+    int i = X509_NAME_get_index_by_NID(X509_get_subject_name(cert), NID_commonName, -1);
+    if (i < 0)
+    {
+        return -1;
+    }
+    X509_NAME_ENTRY *cn = X509_NAME_get_entry(X509_get_subject_name(cert), i);
+    if (cn == NULL)
+    {
+        return -1;
+    }
+    ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(cn);
+    if (asn1 == NULL)
+    {
+        return -1;
+    }
+    const char *cn_str = (const char *)ASN1_STRING_data(asn1);
+    // check that there isn't a null in the asn1 string
+    if (strlen(cn_str) != (size_t)ASN1_STRING_length(asn1))
+    {
+        errno = NEO4J_TLS_MALFORMED_CERTIFICATE;
+        return -1;
+    }
+    neo4j_log_trace(logger, "checking against certificate common name '%s'",
+            cn_str);
+    return hostname_matches(hostname, cn_str)? 0 : 1;
 }
 
 

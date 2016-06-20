@@ -400,6 +400,7 @@ struct neo4j_connection_factory
 #define NEO4J_INVALID_PATH_SEQUENCE_IDX_RANGE -34
 #define NEO4J_NO_PLAN_AVAILABLE -35
 #define NEO4J_AUTH_RATE_LIMIT -36
+#define NEO4J_TLS_MALFORMED_CERTIFICATE -37
 
 /**
  * Print the error message corresponding to an error number.
@@ -1169,13 +1170,13 @@ int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
         const char *password);
 
 /**
- * Set the location of a TLS certificate authority file.
+ * Set the location of a file containing TLS certificate authorities (and CRLs).
  *
- * The file, in PEM format, should contain any needed root certificates that
- * may be needed to authenticate that returned by a peer.
+ * The file should contain the certificates of the trusted CAs and CRLs. The
+ * file must be in base64 privacy enhanced mail (PEM) format.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [path] The path to the PEM file containing the root certificates.
+ * @param [path] The path to the PEM file containing the trusted CAs and CRLs.
  *         This string should remain allocated whilst the config is allocated
  *         _or if any connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).
@@ -1184,13 +1185,13 @@ __neo4j_must_check
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
 
 /**
- * Set the location of a directory of TLS certificates.
+ * Set the location of a directory of TLS certificate authorities (and CRLs).
  *
- * The specified directory should contain certificate files named by hash
- * according to the `c_rehash` tool.
+ * The specified directory should contain the certificates of the trusted CAs
+ * and CRLs, named by hash according to the `c_rehash` tool.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [path] The path to the directory of certificates. This string should
+ * @param [path] The path to the directory of CAs and CRLs. This string should
  *         remain allocated whilst the config is allocated _or if any
  *         connections opened with the config remain active_.
  * @return 0 on success, or -1 if an error occurs (errno will be set).

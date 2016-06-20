@@ -90,6 +90,8 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "The server did not return a plan or profile";
     case NEO4J_AUTH_RATE_LIMIT:
         return "Too many authentication attempts - wait 5 seconds before trying again";
+    case NEO4J_TLS_MALFORMED_CERTIFICATE:
+        return "Server presented a malformed TLS certificate";
     default:
 #ifdef STRERROR_R_CHAR_P
         return strerror_r(errnum, buf, buflen);
