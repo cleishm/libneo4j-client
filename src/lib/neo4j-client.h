@@ -559,13 +559,23 @@ struct neo4j_map_entry
 #define neo4j_type(v) ((v)._type)
 
 /**
+ * Check the type of a neo4j value.
+ *
+ * @param [value] The neo4j value.
+ * @param [type] The neo4j type.
+ * @return `true` if the node is of the specified type and `false` otherwise.
+ */
+__neo4j_pure
+bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type);
+
+/**
  * Get a string description of the neo4j type.
  *
  * @param [t] The neo4j type.
  * @return A pointer to a `NULL` terminated string containing the type name.
  */
 __neo4j_pure
-const char *neo4j_type_str(neo4j_type_t t);
+const char *neo4j_typestr(neo4j_type_t t);
 
 /**
  * Get a string representation of a neo4j value.

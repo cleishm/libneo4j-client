@@ -830,7 +830,7 @@ int append_result(run_result_stream_t *results,
         neo4j_log_error(results->logger,
                 "invalid field in RECORD message received in %p"
                 " (got %s, expected List)", (void *)session,
-                neo4j_type_str(arg_type));
+                neo4j_typestr(arg_type));
         errno = EPROTO;
         return -1;
     }
