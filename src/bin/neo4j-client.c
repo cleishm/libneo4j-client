@@ -120,7 +120,6 @@ int main(int argc, char *argv[])
 
     uint8_t log_level = NEO4J_LOG_WARN;
     struct neo4j_logger_provider *provider = NULL;
-    neo4j_config_t *config = NULL;
 
     neo4j_client_init();
 
@@ -129,17 +128,10 @@ int main(int argc, char *argv[])
 
     if (shell_state_init(&state, prog_name, stdin, stdout, stderr, tty))
     {
-        perror("unexpected error");
-        goto cleanup;
-    }
-
-    config = neo4j_new_config();
-    if (config == NULL)
-    {
         neo4j_perror(state.err, errno, "unexpected error");
         goto cleanup;
     }
-    state.config = config;
+
     state.interactive = isatty(STDIN_FILENO);
     bool force_password_prompt = false;
 
@@ -168,14 +160,14 @@ int main(int argc, char *argv[])
             state.histfile = (optarg[0] != '\0')? optarg : NULL;
             break;
         case CA_FILE_OPT:
-            if (neo4j_config_set_TLS_ca_file(config, optarg))
+            if (neo4j_config_set_TLS_ca_file(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
             break;
         case CA_DIRECTORY_OPT:
-            if (neo4j_config_set_TLS_ca_dir(config, optarg))
+            if (neo4j_config_set_TLS_ca_dir(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
@@ -193,19 +185,19 @@ int main(int argc, char *argv[])
             }
             break;
         case 'u':
-            if (neo4j_config_set_username(config, optarg))
+            if (neo4j_config_set_username(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
             break;
         case 'p':
-            if (neo4j_config_set_password(config, optarg))
+            if (neo4j_config_set_password(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
-            neo4j_config_allow_empty_password(config, true);
+            neo4j_config_allow_empty_password(state.config, true);
             break;
         case 'P':
             if (tty == NULL)
@@ -217,14 +209,14 @@ int main(int argc, char *argv[])
             force_password_prompt = true;
             break;
         case KNOWN_HOSTS_OPT:
-            if (neo4j_config_set_known_hosts_file(config, optarg))
+            if (neo4j_config_set_known_hosts_file(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
             break;
         case NO_KNOWN_HOSTS_OPT:
-            if (neo4j_config_set_trust_known_hosts(config, false))
+            if (neo4j_config_set_trust_known_hosts(state.config, false))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
@@ -242,7 +234,7 @@ int main(int argc, char *argv[])
                     goto cleanup;
                 }
                 state.pipeline_max = arg;
-                neo4j_config_set_max_pipelined_requests(config, arg * 2);
+                neo4j_config_set_max_pipelined_requests(state.config, arg * 2);
             }
             break;
         case VERSION_OPT:
@@ -277,16 +269,16 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    neo4j_config_set_logger_provider(config, provider);
+    neo4j_config_set_logger_provider(state.config, provider);
 
     if (tty != NULL)
     {
-        neo4j_config_set_unverified_host_callback(config,
+        neo4j_config_set_unverified_host_callback(state.config,
                 host_verification, &state);
 
         if (state.interactive || force_password_prompt)
         {
-            neo4j_config_set_authentication_reattempt_callback(config,
+            neo4j_config_set_authentication_reattempt_callback(state.config,
                     auth_reattempt, &state);
         }
     }
@@ -322,10 +314,6 @@ int main(int argc, char *argv[])
 
 cleanup:
     shell_state_destroy(&state);
-    if (config != NULL)
-    {
-        neo4j_config_free(config);
-    }
     if (provider != NULL)
     {
         neo4j_std_logger_provider_free(provider);

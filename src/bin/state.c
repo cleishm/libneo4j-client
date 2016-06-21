@@ -31,6 +31,11 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->err = err;
     state->tty = tty;
     state->pipeline_max = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS / 2;
+    state->config = neo4j_new_config();
+    if (state->config == NULL)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -38,11 +43,6 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
 void shell_state_destroy(shell_state_t *state)
 {
     assert(state != NULL);
-
-    if (state->temp_buffer != NULL)
-    {
-        free(state->temp_buffer);
-    }
     if (state->session != NULL)
     {
         neo4j_end_session(state->session);
@@ -51,6 +51,8 @@ void shell_state_destroy(shell_state_t *state)
     {
         neo4j_close(state->connection);
     }
+    neo4j_config_free(state->config);
+    free(state->temp_buffer);
 }
 
 
