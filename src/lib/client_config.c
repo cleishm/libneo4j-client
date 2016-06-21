@@ -121,14 +121,14 @@ void neo4j_config_free(neo4j_config_t *config)
     {
         return;
     }
-    free(config->username);
-    free(config->password);
+    ignore_unused_result(neo4j_config_set_username(config, NULL));
+    ignore_unused_result(neo4j_config_set_password(config, NULL));
 #ifdef HAVE_TLS
-    free(config->tls_private_key_file);
-    free(config->tls_ca_file);
-    free(config->tls_ca_dir);
+    ignore_unused_result(neo4j_config_set_TLS_private_key(config, NULL));
+    ignore_unused_result(neo4j_config_set_TLS_ca_file(config, NULL));
+    ignore_unused_result(neo4j_config_set_TLS_ca_dir(config, NULL));
 #endif
-    free(config->known_hosts_file);
+    ignore_unused_result(neo4j_config_set_known_hosts_file(config, NULL));
     free(config);
 }
 
@@ -157,6 +157,10 @@ int neo4j_config_nset_username(neo4j_config_t *config,
 int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 {
     REQUIRE(config != NULL, -1);
+    if (config->password != NULL)
+    {
+        memset(config->password, 0, strlen(config->password));
+    }
     return replace_strptr_dup(&(config->password), password);
 }
 
