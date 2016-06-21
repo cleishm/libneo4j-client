@@ -291,6 +291,14 @@ int main(int argc, char *argv[])
         }
     }
 
+    // remove the password from the config
+    if (neo4j_config_set_password(state.config, NULL))
+    {
+        // can't fail
+    }
+    // future :connect attempts can try using an empty password from the URI
+    neo4j_config_allow_empty_password(state.config, true);
+
     if (state.interactive)
     {
         state.render = render_results_table;
