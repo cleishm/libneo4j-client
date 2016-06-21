@@ -1049,6 +1049,18 @@ neo4j_config_t *neo4j_new_config(void);
 void neo4j_config_free(neo4j_config_t *config);
 
 /**
+ * Duplicate a neo4j client configuration.
+ *
+ * The returned configuration must be later released using
+ * neo4j_config_free().
+ *
+ * @param [config] A pointer to a neo4j client configuration.
+ * @return A duplicate configuration.
+ */
+__neo4j_must_check
+neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
+
+/**
  * Set the client ID.
  *
  * The client ID will be used when identifying the client to neo4j.

@@ -66,18 +66,6 @@ struct neo4j_config
 
 
 /**
- * Duplicate a `neo4j_config_t`.
- *
- * @internal
- *
- * @param [config] The config to duplicate.
- * @return A newly allocated `neo4j_config_t`.
- */
-__neo4j_must_check
-neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
-
-
-/**
  * Set the username in the config.
  *
  * Differs from `neo4j_config_set_username` as the username string
