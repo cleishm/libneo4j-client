@@ -1588,6 +1588,15 @@ int neo4j_end_session(neo4j_session_t *session);
 int neo4j_reset_session(neo4j_session_t *session);
 
 /**
+ * Obtain the connection associated with a session.
+ *
+ * @param [session] The session.
+ * @return The connection for the session.
+ */
+__neo4j_pure
+neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session);
+
+/**
  * Check if the server indicated that credentials have expired.
  *
  * @param [session] The session.

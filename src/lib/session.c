@@ -94,6 +94,12 @@ failure:
 }
 
 
+neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session)
+{
+    return session->connection;
+}
+
+
 int session_start(neo4j_session_t *session)
 {
     const neo4j_config_t *config = session->config;
