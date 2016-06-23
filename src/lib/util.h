@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <limits.h>
+#include <netdb.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
