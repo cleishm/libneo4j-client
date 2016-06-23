@@ -16,10 +16,8 @@
  */
 #include "../../config.h"
 #include "session.h"
-#include "connection.h"
 #include "iostream.h"
 #include "memory.h"
-#include "messages.h"
 #include "metadata.h"
 #include "serialization.h"
 #include "util.h"
@@ -70,7 +68,6 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
             (void *)session, (void *)connection);
 
     session->connection = connection;
-    session->config = connection->config;
     session->logger = logger;
     if (session_start(session))
     {
@@ -102,7 +99,7 @@ neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session)
 
 int session_start(neo4j_session_t *session)
 {
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
 
     if (neo4j_attach_session(session->connection, session))
     {
@@ -210,7 +207,6 @@ int neo4j_end_session(neo4j_session_t *session)
     neo4j_log_debug(session->logger, "session ended (%p)", (void *)session);
 
     session->connection = NULL;
-    session->config = NULL;
     neo4j_logger_release(session->logger);
     session->logger = NULL;
     free(session);
@@ -335,7 +331,7 @@ int send_requests(neo4j_session_t *session)
 {
     assert(session != NULL);
     neo4j_connection_t *connection = session->connection;
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
 
     for (unsigned int i = session->inflight_requests;
             i < session->request_queue_depth &&
@@ -456,7 +452,7 @@ int drain_queued_requests(neo4j_session_t *session)
 struct neo4j_request *new_request(neo4j_session_t *session)
 {
     assert(session != NULL);
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
 
     if (session->failed)
     {
@@ -518,7 +514,7 @@ int initialize(neo4j_session_t *session, unsigned int attempts,
         char *username, size_t usize, char *password, size_t psize)
 {
     assert(session != NULL);
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
     const char *client_id = config->client_id;
 
     struct init_cdata cdata = { .session = session, .error = 0 };
@@ -654,7 +650,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
                 *metadata);
     }
 
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
     const char *code;
     const char *message;
     neo4j_mpool_t mpool =

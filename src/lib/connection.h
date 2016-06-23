@@ -20,7 +20,9 @@
 #include "neo4j-client.h"
 #include "client_config.h"
 #include "iostream.h"
+#include "logging.h"
 #include "memory.h"
+#include "messages.h"
 #include "session.h"
 #include "uri.h"
 

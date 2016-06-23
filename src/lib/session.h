@@ -18,10 +18,9 @@
 #define NEO4J_SESSION_H
 
 #include "neo4j-client.h"
+#include "connection.h"
 #include "job.h"
-#include "logging.h"
 #include "memory.h"
-#include "messages.h"
 
 
 typedef int (*neo4j_response_recv_t)(void *cdata, neo4j_message_type_t type,
@@ -47,7 +46,6 @@ struct neo4j_request
 struct neo4j_session
 {
     neo4j_connection_t *connection;
-    const neo4j_config_t *config;
     neo4j_logger_t *logger;
 
     bool credentials_expired;
@@ -63,6 +61,17 @@ struct neo4j_session
     neo4j_job_t *jobs;
 };
 
+
+/**
+ * @fn neo4j_config_t *neo4j_session_config(neo4j_session_t *session)
+ * @brief Get the configuration associated with a session
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @return The configuration.
+ */
+#define neo4j_session_config(s) ((s)->connection->config)
 
 /**
  * Attach a job to a session.

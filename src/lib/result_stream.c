@@ -292,14 +292,17 @@ failure:
 
 run_result_stream_t *run_rs_open(neo4j_session_t *session)
 {
-    run_result_stream_t *results = neo4j_calloc(session->config->allocator,
+    assert(session != NULL);
+    neo4j_config_t *config = neo4j_session_config(session);
+
+    run_result_stream_t *results = neo4j_calloc(config->allocator,
             NULL, 1, sizeof(run_result_stream_t));
 
     results->session = session;
-    results->logger = neo4j_get_logger(session->config, "results");
-    results->allocator = session->config->allocator;
-    results->mpool = neo4j_std_mpool(session->config);
-    results->record_mpool = neo4j_std_mpool(session->config);
+    results->logger = neo4j_get_logger(config, "results");
+    results->allocator = config->allocator;
+    results->mpool = neo4j_std_mpool(config);
+    results->record_mpool = neo4j_std_mpool(config);
     results->statement_type = -1;
     results->refcount = 1;
 
@@ -721,6 +724,8 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
         return 0;
     }
 
+    neo4j_config_t *config = neo4j_session_config(session);
+
     if (type == NEO4J_IGNORED_MESSAGE)
     {
         if (results->failure == 0)
@@ -777,7 +782,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     }
 
     results->statement_plan = neo4j_meta_plan(*metadata, description,
-            session->config, logger);
+            config, logger);
     if (results->statement_plan == NULL && errno != NEO4J_NO_PLAN_AVAILABLE)
     {
         set_failure(results, errno);
@@ -842,6 +847,9 @@ int append_result(run_result_stream_t *results,
         return 0;
     }
 
+    assert(session != NULL);
+    neo4j_config_t *config = neo4j_session_config(session);
+
     result_record_t *record = neo4j_mpool_calloc(&(results->record_mpool),
             1, sizeof(result_record_t));
     if (record == NULL)
@@ -853,7 +861,7 @@ int append_result(run_result_stream_t *results,
 
     // save memory for the record with the record
     record->mpool = results->record_mpool;
-    results->record_mpool = neo4j_std_mpool(session->config);
+    results->record_mpool = neo4j_std_mpool(config);
 
     record->list = argv[0];
     record->next = NULL;

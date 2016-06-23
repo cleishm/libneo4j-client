@@ -20,7 +20,6 @@
 #include "chunking_iostream.h"
 #include "client_config.h"
 #include "deserialization.h"
-#include "logging.h"
 #include "memory.h"
 #include "network.h"
 #ifdef HAVE_OPENSSL
