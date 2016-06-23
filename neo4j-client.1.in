@@ -138,6 +138,23 @@ Connect to the Neo4j server specified by the host and optional port.
 .I :disconnect
 Disconnect from the Neo4j server (if connected).
 .TP
+.I :export name=val ...
+Export parameters for queries. The parameter will be available in queries
+as \fI{name}\fR, and will be a string containing the text specified. Values
+containing spaces must be quoted, e.g. \fI:export name="foo bar"\fR. Multiple
+name and value pairs may be specified. If no name and value pairs are specified,
+then the list of currently exported values will be displayed.
+
+Note that all parameters are sent to the server for every query, so it is
+best not to export large values without immediately using \fI:unexport\fR
+after.
+.TP
+.I :unexport name ...
+Remove a named parameter from those exported to queries.
+.Tp
+.I :reset
+Reset the session with the server, aborting any open transactions.
+.TP
 .I ":output (table|csv)"
 Set the output format to either table or CSV.
 .TP
