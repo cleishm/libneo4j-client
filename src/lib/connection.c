@@ -145,6 +145,11 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
     REQUIRE(hostname != NULL, NULL);
     REQUIRE(port <= UINT16_MAX, NULL);
 
+    if (port == 0)
+    {
+        port = NEO4J_DEFAULT_TCP_PORT;
+    }
+
     config = neo4j_config_dup(config);
     if (config == NULL)
     {
