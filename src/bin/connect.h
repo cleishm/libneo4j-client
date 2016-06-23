@@ -19,7 +19,7 @@
 
 #include "state.h"
 
-int db_connect(shell_state_t *state, const char *uri_string);
+int db_connect(shell_state_t *state, const char *connect_string);
 int db_disconnect(shell_state_t *state);
 
 #endif/*NEO4J_CONNECT_H*/

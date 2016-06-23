@@ -72,7 +72,7 @@ static struct option longopts[] =
 static void usage(FILE *s, const char *prog_name)
 {
     fprintf(s,
-"usage: %s [OPTIONS] [URL]\n"
+"usage: %s [OPTIONS] [URL | host[:port]]\n"
 "options:\n"
 " --help, -h          Output this usage information.\n"
 " --history=file      Use the specified file for saving history.\n"

@@ -19,7 +19,7 @@
 .SH NAME
 neo4j\-client \- command shell for Neo4j
 .SH SYNOPSIS
-.B neo4j\-client \fI[options...] [URL]\fR
+.B neo4j\-client \fI[options...] [URL | host[:port]]\fR
 .SH "DESCRIPTION"
 \fBneo4j\-client\fR is a command shell for Neo4j. It supports secure
 connections to Neo4j server, sending of statements (including multiline
@@ -105,7 +105,7 @@ history of entered commands will be saved (unless disabled) and an errors in
 evaluation will be presented to the user. Results from statements sent to Neo4j
 will be presented to the user in table format (by default), using the full
 width of the terminal.
-.SH BATCH (NON-INTERACTIVE) MODE
+.SH NON-INTERACTIVE (BATCH) MODE
 When \fBneo4j\-client\fR is started with standard intput connected to a pipe,
 it will read statements from the pipe and evaluate each. Any error in
 evaluation will cause \fBneo4j\-client\fR to terminate without evaluating any
@@ -128,9 +128,12 @@ List all the available commands and usage information.
 Exit \fBneo4j\-client\fR.
 .TP
 .I ":connect '<url>'"
-Connect the Neo4j server specified by the URL. Note that the URL must be
-given in quotes, as it will otherwise the \fI//\fR characters in the URL would
+Connect to the Neo4j server specified by the URL. Note that the URL must be
+given in quotes, as the \fI//\fR characters in the URL would otherwise
 be considered as the start of a comment.
+.TP
+.I ":connect <host[:port]>"
+Connect to the Neo4j server specified by the host and optional port.
 .TP
 .I :disconnect
 Disconnect from the Neo4j server (if connected).
