@@ -28,7 +28,7 @@ struct test_allocator
 };
 
 
-#define TEST_BUFFER_SIZE 4096
+#define TEST_BUFFER_SIZE 2048
 static char test_buffer[TEST_BUFFER_SIZE];
 static unsigned int test_buffer_used;
 
@@ -260,6 +260,8 @@ END_TEST
 START_TEST (fill_and_drain)
 {
     int additions = sizeof(test_buffer) - 1;
+    ck_assert_int_gt((additions % (block_size - 1)), NEO4J_MPOOL_DEBOUNCE);
+
     for (int i = additions; i > 0; --i)
     {
         ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);

@@ -28,7 +28,7 @@ EXTRA_DIST = \
 docker-check:
 	$(MAKE) dist
 	id=`docker create -i debian-unstable-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check'` && \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && CK_TIMEOUT_MULTIPLIER=2 make check'` && \
 	trap "docker rm $$id" EXIT && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker start -i $$id
@@ -36,7 +36,7 @@ docker-check:
 docker-valgrind:
 	$(MAKE) dist
 	id=`docker create -i debian-unstable-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check && CK_FORK=no valgrind --suppressions=valgrind.suppressions --leak-check=full ./tests/check_libneo4j-client'` && \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && CK_TIMEOUT_MULTIPLIER=2 make check && CK_FORK=no CK_TIMEOUT_MULTIPLIER=2 valgrind --suppressions=valgrind.suppressions --leak-check=full ./tests/check_libneo4j-client'` && \
 	trap "docker rm $$id" EXIT && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker cp valgrind.suppressions $$id:/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
