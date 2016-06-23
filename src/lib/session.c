@@ -38,8 +38,7 @@ static int drain_queued_requests(neo4j_session_t *session);
 static struct neo4j_request *new_request(neo4j_session_t *session);
 static void pop_request(neo4j_session_t* session);
 
-static int initialize(neo4j_session_t *session, unsigned int attempts,
-        char *username, size_t usize, char *password, size_t psize);
+static int initialize(neo4j_session_t *session, unsigned int attempts);
 static int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 static int ack_failure(neo4j_session_t *session);
@@ -99,8 +98,6 @@ neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session)
 
 int session_start(neo4j_session_t *session)
 {
-    const neo4j_config_t *config = neo4j_session_config(session);
-
     if (neo4j_attach_session(session->connection, session))
     {
         char ebuf[256];
@@ -114,28 +111,13 @@ int session_start(neo4j_session_t *session)
     assert(session->request_queue_size > 0);
     assert(session->request_queue_depth == 0);
 
-    char username[NEO4J_MAXUSERNAMELEN] = "";
-    if (config->username)
+    if (initialize(session, 0))
     {
-        strncpy(username, config->username, sizeof(username));
-    }
-    char password[NEO4J_MAXPASSWORDLEN] = "";
-    if (config->password)
-    {
-        strncpy(password, config->password, sizeof(password));
-    }
-    if (initialize(session, 0, username, sizeof(username),
-            password, sizeof(password)))
-    {
-        memset(username, 0, sizeof(username));
-        memset(password, 0, sizeof(password));
         assert(session->request_queue_depth <= 1);
         session->request_queue_depth = 0;
         goto failure;
     }
 
-    memset(username, 0, sizeof(username));
-    memset(password, 0, sizeof(password));
     return 0;
 
     int errsv;
@@ -510,14 +492,16 @@ struct init_cdata
 };
 
 
-int initialize(neo4j_session_t *session, unsigned int attempts,
-        char *username, size_t usize, char *password, size_t psize)
+int initialize(neo4j_session_t *session, unsigned int attempts)
 {
     assert(session != NULL);
-    const neo4j_config_t *config = neo4j_session_config(session);
+    neo4j_config_t *config = neo4j_session_config(session);
     const char *client_id = config->client_id;
 
     struct init_cdata cdata = { .session = session, .error = 0 };
+
+    const char *username = (config->username != NULL)? config->username : "";
+    const char *password = (config->password != NULL)? config->password : "";
 
     if (attempts > 0 || config->auth_reattempt_callback == NULL ||
             password[0] != '\0' || config->allow_empty_password)
@@ -527,6 +511,7 @@ int initialize(neo4j_session_t *session, unsigned int attempts,
         {
             return -1;
         }
+
         req->type = NEO4J_INIT_MESSAGE;
         req->_argv[0] = neo4j_string(client_id);
         neo4j_map_entry_t auth_token[3] =
@@ -571,9 +556,15 @@ int initialize(neo4j_session_t *session, unsigned int attempts,
         return -1;
     }
 
+    char username_buf[NEO4J_MAXUSERNAMELEN];
+    strncpy(username_buf, username, sizeof(username_buf));
+    char password_buf[NEO4J_MAXPASSWORDLEN];
+    strncpy(password_buf, password, sizeof(password_buf));
+
     int r = config->auth_reattempt_callback(
             config->auth_reattempt_callback_userdata, host, attempts,
-            cdata.error, username, usize, password, psize);
+            cdata.error, username_buf, sizeof(username_buf),
+            password_buf, sizeof(password_buf));
     if (r < 0)
     {
         return -1;
@@ -591,7 +582,17 @@ int initialize(neo4j_session_t *session, unsigned int attempts,
         }
         return -1;
     }
-    return initialize(session, attempts, username, usize, password, psize);
+
+    if (neo4j_config_set_username(config, username_buf))
+    {
+        return -1;
+    }
+    if (neo4j_config_set_password(config, password_buf))
+    {
+        return -1;
+    }
+
+    return initialize(session, attempts);
 }
 
 

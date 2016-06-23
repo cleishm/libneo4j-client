@@ -50,3 +50,66 @@ int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
     }
     return NEO4J_AUTHENTICATION_REATTEMPT;
 }
+
+
+int change_password(shell_state_t *state, neo4j_session_t *session,
+        char *password, size_t pwlen)
+{
+    assert(state->tty != NULL);
+
+    char confirm[NEO4J_MAXPASSWORDLEN];
+    assert(sizeof(confirm) >= pwlen);
+
+    do
+    {
+        if (readpassphrase("New Password: ", password, pwlen,
+                    RPP_REQUIRE_TTY) == NULL)
+        {
+            return -1;
+        }
+
+        if (readpassphrase("Retype Password: ", confirm, sizeof(confirm),
+                    RPP_REQUIRE_TTY) == NULL)
+        {
+            return -1;
+        }
+
+        if (strcmp(password, confirm) == 0)
+        {
+            break;
+        }
+
+        fprintf(state->tty, "Password does not match. Try again.\n");
+    } while (strcmp(password, confirm) != 0);
+
+    neo4j_map_entry_t param =
+            neo4j_map_entry("password", neo4j_string(password));
+    // FIXME: should use neo4j_send, but that results in a failure.
+    neo4j_result_stream_t *results = neo4j_run(session,
+            "CALL dbms.changePassword({password})", neo4j_map(&param, 1));
+    if (results == NULL)
+    {
+        return -1;
+    }
+
+    int err = neo4j_check_failure(results);
+
+    int result = -1;
+    switch (err)
+    {
+    case 0:
+        result = 0;
+        break;
+
+    case NEO4J_STATEMENT_EVALUATION_FAILED:
+        fprintf(state->err, "%s\n", neo4j_error_message(results));
+        break;
+
+    default:
+        neo4j_perror(state->err, err, "Password change failed");
+        break;
+    }
+
+    neo4j_close_results(results);
+    return result;
+}

@@ -33,6 +33,7 @@ struct shell_state
     FILE *err;
     FILE *tty;
     bool interactive;
+    bool password_prompt;
     const char *histfile;
     unsigned int pipeline_max;
     neo4j_config_t *config;

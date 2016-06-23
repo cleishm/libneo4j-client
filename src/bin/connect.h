@@ -14,16 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_AUTHENTICATION_H
-#define NEO4J_AUTHENTICATION_H
+#ifndef NEO4J_CONNECT_H
+#define NEO4J_CONNECT_H
 
-#include <neo4j-client.h>
 #include "state.h"
 
-int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
-        int error, char *username, size_t usize, char *password, size_t psize);
+int db_connect(shell_state_t *state, const char *uri_string);
+int db_disconnect(shell_state_t *state);
 
-int change_password(shell_state_t *state, neo4j_session_t *session,
-        char *password, size_t pwlen);
-
-#endif/*NEO4J_AUTHENTICATION_H*/
+#endif/*NEO4J_CONNECT_H*/

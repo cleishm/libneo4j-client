@@ -16,6 +16,8 @@
  */
 #include "../../config.h"
 #include "evaluate.h"
+#include "authentication.h"
+#include "connect.h"
 #include "render.h"
 #include <cypher-parser.h>
 #include <assert.h>
@@ -141,61 +143,6 @@ int eval_connect(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int db_connect(shell_state_t *state, const char *uri_string)
-{
-    if (state->session != NULL)
-    {
-        if (db_disconnect(state))
-        {
-            return -1;
-        }
-    }
-    assert(state->session == NULL);
-
-    neo4j_connection_t *connection =
-        neo4j_connect(uri_string, state->config, state->connect_flags);
-    if (connection == NULL)
-    {
-        char ebuf[512];
-        const char *hint = "";
-        switch (errno)
-        {
-        case NEO4J_NO_SERVER_TLS_SUPPORT:
-            fprintf(state->err, "connection to '%s' failed: A secure"
-                    " connection could not be esablished (try --insecure)\n",
-                    uri_string);
-            break;
-        case NEO4J_INVALID_URI:
-            if (strchr(uri_string, '/') == NULL)
-            {
-                hint = " (hint: you need to put quotes around the URI)";
-            }
-            fprintf(state->err, "invalid URI '%s'%s\n", uri_string, hint);
-            break;
-        default:
-            fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
-                    neo4j_strerror(errno, ebuf, sizeof(ebuf)));
-            break;
-        }
-        return -1;
-    }
-
-    neo4j_session_t *session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        char ebuf[512];
-        fprintf(state->err, "connection to '%s' failed: %s\n", uri_string,
-                neo4j_strerror(errno, ebuf, sizeof(ebuf)));
-        neo4j_close(connection);
-        return -1;
-    }
-
-    state->connection = connection;
-    state->session = session;
-    return 0;
-}
-
-
 int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command)
 {
     if (cypher_ast_command_narguments(command) != 0)
@@ -205,21 +152,6 @@ int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command)
     }
 
     return db_disconnect(state);
-}
-
-
-int db_disconnect(shell_state_t *state)
-{
-    if (state->session == NULL)
-    {
-        fprintf(state->err, "ERROR: not connected\n");
-        return -1;
-    }
-    neo4j_end_session(state->session);
-    state->session = NULL;
-    neo4j_close(state->connection);
-    state->connection = NULL;
-    return 0;
 }
 
 

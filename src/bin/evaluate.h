@@ -38,7 +38,4 @@ int evaluate_command_string(shell_state_t *state, const char *command);
 evaluation_continuation_t evaluate_statement(shell_state_t *state,
         const char *statement);
 
-int db_connect(shell_state_t *state, const char *uri_string);
-int db_disconnect(shell_state_t *state);
-
 #endif/*NEO4J_EVALUATE_H*/

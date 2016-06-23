@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "authentication.h"
 #include "batch.h"
+#include "connect.h"
 #include "evaluate.h"
 #include "interactive.h"
 #include "render.h"
@@ -133,7 +134,6 @@ int main(int argc, char *argv[])
     }
 
     state.interactive = isatty(STDIN_FILENO);
-    bool force_password_prompt = false;
 
     char histfile[PATH_MAX];
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
                         "Cannot prompt for a password without a tty\n");
                 goto cleanup;
             }
-            force_password_prompt = true;
+            state.password_prompt = true;
             break;
         case KNOWN_HOSTS_OPT:
             if (neo4j_config_set_known_hosts_file(state.config, optarg))
@@ -271,24 +271,26 @@ int main(int argc, char *argv[])
 
     neo4j_config_set_logger_provider(state.config, provider);
 
+    if (state.interactive)
+    {
+        state.password_prompt = true;
+    }
+
     if (tty != NULL)
     {
         neo4j_config_set_unverified_host_callback(state.config,
                 host_verification, &state);
 
-        if (state.interactive || force_password_prompt)
+        if (state.password_prompt)
         {
             neo4j_config_set_authentication_reattempt_callback(state.config,
                     auth_reattempt, &state);
         }
     }
 
-    if (argc >= 1)
+    if (argc >= 1 && db_connect(&state, argv[0]))
     {
-        if (db_connect(&state, argv[0]))
-        {
-            goto cleanup;
-        }
+        goto cleanup;
     }
 
     // remove the password from the config

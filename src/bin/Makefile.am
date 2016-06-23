@@ -5,6 +5,8 @@ neo4j_client_SOURCES = neo4j-client.c \
 	authentication.h \
 	batch.c \
 	batch.h \
+	connect.c \
+	connect.h \
 	evaluate.c \
 	evaluate.h \
 	interactive.c \
