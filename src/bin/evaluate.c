@@ -43,6 +43,7 @@ static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_set(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_status(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
 
@@ -56,6 +57,7 @@ static struct shell_command shell_commands[] =
       { "quit", eval_quit },
       { "reset", eval_reset },
       { "set", eval_set },
+      { "status", eval_status },
       { "unexport", eval_unexport },
       { "width", eval_width },
       { NULL, NULL } };
@@ -271,6 +273,8 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 ":export name=val ...   Export parameters for queries\n"
 ":unexport name ...     Unexport parameters for queries\n"
 ":reset                 Reset the session with the server\n"
+":set option=value ...  Set shell options\n"
+":status                Show the client connection status\n"
 ":help                  Show usage information\n"
 ":output (table|csv)    Set the output format\n"
 ":width (<n>|auto)      Set the number of columns in the table output\n");
@@ -329,6 +333,32 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
         {
             return -1;
         }
+    }
+
+    return 0;
+}
+
+
+int eval_status(shell_state_t *state, const cypher_astnode_t *command)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        fprintf(state->err, ":status does not take any arguments\n");
+        return -1;
+    }
+
+    if (state->connection == NULL)
+    {
+        fprintf(state->out, "Not connected\n");
+    }
+    else
+    {
+        const char *username = neo4j_connection_username(state->connection);
+        const char *hostname = neo4j_connection_hostname(state->connection);
+        unsigned int port = neo4j_connection_port(state->connection);
+        fprintf(state->out, "Connected to 'neo4j://%s%s%s:%u'\n",
+                (username != NULL)? username : "",
+                (username != NULL)? "@" : "", hostname, port);
     }
 
     return 0;
