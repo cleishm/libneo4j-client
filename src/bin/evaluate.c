@@ -67,6 +67,8 @@ static int set_insecure(shell_state_t *state, const char *value);
 static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
 static int set_output(shell_state_t *state, const char *value);
 static const char *get_output(shell_state_t *state, char *buf, size_t n);
+static int set_username(shell_state_t *state, const char *value);
+static const char *get_username(shell_state_t *state, char *buf, size_t n);
 static int set_width(shell_state_t *state, const char *value);
 static const char * get_width(shell_state_t *state, char *buf, size_t n);
 
@@ -80,6 +82,7 @@ struct variables
 static struct variables variables[] =
     { { "insecure", set_insecure, get_insecure },
       { "output", set_output, get_output },
+      { "username", set_username, get_username },
       { "width", set_width, get_width },
       { NULL, NULL } };
 
@@ -440,6 +443,25 @@ const char *get_output(shell_state_t *state, char *buf, size_t n)
 {
     const char *name = renderer_name(state->render);
     return (name != NULL)? name : "unknown";
+}
+
+
+int set_username(shell_state_t *state, const char *value)
+{
+    return neo4j_config_set_username(state->config,
+            (*value != '\0')? value : NULL);
+}
+
+
+const char *get_username(shell_state_t *state, char *buf, size_t n)
+{
+    const char *username = neo4j_config_get_username(state->config);
+    if (username == NULL)
+    {
+        return "";
+    }
+    snprintf(buf, n, "\"%s\"", username);
+    return buf;
 }
 
 
