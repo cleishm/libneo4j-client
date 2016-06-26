@@ -63,6 +63,8 @@ static struct shell_command shell_commands[] =
 
 static int set_variable(shell_state_t *state, const char *name,
         const char *value);
+static int set_insecure(shell_state_t *state, const char *value);
+static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
 static int set_output(shell_state_t *state, const char *value);
 static const char *get_output(shell_state_t *state, char *buf, size_t n);
 static int set_width(shell_state_t *state, const char *value);
@@ -76,7 +78,8 @@ struct variables
 };
 
 static struct variables variables[] =
-    { { "output", set_output, get_output },
+    { { "insecure", set_insecure, get_insecure },
+      { "output", set_output, get_output },
       { "width", set_width, get_width },
       { NULL, NULL } };
 
@@ -392,6 +395,31 @@ int set_variable(shell_state_t *state, const char *name,
 
     fprintf(state->err, "Unknown variable '%s'\n", name);
     return -1;
+}
+
+
+int set_insecure(shell_state_t *state, const char *value)
+{
+    if (strcmp(value, "yes") == 0)
+    {
+        state->connect_flags |= NEO4J_INSECURE;
+    }
+    else if (strcmp(value, "no") == 0)
+    {
+        state->connect_flags &= ~NEO4J_INSECURE;
+    }
+    else
+    {
+        fprintf(state->err, "Must set insecure to 'yes' or 'no'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+const char *get_insecure(shell_state_t *state, char *buf, size_t n)
+{
+    return (state->connect_flags & NEO4J_INSECURE)? "yes" : "no";
 }
 
 

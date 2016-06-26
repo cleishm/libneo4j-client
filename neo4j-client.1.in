@@ -132,13 +132,13 @@ Connect to the Neo4j server specified by the URL. Note that the URL must be
 given in quotes, as the \fI//\fR characters in the URL would otherwise
 be considered as the start of a comment.
 .TP
-.I ":connect <host[:port]>"
+.I ":connect <host>[:<port>]"
 Connect to the Neo4j server specified by the host and optional port.
 .TP
 .I :disconnect
 Disconnect from the Neo4j server (if connected).
 .TP
-.I :export name=val ...
+.I :export [name=val] ...
 Export parameters for queries. The parameter will be available in queries
 as \fI{name}\fR, and will be a string containing the text specified. Values
 containing spaces must be quoted, e.g. \fI:export name="foo bar"\fR. Multiple
@@ -155,14 +155,22 @@ Remove a named parameter from those exported to queries.
 .I :reset
 Reset the session with the server, aborting any open transactions.
 .TP
+.I :set [option=value] ...
+Set various shell options. If no option name and value paris are specified,
+then the list of current options and their values will be displayed.
+.TP
 .I ":output (table|csv)"
 Set the output format to either table or CSV.
+
+Equivalent to `:set output=(table|csv)`.
 .TP
 .I ":width <n>"
 Set the output width for table rendering. \fIn\fR is either an integer between
 2 and 4095, or \fIauto\fR. In interactive mode, the default is \fIauto\fR,
 which sets the output width to match the width of the terminal. In
 non-interactive (batch) mode, the default is 70.
+
+Equivalent to `:set width=<n>`.
 .SH EXAMPLES
 Start \fBneo4j\-client\fR in interactive mode, and run a query:
 
