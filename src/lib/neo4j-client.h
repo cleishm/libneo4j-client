@@ -1072,6 +1072,15 @@ neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
  */
 void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
 
+/**
+ * Get the client ID in the neo4j client configuration.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return A pointer to the client ID, or `NULL` if one is not set.
+ */
+__neo4j_pure
+const char *neo4j_config_get_client_id(neo4j_config_t *config);
+
 #define NEO4J_MAXUSERNAMELEN 1024
 
 /**
@@ -1084,6 +1093,18 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
  */
 __neo4j_must_check
 int neo4j_config_set_username(neo4j_config_t *config, const char *username);
+
+/**
+ * Get the username in the neo4j client configuration.
+ *
+ * The returned username will only be valid whilst the configuration is
+ * unchanged.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return A pointer to the username, or `NULL` if one is not set.
+ */
+__neo4j_pure
+const char *neo4j_config_get_username(neo4j_config_t *config);
 
 #define NEO4J_MAXPASSWORDLEN 1024
 
@@ -1114,6 +1135,15 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password);
  */
 void neo4j_config_set_attempt_empty_password(neo4j_config_t *config,
         bool value);
+
+/**
+ * Check if the configuration allows for auth attempts using an empty password.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if an attempt will be made, or `false` otherwise.
+ */
+__neo4j_pure
+bool neo4j_config_will_attempt_empty_password(neo4j_config_t *config);
 
 #define NEO4J_AUTHENTICATION_REATTEMPT 0
 #define NEO4J_AUTHENTICATION_FAIL 1

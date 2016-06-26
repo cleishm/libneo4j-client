@@ -139,10 +139,22 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
 }
 
 
+const char *neo4j_config_get_client_id(neo4j_config_t *config)
+{
+    return config->client_id;
+}
+
+
 int neo4j_config_set_username(neo4j_config_t *config, const char *username)
 {
     REQUIRE(config != NULL, -1);
     return replace_strptr_dup(&(config->username), username);
+}
+
+
+const char *neo4j_config_get_username(neo4j_config_t *config)
+{
+    return config->username;
 }
 
 
@@ -168,6 +180,12 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 void neo4j_config_set_attempt_empty_password(neo4j_config_t *config, bool value)
 {
     config->attempt_empty_password = value;
+}
+
+
+bool neo4j_config_will_attempt_empty_password(neo4j_config_t *config)
+{
+    return config->attempt_empty_password;
 }
 
 
