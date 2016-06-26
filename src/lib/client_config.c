@@ -165,9 +165,9 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 }
 
 
-void neo4j_config_allow_empty_password(neo4j_config_t *config, bool allow)
+void neo4j_config_set_attempt_empty_password(neo4j_config_t *config, bool value)
 {
-    config->allow_empty_password = allow;
+    config->attempt_empty_password = value;
 }
 
 

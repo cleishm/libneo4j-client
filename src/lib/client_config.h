@@ -30,7 +30,7 @@ struct neo4j_config
 
     char *username;
     char *password;
-    bool allow_empty_password;
+    bool attempt_empty_password;
     neo4j_authentication_reattempt_callback_t auth_reattempt_callback;
     void *auth_reattempt_callback_userdata;
 

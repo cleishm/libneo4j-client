@@ -1102,18 +1102,18 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password);
  * Attempt initial authentication with an empty password.
  *
  * If an authentication re-attempt callback has been provided (see
- * neo4j_config_set_authentication_reattempt_callback()), and a password
- * has not been set in the config, or a connection URL does not contain
- * a password, then the default behaviour is to immediately call the
- * authentication re-attempt callback. If, however, this config property
- * is set to true, then authentication using the empty password will
- * be attempted first.
+ * neo4j_config_set_authentication_reattempt_callback()), and a password has
+ * not been set in the config, or a connection URL does not contain a password,
+ * then the default behaviour is to immediately call the authentication
+ * re-attempt callback. If, however, this config property is set to true, then
+ * authentication using an empty password will be attempted first.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [allow] Allow attempting to use an empty password for the first
+ * @param [value] Allow attempting to use an empty password for the first
  *         authentiation attempt.
  */
-void neo4j_config_allow_empty_password(neo4j_config_t *config, bool allow);
+void neo4j_config_set_attempt_empty_password(neo4j_config_t *config,
+        bool value);
 
 #define NEO4J_AUTHENTICATION_REATTEMPT 0
 #define NEO4J_AUTHENTICATION_FAIL 1

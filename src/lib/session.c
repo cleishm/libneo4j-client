@@ -504,7 +504,7 @@ int initialize(neo4j_session_t *session, unsigned int attempts)
     const char *password = (config->password != NULL)? config->password : "";
 
     if (attempts > 0 || config->auth_reattempt_callback == NULL ||
-            password[0] != '\0' || config->allow_empty_password)
+            config->password != NULL || config->attempt_empty_password)
     {
         struct neo4j_request *req = new_request(session);
         if (req == NULL)

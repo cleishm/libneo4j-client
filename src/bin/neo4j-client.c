@@ -197,7 +197,6 @@ int main(int argc, char *argv[])
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
-            neo4j_config_allow_empty_password(state.config, true);
             break;
         case 'P':
             if (tty == NULL)
@@ -293,13 +292,11 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    // remove the password from the config
+    // remove any password from the config
     if (neo4j_config_set_password(state.config, NULL))
     {
         // can't fail
     }
-    // future :connect attempts can try using an empty password from the URI
-    neo4j_config_allow_empty_password(state.config, true);
 
     if (state.interactive)
     {
