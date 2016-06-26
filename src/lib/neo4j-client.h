@@ -1471,7 +1471,10 @@ int neo4j_mkdir_p(const char *path);
  * Establish a connection to a neo4j server.
  *
  * A bitmask of flags may be supplied, which may include:
- * - NEO4J_INSECURE - do not attempt to establish a secure connection
+ * - NEO4J_INSECURE - do not attempt to establish a secure connection. If a
+ *   secure connection is required, then connect will fail with errno set to
+ *   `NEO4J_SERVER_REQUIRES_SECURE_CONNECTION`.
+ *
  *
  * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
@@ -1491,7 +1494,9 @@ neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
  * Establish a connection to a neo4j server.
  *
  * A bitmask of flags may be supplied, which may include:
- * - NEO4J_INSECURE - do not attempt to establish a secure connection
+ * - NEO4J_INSECURE - do not attempt to establish a secure connection. If a
+ *   secure connection is required, then connect will fail with errno set to
+ *   `NEO4J_SERVER_REQUIRES_SECURE_CONNECTION`.
  *
  * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
