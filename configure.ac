@@ -119,27 +119,12 @@ AC_CHECK_DECL([OSSwapBigToHostInt64],[AC_DEFINE([HAVE_OSSWAPBIGTOHOSTINT64],[1],
 AC_CHECK_DECL([bswap_64],[AC_DEFINE([HAVE_BSWAP_64],[1],
   [Define to 1 if you have bswap_64.])])
 
-AC_CHECK_FUNCS([mkstemp],[],[AC_MSG_ERROR([A working mkstemp is required])],
-  [
-#include <stdlib.h>
-#include <unistd.h>
-  ])
-
-AC_CHECK_FUNCS([open_memstream],[],[],
-  [
-#include <stdio.h>
-  ])
+AC_CHECK_FUNCS([mkstemp],[],[AC_MSG_ERROR([A working mkstemp is required])])
+AC_CHECK_FUNCS([open_memstream],[],[])
 
 AC_CHECK_HEADERS([readpassphrase.h bsd/readpassphrase.h])
 AC_SEARCH_LIBS([readpassphrase],[bsd])
-AC_CHECK_FUNCS([readpassphrase],[],[],
-  [
-#ifdef HAVE_READPASSPHRASE_H
-#include <readpassphrase.h>
-#elif HAVE_BSD_READPASSPHRASE_H
-#include <bsd/readpassphrase.h>
-#endif
-  ])
+AC_CHECK_FUNCS([readpassphrase],[],[])
 
 
 dnl Threading
@@ -161,7 +146,7 @@ AC_ARG_WITH([tls],
 AS_IF([test "X$with_tls" = "Xyes" -o "X$with_tls" = "Xopenssl"],
   [PKG_CHECK_MODULES([OPENSSL], [openssl >= 0.9.7],
     [has_openssl=yes; has_tls=yes],
-    [AC_MSG_ERROR([openssl not found (specify --without-tls to ignore)])])])
+    [AC_MSG_ERROR([openssl >= 0.9.7 not found (specify --without-tls to ignore)])])])
 
 AS_IF([test "X$has_openssl" = "Xyes"],
   [AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if you have openssl.])
