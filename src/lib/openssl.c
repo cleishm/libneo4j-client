@@ -18,16 +18,26 @@
 #include "openssl.h"
 #include "errno.h"
 #include "logging.h"
+#include "openssl_iostream.h"
 #include "thread.h"
 #include "tofu.h"
 #include "util.h"
 #include <assert.h>
+// FIXME: openssl 1.1.0-pre4 has issues with cast-qual
+// (and perhaps earlier versions?)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
+#pragma GCC diagnostic pop
+
+#define NEO4J_CYPHER_LIST "HIGH:!EXPORT:!aNULL@STRENGTH"
 
 static neo4j_mutex_t *thread_locks;
 
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 static void locking_callback(int mode, int type, const char *file, int line);
+#endif
 static SSL_CTX *new_ctx(const neo4j_config_t *config, neo4j_logger_t *logger);
 static int load_private_key(SSL_CTX *ctx, const neo4j_config_t *config,
         neo4j_logger_t *logger);
@@ -58,6 +68,11 @@ int neo4j_openssl_init(void)
     ERR_load_BIO_strings();
     OpenSSL_add_all_algorithms();
 
+    if (neo4j_openssl_iostream_init())
+    {
+        return -1;
+    }
+
     int num_locks = CRYPTO_num_locks();
     thread_locks = calloc(num_locks, sizeof(neo4j_mutex_t));
     if (thread_locks == NULL)
@@ -80,18 +95,21 @@ int neo4j_openssl_init(void)
         }
     }
 
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
     if (CRYPTO_get_locking_callback() == NULL)
     {
         CRYPTO_set_locking_callback(locking_callback);
         CRYPTO_set_id_callback(neo4j_current_thread_id);
     }
+#endif
 
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_method());
+    SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
     if (ctx == NULL)
     {
         errno = openssl_error(NULL, NEO4J_LOG_ERROR, __FILE__, __LINE__);
         return -1;
     }
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
     SSL_CTX_free(ctx);
 
     return 0;
@@ -100,11 +118,13 @@ int neo4j_openssl_init(void)
 
 int neo4j_openssl_cleanup(void)
 {
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
     if (CRYPTO_get_locking_callback() == locking_callback)
     {
         CRYPTO_set_locking_callback(NULL);
         CRYPTO_set_id_callback(NULL);
     }
+#endif
 
     int num_locks = CRYPTO_num_locks();
     for (int i = 0; i < num_locks; i++)
@@ -113,11 +133,13 @@ int neo4j_openssl_cleanup(void)
     }
     free(thread_locks);
 
+    neo4j_openssl_iostream_cleanup();
     EVP_cleanup();
     return 0;
 }
 
 
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 void locking_callback(int mode, int type, const char *file, int line)
 {
     if (mode & CRYPTO_LOCK)
@@ -129,6 +151,7 @@ void locking_callback(int mode, int type, const char *file, int line)
         neo4j_mutex_unlock(&thread_locks[type]);
     }
 }
+#endif
 
 
 BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
@@ -163,8 +186,15 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
     int result = BIO_do_handshake(ssl_bio);
     if (result != 1)
     {
+#if OPENSSL_VERSION_NUMBER < 0x10100004
         if (result == 0)
+#else
+        // FIXME: when no handshake, openssl 1.1.0-pre4 reports result == -1
+        // but error == 0 (and perhaps earlier versions?)
+        if (result == 0 || ERR_peek_error() == 0)
+#endif
         {
+            ERR_get_error(); // pop the error
             errno = NEO4J_NO_SERVER_TLS_SUPPORT;
             goto failure;
         }
@@ -195,14 +225,15 @@ failure:
 
 SSL_CTX *new_ctx(const neo4j_config_t *config, neo4j_logger_t *logger)
 {
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_method());
+    SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
     if (ctx == NULL)
     {
         errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);
-        return NULL;
+        goto failure;
     }
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
-    if (SSL_CTX_set_cipher_list(ctx, "HIGH:!EXPORT:!aNULL@STRENGTH") != 1)
+    if (SSL_CTX_set_cipher_list(ctx, NEO4J_CYPHER_LIST) != 1)
     {
         errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);
         goto failure;

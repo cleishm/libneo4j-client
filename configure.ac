@@ -150,7 +150,12 @@ AS_IF([test "X$with_tls" = "Xyes" -o "X$with_tls" = "Xopenssl"],
 
 AS_IF([test "X$has_openssl" = "Xyes"],
   [AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if you have openssl.])
-   REQUIRES="$REQUIRES, openssl >= 0.9.7"])
+   REQUIRES="$REQUIRES, openssl >= 0.9.7"
+   save_LIBS="$LIBS"
+   LIBS="$OPENSSL_LIBS $LIBS"
+   AC_CHECK_FUNCS([CRYPTO_set_locking_callback BIO_meth_new],[],[])
+   LIBS="$save_LIBS"
+  ])
 AM_CONDITIONAL([HAVE_OPENSSL], [test "X$has_openssl" = "Xyes"])
 
 AS_IF([test "X$has_tls" = "Xyes"],
