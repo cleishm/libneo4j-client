@@ -69,7 +69,7 @@ Use the specified password when connecting.
 
 The password (and username) can also be supplied in the connection URL, and will
 override what is set here.
-.TO
+.TP
 .I \-P
 Prompt for a password, even in non-interactive (batch) mode. This option
 requires that neo4j-client is being run with a controlling TTY, which will
@@ -151,7 +151,7 @@ after.
 .TP
 .I :unexport name ...
 Remove a named parameter from those exported to queries.
-.Tp
+.TP
 .I :reset
 Reset the session with the server, aborting any open transactions.
 .TP
