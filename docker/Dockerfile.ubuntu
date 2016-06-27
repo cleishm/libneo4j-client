@@ -21,6 +21,15 @@ RUN apt-get update && \
         valgrind \
         vim
 
+RUN cp /etc/devscripts.conf /root/.devscripts
+RUN echo 'DSCVERIFY_KEYRINGS="~/.gnupg/pubring.gpg"' >> /root/.devscripts
+RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 565E89E0
+
+RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.3.3-1.dsc && \
+    (cd libcypher-parser-0.3.3 && debuild -us -uc) && \
+    dpkg -i libcypher-parser3_0.3.3-1_amd64.deb libcypher-parser3-dev_0.3.3-1_amd64.deb && \
+    rm -rf libcypher-parser* cypher-lint*
+
 ADD dput.cf /root/.dput.cf
 ENV DEBEMAIL=chris@leishman.org DEBNAME="Chris Leishman"
 ADD bashrc /root/.bashrc
