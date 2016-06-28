@@ -14,18 +14,18 @@
 #
 Summary: Client library for the Neo4j graph database
 Name: libneo4j-client
-Version: 0.9.2
+Version: 1.0.0
 Release: 1%{?dist}
 Group: System Environment/Libraries
 License: Apache-2.0
 URL: https://github.com/cleishm/libneo4j-client
 Source0: https://github.com/cleishm/libneo4j-client/releases/download/%{version}/%{name}-%{version}.tar.gz
-BuildRequires: openssl-devel libedit-devel doxygen pkgconfig
+BuildRequires: libcypher-parser3-devel openssl-devel libedit-devel doxygen pkgconfig
 
 %description
 libneo4j-client is a client library and command line shell for Neo4j.
 
-%define sover 7
+%define sover 8
 %define libname %{name}%{sover}
 
 %prep
@@ -69,6 +69,7 @@ Neo4j server, sending statements for evaluation, and retrieving results.
 Summary: Development files for %{libname}
 Group: Development/Libraries
 Requires: %{libname}%{?_isa} = %{version}-%{release}
+Provides: %{name}-devel
 
 %description -n %{libname}-devel
 libneo4j-client takes care of all the detail of establishing a session with a
@@ -88,6 +89,7 @@ This package contains the development files (headers, static libraries)
 Summary: Development documentation for %{libname}
 Group: Development/Libraries
 BuildArch: noarch
+Provides: %{name}-devel-doc
 
 %description -n %{libname}-devel-doc
 libneo4j-client takes care of all the detail of establishing a session with a
@@ -119,6 +121,8 @@ of results to tables or CSV.
 #------------------------------------------------------------------------------
 
 %changelog
+* Mon Jun 27 2016 Chris Leishman <chris@leishman.org> - 1.0.0-1
+- Upstream release 1.0.0
 * Sat May 21 2016 Chris Leishman <chris@leishman.org> - 0.9.2-1
 - Upstream release 0.9.2
 * Mon Apr 25 2016 Chris Leishman <chris@leishman.org> - 0.9.1-1
