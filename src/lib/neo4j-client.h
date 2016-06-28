@@ -28,6 +28,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <wchar.h>
 
 #if __GNUC__ > 3
 #define __neo4j_pure __attribute__((pure))
@@ -586,11 +587,11 @@ const char *neo4j_typestr(neo4j_type_t t);
  * ensuring it is always `NULL` terminated.
  *
  * @param [value] The neo4j value.
- * @param [strbuf] A buffer to write the string representation into.
+ * @param [buf] A buffer to write the string representation into.
  * @param [n] The length of the buffer.
  * @return A pointer to the provided buffer.
  */
-char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
+char *neo4j_tostring(neo4j_value_t value, char *buf, size_t n);
 
 /**
  * Get a string representation of a neo4j value.
@@ -599,12 +600,28 @@ char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
  * ensuring it is always `NULL` terminated.
  *
  * @param [value] The neo4j value.
- * @param [strbuf] A buffer to write the string representation into.
+ * @param [buf] A buffer to write the string representation into.
  * @param [n] The length of the buffer.
  * @return The number of bytes that would have been written into the buffer
- *         had the buffer been large enough.
+ *         had the buffer been large enough, not including the terminating
+ *         null character.
  */
-size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n);
+size_t neo4j_ntostring(neo4j_value_t value, char *buf, size_t n);
+
+/**
+ * Get a wide string representation of a neo4j value.
+ *
+ * Writes as much of the representation as possible into the buffer,
+ * ensuring it is always terminated with a null wide character.
+ *
+ * @param [value] The neo4j value.
+ * @param [buf] A buffer to write the string representation into.
+ * @param [n] The length of the buffer.
+ * @return The number of characters that would have been written into the
+ *         buffer had the buffer been large enough, not including the
+ *         terminating null wide character.
+ */
+ssize_t neo4j_ntowstring(neo4j_value_t value, wchar_t *wbuf, size_t n);
 
 /**
  * Print a string representation of a neo4j value to a stream.
@@ -775,6 +792,22 @@ const char *neo4j_ustring_value(neo4j_value_t value);
  */
 char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length);
 
+/**
+ * Copy a neo4j string to a multibyte character buffer.
+ *
+ * As much of the string will be copied to the buffer as possible, and
+ * the result will be terminated with a null wide character.
+ *
+ * @param [value] The neo4j string.
+ * @param [buffer] A pointer to a buffer for storing the string. The pointer
+ *         must remain valid, and the content unchanged, for the lifetime of
+ *         the neo4j value.
+ * @param [length] The length of the buffer.
+ * @return The length of the string written to the buffer (not including the
+ *         null terminating character), or -1 if a conversion error occurs.
+ */
+ssize_t neo4j_string_wvalue(neo4j_value_t value, wchar_t *wbuffer,
+        size_t length);
 
 /**
  * Construct a neo4j value encoding a list.

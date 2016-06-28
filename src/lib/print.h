@@ -20,15 +20,19 @@
 #include "neo4j-client.h"
 
 size_t neo4j_null_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_null_wstr(const neo4j_value_t *value, wchar_t *buf, size_t n);
 ssize_t neo4j_null_fprint(const neo4j_value_t *value, FILE *stream);
 
 size_t neo4j_bool_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_bool_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n);
 ssize_t neo4j_bool_fprint(const neo4j_value_t *value, FILE *stream);
 
 size_t neo4j_int_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_int_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n);
 ssize_t neo4j_int_fprint(const neo4j_value_t *value, FILE *stream);
 
 size_t neo4j_float_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_float_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n);
 ssize_t neo4j_float_fprint(const neo4j_value_t *value, FILE *stream);
 
 size_t neo4j_string_str(const neo4j_value_t *value, char *buf, size_t n);

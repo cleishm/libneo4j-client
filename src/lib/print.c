@@ -22,6 +22,10 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
+
+
+#define NEO4J_FLOAT_PRECISION 6
 
 
 static size_t identifier_str(char *buf, size_t n, const neo4j_value_t *value);
@@ -49,8 +53,26 @@ size_t neo4j_null_str(const neo4j_value_t *value, char *buf, size_t n)
         {
             n = 5;
         }
-        strncpy(buf, "null", n);
+        memcpy(buf, "null", n-1);
         buf[n-1] = '\0';
+    }
+    return 4;
+}
+
+
+ssize_t neo4j_null_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || wbuf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_NULL);
+    if (n > 0)
+    {
+        if (n > 5)
+        {
+            n = 5;
+        }
+        memcpy(wbuf, L"null", (n-1) * sizeof(wchar_t));
+        wbuf[n-1] = L'\0';
     }
     return 4;
 }
@@ -72,16 +94,67 @@ size_t neo4j_bool_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_BOOL);
     const struct neo4j_bool *v = (const struct neo4j_bool *)value;
-    if (n > 0)
+    if (v->value > 0)
     {
-        if (n > 6)
+        if (n > 0)
         {
-            n = 6;
+            if (n > 5)
+            {
+                n = 5;
+            }
+            memcpy(buf, "true", n-1);
+            buf[n-1] = '\0';
         }
-        strncpy(buf, (v->value > 0)? "true" : "false", n);
-        buf[n-1] = '\0';
+        return 4;
     }
-    return (v->value > 0)? 4 : 5;
+    else
+    {
+        if (n > 0)
+        {
+            if (n > 6)
+            {
+                n = 6;
+            }
+            memcpy(buf, "false", n-1);
+            buf[n-1] = '\0';
+        }
+        return 5;
+    }
+}
+
+
+ssize_t neo4j_bool_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || wbuf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_BOOL);
+    const struct neo4j_bool *v = (const struct neo4j_bool *)value;
+    if (v->value > 0)
+    {
+        if (n > 0)
+        {
+            if (n > 5)
+            {
+                n = 5;
+            }
+            memcpy(wbuf, L"true", (n-1) * sizeof(wchar_t));
+            wbuf[n-1] = '\0';
+        }
+        return 4;
+    }
+    else
+    {
+        if (n > 0)
+        {
+            if (n > 6)
+            {
+                n = 6;
+            }
+            memcpy(wbuf, L"false", (n-1) * sizeof(wchar_t));
+            wbuf[n-1] = '\0';
+        }
+        return 5;
+    }
 }
 
 
@@ -110,6 +183,31 @@ size_t neo4j_int_str(const neo4j_value_t *value, char *buf, size_t n)
 }
 
 
+ssize_t neo4j_int_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || wbuf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_INT ||
+            neo4j_type(*value) == NEO4J_IDENTITY);
+    const struct neo4j_int *v = (const struct neo4j_int *)value;
+    // Unfortunately swprintf doesn't return the size that would have been
+    // output, and there is no snwprintf (see
+    // https://groups.google.com/d/msg/comp.std.c/XBaGpDOOqqQ/-B83RstUVR0J).
+    // So we assume the only possible error is an overflow, and fake it.
+    int r = -1;
+    if (wbuf != NULL && n > 0)
+    {
+        r = swprintf(wbuf, n, L"%" PRId64, v->value);
+    }
+    if (r < 0)
+    {
+        return (v->value == 0)? 1 : ((v->value < 0)? 1 : 0) +
+                ((ssize_t)log10(fabs((double)v->value)) + 1);
+    }
+    return (ssize_t)r;
+}
+
+
 ssize_t neo4j_int_fprint(const neo4j_value_t *value, FILE *stream)
 {
     REQUIRE(value != NULL, -1);
@@ -128,9 +226,34 @@ size_t neo4j_float_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_FLOAT);
     const struct neo4j_float *v = (const struct neo4j_float *)value;
-    int r = snprintf(buf, n, "%f", v->value);
+    int r = snprintf(buf, n, "%.*f", NEO4J_FLOAT_PRECISION, v->value);
     assert(r > 0);
     return (size_t)r;
+}
+
+
+ssize_t neo4j_float_wstr(const neo4j_value_t *value, wchar_t *wbuf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || wbuf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_FLOAT);
+    const struct neo4j_float *v = (const struct neo4j_float *)value;
+    // Unfortunately swprintf doesn't return the size that would have been
+    // output, and there is no snwprintf (see
+    // https://groups.google.com/d/msg/comp.std.c/XBaGpDOOqqQ/-B83RstUVR0J).
+    // So we assume the only possible error is an overflow, and fake it.
+    int r = -1;
+    if (wbuf != NULL && n > 0)
+    {
+        r = swprintf(wbuf, n, L"%.*f", NEO4J_FLOAT_PRECISION, v->value);
+    }
+    if (r < 0)
+    {
+        double i = floor(v->value);
+        return (i == 0)? 2 + NEO4J_FLOAT_PRECISION : ((i < 0)? 1 : 0) +
+                ((size_t)log10(fabs(i)) + 2 + NEO4J_FLOAT_PRECISION);
+    }
+    return (ssize_t)r;
 }
 
 
@@ -139,7 +262,7 @@ ssize_t neo4j_float_fprint(const neo4j_value_t *value, FILE *stream)
     REQUIRE(value != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_FLOAT);
     const struct neo4j_float *v = (const struct neo4j_float *)value;
-    return fprintf(stream, "%f", v->value);
+    return fprintf(stream, "%.*f", NEO4J_FLOAT_PRECISION, v->value);
 }
 
 

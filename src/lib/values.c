@@ -120,7 +120,8 @@ const char *neo4j_typestr(const neo4j_type_t type)
 
 struct neo4j_value_vt
 {
-    size_t (*str)(const neo4j_value_t *self, char *strbuf, size_t n);
+    size_t (*str)(const neo4j_value_t *self, char *buf, size_t n);
+    ssize_t (*wstr)(const neo4j_value_t *self, wchar_t *buf, size_t n);
     ssize_t (*fprint)(const neo4j_value_t *self, FILE *stream);
     int (*serialize)(const neo4j_value_t *self, neo4j_iostream_t *stream);
     bool (*eq)(const neo4j_value_t *self, const neo4j_value_t *other);
@@ -128,21 +129,25 @@ struct neo4j_value_vt
 
 static struct neo4j_value_vt null_vt =
     { .str = neo4j_null_str,
+      .wstr = neo4j_null_wstr,
       .fprint = neo4j_null_fprint,
       .serialize = neo4j_null_serialize,
       .eq = null_eq };
 static struct neo4j_value_vt bool_vt =
     { .str = neo4j_bool_str,
+      .wstr = neo4j_bool_wstr,
       .fprint = neo4j_bool_fprint,
       .serialize = neo4j_bool_serialize,
       .eq = bool_eq };
 static struct neo4j_value_vt int_vt =
     { .str = neo4j_int_str,
+      .wstr = neo4j_int_wstr,
       .fprint = neo4j_int_fprint,
       .serialize = neo4j_int_serialize,
       .eq = int_eq };
 static struct neo4j_value_vt float_vt =
     { .str = neo4j_float_str,
+      .wstr = neo4j_float_wstr,
       .fprint = neo4j_float_fprint,
       .serialize = neo4j_float_serialize,
       .eq = float_eq };
@@ -222,19 +227,28 @@ static_assert(
 
 /* method dispatch */
 
-char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n)
+char *neo4j_tostring(neo4j_value_t value, char *buf, size_t n)
 {
-    neo4j_ntostring(value, strbuf, n);
-    return strbuf;
+    neo4j_ntostring(value, buf, n);
+    return buf;
 }
 
 
-size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n)
+size_t neo4j_ntostring(neo4j_value_t value, char *buf, size_t n)
 {
     REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
     REQUIRE(value._type < _MAX_TYPE, -1);
     const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
-    return vt->str(&value, strbuf, n);
+    return vt->str(&value, buf, n);
+}
+
+
+ssize_t neo4j_ntowstring(neo4j_value_t value, wchar_t *wbuf, size_t n)
+{
+    REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
+    REQUIRE(value._type < _MAX_TYPE, -1);
+    const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
+    return vt->wstr(&value, wbuf, n);
 }
 
 
@@ -417,6 +431,23 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length)
     memcpy(buffer, v->ustring, tocopy);
     buffer[tocopy] = '\0';
     return buffer;
+}
+
+
+ssize_t neo4j_string_wvalue(neo4j_value_t value, wchar_t *wbuffer,
+        size_t length)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_STRING, -1);
+    mbstate_t ps;
+    memset(&ps, 0, sizeof(ps));
+    const struct neo4j_string *v = (const struct neo4j_string *)&value;
+    const char *s = v->ustring;
+    size_t n = mbsnrtowcs(wbuffer, &s, v->length, length, &ps);
+    if (n == (size_t)-1)
+    {
+        return -1;
+    }
+    return (ssize_t)n;
 }
 
 

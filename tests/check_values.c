@@ -23,6 +23,7 @@
 
 
 static char buf[1024];
+static wchar_t wbuf[1024];
 static char *memstream_buffer;
 static size_t memstream_size;
 static FILE *memstream;
@@ -122,6 +123,13 @@ START_TEST (int_value)
     ck_assert(neo4j_fprint(value, memstream) == 3);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "-53");
+
+    ck_assert_int_eq(neo4j_ntowstring(value, NULL, 0), 3);
+    ck_assert_int_eq(neo4j_ntowstring(value, wbuf, 2), 3);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_int(0), NULL, 0), 1);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_int(0), wbuf, 2), 1);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_int(12345), NULL, 0), 5);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_int(12345), wbuf, 1), 5);
 }
 END_TEST
 
@@ -159,6 +167,13 @@ START_TEST (float_value)
     ck_assert(neo4j_fprint(value, memstream) == 10);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "-89.834230");
+
+    ck_assert_int_eq(neo4j_ntowstring(value, NULL, 0), 10);
+    ck_assert_int_eq(neo4j_ntowstring(value, wbuf, 2), 10);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_float(0), NULL, 0), 8);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_float(0), wbuf, 2), 8);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_float(12345), NULL, 0), 12);
+    ck_assert_int_eq(neo4j_ntowstring(neo4j_float(12345), wbuf, 1), 12);
 }
 END_TEST
 

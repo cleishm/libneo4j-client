@@ -127,6 +127,9 @@ AC_CHECK_HEADERS([readpassphrase.h bsd/readpassphrase.h])
 AC_SEARCH_LIBS([readpassphrase],[bsd])
 AC_CHECK_FUNCS([readpassphrase],[],[])
 
+AC_CHECK_FUNCS([mbstowcs],[],[AC_MSG_ERROR([A working mbstowcs is required])])
+AC_CHECK_FUNCS([mbsnrtowcs],[],[AC_MSG_ERROR([A working mbsnrtowcs is required])])
+
 
 dnl Threading
 AX_THREAD_LOCAL()
