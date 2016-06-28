@@ -9,8 +9,17 @@
 /* Define to 1 if you have be64toh. */
 #undef HAVE_BE64TOH
 
+/* Define to 1 if you have the `BIO_meth_new' function. */
+#undef HAVE_BIO_METH_NEW
+
+/* Define to 1 if you have the <bsd/readpassphrase.h> header file. */
+#undef HAVE_BSD_READPASSPHRASE_H
+
 /* Define to 1 if you have bswap_64. */
 #undef HAVE_BSWAP_64
+
+/* Define to 1 if you have the `CRYPTO_set_locking_callback' function. */
+#undef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 
 /* Define to 1 if C supports variable-length arrays. */
 #undef HAVE_C_VARARRAYS
@@ -65,6 +74,12 @@
 
 /* Have PTHREAD_PRIO_INHERIT. */
 #undef HAVE_PTHREAD_PRIO_INHERIT
+
+/* Define to 1 if you have the `readpassphrase' function. */
+#undef HAVE_READPASSPHRASE
+
+/* Define to 1 if you have the <readpassphrase.h> header file. */
+#undef HAVE_READPASSPHRASE_H
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H

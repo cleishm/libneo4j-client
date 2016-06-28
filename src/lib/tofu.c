@@ -26,7 +26,6 @@
 #include <unistd.h>
 
 #define NEO4J_KNOWN_HOSTS "known_hosts"
-#define NEO4J_MAX_HOST_LENGTH 512
 #define NEO4J_MAX_FINGERPRINT_LENGTH 512
 #define NEO4J_MAX_KNOWN_HOSTS_LINE_LENGTH 2048
 #define NEO4J_TEMP_FILE_SUFFIX ".tmpXXXXXX"
@@ -43,6 +42,7 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
         const char * restrict fingerprint, const neo4j_config_t *config,
         uint_fast8_t flags)
 {
+    int result = -1;
     neo4j_logger_t *logger = neo4j_get_logger(config, "tofu");
 
     REQUIRE(strlen(hostname) < 256 && hostname[0] != '\0', -1);
@@ -57,17 +57,19 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
             {
                 errno = ENAMETOOLONG;
             }
-            return -1;
+            goto cleanup;
         }
         file = buf;
     }
 
-    char host[NEO4J_MAX_HOST_LENGTH];
-    int n = snprintf(host, sizeof(host), "%s:%d", hostname, port);
-    assert(n > 0 && n < NEO4J_MAX_HOST_LENGTH);
+    char host[NEO4J_MAXHOSTLEN];
+    if (describe_host(host, sizeof(host), hostname, port))
+    {
+        goto cleanup;
+    }
 
     char existing[NEO4J_MAX_FINGERPRINT_LENGTH];
-    int result = retrieve_stored_fingerprint(file, host,
+    result = retrieve_stored_fingerprint(file, host,
                 existing, sizeof(existing), logger);
 
     if (result > 0 || strcmp(fingerprint, existing) != 0)
@@ -78,6 +80,7 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
         result = 1;
         if (config->unverified_host_callback != NULL)
         {
+            result = 2;
             int action = config->unverified_host_callback(
                     config->unverified_host_callback_userdata, host,
                     fingerprint, reason);
@@ -86,7 +89,8 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
             case NEO4J_HOST_VERIFICATION_TRUST:
                 if (update_stored_fingerprint(file, host, fingerprint, logger))
                 {
-                    return -1;
+                    result = -1;
+                    goto cleanup;
                 }
                 // fall through
             case NEO4J_HOST_VERIFICATION_ACCEPT_ONCE:
@@ -98,6 +102,11 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
         }
     }
 
+    int errsv;
+cleanup:
+    errsv = errno;
+    neo4j_logger_release(logger);
+    errno = errsv;
     return result;
 }
 

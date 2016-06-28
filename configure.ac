@@ -14,7 +14,7 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[0.9.2])
+AC_INIT([libneo4j-client],[1.0.0])
 AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -36,12 +36,6 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_ARG_VAR([LEG], [leg parser generator command])
-AC_CHECK_PROG([LEG], [leg], [leg])
-AM_CONDITIONAL([HAVE_LEG], [test -n "$LEG"])
-
-AS_IF([test -n "$LEG" -o -f ./src/lib/cli_parser_leg.c], [],
-  [AC_MSG_ERROR([leg is required: please install http://piumarta.com/software/peg/])])
 
 AC_C_CONST
 AC_C_INLINE
@@ -125,16 +119,12 @@ AC_CHECK_DECL([OSSwapBigToHostInt64],[AC_DEFINE([HAVE_OSSWAPBIGTOHOSTINT64],[1],
 AC_CHECK_DECL([bswap_64],[AC_DEFINE([HAVE_BSWAP_64],[1],
   [Define to 1 if you have bswap_64.])])
 
-AC_CHECK_FUNCS([mkstemp],[],[AC_MSG_ERROR([A working mkstemp is required])],
-  [
-#include <stdlib.h>
-#include <unistd.h>
-  ])
+AC_CHECK_FUNCS([mkstemp],[],[AC_MSG_ERROR([A working mkstemp is required])])
+AC_CHECK_FUNCS([open_memstream],[],[])
 
-AC_CHECK_FUNCS([open_memstream],[],[],
-  [
-#include <stdio.h>
-  ])
+AC_CHECK_HEADERS([readpassphrase.h bsd/readpassphrase.h])
+AC_SEARCH_LIBS([readpassphrase],[bsd])
+AC_CHECK_FUNCS([readpassphrase],[],[])
 
 
 dnl Threading
@@ -156,11 +146,16 @@ AC_ARG_WITH([tls],
 AS_IF([test "X$with_tls" = "Xyes" -o "X$with_tls" = "Xopenssl"],
   [PKG_CHECK_MODULES([OPENSSL], [openssl >= 0.9.7],
     [has_openssl=yes; has_tls=yes],
-    [AC_MSG_ERROR([openssl not found (specify --without-tls to ignore)])])])
+    [AC_MSG_ERROR([openssl >= 0.9.7 not found (specify --without-tls to ignore)])])])
 
 AS_IF([test "X$has_openssl" = "Xyes"],
   [AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if you have openssl.])
-   REQUIRES="$REQUIRES, openssl >= 0.9.7"])
+   REQUIRES="$REQUIRES, openssl >= 0.9.7"
+   save_LIBS="$LIBS"
+   LIBS="$OPENSSL_LIBS $LIBS"
+   AC_CHECK_FUNCS([CRYPTO_set_locking_callback BIO_meth_new],[],[])
+   LIBS="$save_LIBS"
+  ])
 AM_CONDITIONAL([HAVE_OPENSSL], [test "X$has_openssl" = "Xyes"])
 
 AS_IF([test "X$has_tls" = "Xyes"],
@@ -174,16 +169,20 @@ dnl Check for check test support
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.4], [has_check=yes], [has_check=no])
 AM_CONDITIONAL([HAVE_CHECK], [test "X$has_check" = "Xyes"])
 
-PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
-
 
 dnl Check if command line tools should be built
 AC_ARG_ENABLE([tools],
   AS_HELP_STRING([--disable-tools], [Do not build command line tools]))
 AM_CONDITIONAL([WANT_TOOLS], [test "X$enable_tools" != "Xno"])
 
+dnl Check for required libraries for tools
+PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_libedit" != "Xyes"],
   [AC_MSG_ERROR([libedit is required for building command line tools (specify --disable-tools to ignore)])])
+
+PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.3.2], [has_cypher_parser=yes], [has_cypher_parser=no])
+AS_IF([test "X$enable_tools" != "Xno" -a "X$has_cypher_parser" != "Xyes"],
+  [AC_MSG_ERROR([libcypher-parser (>= 0.3.2) is required for building command line tools (specify --disable-tools to ignore)])])
 
 
 dnl Check if assertions should be disabled

@@ -2,7 +2,6 @@
 
 TCase* buffering_iostream_tcase(void);
 TCase* chunking_iostream_tcase(void);
-TCase* cli_parser_tcase(void);
 TCase* config_tcase(void);
 TCase* connection_tcase(void);
 TCase* deserialization_tcase(void);
@@ -27,7 +26,6 @@ Suite *libneo4j_client_suite(void)
     Suite *s = suite_create("libneo4j-client");
     suite_add_tcase(s, buffering_iostream_tcase());
     suite_add_tcase(s, chunking_iostream_tcase());
-    suite_add_tcase(s, cli_parser_tcase());
     suite_add_tcase(s, config_tcase());
     suite_add_tcase(s, connection_tcase());
     suite_add_tcase(s, deserialization_tcase());

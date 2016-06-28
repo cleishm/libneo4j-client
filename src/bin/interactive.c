@@ -23,6 +23,7 @@
 #include <histedit.h>
 #include <limits.h>
 #include <neo4j-client.h>
+#include <cypher-parser.h>
 
 
 static int editline_setup(shell_state_t *state,
@@ -31,8 +32,10 @@ static int setup_history(shell_state_t *state, History *el_history);
 static char *prompt(EditLine *el);
 static unsigned char literal_newline(EditLine *el, int ch);
 static unsigned char check_line(EditLine *el, int ch);
+static int check_processable(void *data, const char *segment, size_t n, bool eof);
 static int process_input(shell_state_t *state, const char *input, size_t length,
         const char **end);
+static int process_segment(void *data, cypher_parse_segment_t *segment);
 
 
 int interact(shell_state_t *state)
@@ -89,9 +92,9 @@ int interact(shell_state_t *state)
             }
         }
 
-        if (end < (input + length - 1))
+        if (end < (input + length))
         {
-            char *buffer = temp_copy(state, end, (input + length - 1) - end);
+            char *buffer = temp_copy(state, end, (input + length) - end);
             if (buffer == NULL)
             {
                 neo4j_perror(state->err, errno, "unexpected error");
@@ -234,96 +237,131 @@ unsigned char check_line(EditLine *el, int ch)
     shell_state_t *state;
     if (el_get(el, EL_CLIENTDATA, &state))
     {
+        neo4j_perror(state->err, errno, "unexpected error");
         return CC_FATAL;
     }
     const LineInfo *li = el_line(el);
 
     size_t length = li->lastchar - li->buffer;
-    char *line = temp_copy(state, li->buffer, length);
-    if (line == NULL)
-    {
-        return CC_FATAL;
-    }
-    line[length] = '\n';
 
-    bool complete;
-    ssize_t n = neo4j_cli_uparse(line, length + 1,
-            NULL, &length, &complete);
-    if (n < 0)
-    {
-        return CC_FATAL;
-    }
-    if (complete)
-    {
-        return CC_NEWLINE;
-    }
+    // if there's no other characters in the line, then we insert a newline
+    // at the cursor (the end) and let it process - which will be a noop
     if (length == 0)
     {
-        // There has to be at least one char in the line to avoid having it
-        // interpretted as EOF
         if (literal_newline(el, ch) == CC_ERROR)
         {
             return CC_ERROR;
         }
         return CC_NEWLINE;
     }
+
+    char *line = temp_copy(state, li->buffer, length);
+    if (line == NULL)
+    {
+        neo4j_perror(state->err, errno, "unexpected error");
+        return CC_FATAL;
+    }
+
+    // add a newline to the end (replacing the '\0')
+    // NOTE: we don't use literal_newline, as the cursor may not be
+    // at the end of the line
+    line[length] = '\n';
+
+    bool process = false;
+    if (cypher_quick_uparse(line, length + 1, check_processable, &process,
+                CYPHER_PARSE_SINGLE))
+    {
+        neo4j_perror(state->err, errno, "unexpected error");
+        return CC_FATAL;
+    }
+
+    if (process)
+    {
+        return CC_NEWLINE;
+    }
+
+    // if we're not processing, then we insert a newline at the cursor position
     return literal_newline(el, ch);
 }
+
+
+int check_processable(void *data, const char *segment, size_t n, bool eof)
+{
+    bool *processable = (bool *)data;
+    *processable = !eof;
+    return 1;
+}
+
+
+struct process_data
+{
+    shell_state_t *state;
+    const char *input;
+    size_t last_offset;
+    int result;
+};
 
 
 int process_input(shell_state_t *state, const char *input, size_t length,
         const char **end)
 {
-    const char *input_end = input + length;
-    while (input < input_end)
+    // TODO: use previous parse rather than copy&re-parse
+    char *line = temp_copy(state, input, length);
+    line[length] = '\n';
+
+    struct process_data cbdata =
+        { .state = state, .input = input, .last_offset = 0, .result = 0 };
+
+    if (cypher_uparse_each(line, length + 1, process_segment, &cbdata,
+                NULL, NULL, 0))
     {
-        const char *start;
-        bool complete;
-        ssize_t n = neo4j_cli_uparse(input, input_end - input,
-                &start, &length, &complete);
-        if (n < 0)
-        {
-            neo4j_perror(state->err, errno, "unexpected error");
-            return -1;
-        }
-        if (n == 0 || !complete)
-        {
-            break;
-        }
-
-        const char *directive = temp_copy(state, start, length);
-        if (directive == NULL)
-        {
-            neo4j_perror(state->err, errno, "unexpected error");
-            return -1;
-        }
-
-        int r;
-        if (is_command(directive))
-        {
-            r = evaluate_command(state, directive);
-        }
-        else
-        {
-            evaluation_continuation_t continuation =
-                evaluate_statement(state, directive);
-            r = continuation.complete(&continuation, state);
-        }
-
-        if (r < 0)
-        {
-            *end = input_end;
-            return 0;
-        }
-        if (r > 0)
-        {
-            return 1;
-        }
-        input += n;
-        assert(input <= input_end);
+        neo4j_perror(state->err, errno, "unexpected error");
+        return -1;
     }
-    for (; input < input_end && isspace(*input); ++input)
+
+    size_t last_offset = cbdata.last_offset;
+    for (; last_offset < length && isspace(input[last_offset]); ++last_offset)
         ;
-    *end = input;
-    return 0;
+    *end = input + last_offset;
+
+    return cbdata.result;
+}
+
+
+int process_segment(void *data, cypher_parse_segment_t *segment)
+{
+    struct process_data *cbdata = (struct process_data *)data;
+
+    if (cypher_parse_segment_eof(segment))
+    {
+        assert(cbdata->result == 0);
+        return 1;
+    }
+
+    const cypher_astnode_t *directive =
+            cypher_parse_segment_get_directive(segment);
+    struct cypher_input_range range = cypher_parse_segment_get_range(segment);
+
+    int r = 0;
+    if (cypher_astnode_instanceof(directive, CYPHER_AST_COMMAND))
+    {
+        r = evaluate_command(cbdata->state, directive);
+    }
+    else
+    {
+        const char *s = cbdata->input + range.start.offset;
+        size_t n = range.end.offset - range.start.offset;
+        trim_statement(&s, &n);
+        if (n > 0)
+        {
+            const char *statement = temp_copy(cbdata->state, s, n);
+            evaluation_continuation_t continuation =
+                evaluate_statement(cbdata->state, statement);
+            r = continuation.complete(&continuation, cbdata->state);
+        }
+    }
+
+    cbdata->last_offset = range.end.offset;
+    cbdata->result = (r > 0)? r : 0;
+    return cbdata->result;
 }

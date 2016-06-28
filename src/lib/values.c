@@ -102,7 +102,14 @@ static_assert(
     "value vt table cannot hold more than 2^8 entries");
 
 
-const char *neo4j_type_str(const neo4j_type_t type)
+bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type)
+{
+    // currently, values do not have any inheritance
+    return neo4j_type(value) == type;
+}
+
+
+const char *neo4j_typestr(const neo4j_type_t type)
 {
     assert(type < _MAX_TYPE);
     return neo4j_types[type]->name;

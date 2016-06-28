@@ -14,19 +14,15 @@ statements for evaluation, and retrieving results.
 neo4j-client, the command line shell, is included with the libneo4j-client
 distribution and uses libneo4j-client for all interaction with Neo4j server.
 
-For more details, see [the project page](
-https://cleishm.github.io/libneo4j-client/) and the [FAQ](
-https://github.com/cleishm/libneo4j-client/wiki/FAQ).
+For more details, see [the project page](https://git.io/libneo4j-client) and
+the [FAQ](https://github.com/cleishm/libneo4j-client/wiki/FAQ).
 
 
 Requirements
 ------------
 
 libneo4j-client is known to work on GNU/Linux, Mac OS X and FreeBSD. It
-requires neo4j 3.0.0-M02 or later.
-
-Note that libneo4j-client is still an alpha release, and may change in
-incompatible ways before a stable release is made.
+requires neo4j 3.0.0 or later.
 
 
 Getting Started
@@ -35,20 +31,19 @@ Getting Started
 If you're using Mac OS X, libneo4j-client can be installed using homebrew:
 
 ```console
-$ brew install cleishm/neo4j/libneo4j-client
+$ brew install cleishm/neo4j/neo4j-client
 ```
 
 If you're using Ubuntu, neo4j-client can be install using APT:
 
 ```console
-$ sudo add-apt-repository ppa:cleishm/libneo4j-client
+$ sudo add-apt-repository ppa:cleishm/neo4j
 $ sudo apt-get update
 $ sudo apt-get install neo4j-client libneo4j-client-dev
 ```
 
 There are also packages available for other platforms, including
 [Debian](https://packages.debian.org/source/sid/libneo4j-client),
-[Ubuntu](https://launchpad.net/~cleishm/+archive/ubuntu/libneo4j-client),
 [Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
 [CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
 [openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed).
@@ -66,10 +61,12 @@ persistent command history, and rendering of results to tables or CSV.
 Basic usage:
 
 ```console
-$ neo4j-client -v neo4j://user:pass@localhost:7687
+$ neo4j-client -v neo4j://localhost:7687
 The authenticity of host 'localhost:7687' could not be established.
 TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.
 Would you like to trust this host (NO/yes/once)? yes
+Username: neo4j
+Password: *****
 neo4j> :help
 :quit                  Exit the shell
 :connect '<url>'       Connect to the specified URL
@@ -133,7 +130,7 @@ int main(int argc, char *argv[])
 
     /* use NEO4J_INSECURE when connecting to disable TLS */
     neo4j_connection_t *connection =
-            neo4j_connect("neo4j://localhost:7687", NULL, NEO4J_INSECURE);
+            neo4j_connect("neo4j://user:pass@localhost:7687", NULL, NEO4J_INSECURE);
     if (connection == NULL)
     {
         neo4j_perror(stderr, errno, "Connection failed");
@@ -180,9 +177,9 @@ Building
 
 To build software using libneo4j-client, consider installing libneo4j-client
 using the package management system for your operating system (currently
-Mac OS X,
+[Mac OS X](#getting_started),
 [Debian](https://packages.debian.org/source/sid/libneo4j-client),
-[Ubuntu](https://launchpad.net/~cleishm/+archive/ubuntu/libneo4j-client),
+[Ubuntu](#getting_started),
 [Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
 [CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
 [openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed)).
@@ -197,14 +194,18 @@ $ make clean check
 $ sudo make install
 ```
 
-libneo4j-client requires some dependencies to build, including OpenSSL and
-[libedit](http://thrysoee.dk/editline/). The need for these can be disabled
-by invoking configure with `--without-tls` or `--disable-tools` respectively.
+libneo4j-client requires OpenSSL, although this can be disabled by invoking
+configure with `--without-tls`.
+
+neo4j-client also requires some dependencies to build, including
+[libedit](http://thrysoee.dk/editline/) and
+[libcypher-parser](https://git.io/libcypher-parser). If these are not available,
+the library can be built without neo4j-client, by invoking configure with
+`--disable-tools`.
 
 Building from the GitHub repository requires a few extra steps. Firstly, some
-additional tooling is required, including autoconf, automake, libtool and
-[peg/leg](http://piumarta.com/software/peg/). Assuming these are available,
-to checkout from GitHub and build:
+additional tooling is required, including autoconf, automake and libtool.
+Assuming these are available, to checkout from GitHub and build:
 
 ```console
 $ git clone https://github.com/cleishm/libneo4j-client.git
@@ -234,9 +235,10 @@ More detail about this workaround can be found via `brew info openssl`.
 Support
 -------
 
-Having trouble with libneo4j-client? Please raise any issues with usage on
-[StackOverflow](http://stackoverflow.com/questions/tagged/libneo4j-client). If
-you've found a bug in the code for libneo4j-client, please raise an issue on
+Having trouble with libneo4j-client or neo4j-client? Please raise any issues
+with usage on
+[StackOverflow](http://stackoverflow.com/questions/tagged/neo4j-client). If
+you've found a bug in the code, please raise an issue on
 [GitHub](https://github.com/cleishm/libneo4j-client) and include details of how
 to reproduce the bug.
 

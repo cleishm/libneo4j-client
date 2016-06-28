@@ -18,7 +18,12 @@
 #define NEO4J_OPENSSL_H
 
 #include "client_config.h"
+// FIXME: openssl 1.1.0-pre4 has issues with cast-qual
+// (and perhaps earlier versions?)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 #include <openssl/ssl.h>
+#pragma GCC diagnostic pop
 
 /**
  * Initialize the OpenSSL library.

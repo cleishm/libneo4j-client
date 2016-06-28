@@ -1,4 +1,4 @@
-libneo4j-client.so.7 libneo4j-client7 #MINVER#
+libneo4j-client.so.8 libneo4j-client8 #MINVER#
  NEO4J_BOOL@Base 0.9.0
  NEO4J_FLOAT@Base 0.9.0
  NEO4J_IDENTITY@Base 0.9.0
@@ -17,19 +17,21 @@ libneo4j-client.so.7 libneo4j-client7 #MINVER#
  neo4j_bool@Base 0.9.0
  neo4j_bool_value@Base 0.9.0
  neo4j_check_failure@Base 0.9.0
- neo4j_cli_arg_uparse@Base 0.9.0
- neo4j_cli_fparse@Base 0.9.0
- neo4j_cli_uparse@Base 0.9.0
  neo4j_client_cleanup@Base 0.9.0
  neo4j_client_init@Base 0.9.0
  neo4j_close@Base 0.9.0
  neo4j_close_results@Base 0.9.0
+ neo4j_config_dup@Base 1.0.0
  neo4j_config_free@Base 0.9.0
+ neo4j_config_get_client_id@Base 1.0.0
+ neo4j_config_get_username@Base 1.0.0
  neo4j_config_set_TLS_ca_dir@Base 0.9.0
  neo4j_config_set_TLS_ca_file@Base 0.9.0
  neo4j_config_set_TLS_private_key@Base 0.9.0
  neo4j_config_set_TLS_private_key_password@Base 0.9.0
  neo4j_config_set_TLS_private_key_password_callback@Base 0.9.0
+ neo4j_config_set_attempt_empty_password@Base 1.0.0
+ neo4j_config_set_authentication_reattempt_callback@Base 1.0.0
  neo4j_config_set_client_id@Base 0.9.0
  neo4j_config_set_connection_factory@Base 0.9.0
  neo4j_config_set_known_hosts_file@Base 0.9.0
@@ -44,7 +46,12 @@ libneo4j-client.so.7 libneo4j-client7 #MINVER#
  neo4j_config_set_trust_known_hosts@Base 0.9.0
  neo4j_config_set_unverified_host_callback@Base 0.9.0
  neo4j_config_set_username@Base 0.9.0
+ neo4j_config_will_attempt_empty_password@Base 1.0.0
  neo4j_connect@Base 0.9.0
+ neo4j_connection_hostname@Base 1.0.0
+ neo4j_connection_port@Base 1.0.0
+ neo4j_connection_username@Base 1.0.0
+ neo4j_credentials_expired@Base 1.0.0
  neo4j_dirname@Base 0.9.0
  neo4j_dot_dir@Base 0.9.0
  neo4j_end_session@Base 0.9.0
@@ -56,6 +63,7 @@ libneo4j-client.so.7 libneo4j-client7 #MINVER#
  neo4j_float@Base 0.9.0
  neo4j_float_value@Base 0.9.0
  neo4j_fprint@Base 0.9.0
+ neo4j_instanceof@Base 1.0.0
  neo4j_int@Base 0.9.0
  neo4j_int_value@Base 0.9.0
  neo4j_list@Base 0.9.0
@@ -94,6 +102,7 @@ libneo4j-client.so.7 libneo4j-client7 #MINVER#
  neo4j_retain@Base 0.9.0
  neo4j_run@Base 0.9.0
  neo4j_send@Base 0.9.0
+ neo4j_session_connection@Base 1.0.0
  neo4j_statement_plan@Base 0.9.0
  neo4j_statement_plan_release@Base 0.9.0
  neo4j_statement_type@Base 0.9.0
@@ -106,7 +115,7 @@ libneo4j-client.so.7 libneo4j-client7 #MINVER#
  neo4j_string_value@Base 0.9.0
  neo4j_tcp_connect@Base 0.9.0
  neo4j_tostring@Base 0.9.0
- neo4j_type_str@Base 0.9.0
+ neo4j_typestr@Base 1.0.0
  neo4j_update_counts@Base 0.9.0
  neo4j_ustring@Base 0.9.0
  neo4j_ustring_value@Base 0.9.0
