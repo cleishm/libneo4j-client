@@ -22,7 +22,7 @@
 
 #ifndef HAVE_READPASSPHRASE
 
-#include "readpassphrase.h"
+#include "readpass.h"
 #include <termios.h>
 #include <signal.h>
 #include <ctype.h>
