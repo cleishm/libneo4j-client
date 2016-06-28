@@ -136,11 +136,11 @@ persistent command history, and rendering of results to tables or CSV.</p>
 <span class="pl-mo">neo4j&gt;</span>
 <span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:set output=csv</span>
 <span class="pl-mo">neo4j&gt;</span>
-<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">MATCH (n:Person) RETURN n LIMIT 3;</span>
-<span class="pl-k">"n"</span>
-<span class="pl-k">"(:Person{born:1964,name:""Keanu Reeves""})"</span>
-<span class="pl-k">"(:Person{born:1967,name:""Carrie-Anne Moss""})"</span>
-<span class="pl-k">"(:Person{born:1961,name:""Laurence Fishburne""})"</span>
+<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3;</span>
+<span class="pl-k">"name","born"</span>
+<span class="pl-k">"Keanu Reeves",1964</span>
+<span class="pl-k">"Carrie-Anne Moss",1967</span>
+<span class="pl-k">"Laurence Fishburne",1961</span>
 <span class="pl-mo">neo4j&gt;</span>
 <span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:quit</span>
 $</pre></div>
