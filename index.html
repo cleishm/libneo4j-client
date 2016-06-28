@@ -95,22 +95,29 @@ $ <span class="pl-s1">sudo apt-get install neo4j-client libneo4j-client-dev</spa
 to Neo4j server, sending of statements (including multiline statements),
 persistent command history, and rendering of results to tables or CSV.</p>
 
-<p>Basic usage:</p>
+<p>Example usage:</p>
 
-<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">neo4j-client -v neo4j://localhost:7687</span>
+<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">neo4j-client -u neo4j localhost</span>
 <span class="pl-mo">The authenticity of host 'localhost:7687' could not be established.</span>
 <span class="pl-mo">TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.</span>
 <span class="pl-mo">Would you like to trust this host (NO/yes/once)? </span><span class="pl-mb">yes</span>
-<span class="pl-mo">Username: </span><span class="pl-mb">neo4j</span>
 <span class="pl-mo">Password: </span><span class="pl-mb">*****</span>
 <span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:help</span>
-<span class="pl-mo">:quit                    Exit the shell</span>
-<span class="pl-mo">:connect '&lt;url&gt;'         Connect to the specified URL</span>
-<span class="pl-mo">:disconnect              Disconnect the client from the server</span>
-<span class="pl-mo">:help                    Show usage information</span>
-<span class="pl-mo">:output (table|csv)      Set the output format</span>
-<span class="pl-mo">:width &lt;n&gt;               Set the number of columns in the table output</span>
+<span class="pl-k">:quit                  Exit the shell</span>
+<span class="pl-k">:connect '&lt;url&gt;'       Connect to the specified URL</span>
+<span class="pl-k">:connect host[:port]   Connect to the specified host (and optional port)</span>
+<span class="pl-k">:disconnect            Disconnect the client from the server</span>
+<span class="pl-k">:export name=val ...   Export parameters for queries</span>
+<span class="pl-k">:uexport name ...      Unexport parameters for queries</span>
+<span class="pl-k">:reset                 Reset the session with the server</span>
+<span class="pl-k">:set option=value ...  Set shell options</span>
+<span class="pl-k">:status                Show the client connection status</span>
+<span class="pl-k">:help                  Show usage information</span>
+<span class="pl-k">:output (table|csv)    Set the output format</span>
+<span class="pl-k">:width (&lt;n&gt;|auto)      Set the number of columns in the table output</span>
 <span class="pl-mo">neo4j&gt;</span>
+<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:status</span>
+<span class="pl-k">Connected to 'neo4j://neo4j@localhost:7687'</span>
 <span class="pl-mo">neo4j&gt;</span>
 <span class="pl-mo">neo4j&gt; </span><span class="pl-mb">MATCH (n:Person) RETURN n LIMIT 3;</span>
 <span class="pl-k">+----------------------------------------------------------------------------+</span>
@@ -120,7 +127,22 @@ persistent command history, and rendering of results to tables or CSV.</p>
 <span class="pl-k">| (:Person{born:1967,name:"Carrie-Anne Moss"})                               |</span>
 <span class="pl-k">| (:Person{born:1961,name:"Laurence Fishburne"})                             |</span>
 <span class="pl-k">+----------------------------------------------------------------------------+</span>
-<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:exit</span>
+<span class="pl-mo">neo4j&gt;</span>
+<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:set</span>
+<span class="pl-k"> insecure=no</span>
+<span class="pl-k"> output=table</span>
+<span class="pl-k"> username="neo4j"</span>
+<span class="pl-k"> width=auto</span>
+<span class="pl-mo">neo4j&gt;</span>
+<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:set output=csv</span>
+<span class="pl-mo">neo4j&gt;</span>
+<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">MATCH (n:Person) RETURN n LIMIT 3;</span>
+<span class="pl-k">"n"</span>
+<span class="pl-k">"(:Person{born:1964,name:""Keanu Reeves""})"</span>
+<span class="pl-k">"(:Person{born:1967,name:""Carrie-Anne Moss""})"</span>
+<span class="pl-k">"(:Person{born:1961,name:""Laurence Fishburne""})"</span>
+<span class="pl-mo">neo4j&gt;</span>
+<span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:quit</span>
 $</pre></div>
 
 <h2>
