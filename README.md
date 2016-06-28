@@ -100,11 +100,11 @@ neo4j> :set
 neo4j>
 neo4j> :set output=csv
 neo4j>
-neo4j> MATCH (n:Person) RETURN n.name AS name LIMIT 3;
-"name"
-"Keanu Reeves"
-"Carrie-Anne Moss"
-"Laurence Fishburne"
+neo4j> MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3;
+"name","born"
+"Keanu Reeves",1964
+"Carrie-Anne Moss",1967
+"Laurence Fishburne",1961
 neo4j>
 neo4j> :quit
 $
