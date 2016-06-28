@@ -30,6 +30,9 @@ struct neo4j_config
 
     char *username;
     char *password;
+    bool attempt_empty_password;
+    neo4j_authentication_reattempt_callback_t auth_reattempt_callback;
+    void *auth_reattempt_callback_userdata;
 
     const char *client_id;
 
@@ -60,18 +63,6 @@ struct neo4j_config
     neo4j_unverified_host_callback_t unverified_host_callback;
     void *unverified_host_callback_userdata;
 };
-
-
-/**
- * Duplicate a `neo4j_config_t`.
- *
- * @internal
- *
- * @param [config] The config to duplicate.
- * @return A newly allocated `neo4j_config_t`.
- */
-__neo4j_must_check
-neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config);
 
 
 /**

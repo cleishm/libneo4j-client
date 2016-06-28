@@ -26,7 +26,7 @@ void neo4j_perror(FILE *stream, int errnum, const char *message)
     char buf[1024];
     fprintf(stream, "%s%s%s\n", (message != NULL)? message : "",
         (message != NULL)? ": " : "",
-        neo4j_strerror(errno, buf, sizeof(buf)));
+        neo4j_strerror(errnum, buf, sizeof(buf)));
 }
 
 
@@ -88,6 +88,10 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Path contains an out-of-range sequence index";
     case NEO4J_NO_PLAN_AVAILABLE:
         return "The server did not return a plan or profile";
+    case NEO4J_AUTH_RATE_LIMIT:
+        return "Too many authentication attempts - wait 5 seconds before trying again";
+    case NEO4J_TLS_MALFORMED_CERTIFICATE:
+        return "Server presented a malformed TLS certificate";
     default:
 #ifdef STRERROR_R_CHAR_P
         return strerror_r(errnum, buf, buflen);

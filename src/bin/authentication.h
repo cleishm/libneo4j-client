@@ -14,34 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_UTIL_H
-#define NEO4J_UTIL_H
+#ifndef NEO4J_AUTHENTICATION_H
+#define NEO4J_AUTHENTICATION_H
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <stdlib.h>
+#include <neo4j-client.h>
+#include "state.h"
 
+int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
+        int error, char *username, size_t usize, char *password, size_t psize);
 
-#ifndef MAXSERVNAMELEN
-#  ifdef NI_MAXSERV
-#    define MAXSERVNAMELEN NI_MAXSERV
-#  else
-#    define MAXSERVNAMELEN 32
-#  endif
-#endif
+int change_password(shell_state_t *state, neo4j_session_t *session,
+        char *password, size_t pwlen);
 
-#ifndef MAXHOSTNAMELEN
-#  ifdef NI_MAXHOST
-#    define MAXHOSTNAMELEN NI_MAXHOST
-#  else
-#    define MAXHOSTNAMELEN 1025
-#  endif
-#endif
-
-#define NEO4J_MAXHOSTLEN (MAXHOSTNAMELEN + 1 + MAXSERVNAMELEN)
-
-char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
-
-void trim_statement(const char **s, size_t *n);
-
-#endif/*NEO4J_UTIL_H*/
+#endif/*NEO4J_AUTHENTICATION_H*/

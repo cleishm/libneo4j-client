@@ -149,11 +149,11 @@ libneo4j_client_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 am__libneo4j_client_la_SOURCES_DIST = error_handling.c \
 	buffering_iostream.c buffering_iostream.h chunking_iostream.c \
 	chunking_iostream.h client_config.c client_config.h \
-	cli_parser.leg connection.c connection.h deserialization.c \
-	deserialization.h dotdir.c init.c iostream.c iostream.h job.h \
-	logging.c logging.h memory.c memory.h messages.c messages.h \
-	metadata.c metadata.h network.c network.h cli_parser.c print.c \
-	print.h posix_iostream.c posix_iostream.h render.c render.h \
+	connection.c connection.h deserialization.c deserialization.h \
+	dotdir.c init.c iostream.c iostream.h job.h logging.c \
+	logging.h memory.c memory.h messages.c messages.h metadata.c \
+	metadata.h network.c network.h print.c print.h \
+	posix_iostream.c posix_iostream.h render.c render.h \
 	render_plan.c render_results.c result_stream.c result_stream.h \
 	ring_buffer.c ring_buffer.h serialization.c serialization.h \
 	session.c session.h thread.c thread.h tofu.c tofu.h uri.c \
@@ -171,7 +171,7 @@ am_libneo4j_client_la_OBJECTS = libneo4j_client_la-error_handling.lo \
 	libneo4j_client_la-iostream.lo libneo4j_client_la-logging.lo \
 	libneo4j_client_la-memory.lo libneo4j_client_la-messages.lo \
 	libneo4j_client_la-metadata.lo libneo4j_client_la-network.lo \
-	libneo4j_client_la-cli_parser.lo libneo4j_client_la-print.lo \
+	libneo4j_client_la-print.lo \
 	libneo4j_client_la-posix_iostream.lo \
 	libneo4j_client_la-render.lo libneo4j_client_la-render_plan.lo \
 	libneo4j_client_la-render_results.lo \
@@ -270,6 +270,8 @@ CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
+CYPHER_PARSER_CFLAGS = @CYPHER_PARSER_CFLAGS@
+CYPHER_PARSER_LIBS = @CYPHER_PARSER_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -313,7 +315,6 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LEG = @LEG@
 LIBEDIT_CFLAGS = @LIBEDIT_CFLAGS@
 LIBEDIT_LIBS = @LIBEDIT_LIBS@
 LIBM = @LIBM@
@@ -414,21 +415,19 @@ lib_LTLIBRARIES = libneo4j-client.la
 include_HEADERS = neo4j-client.h
 libneo4j_client_la_SOURCES = error_handling.c buffering_iostream.c \
 	buffering_iostream.h chunking_iostream.c chunking_iostream.h \
-	client_config.c client_config.h cli_parser.leg connection.c \
-	connection.h deserialization.c deserialization.h dotdir.c \
-	init.c iostream.c iostream.h job.h logging.c logging.h \
-	memory.c memory.h messages.c messages.h metadata.c metadata.h \
-	network.c network.h cli_parser.c print.c print.h \
-	posix_iostream.c posix_iostream.h render.c render.h \
-	render_plan.c render_results.c result_stream.c result_stream.h \
-	ring_buffer.c ring_buffer.h serialization.c serialization.h \
-	session.c session.h thread.c thread.h tofu.c tofu.h uri.c \
-	uri.h util.c util.h values.c values.h $(am__append_1)
+	client_config.c client_config.h connection.c connection.h \
+	deserialization.c deserialization.h dotdir.c init.c iostream.c \
+	iostream.h job.h logging.c logging.h memory.c memory.h \
+	messages.c messages.h metadata.c metadata.h network.c \
+	network.h print.c print.h posix_iostream.c posix_iostream.h \
+	render.c render.h render_plan.c render_results.c \
+	result_stream.c result_stream.h ring_buffer.c ring_buffer.h \
+	serialization.c serialization.h session.c session.h thread.c \
+	thread.h tofu.c tofu.h uri.c uri.h util.c util.h values.c \
+	values.h $(am__append_1)
 libneo4j_client_la_CFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_CFLAGS) -Wpedantic -Wvla
-libneo4j_client_la_LDFLAGS = -version-info 7:2:0
+libneo4j_client_la_LDFLAGS = -version-info 8:0:0
 libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
-EXTRA_DIST = cli_parser_leg.c
-MAINTAINERCLEANFILES = cli_parser_leg.c
 all: all-am
 
 .SUFFIXES:
@@ -509,7 +508,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-buffering_iostream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-chunking_iostream.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-cli_parser.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-client_config.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-connection.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-deserialization.Plo@am__quote@
@@ -657,13 +655,6 @@ libneo4j_client_la-network.lo: network.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='network.c' object='libneo4j_client_la-network.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -c -o libneo4j_client_la-network.lo `test -f 'network.c' || echo '$(srcdir)/'`network.c
-
-libneo4j_client_la-cli_parser.lo: cli_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -MT libneo4j_client_la-cli_parser.lo -MD -MP -MF $(DEPDIR)/libneo4j_client_la-cli_parser.Tpo -c -o libneo4j_client_la-cli_parser.lo `test -f 'cli_parser.c' || echo '$(srcdir)/'`cli_parser.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libneo4j_client_la-cli_parser.Tpo $(DEPDIR)/libneo4j_client_la-cli_parser.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cli_parser.c' object='libneo4j_client_la-cli_parser.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -c -o libneo4j_client_la-cli_parser.lo `test -f 'cli_parser.c' || echo '$(srcdir)/'`cli_parser.c
 
 libneo4j_client_la-print.lo: print.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -MT libneo4j_client_la-print.lo -MD -MP -MF $(DEPDIR)/libneo4j_client_la-print.Tpo -c -o libneo4j_client_la-print.lo `test -f 'print.c' || echo '$(srcdir)/'`print.c
@@ -923,7 +914,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
@@ -1015,13 +1005,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLTLIBRARIES
 
 .PRECIOUS: Makefile
 
-
-cli_parser.c: cli_parser_leg.c
-
-@HAVE_LEG_TRUE@%_leg.c: %.leg
-@HAVE_LEG_TRUE@	$(LEG) -o $@ $<
-@HAVE_LEG_FALSE@%_leg.c: %.leg
-@HAVE_LEG_FALSE@	$(error Cannot compile .leg source file, as the leg compiler was not found by the configure script: please install http://piumarta.com/software/peg/ and re-run the configure script)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -40,6 +40,19 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
         uint16_t nfields, const char *description, neo4j_logger_t *logger);
 
 /**
+ * Log the contents of a metadata map.
+ *
+ * @internal
+ *
+ * @param [logger] The logger to write to.
+ * @param [level] The level to log at.
+ * @param [msg] A message to prefix in the log ('%s: ').
+ * @param [metadata] A neo4j map value.
+ */
+void neo4j_metadata_log(neo4j_logger_t *logger, uint_fast8_t level,
+        const char *msg, neo4j_value_t metadata);
+
+/**
  * Validate failure metadata received in a server message.
  *
  * Ensures that the metadata map contains a "code" and a "message" entry,

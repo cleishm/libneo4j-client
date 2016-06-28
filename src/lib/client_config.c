@@ -121,14 +121,14 @@ void neo4j_config_free(neo4j_config_t *config)
     {
         return;
     }
-    free(config->username);
-    free(config->password);
+    ignore_unused_result(neo4j_config_set_username(config, NULL));
+    ignore_unused_result(neo4j_config_set_password(config, NULL));
 #ifdef HAVE_TLS
-    free(config->tls_private_key_file);
-    free(config->tls_ca_file);
-    free(config->tls_ca_dir);
+    ignore_unused_result(neo4j_config_set_TLS_private_key(config, NULL));
+    ignore_unused_result(neo4j_config_set_TLS_ca_file(config, NULL));
+    ignore_unused_result(neo4j_config_set_TLS_ca_dir(config, NULL));
 #endif
-    free(config->known_hosts_file);
+    ignore_unused_result(neo4j_config_set_known_hosts_file(config, NULL));
     free(config);
 }
 
@@ -139,10 +139,22 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
 }
 
 
+const char *neo4j_config_get_client_id(neo4j_config_t *config)
+{
+    return config->client_id;
+}
+
+
 int neo4j_config_set_username(neo4j_config_t *config, const char *username)
 {
     REQUIRE(config != NULL, -1);
     return replace_strptr_dup(&(config->username), username);
+}
+
+
+const char *neo4j_config_get_username(neo4j_config_t *config)
+{
+    return config->username;
 }
 
 
@@ -157,7 +169,33 @@ int neo4j_config_nset_username(neo4j_config_t *config,
 int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 {
     REQUIRE(config != NULL, -1);
+    if (config->password != NULL)
+    {
+        memset(config->password, 0, strlen(config->password));
+    }
     return replace_strptr_dup(&(config->password), password);
+}
+
+
+void neo4j_config_set_attempt_empty_password(neo4j_config_t *config, bool value)
+{
+    config->attempt_empty_password = value;
+}
+
+
+bool neo4j_config_will_attempt_empty_password(neo4j_config_t *config)
+{
+    return config->attempt_empty_password;
+}
+
+
+int neo4j_config_set_authentication_reattempt_callback(neo4j_config_t *config,
+        neo4j_authentication_reattempt_callback_t callback, void *userdata)
+{
+    REQUIRE(config != NULL, -1);
+    config->auth_reattempt_callback = callback;
+    config->auth_reattempt_callback_userdata = userdata;
+    return 0;
 }
 
 

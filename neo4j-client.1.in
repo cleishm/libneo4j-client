@@ -19,7 +19,7 @@
 .SH NAME
 neo4j\-client \- command shell for Neo4j
 .SH SYNOPSIS
-.B neo4j\-client \fI[options...] [URL]\fR
+.B neo4j\-client \fI[options...] [URL | host[:port]]\fR
 .SH "DESCRIPTION"
 \fBneo4j\-client\fR is a command shell for Neo4j. It supports secure
 connections to Neo4j server, sending of statements (including multiline
@@ -40,8 +40,23 @@ By default, history is saved to \fI$(HOME)/.neo4j/client-history\fR.
 .I \-\-no-history
 Do not save the command history.
 .TP
+.I \-\-ca\-file=cert.pem
+Specify a file containing trusted certificates (and CRLs). The file should
+contain one or more certificates in PEM format.
+.TP
+.I \-\-ca\-directory=dir
+Specify a directory containing trusted certificates (and CRLs). The
+certificates should have names of the form: hash.0 or have symbolic links to
+them of this form ("hash" is the hashed certificate subject name: see the -hash
+option of the x509 utility). Under Unix the c_rehash script will automatically
+create symbolic links to a directory of certificates.
+.TP
 .I \-\-insecure
 Do not attempt to establish a secure (TLS) connection to Neo4j.
+.TP
+.I \-\-non-interactive
+Use non-interactive (batch) mode and do not prompt for credentials when
+connecting.
 .TP
 .I \-\-username=name, \-u name
 Use the specified username when connecting.
@@ -55,12 +70,20 @@ Use the specified password when connecting.
 The password (and username) can also be supplied in the connection URL, and will
 override what is set here.
 .TP
+.I \-P
+Prompt for a password, even in non-interactive (batch) mode. This option
+requires that neo4j-client is being run with a controlling TTY, which will
+be used for password prompting and input.
+.TP
 .I \-\-known-hosts=file
 When using secure (TLS) connections, the certificate signatures of previously
 verified hosts is persisted to the known hosts file. This setting specifies
 the location of that file.
 
 By default, the file is \fI$(HOME)/.neo4j/neo4j_known_certs\fR.
+.TP
+.I \-\-no-known-hosts
+Do not do host checking via known-hosts (use only TLS certificate verification).
 .TP
 .I \-v, \-\-verbose
 Increase the logging verbosity. Each invocation increases the verbosity. Each
@@ -82,7 +105,7 @@ history of entered commands will be saved (unless disabled) and an errors in
 evaluation will be presented to the user. Results from statements sent to Neo4j
 will be presented to the user in table format (by default), using the full
 width of the terminal.
-.SH BATCH (NON-INTERACTIVE) MODE
+.SH NON-INTERACTIVE (BATCH) MODE
 When \fBneo4j\-client\fR is started with standard intput connected to a pipe,
 it will read statements from the pipe and evaluate each. Any error in
 evaluation will cause \fBneo4j\-client\fR to terminate without evaluating any
@@ -105,21 +128,54 @@ List all the available commands and usage information.
 Exit \fBneo4j\-client\fR.
 .TP
 .I ":connect '<url>'"
-Connect the Neo4j server specified by the URL. Note that the URL must be
-given in quotes, as it will otherwise the \fI//\fR characters in the URL would
+Connect to the Neo4j server specified by the URL. Note that the URL must be
+given in quotes, as the \fI//\fR characters in the URL would otherwise
 be considered as the start of a comment.
+.TP
+.I ":connect <host>[:<port>]"
+Connect to the Neo4j server specified by the host and optional port.
 .TP
 .I :disconnect
 Disconnect from the Neo4j server (if connected).
 .TP
+.I :export [name=val] ...
+Export parameters for queries. The parameter will be available in queries
+as \fI{name}\fR, and will be a string containing the text specified. Values
+containing spaces must be quoted, e.g. \fI:export name="foo bar"\fR. Multiple
+name and value pairs may be specified. If no name and value pairs are specified,
+then the list of currently exported values will be displayed.
+
+Note that all parameters are sent to the server for every query, so it is
+best not to export large values without immediately using \fI:unexport\fR
+after.
+.TP
+.I :unexport name ...
+Remove a named parameter from those exported to queries.
+.TP
+.I :reset
+Reset the session with the server, aborting any open transactions.
+.TP
+.I :set [option=value] ...
+Set various shell options. If no option name and value paris are specified,
+then the list of current options and their values will be displayed.
+.TP
+.I :status
+Show the client connection status, which indicates if the client is
+disconnected or connected to a server. If the latter, the connection URI is
+output.
+.TP
 .I ":output (table|csv)"
 Set the output format to either table or CSV.
+
+Equivalent to `:set output=(table|csv)`.
 .TP
 .I ":width <n>"
 Set the output width for table rendering. \fIn\fR is either an integer between
 2 and 4095, or \fIauto\fR. In interactive mode, the default is \fIauto\fR,
-which sets the output width to match the width of the terminal. In batch
-(non-interactive) mode, the default is 70.
+which sets the output width to match the width of the terminal. In
+non-interactive (batch) mode, the default is 70.
+
+Equivalent to `:set width=<n>`.
 .SH EXAMPLES
 Start \fBneo4j\-client\fR in interactive mode, and run a query:
 
@@ -136,7 +192,7 @@ Start \fBneo4j\-client\fR in interactive mode, and run a query:
     neo4j> :quit
     $
 
-Evaluate a query using \fBneo4j\-client\fR in batch (non-interactive) mode,
+Evaluate a query using \fBneo4j\-client\fR in non-interactive (batch) mode,
 saving the output to a csv file:
 
     $ echo "MATCH (n:Person) RETURN n.name, n.born LIMIT 4;" | \\
@@ -152,7 +208,7 @@ saving the output to a csv file:
 In interactive mode, \fBneo4j\-client\fR attempts to exit cleanly (with
 \fI$?\fR set to 0) when the session is terminated via the use of \fI:quit\fR,
 \fI:exit\fR or \fIctrl-D\fR, and to use a non-zero exit code otherwise.
-In batch (non-interactive) mode, \fBneo4j\-client\fR will exit cleanly if all
+In non-interactive (batch) mode, \fBneo4j\-client\fR will exit cleanly if all
 statements read from stdin evaluate successfully.
 .SH VERSION
 This man page is current for version @VERSION@ of neo4j\-client.

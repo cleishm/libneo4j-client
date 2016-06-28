@@ -52,8 +52,8 @@ static long iostream_bio_ctrl(BIO *bio, int cmd, long num, void *ptr);
 static int iostream_bio_create(BIO *bio);
 static int iostream_bio_destroy(BIO *bio);
 
-
-static BIO_METHOD iostream_bio_method = {
+#ifndef HAVE_BIO_METH_NEW
+static BIO_METHOD _iostream_bio_method = {
     BIO_TYPE_FILTER,
     "neo4j_openssl_iostream",
     iostream_bio_write,
@@ -64,6 +64,44 @@ static BIO_METHOD iostream_bio_method = {
     iostream_bio_create,
     iostream_bio_destroy
 };
+static BIO_METHOD *iostream_bio_method = &_iostream_bio_method;
+#define BIO_set_data(bio, value) (bio->ptr = (value))
+#define BIO_get_data(bio) (bio->ptr)
+#define BIO_set_init(bio, value) (bio->init = (value))
+#define BIO_get_init(bio) (bio->init)
+#else
+static BIO_METHOD *iostream_bio_method = NULL;
+#endif
+
+
+int neo4j_openssl_iostream_init(void)
+{
+#ifdef HAVE_BIO_METH_NEW
+    iostream_bio_method = BIO_meth_new(BIO_TYPE_FILTER,
+            "neo4j_openssl_iostream");
+    if (iostream_bio_method == NULL)
+    {
+        return -1;
+    }
+    BIO_meth_set_write(iostream_bio_method, iostream_bio_write);
+    BIO_meth_set_read(iostream_bio_method, iostream_bio_read);
+    BIO_meth_set_puts(iostream_bio_method, iostream_bio_puts);
+    BIO_meth_set_gets(iostream_bio_method, iostream_bio_gets);
+    BIO_meth_set_ctrl(iostream_bio_method, iostream_bio_ctrl);
+    BIO_meth_set_create(iostream_bio_method, iostream_bio_create);
+    BIO_meth_set_destroy(iostream_bio_method, iostream_bio_destroy);
+#endif
+    return 0;
+}
+
+
+void neo4j_openssl_iostream_cleanup(void)
+{
+#ifdef HAVE_BIO_METH_NEW
+    BIO_meth_free(iostream_bio_method);
+    iostream_bio_method = NULL;
+#endif
+}
 
 
 neo4j_iostream_t *neo4j_openssl_iostream(neo4j_iostream_t *delegate,
@@ -74,12 +112,13 @@ neo4j_iostream_t *neo4j_openssl_iostream(neo4j_iostream_t *delegate,
     REQUIRE(hostname != NULL, NULL);
     REQUIRE(config != NULL, NULL);
 
-    BIO *iostream_bio = BIO_new(&iostream_bio_method);
+    assert(iostream_bio_method != NULL);
+    BIO *iostream_bio = BIO_new(iostream_bio_method);
     if (iostream_bio == NULL)
     {
         return NULL;
     }
-    iostream_bio->ptr = delegate;
+    BIO_set_data(iostream_bio, delegate);
 
     struct openssl_iostream *ios = NULL;
 
@@ -222,7 +261,7 @@ int openssl_close(neo4j_iostream_t *self)
 
 int iostream_bio_write(BIO *bio, const char *buf, int nbyte)
 {
-    neo4j_iostream_t *ios = (neo4j_iostream_t *)bio->ptr;
+    neo4j_iostream_t *ios = (neo4j_iostream_t *)BIO_get_data(bio);
     if (ios == NULL)
     {
         errno = EPIPE;
@@ -236,7 +275,7 @@ int iostream_bio_write(BIO *bio, const char *buf, int nbyte)
 
 int iostream_bio_read(BIO *bio, char *buf, int nbyte)
 {
-    neo4j_iostream_t *ios = (neo4j_iostream_t *)bio->ptr;
+    neo4j_iostream_t *ios = (neo4j_iostream_t *)BIO_get_data(bio);
     if (ios == NULL)
     {
         errno = EPIPE;
@@ -250,7 +289,7 @@ int iostream_bio_read(BIO *bio, char *buf, int nbyte)
 
 int iostream_bio_puts(BIO *bio, const char *s)
 {
-    neo4j_iostream_t *ios = (neo4j_iostream_t *)bio->ptr;
+    neo4j_iostream_t *ios = (neo4j_iostream_t *)BIO_get_data(bio);
     if (ios == NULL)
     {
         errno = EPIPE;
@@ -283,24 +322,21 @@ long iostream_bio_ctrl(BIO *bio, int cmd, long num, void *ptr)
 
 int iostream_bio_create(BIO *bio)
 {
-    bio->init = 1;
-    bio->num = 0;
-    bio->ptr = NULL;
-    bio->flags = 0;
+    BIO_set_init(bio, 1);
+    BIO_set_data(bio, NULL);
     return 1;
 }
 
 
 int iostream_bio_destroy(BIO *bio)
 {
-    neo4j_iostream_t *ios = (neo4j_iostream_t *)bio->ptr;
+    neo4j_iostream_t *ios = (neo4j_iostream_t *)BIO_get_data(bio);
     if (ios == NULL)
     {
         errno = EPIPE;
         return -1;
     }
-    bio->ptr = NULL;
-    bio->init = 0;
-    bio->flags = 0;
+    BIO_set_data(bio, NULL);
+    BIO_set_init(bio, 0);
     return 1;
 }

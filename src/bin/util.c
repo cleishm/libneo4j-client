@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "util.h"
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 
 
@@ -32,7 +33,30 @@ char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n)
         *dest = updated;
         *cap = n+1;
     }
-    memcpy(*dest, s, n+1);
+    strncpy(*dest, s, n+1);
     (*dest)[n] = '\0';
     return *dest;
+}
+
+
+void trim_statement(const char **s, size_t *n)
+{
+    // Skip all whitespace lines before the statement, but not whitespace
+    // at the start of the same line. This helps error position indicators from
+    // Neo4j to be a little more helpful
+    // (see: https://github.com/neo4j/neo4j/issues/7318).
+    const char *e = *s + *n;
+    for (const char *p = *s; p < e && isspace(*p); ++p)
+    {
+        if (*p == '\n')
+        {
+            *n -= ((p+1) - *s);
+            *s = p+1;
+        }
+    }
+
+    // trim all space (and ';') from the end
+    for (--e; *n > 0 && (*e == '\0' || *e == ';' || isspace(*e));
+            --e, --(*n))
+        ;
 }

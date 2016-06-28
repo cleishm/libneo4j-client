@@ -60,12 +60,29 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
     if (field_type != NEO4J_MAP)
     {
         neo4j_log_error(logger, "invalid field in %s: got %s, expected MAP",
-                description, neo4j_type_str(field_type));
+                description, neo4j_typestr(field_type));
         errno = EPROTO;
         return NULL;
     }
 
     return &(fields[0]);
+}
+
+
+void neo4j_metadata_log(neo4j_logger_t *logger, uint_fast8_t level,
+        const char *msg, neo4j_value_t metadata)
+{
+    char detail[1024];
+    size_t n = neo4j_ntostring(metadata, detail, sizeof(detail));
+    if (n >= sizeof(detail))
+    {
+        // TODO: dynamically allocate `detail` if static size is insufficient
+        detail[sizeof(detail)-1] = '\0';
+        detail[sizeof(detail)-2] = '.';
+        detail[sizeof(detail)-3] = '.';
+        detail[sizeof(detail)-4] = '.';
+    }
+    neo4j_log(logger, level, "%s: %s", msg, detail);
 }
 
 
@@ -448,7 +465,7 @@ struct neo4j_statement_execution_step *meta_execution_steps(
                 neo4j_log_error(logger,
                         "invalid field in %s: %s is %s, expected Map",
                         description, subpath,
-                        neo4j_type_str(neo4j_type(child)));
+                        neo4j_typestr(neo4j_type(child)));
                 errno = EPROTO;
                 goto failure;
             }
@@ -496,8 +513,8 @@ int map_get_typed(neo4j_value_t *value, neo4j_value_t map, const char *path,
         neo4j_log_error(logger,
                 "invalid field in %s: '%s%s%s' is %s, expected %s",
                 description, (path != NULL)? path : "",
-                (path != NULL)? "." : "", key, neo4j_type_str(neo4j_type(val)),
-                neo4j_type_str(expected));
+                (path != NULL)? "." : "", key, neo4j_typestr(neo4j_type(val)),
+                neo4j_typestr(expected));
         errno = EPROTO;
         return -1;
     }
@@ -599,7 +616,7 @@ int extract_string_list(const char * const **strings, unsigned int *nstrings,
                     "invalid field in %s: %s%s%s[%d] is %s, expected String",
                     description, (path != NULL)? path : "",
                     (path != NULL)? "." : "", key, i,
-                    neo4j_type_str(neo4j_type(sv)));
+                    neo4j_typestr(neo4j_type(sv)));
             errno = EPROTO;
             goto failure;
         }

@@ -17,9 +17,10 @@
 #include "../../config.h"
 #include "batch.h"
 #include "evaluate.h"
+#include <neo4j-client.h>
+#include <cypher-parser.h>
 #include <assert.h>
 #include <errno.h>
-#include <neo4j-client.h>
 
 
 struct evaluation
@@ -39,6 +40,14 @@ typedef struct evaluation_queue
 } evaluation_queue_t;
 
 
+struct parse_callback_data
+{
+    shell_state_t *state;
+    evaluation_queue_t *queue;
+};
+
+
+static int parse_callback(void *data, const char *s, size_t n, bool eof);
 static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
@@ -47,9 +56,6 @@ static int finalize(shell_state_t *state, evaluation_queue_t *queue,
 
 int batch(shell_state_t *state)
 {
-    char *buffer = NULL;
-    size_t bufcap = 0;
-
     evaluation_queue_t *queue = calloc(1, sizeof(evaluation_queue_t) +
             (state->pipeline_max * sizeof(struct evaluation)));
     if (queue == NULL)
@@ -59,33 +65,10 @@ int batch(shell_state_t *state)
     queue->capacity = state->pipeline_max;
 
     int result = -1;
-
-    for (;;)
+    struct parse_callback_data cbdata = { .state = state, .queue = queue };
+    if (cypher_quick_fparse(state->in, parse_callback, &cbdata, 0))
     {
-        char *start;
-        size_t length;
-        bool complete;
-        ssize_t n = neo4j_cli_fparse(state->in, &buffer, &bufcap,
-                &start, &length, &complete);
-        if (n < 0)
-        {
-            neo4j_perror(state->err, errno, "unexpected error");
-            goto cleanup;
-        }
-        if (n == 0 || !complete)
-        {
-            break;
-        }
-
-        int r = evaluate(state, queue, start, length);
-        if (r < 0)
-        {
-            goto cleanup;
-        }
-        if (r > 0)
-        {
-            break;
-        }
+        goto cleanup;
     }
 
     if (finalize(state, queue, queue->depth))
@@ -103,17 +86,24 @@ cleanup:
         free(queue->directives[i].buffer);
     }
     free(queue);
-    free(buffer);
     errno = errsv;
     return result;
+}
+
+
+int parse_callback(void *data, const char *s, size_t n, bool eof)
+{
+    struct parse_callback_data *cbdata = (struct parse_callback_data *)data;
+    return evaluate(cbdata->state, cbdata->queue, s, n);
 }
 
 
 int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n)
 {
-    if (n > 0 && is_command(directive))
+    if (is_command(directive))
     {
+        // drain queue before running commands
         if (finalize(state, queue, queue->depth))
         {
             neo4j_perror(state->err, errno, "unexpected error");
@@ -125,7 +115,13 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
             neo4j_perror(state->err, errno, "unexpected error");
             return -1;
         }
-        return evaluate_command(state, command);
+        return evaluate_command_string(state, command);
+    }
+
+    trim_statement(&directive, &n);
+    if (n == 0)
+    {
+        return 0;
     }
 
     assert (queue->depth <= queue->capacity);
