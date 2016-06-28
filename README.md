@@ -58,23 +58,30 @@ neo4j-client is a command shell for Neo4j. It supports secure connections
 to Neo4j server, sending of statements (including multiline statements),
 persistent command history, and rendering of results to tables or CSV.
 
-Basic usage:
+Example usage:
 
 ```console
-$ neo4j-client -v neo4j://localhost:7687
+$ neo4j-client -u neo4j localhost
 The authenticity of host 'localhost:7687' could not be established.
 TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.
 Would you like to trust this host (NO/yes/once)? yes
-Username: neo4j
 Password: *****
 neo4j> :help
 :quit                  Exit the shell
 :connect '<url>'       Connect to the specified URL
+:connect host[:port]   Connect to the specified host (and optional port)
 :disconnect            Disconnect the client from the server
+:export name=val ...   Export parameters for queries
+:unexport name ...     Unexport parameters for queries
+:reset                 Reset the session with the server
+:set option=value ...  Set shell options
+:status                Show the client connection status
 :help                  Show usage information
 :output (table|csv)    Set the output format
-:width <n>             Set the number of columns in the table output
+:width (<n>|auto)      Set the number of columns in the table output
 neo4j>
+neo4j> :status
+Connected to 'neo4j://neo4j@localhost:7687'
 neo4j>
 neo4j> MATCH (n:Person) RETURN n LIMIT 3;
 +----------------------------------------------------------------------------+
@@ -84,7 +91,22 @@ neo4j> MATCH (n:Person) RETURN n LIMIT 3;
 | (:Person{born:1967,name:"Carrie-Anne Moss"})                               |
 | (:Person{born:1961,name:"Laurence Fishburne"})                             |
 +----------------------------------------------------------------------------+
-neo4j> :exit
+neo4j>
+neo4j> :set
+ insecure=no
+ output=table
+ username="neo4j"
+ width=auto
+neo4j>
+neo4j> :set output=csv
+neo4j>
+neo4j> MATCH (n:Person) RETURN n LIMIT 3;
+"n"
+"(:Person{born:1964,name:""Keanu Reeves""})"
+"(:Person{born:1967,name:""Carrie-Anne Moss""})"
+"(:Person{born:1961,name:""Laurence Fishburne""})"
+neo4j>
+neo4j> :quit
 $
 ```
 
