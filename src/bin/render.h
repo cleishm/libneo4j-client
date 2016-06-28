@@ -22,6 +22,7 @@
 typedef int (*renderer_t)(shell_state_t *state, neo4j_result_stream_t *results);
 
 renderer_t find_renderer(const char *name);
+const char *renderer_name(renderer_t renderer);
 
 int render_results_csv(shell_state_t *state, neo4j_result_stream_t *results);
 int render_results_table(shell_state_t *state, neo4j_result_stream_t *results);

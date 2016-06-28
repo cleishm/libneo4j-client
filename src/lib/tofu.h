@@ -29,7 +29,9 @@
  * @param [fingerprint] The fingerprint of the host.
  * @param [config] The client config.
  * @param [flags] A bitmask of flags to control connections.
- * @return 0 if the host is trusted, >0 if the host is not trusted, and -1
+ * @return 0 if the host is trusted; 1 if the host is not trusted and
+ *         no unverified host callback was made; 2 if the host is not
+ *         trusted and a verified host callback was made; and -1
  *         if an error occurs (errno will be set).
  */
 __neo4j_must_check

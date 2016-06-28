@@ -45,6 +45,9 @@ static int response_recv_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 
 
+static neo4j_value_t empty_map;
+static neo4j_value_t failure_metadata;
+static neo4j_map_entry_t failure_metadata_entries[2];
 static struct neo4j_logger_provider *logger_provider;
 static ring_buffer_t *in_rb;
 static ring_buffer_t *out_rb;
@@ -58,6 +61,14 @@ neo4j_mpool_t mpool;
 
 static void setup(void)
 {
+    empty_map = neo4j_map(NULL, 0);
+
+    failure_metadata_entries[0] =
+            neo4j_map_entry("code", neo4j_string("unknown"));
+    failure_metadata_entries[1] =
+            neo4j_map_entry("message", neo4j_string("unknown"));
+    failure_metadata = neo4j_map(failure_metadata_entries, 2);
+
     logger_provider = neo4j_std_logger_provider(stderr, NEO4J_LOG_ERROR, 0);
     in_rb = rb_alloc(1024);
     out_rb = rb_alloc(1024);
@@ -130,7 +141,7 @@ int response_recv_callback(void *cdata, neo4j_message_type_t type,
 
 START_TEST (test_new_session_sends_init_with_clientid_and_auth)
 {
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -165,10 +176,10 @@ START_TEST (test_new_session_fails_on_init_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_eq(session, NULL);
-    ck_assert_int_eq(errno, EPROTO);
+    ck_assert_int_eq(errno, NEO4J_UNEXPECTED_ERROR);
 }
 END_TEST
 
@@ -188,7 +199,7 @@ START_TEST (test_new_session_fails_if_session_active)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session1 = neo4j_new_session(connection);
     ck_assert_ptr_ne(session1, NULL);
 
@@ -203,12 +214,12 @@ END_TEST
 
 START_TEST (test_new_session_after_previous_is_closed)
 {
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session1 = neo4j_new_session(connection);
     ck_assert_ptr_ne(session1, NULL);
     neo4j_end_session(session1);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session2 = neo4j_new_session(connection);
     ck_assert_ptr_ne(session2, NULL);
     neo4j_end_session(session2);
@@ -220,12 +231,12 @@ START_TEST (test_session_cant_start_after_previous_init_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // INIT
     neo4j_session_t *session1 = neo4j_new_session(connection);
     ck_assert_ptr_eq(session1, NULL);
-    ck_assert_int_eq(errno, EPROTO);
+    ck_assert_int_eq(errno, NEO4J_UNEXPECTED_ERROR);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session2 = neo4j_new_session(connection);
     ck_assert_ptr_eq(session2, NULL);
     ck_assert_int_eq(errno, NEO4J_CONNECTION_CLOSED);
@@ -237,7 +248,7 @@ START_TEST (test_session_drains_outstanding_requests_on_close)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -256,7 +267,7 @@ START_TEST (test_session_awaits_inflight_requests_on_close)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -271,13 +282,13 @@ START_TEST (test_session_awaits_inflight_requests_on_close)
     ck_assert_int_eq(result, 0);
 
     // await only the first request (leaves the 2nd inflight)
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RUN
     result = neo4j_session_sync(session, &(resp1.condition));
     ck_assert_int_eq(result, 0);
     ck_assert(resp1.type == NEO4J_SUCCESS_MESSAGE);
     ck_assert_int_eq(resp2.condition, 1);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // PULL_ALL
     neo4j_end_session(session);
     ck_assert(resp2.type == NEO4J_SUCCESS_MESSAGE);
 }
@@ -286,7 +297,7 @@ END_TEST
 
 START_TEST (test_session_sends_reset_on_reset)
 {
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // INIT
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
 
     neo4j_session_t *session = neo4j_new_session(connection);
@@ -313,7 +324,7 @@ START_TEST (test_session_drains_outstanding_requests_on_reset)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -334,7 +345,7 @@ START_TEST (test_session_awaits_inflight_requests_on_reset)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -349,13 +360,13 @@ START_TEST (test_session_awaits_inflight_requests_on_reset)
     ck_assert_int_eq(result, 0);
 
     // await only the first request (leaves the 2nd inflight)
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RUN
     result = neo4j_session_sync(session, &(resp1.condition));
     ck_assert_int_eq(result, 0);
     ck_assert(resp1.type == NEO4J_SUCCESS_MESSAGE);
     ck_assert_int_eq(resp2.condition, 1);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // PULL_ALL
     neo4j_reset_session(session);
     ck_assert(resp2.type == NEO4J_SUCCESS_MESSAGE);
 
@@ -368,7 +379,7 @@ START_TEST (test_session_drains_requests_and_acks_after_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -385,9 +396,9 @@ START_TEST (test_session_drains_requests_and_acks_after_failure)
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
-    queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0);
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // RUN
+    queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
     result = neo4j_session_sync(session, &(resp1.condition));
     ck_assert_int_eq(result, 0);
     ck_assert(resp1.type == NEO4J_FAILURE_MESSAGE);
@@ -411,7 +422,7 @@ START_TEST (test_session_cant_start_after_eproto_in_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session1 = neo4j_new_session(connection);
     ck_assert_ptr_ne(session1, NULL);
 
@@ -425,8 +436,8 @@ START_TEST (test_session_cant_start_after_eproto_in_failure)
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // RUN
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // PULL_ALL
     result = neo4j_session_sync(session1, NULL);
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, EPROTO);
@@ -435,7 +446,7 @@ START_TEST (test_session_cant_start_after_eproto_in_failure)
 
     neo4j_end_session(session1);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session2 = neo4j_new_session(connection);
     ck_assert_ptr_eq(session2, NULL);
     ck_assert_int_eq(errno, NEO4J_CONNECTION_CLOSED);
@@ -447,7 +458,7 @@ START_TEST (test_session_cant_start_after_eproto_in_ack_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session1 = neo4j_new_session(connection);
     ck_assert_ptr_ne(session1, NULL);
 
@@ -461,9 +472,9 @@ START_TEST (test_session_cant_start_after_eproto_in_ack_failure)
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
-    queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0);
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // RUN
+    queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // ACK_FAILURE
     result = neo4j_session_sync(session1, NULL);
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, EPROTO);
@@ -472,7 +483,7 @@ START_TEST (test_session_cant_start_after_eproto_in_ack_failure)
 
     neo4j_end_session(session1);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session2 = neo4j_new_session(connection);
     ck_assert_ptr_eq(session2, NULL);
     ck_assert_int_eq(errno, NEO4J_CONNECTION_CLOSED);
@@ -484,7 +495,7 @@ START_TEST (test_session_drains_acks_when_closed)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_session_t *session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -501,8 +512,8 @@ START_TEST (test_session_drains_acks_when_closed)
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
-    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, NULL, 0);
-    queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0);
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE, &failure_metadata, 1); // RUN
+    queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
     // no queued response for the ACK_FAILURE => connection closed
 
     result = neo4j_session_sync(session, &(resp1.condition));

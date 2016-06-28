@@ -16,10 +16,8 @@
  */
 #include "../../config.h"
 #include "session.h"
-#include "connection.h"
 #include "iostream.h"
 #include "memory.h"
-#include "messages.h"
 #include "metadata.h"
 #include "serialization.h"
 #include "util.h"
@@ -40,7 +38,7 @@ static int drain_queued_requests(neo4j_session_t *session);
 static struct neo4j_request *new_request(neo4j_session_t *session);
 static void pop_request(neo4j_session_t* session);
 
-static int initialize(neo4j_session_t *session);
+static int initialize(neo4j_session_t *session, unsigned int attempts);
 static int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 static int ack_failure(neo4j_session_t *session);
@@ -69,7 +67,6 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
             (void *)session, (void *)connection);
 
     session->connection = connection;
-    session->config = connection->config;
     session->logger = logger;
     if (session_start(session))
     {
@@ -93,6 +90,12 @@ failure:
 }
 
 
+neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session)
+{
+    return session->connection;
+}
+
+
 int session_start(neo4j_session_t *session)
 {
     if (neo4j_attach_session(session->connection, session))
@@ -108,7 +111,7 @@ int session_start(neo4j_session_t *session)
     assert(session->request_queue_size > 0);
     assert(session->request_queue_depth == 0);
 
-    if (initialize(session))
+    if (initialize(session, 0))
     {
         assert(session->request_queue_depth <= 1);
         session->request_queue_depth = 0;
@@ -186,7 +189,6 @@ int neo4j_end_session(neo4j_session_t *session)
     neo4j_log_debug(session->logger, "session ended (%p)", (void *)session);
 
     session->connection = NULL;
-    session->config = NULL;
     neo4j_logger_release(session->logger);
     session->logger = NULL;
     free(session);
@@ -207,6 +209,12 @@ int neo4j_reset_session(neo4j_session_t *session)
     }
     neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
     return 0;
+}
+
+
+bool neo4j_credentials_expired(const neo4j_session_t *session)
+{
+    return session->credentials_expired;
 }
 
 
@@ -305,7 +313,7 @@ int send_requests(neo4j_session_t *session)
 {
     assert(session != NULL);
     neo4j_connection_t *connection = session->connection;
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
 
     for (unsigned int i = session->inflight_requests;
             i < session->request_queue_depth &&
@@ -426,7 +434,7 @@ int drain_queued_requests(neo4j_session_t *session)
 struct neo4j_request *new_request(neo4j_session_t *session)
 {
     assert(session != NULL);
-    const neo4j_config_t *config = session->config;
+    const neo4j_config_t *config = neo4j_session_config(session);
 
     if (session->failed)
     {
@@ -477,35 +485,114 @@ void pop_request(neo4j_session_t* session)
 }
 
 
-int initialize(neo4j_session_t *session)
+struct init_cdata
+{
+    neo4j_session_t *session;
+    int error;
+};
+
+
+int initialize(neo4j_session_t *session, unsigned int attempts)
 {
     assert(session != NULL);
-    const neo4j_config_t *config = session->config;
+    neo4j_config_t *config = neo4j_session_config(session);
     const char *client_id = config->client_id;
-    const char *principal = config->username? config->username : "";
-    const char *credentials = config->password? config->password : "";
 
-    struct neo4j_request *req = new_request(session);
-    if (req == NULL)
+    struct init_cdata cdata = { .session = session, .error = 0 };
+
+    const char *username = (config->username != NULL)? config->username : "";
+    const char *password = (config->password != NULL)? config->password : "";
+
+    if (attempts > 0 || config->auth_reattempt_callback == NULL ||
+            config->password != NULL || config->attempt_empty_password)
+    {
+        struct neo4j_request *req = new_request(session);
+        if (req == NULL)
+        {
+            return -1;
+        }
+
+        req->type = NEO4J_INIT_MESSAGE;
+        req->_argv[0] = neo4j_string(client_id);
+        neo4j_map_entry_t auth_token[3] =
+            { neo4j_map_entry("scheme", neo4j_string("basic")),
+              neo4j_map_entry("principal", neo4j_string(username)),
+              neo4j_map_entry("credentials", neo4j_string(password)) };
+        req->_argv[1] = neo4j_map(auth_token, 3);
+        req->argv = req->_argv;
+        req->argc = 2;
+        req->receive = initialize_callback;
+        req->cdata = &cdata;
+
+        neo4j_log_trace(session->logger, "enqu INIT{\"%s\"} (%p) in %p",
+                client_id, (void *)req, (void *)session);
+
+        if (neo4j_session_sync(session, NULL))
+        {
+            return -1;
+        }
+
+        if (cdata.error == 0)
+        {
+            return 0;
+        }
+
+        assert(cdata.error == NEO4J_INVALID_CREDENTIALS ||
+                cdata.error == NEO4J_AUTH_RATE_LIMIT);
+
+        if (config->auth_reattempt_callback == NULL)
+        {
+            errno = cdata.error;
+            return -1;
+        }
+
+        ++attempts;
+    }
+
+    char host[NEO4J_MAXHOSTLEN];
+    if (describe_host(host, sizeof(host),
+            session->connection->hostname, session->connection->port))
     {
         return -1;
     }
-    req->type = NEO4J_INIT_MESSAGE;
-    req->_argv[0] = neo4j_string(client_id);
-    neo4j_map_entry_t auth_token[3] =
-        { neo4j_map_entry("scheme", neo4j_string("basic")),
-          neo4j_map_entry("principal", neo4j_string(principal)),
-          neo4j_map_entry("credentials", neo4j_string(credentials)) };
-    req->_argv[1] = neo4j_map(auth_token, 3);
-    req->argv = req->_argv;
-    req->argc = 2;
-    req->receive = initialize_callback;
-    req->cdata = session;
 
-    neo4j_log_trace(session->logger, "enqu INIT{\"%s\"} (%p) in %p",
-            client_id, (void *)req, (void *)session);
+    char username_buf[NEO4J_MAXUSERNAMELEN];
+    strncpy(username_buf, username, sizeof(username_buf));
+    char password_buf[NEO4J_MAXPASSWORDLEN];
+    strncpy(password_buf, password, sizeof(password_buf));
 
-    return neo4j_session_sync(session, NULL);
+    int r = config->auth_reattempt_callback(
+            config->auth_reattempt_callback_userdata, host, attempts,
+            cdata.error, username_buf, sizeof(username_buf),
+            password_buf, sizeof(password_buf));
+    if (r < 0)
+    {
+        return -1;
+    }
+    else if (r > 0)
+    {
+        errno = cdata.error;
+        if (cdata.error == 0)
+        {
+            neo4j_log_error(session->logger,
+                    "authentication callback returned NEO4J_AUTHENTICATION_FAIL"
+                    " before first authentication attempt (in %p)",
+                    (void *)session);
+            errno = NEO4J_UNEXPECTED_ERROR;
+        }
+        return -1;
+    }
+
+    if (neo4j_config_set_username(config, username_buf))
+    {
+        return -1;
+    }
+    if (neo4j_config_set_password(config, password_buf))
+    {
+        return -1;
+    }
+
+    return initialize(session, attempts);
 }
 
 
@@ -513,10 +600,28 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
 {
     assert(cdata != NULL);
-    neo4j_session_t *session = (neo4j_session_t *)cdata;
+    neo4j_session_t *session = ((struct init_cdata *)cdata)->session;
+
+    char description[128];
 
     if (type == NEO4J_SUCCESS_MESSAGE)
     {
+        snprintf(description, sizeof(description),
+                "SUCCESS in %p (response to INIT)", (void *)session);
+        const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
+                description, session->logger);
+        if (metadata == NULL)
+        {
+            return -1;
+        }
+        if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+        {
+            neo4j_metadata_log(session->logger, NEO4J_LOG_TRACE, description,
+                    *metadata);
+        }
+        neo4j_value_t ce = neo4j_map_get(*metadata, "credentials_expired");
+        session->credentials_expired =
+                (neo4j_type(ce) == NEO4J_BOOL && neo4j_bool_value(ce));
         return 0;
     }
 
@@ -531,10 +636,8 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     }
 
     // handle failure
-    char description[128];
     snprintf(description, sizeof(description),
-            "FAILURE message received in %p (in response to INIT)",
-            (void *)session);
+            "FAILURE in %p (response to INIT)", (void *)session);
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
             description, session->logger);
     if (metadata == NULL)
@@ -542,7 +645,13 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
 
-    const neo4j_config_t *config = session->config;
+    if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+    {
+        neo4j_metadata_log(session->logger, NEO4J_LOG_TRACE, description,
+                *metadata);
+    }
+
+    const neo4j_config_t *config = neo4j_session_config(session);
     const char *code;
     const char *message;
     neo4j_mpool_t mpool =
@@ -553,16 +662,33 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
 
+    int result = -1;
+
     if (strcmp(code, "Neo.ClientError.Security.EncryptionRequired") == 0)
     {
         errno = NEO4J_SERVER_REQUIRES_SECURE_CONNECTION;
-        return -1;
+        goto cleanup;
+    }
+    if (strcmp(code, "Neo.ClientError.Security.Unauthorized") == 0)
+    {
+        ((struct init_cdata *)cdata)->error = NEO4J_INVALID_CREDENTIALS;
+        result = 0;
+        goto cleanup;
+    }
+    if (strcmp(code, "Neo.ClientError.Security.AuthenticationRateLimit") == 0)
+    {
+        ((struct init_cdata *)cdata)->error = NEO4J_AUTH_RATE_LIMIT;
+        result = 0;
+        goto cleanup;
     }
 
     neo4j_log_error(session->logger, "session initalization failed: %s",
             message);
     errno = NEO4J_UNEXPECTED_ERROR;
-    return -1;
+
+cleanup:
+    neo4j_mpool_drain(&mpool);
+    return result;
 }
 
 

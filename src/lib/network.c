@@ -71,8 +71,8 @@ int neo4j_connect_tcp_socket(const char *hostname, const char *servname,
 
         set_socket_options(fd, config, logger);
 
-        char hostnum[1024];
-        char servnum[1024];
+        char hostnum[NI_MAXHOST];
+        char servnum[NI_MAXSERV];
         err = getnameinfo(addr->ai_addr, addr->ai_addrlen,
                 hostnum, sizeof(hostnum), servnum, sizeof(servnum),
                 NI_NUMERICHOST | NI_NUMERICSERV);

@@ -301,6 +301,8 @@ CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
+CYPHER_PARSER_CFLAGS = @CYPHER_PARSER_CFLAGS@
+CYPHER_PARSER_LIBS = @CYPHER_PARSER_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -344,7 +346,6 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LEG = @LEG@
 LIBEDIT_CFLAGS = @LIBEDIT_CFLAGS@
 LIBEDIT_LIBS = @LIBEDIT_LIBS@
 LIBM = @LIBM@
@@ -1089,16 +1090,16 @@ src/.doc/neo4j-client.h: src/lib/neo4j-client.h
 
 docker-check:
 	$(MAKE) dist
-	id=`docker create -i debian-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check'` && \
+	id=`docker create -i debian-unstable-dev \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && CK_TIMEOUT_MULTIPLIER=2 make check'` && \
 	trap "docker rm $$id" EXIT && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker start -i $$id
 
 docker-valgrind:
 	$(MAKE) dist
-	id=`docker create -i debian-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && make check && CK_FORK=no valgrind --suppressions=valgrind.suppressions --leak-check=full ./tests/check_libneo4j-client'` && \
+	id=`docker create -i debian-unstable-dev \
+		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && CK_TIMEOUT_MULTIPLIER=2 make check && CK_FORK=no CK_TIMEOUT_MULTIPLIER=2 valgrind --suppressions=valgrind.suppressions --leak-check=full ./tests/check_libneo4j-client'` && \
 	trap "docker rm $$id" EXIT && \
 	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
 	docker cp valgrind.suppressions $$id:/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \

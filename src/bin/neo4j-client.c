@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 #include "../../config.h"
+#include "authentication.h"
 #include "batch.h"
+#include "connect.h"
 #include "evaluate.h"
 #include "interactive.h"
 #include "render.h"
@@ -29,27 +31,39 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifndef _PATH_TTY
+#  define _PATH_TTY "/dev/tty"
+#endif
+
 
 #define NEO4J_HISTORY_FILE "client-history"
 
 
-const char *shortopts = "hp:u:v";
+const char *shortopts = "hp:Pu:v";
 
 #define HISTFILE_OPT 1000
-#define INSECURE_OPT 1001
-#define KNOWN_HOSTS_OPT 1002
-#define NOHIST_OPT 1003
-#define VERSION_OPT 1004
-#define PIPELINE_MAX_OPT 1005
+#define CA_FILE_OPT 1001
+#define CA_DIRECTORY_OPT 1002
+#define INSECURE_OPT 1003
+#define NON_INTERACTIVE_OPT 1004
+#define KNOWN_HOSTS_OPT 1005
+#define NO_KNOWN_HOSTS_OPT 1006
+#define NOHIST_OPT 1007
+#define VERSION_OPT 1008
+#define PIPELINE_MAX_OPT 1009
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
       { "history-file", required_argument, NULL, HISTFILE_OPT },
       { "no-history", no_argument, NULL, NOHIST_OPT },
+      { "ca-file", required_argument, NULL, CA_FILE_OPT },
+      { "ca-directory", required_argument, NULL, CA_DIRECTORY_OPT },
       { "insecure", no_argument, NULL, INSECURE_OPT },
+      { "non-interactive", no_argument, NULL, NON_INTERACTIVE_OPT },
       { "username", required_argument, NULL, 'u' },
       { "password", required_argument, NULL, 'p' },
       { "known-hosts", required_argument, NULL, KNOWN_HOSTS_OPT },
+      { "no-known-hosts", no_argument, NULL, NO_KNOWN_HOSTS_OPT },
       { "pipeline-max", required_argument, NULL, PIPELINE_MAX_OPT },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
@@ -58,17 +72,24 @@ static struct option longopts[] =
 static void usage(FILE *s, const char *prog_name)
 {
     fprintf(s,
-"usage: %s [OPTIONS] [URL]\n"
+"usage: %s [OPTIONS] [URL | host[:port]]\n"
 "options:\n"
 " --help, -h          Output this usage information.\n"
 " --history=file      Use the specified file for saving history.\n"
 " --no-history        Do not save history.\n"
+" --ca-file=cert.pem  Specify a file containing trusted certificates.\n"
+" --ca-directory=dir  Specify a directory containing trusted certificates.\n"
 " --insecure          Do not attempt to establish a secure connection.\n"
+" --non-interactive   Use non-interactive mode and do not prompt for\n"
+"                     credentials when connecting.\n"
 " --username=name, -u name\n"
 "                     Connect using the specified username.\n"
 " --password=pass, -p pass\n"
 "                     Connect using the specified password.\n"
+" -P                  Prompt for a password, even in non-interactive mode.\n"
 " --known-hosts=file  Set the path to the known-hosts file.\n"
+" --no-known-hosts    Do not do host checking via known-hosts (use only TLS\n"
+"                     certificate verification).\n"
 " --verbose, -v       Increase logging verbosity.\n"
 " --version           Output the version of neo4j-client and dependencies.\n"
 "\n"
@@ -84,10 +105,10 @@ static void usage(FILE *s, const char *prog_name)
 
 int main(int argc, char *argv[])
 {
-    FILE *tty = fopen("/dev/tty", "r+");
+    FILE *tty = fopen(_PATH_TTY, "r+");
     if (tty == NULL && errno != ENOENT)
     {
-        perror("can't open /dev/tty");
+        perror("can't open " _PATH_TTY);
         exit(EXIT_FAILURE);
     }
 
@@ -100,7 +121,6 @@ int main(int argc, char *argv[])
 
     uint8_t log_level = NEO4J_LOG_WARN;
     struct neo4j_logger_provider *provider = NULL;
-    neo4j_config_t *config = NULL;
 
     neo4j_client_init();
 
@@ -109,17 +129,10 @@ int main(int argc, char *argv[])
 
     if (shell_state_init(&state, prog_name, stdin, stdout, stderr, tty))
     {
-        perror("unexpected error");
-        goto cleanup;
-    }
-
-    config = neo4j_new_config();
-    if (config == NULL)
-    {
         neo4j_perror(state.err, errno, "unexpected error");
         goto cleanup;
     }
-    state.config = config;
+
     state.interactive = isatty(STDIN_FILENO);
 
     char histfile[PATH_MAX];
@@ -146,25 +159,63 @@ int main(int argc, char *argv[])
         case HISTFILE_OPT:
             state.histfile = (optarg[0] != '\0')? optarg : NULL;
             break;
+        case CA_FILE_OPT:
+            if (neo4j_config_set_TLS_ca_file(state.config, optarg))
+            {
+                neo4j_perror(state.err, errno, "unexpected error");
+                goto cleanup;
+            }
+            break;
+        case CA_DIRECTORY_OPT:
+            if (neo4j_config_set_TLS_ca_dir(state.config, optarg))
+            {
+                neo4j_perror(state.err, errno, "unexpected error");
+                goto cleanup;
+            }
+            break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;
             break;
+        case NON_INTERACTIVE_OPT:
+            state.interactive = false;
+            if (tty != NULL)
+            {
+                fclose(tty);
+                tty = NULL;
+            }
+            break;
         case 'u':
-            if (neo4j_config_set_username(config, optarg))
+            if (neo4j_config_set_username(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
             break;
         case 'p':
-            if (neo4j_config_set_password(config, optarg))
+            if (neo4j_config_set_password(state.config, optarg))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
             break;
+        case 'P':
+            if (tty == NULL)
+            {
+                fprintf(state.err,
+                        "Cannot prompt for a password without a tty\n");
+                goto cleanup;
+            }
+            state.password_prompt = true;
+            break;
         case KNOWN_HOSTS_OPT:
-            if (neo4j_config_set_known_hosts_file(config, optarg))
+            if (neo4j_config_set_known_hosts_file(state.config, optarg))
+            {
+                neo4j_perror(state.err, errno, "unexpected error");
+                goto cleanup;
+            }
+            break;
+        case NO_KNOWN_HOSTS_OPT:
+            if (neo4j_config_set_trust_known_hosts(state.config, false))
             {
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
@@ -182,7 +233,7 @@ int main(int argc, char *argv[])
                     goto cleanup;
                 }
                 state.pipeline_max = arg;
-                neo4j_config_set_max_pipelined_requests(config, arg * 2);
+                neo4j_config_set_max_pipelined_requests(state.config, arg * 2);
             }
             break;
         case VERSION_OPT:
@@ -217,20 +268,34 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    neo4j_config_set_logger_provider(config, provider);
+    neo4j_config_set_logger_provider(state.config, provider);
 
-    if (state.tty != NULL)
+    if (state.interactive)
     {
-        neo4j_config_set_unverified_host_callback(config,
-                host_verification, &state);
+        state.password_prompt = true;
     }
 
-    if (argc >= 1)
+    if (tty != NULL)
     {
-        if (db_connect(&state, argv[0]))
+        neo4j_config_set_unverified_host_callback(state.config,
+                host_verification, &state);
+
+        if (state.password_prompt)
         {
-            goto cleanup;
+            neo4j_config_set_authentication_reattempt_callback(state.config,
+                    auth_reattempt, &state);
         }
+    }
+
+    if (argc >= 1 && db_connect(&state, argv[0]))
+    {
+        goto cleanup;
+    }
+
+    // remove any password from the config
+    if (neo4j_config_set_password(state.config, NULL))
+    {
+        // can't fail
     }
 
     if (state.interactive)
@@ -256,10 +321,6 @@ int main(int argc, char *argv[])
 
 cleanup:
     shell_state_destroy(&state);
-    if (config != NULL)
-    {
-        neo4j_config_free(config);
-    }
     if (provider != NULL)
     {
         neo4j_std_logger_provider_free(provider);

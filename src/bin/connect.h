@@ -14,34 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_UTIL_H
-#define NEO4J_UTIL_H
+#ifndef NEO4J_CONNECT_H
+#define NEO4J_CONNECT_H
 
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <stdlib.h>
+#include "state.h"
 
+int db_connect(shell_state_t *state, const char *connect_string);
+int db_disconnect(shell_state_t *state);
 
-#ifndef MAXSERVNAMELEN
-#  ifdef NI_MAXSERV
-#    define MAXSERVNAMELEN NI_MAXSERV
-#  else
-#    define MAXSERVNAMELEN 32
-#  endif
-#endif
-
-#ifndef MAXHOSTNAMELEN
-#  ifdef NI_MAXHOST
-#    define MAXHOSTNAMELEN NI_MAXHOST
-#  else
-#    define MAXHOSTNAMELEN 1025
-#  endif
-#endif
-
-#define NEO4J_MAXHOSTLEN (MAXHOSTNAMELEN + 1 + MAXSERVNAMELEN)
-
-char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
-
-void trim_statement(const char **s, size_t *n);
-
-#endif/*NEO4J_UTIL_H*/
+#endif/*NEO4J_CONNECT_H*/
