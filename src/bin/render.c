@@ -51,6 +51,19 @@ renderer_t find_renderer(const char *name)
 }
 
 
+const char *renderer_name(renderer_t renderer)
+{
+    for (unsigned int i = 0; renderers[i].name != NULL; ++i)
+    {
+        if (renderers[i].handler == renderer)
+        {
+            return renderers[i].name;
+        }
+    }
+    return NULL;
+}
+
+
 int render_results_csv(shell_state_t *state, neo4j_result_stream_t *results)
 {
     return neo4j_render_csv(state->out, results, state->render_flags);

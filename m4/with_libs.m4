@@ -13,8 +13,7 @@ AC_DEFUN([WITH_LIBS],
     CPPFLAGS="-I${dir}/include $CPPFLAGS"
     LDFLAGS="-L${dir}/lib $LDFLAGS"
     PATH="${dir}/bin:$PATH"
-    echo "SET path to $PATH"
-    PKG_CONFIG_PATH="${PKG_CONFIG_PATH}${PKG_CONFIG_PATH:+:}${dir}/lib/pkgconfig"
+    export PKG_CONFIG_PATH="${PKG_CONFIG_PATH}${PKG_CONFIG_PATH:+:}${dir}/lib/pkgconfig"
   done
   IFS=$neo4j_save_ifs
   ])

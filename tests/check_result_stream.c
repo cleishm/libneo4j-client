@@ -76,7 +76,8 @@ static void setup(void)
     connection = neo4j_connect("neo4j://localhost:7687", config, 0);
     ck_assert_ptr_ne(connection, NULL);
 
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0);
+    neo4j_value_t empty_map = neo4j_map(NULL, 0);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // RUN
     session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 

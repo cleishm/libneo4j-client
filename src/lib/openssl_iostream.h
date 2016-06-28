@@ -21,6 +21,21 @@
 #include "iostream.h"
 
 /**
+ * Initialize the openssl_iostream system.
+ *
+ * @internal
+ *
+ * @return 0 on success, -1 on failure (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_openssl_iostream_init(void);
+
+/**
+ * Cleanup the openssl_iostream system.
+ */
+void neo4j_openssl_iostream_cleanup(void);
+
+/**
  * Create an iostream for an OpenSSL BIO.
  *
  * @internal

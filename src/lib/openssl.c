@@ -18,15 +18,26 @@
 #include "openssl.h"
 #include "errno.h"
 #include "logging.h"
+#include "openssl_iostream.h"
 #include "thread.h"
 #include "tofu.h"
 #include "util.h"
 #include <assert.h>
+// FIXME: openssl 1.1.0-pre4 has issues with cast-qual
+// (and perhaps earlier versions?)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#include <openssl/x509v3.h>
 #include <openssl/err.h>
+#pragma GCC diagnostic pop
+
+#define NEO4J_CYPHER_LIST "HIGH:!EXPORT:!aNULL@STRENGTH"
 
 static neo4j_mutex_t *thread_locks;
 
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 static void locking_callback(int mode, int type, const char *file, int line);
+#endif
 static SSL_CTX *new_ctx(const neo4j_config_t *config, neo4j_logger_t *logger);
 static int load_private_key(SSL_CTX *ctx, const neo4j_config_t *config,
         neo4j_logger_t *logger);
@@ -40,6 +51,12 @@ static int cert_fingerprint(X509* cert, char *buf, size_t n,
         neo4j_logger_t *logger);
 static int sha512_digest(unsigned char *buf, unsigned int *np,
         const void *s, size_t n, neo4j_logger_t *logger);
+static int verify_hostname(X509* cert, const char *hostname,
+        neo4j_logger_t *logger);
+static int check_subject_alt_name(X509* cert, const char *hostname,
+        neo4j_logger_t *logger);
+static int check_common_name(X509 *cert, const char *hostname,
+        neo4j_logger_t *logger);
 static int openssl_error(neo4j_logger_t *logger, uint_fast8_t level,
         const char *file, unsigned int line);
 
@@ -50,6 +67,11 @@ int neo4j_openssl_init(void)
     SSL_load_error_strings();
     ERR_load_BIO_strings();
     OpenSSL_add_all_algorithms();
+
+    if (neo4j_openssl_iostream_init())
+    {
+        return -1;
+    }
 
     int num_locks = CRYPTO_num_locks();
     thread_locks = calloc(num_locks, sizeof(neo4j_mutex_t));
@@ -73,18 +95,21 @@ int neo4j_openssl_init(void)
         }
     }
 
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
     if (CRYPTO_get_locking_callback() == NULL)
     {
         CRYPTO_set_locking_callback(locking_callback);
         CRYPTO_set_id_callback(neo4j_current_thread_id);
     }
+#endif
 
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_method());
+    SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
     if (ctx == NULL)
     {
         errno = openssl_error(NULL, NEO4J_LOG_ERROR, __FILE__, __LINE__);
         return -1;
     }
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
     SSL_CTX_free(ctx);
 
     return 0;
@@ -93,11 +118,13 @@ int neo4j_openssl_init(void)
 
 int neo4j_openssl_cleanup(void)
 {
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
     if (CRYPTO_get_locking_callback() == locking_callback)
     {
         CRYPTO_set_locking_callback(NULL);
         CRYPTO_set_id_callback(NULL);
     }
+#endif
 
     int num_locks = CRYPTO_num_locks();
     for (int i = 0; i < num_locks; i++)
@@ -106,11 +133,13 @@ int neo4j_openssl_cleanup(void)
     }
     free(thread_locks);
 
+    neo4j_openssl_iostream_cleanup();
     EVP_cleanup();
     return 0;
 }
 
 
+#ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 void locking_callback(int mode, int type, const char *file, int line)
 {
     if (mode & CRYPTO_LOCK)
@@ -122,6 +151,7 @@ void locking_callback(int mode, int type, const char *file, int line)
         neo4j_mutex_unlock(&thread_locks[type]);
     }
 }
+#endif
 
 
 BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
@@ -132,6 +162,7 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
     SSL_CTX *ctx = new_ctx(config, logger);
     if (ctx == NULL)
     {
+        neo4j_logger_release(logger);
         return NULL;
     }
 
@@ -155,8 +186,15 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
     int result = BIO_do_handshake(ssl_bio);
     if (result != 1)
     {
+#if OPENSSL_VERSION_NUMBER < 0x10100004
         if (result == 0)
+#else
+        // FIXME: when no handshake, openssl 1.1.0-pre4 reports result == -1
+        // but error == 0 (and perhaps earlier versions?)
+        if (result == 0 || ERR_peek_error() == 0)
+#endif
         {
+            ERR_get_error(); // pop the error
             errno = NEO4J_NO_SERVER_TLS_SUPPORT;
             goto failure;
         }
@@ -172,12 +210,14 @@ BIO *neo4j_openssl_new_bio(BIO *delegate, const char *hostname, int port,
         goto failure;
     }
 
+    neo4j_logger_release(logger);
     return ssl_bio;
 
     int errsv;
 failure:
     errsv = errno;
     BIO_free(ssl_bio);
+    neo4j_logger_release(logger);
     errno = errsv;
     return NULL;
 }
@@ -185,14 +225,15 @@ failure:
 
 SSL_CTX *new_ctx(const neo4j_config_t *config, neo4j_logger_t *logger)
 {
-    SSL_CTX *ctx = SSL_CTX_new(TLSv1_method());
+    SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
     if (ctx == NULL)
     {
         errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);
-        return NULL;
+        goto failure;
     }
+    SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
-    if (SSL_CTX_set_cipher_list(ctx, "HIGH:!EXPORT:!aNULL@STRENGTH") != 1)
+    if (SSL_CTX_set_cipher_list(ctx, NEO4J_CYPHER_LIST) != 1)
     {
         errno = openssl_error(logger, NEO4J_LOG_ERROR, __FILE__, __LINE__);
         goto failure;
@@ -290,6 +331,7 @@ int verify(SSL *ssl, const char *hostname, int port,
     X509 *cert = SSL_get_peer_certificate(ssl);
     if (cert == NULL)
     {
+        neo4j_log_error(logger, "server did not present a TLS certificate");
         errno = NEO4J_TLS_VERIFICATION_FAILED;
         return -1;
     }
@@ -305,33 +347,68 @@ int verify(SSL *ssl, const char *hostname, int port,
     neo4j_log_debug(logger, "server cert fingerprint: %s", fingerprint);
 
     long verification = SSL_get_verify_result(ssl);
+    const char *verification_msg = X509_verify_cert_error_string(verification);
     switch (verification)
     {
     case X509_V_OK:
-        // TODO: verify that the certificate matches hostname/port
-        neo4j_log_debug(logger, "certificate verified using CA");
-        result = 0;
+        result = verify_hostname(cert, hostname, logger);
+        if (result < 0)
+        {
+            goto cleanup;
+        }
+        if (result == 0)
+        {
+            neo4j_log_debug(logger, "certificate verified using CA");
+            break;
+        }
+        verification_msg = "certificate does not match hostname";
+        // fall through
+    case X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN:
+    case X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT:
+    case X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE:
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT:
+    case X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY:
+        if (!config->trust_known)
+        {
+            break;
+        }
+        neo4j_log_debug(logger, "TLS certificate verification failed: %s",
+                verification_msg);
+        // attempt use of TOFU
+        result = neo4j_check_known_hosts(hostname, port,
+                fingerprint, config, flags);
+        if (result == 1)
+        {
+            neo4j_log_error(logger,
+                    "server fingerprint not in known hosts and "
+                    "TLS certificate verification failed: %s",
+                    verification_msg);
+        }
+        if (result > 0)
+        {
+            result = -1;
+            errno = NEO4J_TLS_VERIFICATION_FAILED;
+        }
         goto cleanup;
-    // TODO: check other verification codes for unacceptable certificates
+    case X509_V_ERR_OUT_OF_MEM:
+        errno = ENOMEM;
+        goto cleanup;
     default:
         break;
     }
 
-    if (!(config->trust_known))
+    if (result)
     {
+        neo4j_log_error(logger, "TLS certificate verification failed: %s",
+                verification_msg);
         errno = NEO4J_TLS_VERIFICATION_FAILED;
-        goto cleanup;
     }
 
-    result = neo4j_check_known_hosts(hostname, port, fingerprint, config, flags);
-    if (result > 0)
-    {
-        errno = NEO4J_TLS_VERIFICATION_FAILED;
-        result = -1;
-    }
-
+    int errsv;
 cleanup:
+    errsv = errno;
     X509_free(cert);
+    errno = errsv;
     return result;
 }
 
@@ -413,6 +490,92 @@ failure:
     EVP_MD_CTX_destroy(mdctx);
     errno = errsv;
     return -1;
+}
+
+
+int verify_hostname(X509* cert, const char *hostname,
+        neo4j_logger_t *logger)
+{
+    int result = check_subject_alt_name(cert, hostname, logger);
+    if (result <= 0)
+    {
+        return result;
+    }
+    return check_common_name(cert, hostname, logger);
+}
+
+
+int check_subject_alt_name(X509* cert, const char *hostname,
+        neo4j_logger_t *logger)
+{
+    STACK_OF(GENERAL_NAME) *names = X509_get_ext_d2i(cert,
+            NID_subject_alt_name, NULL, NULL);
+    if (names == NULL)
+    {
+        return 1;
+    }
+
+    int result = 1;
+
+    int nnames = sk_GENERAL_NAME_num(names);
+    for (int i = 0; i < nnames; ++i)
+    {
+        const GENERAL_NAME *name = sk_GENERAL_NAME_value(names, i);
+        if (name->type != GEN_DNS)
+        {
+            continue;
+        }
+
+        char *name_str = (char *)ASN1_STRING_data(name->d.dNSName);
+        // check that there isn't a null in the asn1 string
+        if (strlen(name_str) != (size_t)ASN1_STRING_length(name->d.dNSName))
+        {
+            result = -1;
+            errno = NEO4J_TLS_MALFORMED_CERTIFICATE;
+            goto cleanup;
+        }
+        neo4j_log_trace(logger, "checking against certificate "
+                "subject alt name '%s'", name_str);
+        if (hostname_matches(hostname, name_str))
+        {
+            result = 0;
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    sk_GENERAL_NAME_pop_free(names, GENERAL_NAME_free);
+    return result;
+}
+
+
+int check_common_name(X509 *cert, const char *hostname, neo4j_logger_t *logger)
+{
+    int i = X509_NAME_get_index_by_NID(X509_get_subject_name(cert), NID_commonName, -1);
+    if (i < 0)
+    {
+        return -1;
+    }
+    X509_NAME_ENTRY *cn = X509_NAME_get_entry(X509_get_subject_name(cert), i);
+    if (cn == NULL)
+    {
+        return -1;
+    }
+    ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(cn);
+    if (asn1 == NULL)
+    {
+        return -1;
+    }
+    const char *cn_str = (const char *)ASN1_STRING_data(asn1);
+    // check that there isn't a null in the asn1 string
+    if (strlen(cn_str) != (size_t)ASN1_STRING_length(asn1))
+    {
+        errno = NEO4J_TLS_MALFORMED_CERTIFICATE;
+        return -1;
+    }
+    neo4j_log_trace(logger, "checking against certificate common name '%s'",
+            cn_str);
+    return hostname_matches(hostname, cn_str)? 0 : 1;
 }
 
 

@@ -292,14 +292,17 @@ failure:
 
 run_result_stream_t *run_rs_open(neo4j_session_t *session)
 {
-    run_result_stream_t *results = neo4j_calloc(session->config->allocator,
+    assert(session != NULL);
+    neo4j_config_t *config = neo4j_session_config(session);
+
+    run_result_stream_t *results = neo4j_calloc(config->allocator,
             NULL, 1, sizeof(run_result_stream_t));
 
     results->session = session;
-    results->logger = neo4j_get_logger(session->config, "results");
-    results->allocator = session->config->allocator;
-    results->mpool = neo4j_std_mpool(session->config);
-    results->record_mpool = neo4j_std_mpool(session->config);
+    results->logger = neo4j_get_logger(config, "results");
+    results->allocator = config->allocator;
+    results->mpool = neo4j_std_mpool(config);
+    results->record_mpool = neo4j_std_mpool(config);
     results->statement_type = -1;
     results->refcount = 1;
 
@@ -630,8 +633,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     }
 
     char description[128];
-    snprintf(description, sizeof(description),
-            "%s message received in %p (in response to RUN)",
+    snprintf(description, sizeof(description), "%s in %p (response to RUN)",
             neo4j_message_type_str(type), (void *)session);
 
     if (type != NEO4J_SUCCESS_MESSAGE)
@@ -647,6 +649,11 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     {
         set_failure(results, errno);
         return -1;
+    }
+
+    if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+    {
+        neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
 
     if (neo4j_meta_fieldnames(&(results->fields), &(results->nfields),
@@ -717,6 +724,8 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
         return 0;
     }
 
+    neo4j_config_t *config = neo4j_session_config(session);
+
     if (type == NEO4J_IGNORED_MESSAGE)
     {
         if (results->failure == 0)
@@ -748,8 +757,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     }
 
     char description[128];
-    snprintf(description, sizeof(description),
-            "SUCCESS message received in %p (in response to %s)",
+    snprintf(description, sizeof(description), "SUCCESS in %p (response to %s)",
             (void *)session, src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
@@ -762,9 +770,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     if (neo4j_log_is_enabled(logger, NEO4J_LOG_TRACE))
     {
-        char buf[4096];
-        neo4j_log_trace(logger, "%s SUCCESS metadata: %s", src_message_type,
-                neo4j_tostring(*metadata, buf, sizeof(buf)));
+        neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
 
     results->statement_type =
@@ -776,7 +782,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     }
 
     results->statement_plan = neo4j_meta_plan(*metadata, description,
-            session->config, logger);
+            config, logger);
     if (results->statement_plan == NULL && errno != NEO4J_NO_PLAN_AVAILABLE)
     {
         set_failure(results, errno);
@@ -829,7 +835,7 @@ int append_result(run_result_stream_t *results,
         neo4j_log_error(results->logger,
                 "invalid field in RECORD message received in %p"
                 " (got %s, expected List)", (void *)session,
-                neo4j_type_str(arg_type));
+                neo4j_typestr(arg_type));
         errno = EPROTO;
         return -1;
     }
@@ -840,6 +846,9 @@ int append_result(run_result_stream_t *results,
         neo4j_mpool_drain(&(results->record_mpool));
         return 0;
     }
+
+    assert(session != NULL);
+    neo4j_config_t *config = neo4j_session_config(session);
 
     result_record_t *record = neo4j_mpool_calloc(&(results->record_mpool),
             1, sizeof(result_record_t));
@@ -852,7 +861,7 @@ int append_result(run_result_stream_t *results,
 
     // save memory for the record with the record
     record->mpool = results->record_mpool;
-    results->record_mpool = neo4j_std_mpool(session->config);
+    results->record_mpool = neo4j_std_mpool(config);
 
     record->list = argv[0];
     record->next = NULL;
@@ -910,8 +919,7 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
     set_failure(results, NEO4J_STATEMENT_EVALUATION_FAILED);
 
     char description[128];
-    snprintf(description, sizeof(description),
-            "FAILURE message received in %p (in response to %s)",
+    snprintf(description, sizeof(description), "FAILURE in %p (response to %s)",
             (void *)(results->session), src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
@@ -920,6 +928,12 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
     {
         set_failure(results, errno);
         return -1;
+    }
+
+    if (neo4j_log_is_enabled(results->logger, NEO4J_LOG_TRACE))
+    {
+        neo4j_metadata_log(results->logger, NEO4J_LOG_TRACE, description,
+                *metadata);
     }
 
     if (neo4j_meta_failure_details(&(results->error_code),
