@@ -48,6 +48,10 @@ int interact(shell_state_t *state)
         goto cleanup;
     }
 
+    fprintf(state->out,
+            "neo4j-client " PACKAGE_VERSION ".\n"
+            "Enter `:help` for usage hints.\n");
+
     const char *input;
     int length;
     while ((input = el_gets(el, &length)) != NULL)

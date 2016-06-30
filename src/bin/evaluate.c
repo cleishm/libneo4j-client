@@ -128,7 +128,8 @@ int evaluate_command(shell_state_t *state, const cypher_astnode_t *command)
         }
     }
 
-    fprintf(state->err, "Unknown command '%s'\n", name);
+    fprintf(state->err, "Unknown command '%s' (for usage, enter `:help`)\n",
+            name);
     return -1;
 }
 
@@ -266,6 +267,14 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
     }
 
     fprintf(state->out,
+"Enter commands or cypher statements at the prompt.\n"
+"\n"
+"Commands always begin with a colon (:) and conclude at the end of the line,\n"
+"for example `:help`. Statements do not begin with a colon (:), may span\n"
+"multiple lines, are terminated with a semi-colon (;) and will be sent to\n"
+"the Neo4j server for evaluation.\n"
+"\n"
+"Available commands:\n"
 ":quit                  Exit the shell\n"
 ":connect '<url>'       Connect to the specified URL\n"
 ":connect host[:port]   Connect to the specified host (and optional port)\n"
@@ -277,7 +286,9 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 ":status                Show the client connection status\n"
 ":help                  Show usage information\n"
 ":output (table|csv)    Set the output format\n"
-":width (<n>|auto)      Set the number of columns in the table output\n");
+":width (<n>|auto)      Set the number of columns in the table output\n"
+"\n"
+"For more information, see the neo4j-client(1) manpage.\n");
     fflush(state->out);
     return 0;
 }
@@ -560,7 +571,7 @@ evaluation_continuation_t evaluate_statement(shell_state_t *state,
 
 int not_connected_error(evaluation_continuation_t *self, shell_state_t *state)
 {
-    fprintf(state->err, "ERROR: not connected\n");
+    fprintf(state->err, "Not connected (try `:connect <URL>`, or `:help`)\n");
     return -1;
 }
 
