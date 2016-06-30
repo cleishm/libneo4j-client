@@ -24,6 +24,7 @@ Package: libneo4j-client8
 Provides: libneo4j-client
 Section: libs
 Architecture: any
+Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Client library for the Neo4j graph database
  Neo4j is a Graph Database with an open-source, community licensed server.
@@ -31,11 +32,14 @@ Description: Client library for the Neo4j graph database
  libneo4j-client takes care of all the detail of establishing a session with a
  Neo4j server, sending statements for evaluation, and retrieving results.
 
-Package: libneo4j-client8-dev
-Provides: libneo4j-client-dev
+Package: libneo4j-client-dev
 Section: libdevel
 Architecture: any
+Multi-Arch: same
 Depends: libneo4j-client8 (= ${binary:Version}), ${misc:Depends}
+Provides: libneo4j-client7-dev, libneo4j-client8-dev
+Conflicts: libneo4j-client7-dev, libneo4j-client8-dev
+Replaces: libneo4j-client7-dev, libneo4j-client8-dev
 Suggests: pkg-config
 Description: Development files for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.
