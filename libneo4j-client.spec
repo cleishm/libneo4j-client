@@ -15,12 +15,12 @@
 Summary: Client library for the Neo4j graph database
 Name: libneo4j-client
 Version: 1.0.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Group: System Environment/Libraries
 License: Apache-2.0
 URL: https://github.com/cleishm/libneo4j-client
 Source0: https://github.com/cleishm/libneo4j-client/releases/download/%{version}/%{name}-%{version}.tar.gz
-BuildRequires: libcypher-parser3-devel openssl-devel libedit-devel doxygen pkgconfig
+BuildRequires: libcypher-parser-devel openssl-devel libedit-devel doxygen pkgconfig
 
 %description
 libneo4j-client is a client library and command line shell for Neo4j.
@@ -65,19 +65,18 @@ Neo4j server, sending statements for evaluation, and retrieving results.
 
 #------------------------------------------------------------------------------
 
-%package -n %{libname}-devel
-Summary: Development files for %{libname}
+%package -n %{name}-devel
+Summary: Development files for %{name}
 Group: Development/Libraries
 Requires: %{libname}%{?_isa} = %{version}-%{release}
-Provides: %{name}-devel
 
-%description -n %{libname}-devel
+%description -n %{name}-devel
 libneo4j-client takes care of all the detail of establishing a session with a
 Neo4j server, sending statements for evaluation, and retrieving results.
 
 This package contains the development files (headers, static libraries)
 
-%files -n %{libname}-devel
+%files -n %{name}-devel
 %defattr(-, root, root)
 %{_includedir}/neo4j-client.h
 %{_libdir}/*.so
@@ -85,20 +84,19 @@ This package contains the development files (headers, static libraries)
 
 #------------------------------------------------------------------------------
 
-%package -n %{libname}-devel-doc
-Summary: Development documentation for %{libname}
+%package -n %{name}-devel-doc
+Summary: Development documentation for %{name}
 Group: Development/Libraries
 BuildArch: noarch
-Provides: %{name}-devel-doc
 
-%description -n %{libname}-devel-doc
+%description -n %{name}-devel-doc
 libneo4j-client takes care of all the detail of establishing a session with a
 Neo4j server, sending statements for evaluation, and retrieving results.
 
 This package contains the API documentation that is also available on the
 libneo4j-client website (https://github.com/cleishm/libneo4j-client).
 
-%files -n %{libname}-devel-doc
+%files -n %{name}-devel-doc
 %defattr(-, root, root)
 %doc doc/html
 
@@ -121,6 +119,8 @@ of results to tables or CSV.
 #------------------------------------------------------------------------------
 
 %changelog
+* Thu Jun 30 2016 Chris Leishman <chris@leishman.org> - 1.0.0-2
+- Changed -devel package names to remove soname
 * Mon Jun 27 2016 Chris Leishman <chris@leishman.org> - 1.0.0-1
 - Upstream release 1.0.0
 * Sat May 21 2016 Chris Leishman <chris@leishman.org> - 0.9.2-1
