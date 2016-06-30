@@ -2,7 +2,7 @@ Source: libneo4j-client
 Section: devel
 Priority: optional
 Maintainer: Chris Leishman <chris@leishman.org>
-Build-Depends: debhelper (>= 9), dh-autoreconf, pkg-config, libssl-dev, libedit-dev, libcypher-parser3-dev (>= 0.3.3)
+Build-Depends: debhelper (>= 9), dh-autoreconf, pkg-config, libssl-dev, libedit-dev, libcypher-parser-dev (>= 0.3.3)
 Build-Depends-Indep: doxygen
 Standards-Version: 3.9.5
 Homepage: https://cleishm.github.io/libneo4j-client/
@@ -24,6 +24,7 @@ Package: libneo4j-client8
 Provides: libneo4j-client
 Section: libs
 Architecture: any
+Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Client library for the Neo4j graph database
  Neo4j is a Graph Database with an open-source, community licensed server.
@@ -31,11 +32,13 @@ Description: Client library for the Neo4j graph database
  libneo4j-client takes care of all the detail of establishing a session with a
  Neo4j server, sending statements for evaluation, and retrieving results.
 
-Package: libneo4j-client8-dev
-Provides: libneo4j-client-dev
+Package: libneo4j-client-dev
 Section: libdevel
 Architecture: any
+Multi-Arch: same
 Depends: libneo4j-client8 (= ${binary:Version}), ${misc:Depends}
+Breaks: libneo4j-client7-dev (<< 1.0.0-1), libneo4j-client8-dev (<< 1.0.0-2)
+Replaces: libneo4j-client7-dev (<< 1.0.0-1), libneo4j-client8-dev (<< 1.0.0-2)
 Suggests: pkg-config
 Description: Development files for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.
@@ -49,7 +52,7 @@ Package: libneo4j-client-doc
 Section: doc
 Architecture: all
 Depends: libjs-jquery, ${misc:Depends}
-Recommends: libneo4j-client8-dev
+Recommends: libneo4j-client-dev
 Description: Documentation for libneo4j-client, a client library for Neo4j
  Neo4j is a Graph Database with an open-source, community licensed server.
  .
