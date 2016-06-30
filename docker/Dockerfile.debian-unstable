@@ -1,7 +1,7 @@
 FROM debian:unstable
-RUN apt-get update && \
-    apt-get -y upgrade && \
-    apt-get install -y \
+RUN apt-get update
+RUN apt-get -y upgrade
+RUN apt-get install -y \
         autotools-dev \
         automake \
         build-essential \
@@ -24,11 +24,11 @@ RUN cp /etc/devscripts.conf /root/.devscripts
 RUN echo 'DSCVERIFY_KEYRINGS="~/.gnupg/pubring.gpg"' >> /root/.devscripts
 RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 565E89E0
 
-RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.3.3-1.dsc && \
+RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.3.3-2.dsc && \
     (cd libcypher-parser-0.3.3 && debuild -us -uc) && \
-    dpkg -i libcypher-parser3_0.3.3-1_amd64.deb libcypher-parser3-dev_0.3.3-1_amd64.deb && \
+    dpkg -i libcypher-parser3_0.3.3-2_amd64.deb libcypher-parser-dev_0.3.3-2_amd64.deb && \
     rm -rf libcypher-parser* cypher-lint*
 
 ADD dput.cf /root/.dput.cf
-ENV DEBEMAIL=chris@leishman.org DEBNAME="Chris Leishman"
+ENV DEBEMAIL=chris@leishman.org DEBFULLNAME="Chris Leishman"
 ADD bashrc /root/.bashrc
