@@ -2,8 +2,9 @@ libneo4j-client (1.0.0-2) unstable; urgency=high
 
   * Rename -dev package to remove the soname. Closes: #829052
   * Add support for Multi-Arch.
+  * Updated debian/copyright.
 
- -- Chris Leishman <chris@leishman.org>  Wed, 29 Jun 2016 21:02:28 +0000
+ -- Chris Leishman <chris@leishman.org>  Fri, 01 Jul 2016 22:27:30 +0000
 
 libneo4j-client (1.0.0-1) unstable; urgency=low
 
