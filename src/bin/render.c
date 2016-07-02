@@ -67,7 +67,7 @@ const char *renderer_name(renderer_t renderer)
 
 int render_results_csv(shell_state_t *state, neo4j_result_stream_t *results)
 {
-    return neo4j_render_csv(state->out, results, state->render_flags);
+    return neo4j_render_csv(state->output, results, state->render_flags);
 }
 
 
@@ -80,7 +80,7 @@ int render_results_table(shell_state_t *state, neo4j_result_stream_t *results)
                 "(use :output csv?)\n", width);
         return -1;
     }
-    return neo4j_render_table(state->out, results, width, state->render_flags);
+    return neo4j_render_table(state->output, results, width, state->render_flags);
 }
 
 
@@ -91,7 +91,7 @@ int terminal_width(shell_state_t *state)
         return state->width;
     }
     struct winsize w;
-    int fd = fileno(state->out);
+    int fd = fileno(state->output);
     if (!isatty(fd))
     {
         return 70;
@@ -143,7 +143,7 @@ int render_update_counts(shell_state_t *state, neo4j_result_stream_t *results)
         {
             continue;
         }
-        if (fprintf(state->out, "%s: %llu\n",
+        if (fprintf(state->output, "%s: %llu\n",
                 count_names[i], count_values[i]) < 0)
         {
             return -1;
@@ -163,11 +163,11 @@ int render_plan_table(shell_state_t *state, struct neo4j_statement_plan *plan)
                 "to render plan/profile\n", width);
         return -1;
     }
-    if (fprintf(state->out, "%sCompiler: %s\nPlanner: %s\nRuntime: %s\n%s:\n",
+    if (fprintf(state->output, "%sCompiler: %s\nPlanner: %s\nRuntime: %s\n%s:\n",
                 plan->is_profile? "\n" : "", plan->version, plan->planner,
                 plan->runtime, plan->is_profile? "Profile":"Plan") < 0)
     {
         return -1;
     }
-    return neo4j_render_plan_table(state->out, plan, width, 0);
+    return neo4j_render_plan_table(state->output, plan, width, 0);
 }

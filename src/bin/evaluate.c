@@ -72,6 +72,8 @@ static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
 static int set_format(shell_state_t *state, const char *value);
 static int set_output(shell_state_t *state, const char *value);
 static const char *get_format(shell_state_t *state, char *buf, size_t n);
+static int set_outfile(shell_state_t *state, const char *value);
+static const char *get_outfile(shell_state_t *state, char *buf, size_t n);
 static int set_username(shell_state_t *state, const char *value);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
 static int set_width(shell_state_t *state, const char *value);
@@ -88,6 +90,7 @@ static struct variables variables[] =
     { { "insecure", set_insecure, get_insecure },
       { "format", set_format, get_format },
       { "output", set_output, NULL },
+      { "outfile", set_outfile, get_outfile },
       { "username", set_username, get_username },
       { "width", set_width, get_width },
       { NULL, NULL } };
@@ -490,6 +493,23 @@ const char *get_format(shell_state_t *state, char *buf, size_t n)
 }
 
 
+int set_outfile(shell_state_t *state, const char *value)
+{
+    return redirect_output(state, value);
+}
+
+
+const char *get_outfile(shell_state_t *state, char *buf, size_t n)
+{
+    if (state->outfile == NULL)
+    {
+        return "";
+    }
+    snprintf(buf, n, "\"%s\"", state->outfile);
+    return buf;
+}
+
+
 int set_username(shell_state_t *state, const char *value)
 {
     return neo4j_config_set_username(state->config,
@@ -597,6 +617,11 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
             neo4j_perror(state->err, errno, "unexpected error");
         }
         goto cleanup;
+    }
+
+    if (state->interactive && state->outfile != NULL)
+    {
+        fprintf(state->out, "<Output redirected to '%s'>\n", state->outfile);
     }
 
     if (render_update_counts(state, results))

@@ -32,6 +32,8 @@ struct shell_state
     FILE *out;
     FILE *err;
     FILE *tty;
+    char *outfile;
+    FILE *output;
     bool interactive;
     bool password_prompt;
     const char *histfile;
@@ -55,13 +57,18 @@ struct shell_state
 
 int shell_state_init(shell_state_t *state, const char *prog_name,
         FILE *in, FILE *out, FILE *err, FILE *tty);
+
 void shell_state_destroy(shell_state_t *state);
+
+
+int redirect_output(shell_state_t *state, const char *filename);
 
 
 int shell_state_add_export(shell_state_t *state, neo4j_value_t name,
         neo4j_value_t value, void *storage);
 
 void shell_state_unexport(shell_state_t *state, neo4j_value_t name);
+
 
 static inline neo4j_value_t shell_state_get_exports(shell_state_t *state)
 {

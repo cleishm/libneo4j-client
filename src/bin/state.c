@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "state.h"
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,6 +31,7 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->out = out;
     state->err = err;
     state->tty = tty;
+    state->output = out;
     state->pipeline_max = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS / 2;
     state->config = neo4j_new_config();
     if (state->config == NULL)
@@ -51,8 +53,49 @@ void shell_state_destroy(shell_state_t *state)
     {
         neo4j_close(state->connection);
     }
+    if (state->outfile != NULL)
+    {
+        free(state->outfile);
+        fclose(state->output);
+    }
     neo4j_config_free(state->config);
     free(state->temp_buffer);
+    memset(state, 0, sizeof(shell_state_t));
+}
+
+
+int redirect_output(shell_state_t *state, const char *filename)
+{
+    char *outfile = NULL;
+    FILE *output = state->out;
+
+    if (filename != NULL && *filename != '\0' && strcmp(filename, "-") != 0)
+    {
+        outfile = strdup(filename);
+        if (outfile == NULL)
+        {
+            fprintf(state->err, "Unexpected error: %s", strerror(errno));
+            return -1;
+        }
+
+        output = fopen(filename, "w");
+        if (output == NULL)
+        {
+            fprintf(state->err, "Unable to open output file '%s': %s\n",
+                    filename, strerror(errno));
+            return -1;
+        }
+    }
+
+    if (state->outfile != NULL)
+    {
+        free(state->outfile);
+        fclose(state->output);
+    }
+
+    state->outfile = outfile;
+    state->output = output;
+    return 0;
 }
 
 
