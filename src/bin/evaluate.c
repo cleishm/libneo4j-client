@@ -39,6 +39,7 @@ static int eval_connect(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_export(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_help(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_format(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
@@ -53,6 +54,7 @@ static struct shell_command shell_commands[] =
       { "exit", eval_quit },
       { "export", eval_export },
       { "help", eval_help },
+      { "format", eval_format },
       { "output", eval_output },
       { "quit", eval_quit },
       { "reset", eval_reset },
@@ -67,8 +69,9 @@ static int set_variable(shell_state_t *state, const char *name,
         const char *value);
 static int set_insecure(shell_state_t *state, const char *value);
 static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
+static int set_format(shell_state_t *state, const char *value);
 static int set_output(shell_state_t *state, const char *value);
-static const char *get_output(shell_state_t *state, char *buf, size_t n);
+static const char *get_format(shell_state_t *state, char *buf, size_t n);
 static int set_username(shell_state_t *state, const char *value);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
 static int set_width(shell_state_t *state, const char *value);
@@ -83,7 +86,8 @@ struct variables
 
 static struct variables variables[] =
     { { "insecure", set_insecure, get_insecure },
-      { "output", set_output, get_output },
+      { "format", set_format, get_format },
+      { "output", set_output, NULL },
       { "username", set_username, get_username },
       { "width", set_width, get_width },
       { NULL, NULL } };
@@ -285,7 +289,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 ":set option=value ...  Set shell options\n"
 ":status                Show the client connection status\n"
 ":help                  Show usage information\n"
-":output (table|csv)    Set the output format\n"
+":format (table|csv)    Set the output format\n"
 ":width (<n>|auto)      Set the number of columns in the table output\n"
 "\n"
 "For more information, see the neo4j-client(1) manpage.\n");
@@ -294,20 +298,29 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_output(shell_state_t *state, const cypher_astnode_t *command)
+int eval_format(shell_state_t *state, const cypher_astnode_t *command)
 {
     const cypher_astnode_t *arg =
             cypher_ast_command_get_argument(command, 0);
     if (arg == NULL)
     {
-        fprintf(state->err, ":connect requires a rendering format "
+        fprintf(state->err, ":format requires a rendering format "
                 "(table or csv)\n");
         return -1;
     }
 
     assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
     const char *value = cypher_ast_string_get_value(arg);
-    return set_output(state, value);
+    return set_format(state, value);
+}
+
+
+int eval_output(shell_state_t *state, const cypher_astnode_t *command)
+{
+    fprintf(state->err,
+            "WARNING: `:output` is deprecated. "
+            "Use `:format` (or `:set format=value`) instead.\n");
+    return eval_format(state, command);
 }
 
 
@@ -318,8 +331,11 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
         char buf[64];
         for (unsigned int i = 0; variables[i].name != NULL; ++i)
         {
-            fprintf(state->out, " %s=%s\n", variables[i].name, 
-                variables[i].get(state, buf, sizeof(buf)));
+            if (variables[i].get != NULL)
+            {
+                fprintf(state->out, " %s=%s\n", variables[i].name, 
+                    variables[i].get(state, buf, sizeof(buf)));
+            }
         }
         return 0;
     }
@@ -467,7 +483,7 @@ const char *get_insecure(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_output(shell_state_t *state, const char *value)
+int set_format(shell_state_t *state, const char *value)
 {
     renderer_t renderer = find_renderer(value);
     if (renderer == NULL)
@@ -480,7 +496,16 @@ int set_output(shell_state_t *state, const char *value)
 }
 
 
-const char *get_output(shell_state_t *state, char *buf, size_t n)
+int set_output(shell_state_t *state, const char *value)
+{
+    fprintf(state->err,
+            "WARNING: `:set output=value` is deprecated. "
+            "Use `:set format=value` instead.\n");
+    return set_format(state, value);
+}
+
+
+const char *get_format(shell_state_t *state, char *buf, size_t n)
 {
     const char *name = renderer_name(state->render);
     return (name != NULL)? name : "unknown";
