@@ -171,9 +171,9 @@ Equivalent to `:set output=(table|csv)`.
 .TP
 .I ":width <n>"
 Set the output width for table rendering. \fIn\fR is either an integer between
-2 and 4095, or \fIauto\fR. In interactive mode, the default is \fIauto\fR,
-which sets the output width to match the width of the terminal. In
-non-interactive (batch) mode, the default is 70.
+2 and 4095, or "auto". In interactive mode, the default is "auto",
+which sets the output width to match the width of the terminal (or to 70
+characters if the output is not a terminal).
 
 Equivalent to `:set width=<n>`.
 .SH EXAMPLES

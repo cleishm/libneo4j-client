@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 
 
 struct renderer
@@ -90,7 +91,12 @@ int terminal_width(shell_state_t *state)
         return state->width;
     }
     struct winsize w;
-    if (ioctl(fileno(state->out), TIOCGWINSZ, &w))
+    int fd = fileno(state->out);
+    if (!isatty(fd))
+    {
+        return 70;
+    }
+    if (ioctl(fd, TIOCGWINSZ, &w))
     {
         return -1;
     }

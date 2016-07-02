@@ -310,7 +310,6 @@ int main(int argc, char *argv[])
     else
     {
         state.render = render_results_csv;
-        state.width = 70;
         if (batch(&state))
         {
             goto cleanup;

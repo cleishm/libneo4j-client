@@ -404,29 +404,7 @@ int eval_width(shell_state_t *state, const cypher_astnode_t *command)
 
     assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
     const char *value = cypher_ast_string_get_value(arg);
-
-    if (strcmp(value, "auto") == 0)
-    {
-        if (!isatty(fileno(state->out)))
-        {
-            fprintf(state->err, "Setting width to auto is only possible"
-                    " when outputting to a tty\n");
-            return -1;
-        }
-        state->width = 0;
-        return 0;
-    }
-
-    long width = strtol(value, NULL, 10);
-    if (width < 2 || width >= NEO4J_RENDER_MAX_WIDTH)
-    {
-        fprintf(state->err, "Width value (%ld) out of range [1,%d)\n",
-                width, NEO4J_RENDER_MAX_WIDTH);
-        return -1;
-    }
-
-    state->width = (unsigned int)width;
-    return 0;
+    return set_width(state, value);
 }
 
 
@@ -535,12 +513,6 @@ int set_width(shell_state_t *state, const char *value)
 {
     if (strcmp(value, "auto") == 0)
     {
-        if (!isatty(fileno(state->out)))
-        {
-            fprintf(state->err, "Setting width to auto is only possible"
-                    " when outputting to a tty\n");
-            return -1;
-        }
         state->width = 0;
         return 0;
     }
