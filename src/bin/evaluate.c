@@ -83,17 +83,18 @@ struct variables
 {
     const char *name;
     int (*set)(shell_state_t *state, const char *value);
+    bool allow_null;
     const char *(*get)(shell_state_t *state, char *buf, size_t n);
 };
 
 static struct variables variables[] =
-    { { "insecure", set_insecure, get_insecure },
-      { "format", set_format, get_format },
-      { "output", set_output, NULL },
-      { "outfile", set_outfile, get_outfile },
-      { "username", set_username, get_username },
-      { "width", set_width, get_width },
-      { NULL, NULL } };
+    { { "insecure", set_insecure, true, get_insecure },
+      { "format", set_format, false, get_format },
+      { "output", set_output, false, NULL },
+      { "outfile", set_outfile, false, get_outfile },
+      { "username", set_username, false, get_username },
+      { "width", set_width, false, get_width },
+      { NULL, false, NULL } };
 
 
 static int not_connected_error(evaluation_continuation_t *self,
@@ -343,25 +344,34 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
         return 0;
     }
 
-    char name[32];
     const cypher_astnode_t *arg;
     for (unsigned int i = 0;
         (arg = cypher_ast_command_get_argument(command, i)) != NULL; ++i)
     {
         assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
-        const char *variable = cypher_ast_string_get_value(arg);
-        const char *eq = strchr(variable, '=');
-        size_t varlen = eq - variable;
-        if (varlen > sizeof(name))
+        const char *str = cypher_ast_string_get_value(arg);
+        const char *eq = strchr(str, '=');
+        if (eq == NULL)
         {
-            varlen = sizeof(name) - 1;
+            if (set_variable(state, str, NULL))
+            {
+                return -1;
+            }
         }
-        strncpy(name, variable, varlen);
-        name[varlen] = '\0';
-
-        if (set_variable(state, name, eq + 1))
+        else
         {
-            return -1;
+            char name[32];
+            size_t varlen = eq - str;
+            if (varlen > sizeof(name))
+            {
+                varlen = sizeof(name) - 1;
+            }
+            strncpy(name, str, varlen);
+            name[varlen] = '\0';
+            if (set_variable(state, name, eq + 1))
+            {
+                return -1;
+            }
         }
     }
 
@@ -430,6 +440,16 @@ int set_variable(shell_state_t *state, const char *name,
     {
         if (strcmp(variables[i].name, name) == 0)
         {
+            if (value != NULL && *value == '\0')
+            {
+                value = NULL;
+            }
+            if (value == NULL && !variables[i].allow_null)
+            {
+                fprintf(state->err, "Variable '%s' requires a value\n",
+                        name);
+                return -1;
+            }
             return variables[i].set(state, value);
         }
     }
@@ -441,7 +461,7 @@ int set_variable(shell_state_t *state, const char *name,
 
 int set_insecure(shell_state_t *state, const char *value)
 {
-    if (strcmp(value, "yes") == 0)
+    if (value == NULL || strcmp(value, "yes") == 0)
     {
         state->connect_flags |= NEO4J_INSECURE;
     }
