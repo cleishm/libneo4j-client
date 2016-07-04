@@ -44,6 +44,7 @@ static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_set(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_unset(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_status(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
@@ -59,41 +60,48 @@ static struct shell_command shell_commands[] =
       { "quit", eval_quit },
       { "reset", eval_reset },
       { "set", eval_set },
+      { "unset", eval_unset },
       { "status", eval_status },
       { "unexport", eval_unexport },
       { "width", eval_width },
       { NULL, NULL } };
 
 
-static int set_variable(shell_state_t *state, const char *name,
+static int option_set(shell_state_t *state, const char *name,
         const char *value);
+static int option_unset(shell_state_t *state, const char *name);
 static int set_insecure(shell_state_t *state, const char *value);
+static int unset_insecure(shell_state_t *state);
 static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
 static int set_format(shell_state_t *state, const char *value);
 static int set_output(shell_state_t *state, const char *value);
 static const char *get_format(shell_state_t *state, char *buf, size_t n);
 static int set_outfile(shell_state_t *state, const char *value);
+static int unset_outfile(shell_state_t *state);
 static const char *get_outfile(shell_state_t *state, char *buf, size_t n);
 static int set_username(shell_state_t *state, const char *value);
+static int unset_username(shell_state_t *state);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
 static int set_width(shell_state_t *state, const char *value);
+static int unset_width(shell_state_t *state);
 static const char * get_width(shell_state_t *state, char *buf, size_t n);
 
-struct variables
+struct options
 {
     const char *name;
     int (*set)(shell_state_t *state, const char *value);
     bool allow_null;
+    int (*unset)(shell_state_t *state);
     const char *(*get)(shell_state_t *state, char *buf, size_t n);
 };
 
-static struct variables variables[] =
-    { { "insecure", set_insecure, true, get_insecure },
-      { "format", set_format, false, get_format },
-      { "output", set_output, false, NULL },
-      { "outfile", set_outfile, false, get_outfile },
-      { "username", set_username, false, get_username },
-      { "width", set_width, false, get_width },
+static struct options options[] =
+    { { "insecure", set_insecure, true, unset_insecure, get_insecure },
+      { "format", set_format, false, NULL, get_format },
+      { "output", set_output, false, NULL, NULL },
+      { "outfile", set_outfile, false, unset_outfile, get_outfile },
+      { "username", set_username, false, unset_username, get_username },
+      { "width", set_width, false, unset_width, get_width },
       { NULL, false, NULL } };
 
 
@@ -291,6 +299,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 ":unexport name ...     Unexport parameters for queries\n"
 ":reset                 Reset the session with the server\n"
 ":set option=value ...  Set shell options\n"
+":unset option ...      Unset shell options\n"
 ":status                Show the client connection status\n"
 ":help                  Show usage information\n"
 ":format (table|csv)    Set the output format\n"
@@ -333,12 +342,12 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
     if (cypher_ast_command_narguments(command) == 0)
     {
         char buf[64];
-        for (unsigned int i = 0; variables[i].name != NULL; ++i)
+        for (unsigned int i = 0; options[i].name != NULL; ++i)
         {
-            if (variables[i].get != NULL)
+            if (options[i].get != NULL)
             {
-                fprintf(state->out, " %s=%s\n", variables[i].name, 
-                    variables[i].get(state, buf, sizeof(buf)));
+                fprintf(state->out, " %s=%s\n", options[i].name, 
+                    options[i].get(state, buf, sizeof(buf)));
             }
         }
         return 0;
@@ -353,7 +362,7 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
         const char *eq = strchr(str, '=');
         if (eq == NULL)
         {
-            if (set_variable(state, str, NULL))
+            if (option_set(state, str, NULL))
             {
                 return -1;
             }
@@ -368,13 +377,45 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
             }
             strncpy(name, str, varlen);
             name[varlen] = '\0';
-            if (set_variable(state, name, eq + 1))
+            if (option_set(state, name, eq + 1))
             {
                 return -1;
             }
         }
     }
 
+    return 0;
+}
+
+
+int eval_unset(shell_state_t *state, const cypher_astnode_t *command)
+{
+    if (cypher_ast_command_narguments(command) == 0)
+    {
+        fprintf(state->err, ":unset requires at least one option name\n");
+        return -1;
+    }
+
+    char name[32];
+    const cypher_astnode_t *arg;
+    for (unsigned int i = 0;
+        (arg = cypher_ast_command_get_argument(command, i)) != NULL; ++i)
+    {
+        assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+        const char *value = cypher_ast_string_get_value(arg);
+        for (; isspace(*value); ++value)
+            ;
+        size_t varlen = strlen(value);
+        for (; isspace(value[varlen-1]); --varlen)
+            ;
+        strncpy(name, value, varlen);
+        name[varlen] = '\0';
+
+        if (option_unset(state, name))
+        {
+            return -1;
+        }
+    }
     return 0;
 }
 
@@ -435,28 +476,51 @@ int eval_quit(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int set_variable(shell_state_t *state, const char *name,
+int option_set(shell_state_t *state, const char *name,
         const char *value)
 {
-    for (unsigned int i = 0; variables[i].name != NULL; ++i)
+    for (unsigned int i = 0; options[i].name != NULL; ++i)
     {
-        if (strcmp(variables[i].name, name) == 0)
+        if (strcmp(options[i].name, name) == 0)
         {
             if (value != NULL && *value == '\0')
             {
                 value = NULL;
             }
-            if (value == NULL && !variables[i].allow_null)
+            if (value == NULL && !options[i].allow_null)
             {
-                fprintf(state->err, "Variable '%s' requires a value\n",
+                fprintf(state->err, "Option '%s' requires a value\n",
                         name);
                 return -1;
             }
-            return variables[i].set(state, value);
+            return options[i].set(state, value);
         }
     }
 
-    fprintf(state->err, "Unknown variable '%s'\n", name);
+    fprintf(state->err, "Unknown option '%s'\n", name);
+    return -1;
+}
+
+
+int option_unset(shell_state_t *state, const char *name)
+{
+    for (unsigned int i = 0; options[i].name != NULL; ++i)
+    {
+        if (strcmp(options[i].name, name) == 0)
+        {
+            if (options[i].unset != NULL)
+            {
+                return options[i].unset(state);
+            }
+            else
+            {
+                fprintf(state->err, "Cannot unset option '%s'\n", name);
+                return -1;
+            }
+        }
+    }
+
+    fprintf(state->err, "Unknown option '%s'\n", name);
     return -1;
 }
 
@@ -476,6 +540,13 @@ int set_insecure(shell_state_t *state, const char *value)
         fprintf(state->err, "Must set insecure to 'yes' or 'no'\n");
         return -1;
     }
+    return 0;
+}
+
+
+int unset_insecure(shell_state_t *state)
+{
+    state->connect_flags &= ~NEO4J_INSECURE;
     return 0;
 }
 
@@ -521,6 +592,12 @@ int set_outfile(shell_state_t *state, const char *value)
 }
 
 
+int unset_outfile(shell_state_t *state)
+{
+    return set_outfile(state, NULL);
+}
+
+
 const char *get_outfile(shell_state_t *state, char *buf, size_t n)
 {
     if (state->outfile == NULL)
@@ -536,6 +613,12 @@ int set_username(shell_state_t *state, const char *value)
 {
     return neo4j_config_set_username(state->config,
             (*value != '\0')? value : NULL);
+}
+
+
+int unset_username(shell_state_t *state)
+{
+    return neo4j_config_set_username(state->config, NULL);
 }
 
 
@@ -568,6 +651,13 @@ int set_width(shell_state_t *state, const char *value)
     }
 
     state->width = (unsigned int)width;
+    return 0;
+}
+
+
+int unset_width(shell_state_t *state)
+{
+    state->width = 0;
     return 0;
 }
 
