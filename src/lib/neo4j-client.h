@@ -1585,6 +1585,17 @@ __neo4j_pure
 const char *neo4j_connection_username(const neo4j_connection_t *connection);
 
 
+/**
+ * Check if a given connection uses TLS.
+ *
+ * @param [connection] The neo4j connection.
+ * @return `true` if the connection was established over TLS, and `false`
+ *         otherwise.
+ */
+__neo4j_pure
+bool neo4j_connection_is_secure(const neo4j_connection_t *connection);
+
+
 /*
  * =====================================
  * session

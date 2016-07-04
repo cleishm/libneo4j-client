@@ -396,9 +396,11 @@ int eval_status(shell_state_t *state, const cypher_astnode_t *command)
         const char *username = neo4j_connection_username(state->connection);
         const char *hostname = neo4j_connection_hostname(state->connection);
         unsigned int port = neo4j_connection_port(state->connection);
-        fprintf(state->out, "Connected to 'neo4j://%s%s%s:%u'\n",
+        bool secure = neo4j_connection_is_secure(state->connection);
+        fprintf(state->out, "Connected to 'neo4j://%s%s%s:%u'%s\n",
                 (username != NULL)? username : "",
-                (username != NULL)? "@" : "", hostname, port);
+                (username != NULL)? "@" : "", hostname, port,
+                secure? "" : " (insecure)");
     }
 
     return 0;
