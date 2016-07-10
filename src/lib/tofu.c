@@ -74,6 +74,21 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
 
     if (result > 0 || strcmp(fingerprint, existing) != 0)
     {
+        // Release 1.0.0 accidently only used 127 fingerprint characters
+        // rather than the complete 128. This has been resolved, but to avoid
+        // a certificate mismatch, we'll still accept matching a 127 character
+        // stored fingerprint against a 128 character one.
+        if (result == 0 &&
+                strlen(existing) == 127 && strlen(fingerprint) == 128 &&
+                strncmp(fingerprint, existing, 127) == 0)
+        {
+            neo4j_log_warn(logger,
+                    "Replacing previously truncated server fingerprint (for details, "
+                    "see https://github.com/cleishm/libneo4j-client/releases/tag/v1.0.1)");
+            result = update_stored_fingerprint(file, host, fingerprint, logger);
+            goto cleanup;
+        }
+
         neo4j_unverified_host_reason_t reason = (result == 0)?
             NEO4J_HOST_VERIFICATION_MISMATCH :
             NEO4J_HOST_VERIFICATION_UNRECOGNIZED;
