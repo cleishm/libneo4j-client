@@ -703,14 +703,20 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     int result = -1;
     if (state->render(state, results))
     {
-        int error = errno;
-        if (error == NEO4J_STATEMENT_EVALUATION_FAILED)
-        {
-            fprintf(state->err, "%s\n", neo4j_error_message(results));
-        }
-        else
+        if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
         {
             neo4j_perror(state->err, errno, "unexpected error");
+            goto cleanup;
+        }
+
+        const struct neo4j_failure_details *details =
+                neo4j_failure_details(results);
+        fprintf(state->err, "%s:%u:%u: %s\n", "<stdin>", details->line,
+                details->column, details->description);
+        if (details->context != NULL)
+        {
+            fprintf(state->err, "%s\n%*s^\n", details->context,
+                    details->context_offset, "");
         }
         goto cleanup;
     }
