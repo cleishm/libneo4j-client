@@ -32,7 +32,8 @@ static int setup_history(shell_state_t *state, History *el_history);
 static char *prompt(EditLine *el);
 static unsigned char literal_newline(EditLine *el, int ch);
 static unsigned char check_line(EditLine *el, int ch);
-static int check_processable(void *data, const char *segment, size_t n, bool eof);
+static int check_processable(void *data, const char *segment, size_t n,
+        struct cypher_input_range range, bool eof);
 static int process_input(shell_state_t *state, const char *input, size_t length,
         const char **end);
 static int process_segment(void *data, cypher_parse_segment_t *segment);
@@ -290,7 +291,8 @@ unsigned char check_line(EditLine *el, int ch)
 }
 
 
-int check_processable(void *data, const char *segment, size_t n, bool eof)
+int check_processable(void *data, const char *segment, size_t n,
+        struct cypher_input_range range, bool eof)
 {
     bool *processable = (bool *)data;
     *processable = !eof;

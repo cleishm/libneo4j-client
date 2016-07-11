@@ -1,32 +1,24 @@
 FROM debian:unstable
 RUN apt-get update
 RUN apt-get -y upgrade
-RUN apt-get install -y \
-        autotools-dev \
-        automake \
-        build-essential \
-        check \
-        debhelper \
-        dh-autoreconf \
-        devscripts \
-        doxygen \
-        git \
-        git-buildpackage \
-        libedit-dev \
-        libssl-dev \
-        libtool \
-        man \
-        pkg-config \
-        valgrind \
-        vim
+RUN apt-get install -y build-essential debhelper dh-autoreconf devscripts
+RUN apt-get install -y autotools-dev automake libtool pkg-config
+RUN apt-get install -y check
+RUN apt-get install -y doxygen
+RUN apt-get install -y git git-buildpackage
+RUN apt-get install -y libedit-dev
+RUN apt-get install -y libssl-dev
+RUN apt-get install -y man
+RUN apt-get install -y valgrind
+RUN apt-get install -y vim
 
 RUN cp /etc/devscripts.conf /root/.devscripts
 RUN echo 'DSCVERIFY_KEYRINGS="~/.gnupg/pubring.gpg"' >> /root/.devscripts
 RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 565E89E0
 
-RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.3.3-2.dsc && \
-    (cd libcypher-parser-0.3.3 && debuild -us -uc) && \
-    dpkg -i libcypher-parser3_0.3.3-2_amd64.deb libcypher-parser-dev_0.3.3-2_amd64.deb && \
+RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.4.0-1.dsc && \
+    (cd libcypher-parser-0.4.0 && debuild -us -uc) && \
+    dpkg -i libcypher-parser7_0.4.0-1_amd64.deb libcypher-parser-dev_0.4.0-1_amd64.deb && \
     rm -rf libcypher-parser* cypher-lint*
 
 ADD dput.cf /root/.dput.cf

@@ -47,7 +47,8 @@ struct parse_callback_data
 };
 
 
-static int parse_callback(void *data, const char *s, size_t n, bool eof);
+static int parse_callback(void *data, const char *s, size_t n,
+        struct cypher_input_range range, bool eof);
 static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
@@ -91,7 +92,8 @@ cleanup:
 }
 
 
-int parse_callback(void *data, const char *s, size_t n, bool eof)
+int parse_callback(void *data, const char *s, size_t n,
+        struct cypher_input_range range, bool eof)
 {
     struct parse_callback_data *cbdata = (struct parse_callback_data *)data;
     return evaluate(cbdata->state, cbdata->queue, s, n);

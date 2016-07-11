@@ -180,9 +180,9 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_libedit" != "Xyes"],
   [AC_MSG_ERROR([libedit is required for building command line tools (specify --disable-tools to ignore)])])
 
-PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.3.2], [has_cypher_parser=yes], [has_cypher_parser=no])
+PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.4.0], [has_cypher_parser=yes], [has_cypher_parser=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_cypher_parser" != "Xyes"],
-  [AC_MSG_ERROR([libcypher-parser (>= 0.3.2) is required for building command line tools (specify --disable-tools to ignore)])])
+  [AC_MSG_ERROR([libcypher-parser (>= 0.4.0) is required for building command line tools (specify --disable-tools to ignore)])])
 
 
 dnl Check if assertions should be disabled
