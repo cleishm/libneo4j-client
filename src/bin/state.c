@@ -179,3 +179,23 @@ void shell_state_unexport(shell_state_t *state, neo4j_value_t name)
         }
     }
 }
+
+
+void display_status(FILE* stream, shell_state_t *state)
+{
+    if (state->connection == NULL)
+    {
+        fprintf(stream, "Not connected\n");
+    }
+    else
+    {
+        const char *username = neo4j_connection_username(state->connection);
+        const char *hostname = neo4j_connection_hostname(state->connection);
+        unsigned int port = neo4j_connection_port(state->connection);
+        bool secure = neo4j_connection_is_secure(state->connection);
+        fprintf(stream, "Connected to 'neo4j://%s%s%s:%u'%s\n",
+                (username != NULL)? username : "",
+                (username != NULL)? "@" : "", hostname, port,
+                secure? "" : " (insecure)");
+    }
+}

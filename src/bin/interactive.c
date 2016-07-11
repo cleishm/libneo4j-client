@@ -51,6 +51,7 @@ int interact(shell_state_t *state)
     fprintf(state->out,
             "neo4j-client " PACKAGE_VERSION ".\n"
             "Enter `:help` for usage hints.\n");
+    display_status(state->out, state);
 
     const char *input;
     int length;

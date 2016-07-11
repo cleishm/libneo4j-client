@@ -73,7 +73,11 @@ void shell_state_unexport(shell_state_t *state, neo4j_value_t name);
 static inline neo4j_value_t shell_state_get_exports(shell_state_t *state)
 {
     return neo4j_map(state->exports, state->nexports);
+
 }
+
+
+void display_status(FILE* stream, shell_state_t *state);
 
 
 static inline char *temp_copy(shell_state_t *state, const char *s, size_t n)
