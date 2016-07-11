@@ -1809,6 +1809,76 @@ const char *neo4j_error_code(neo4j_result_stream_t *results);
  */
 const char *neo4j_error_message(neo4j_result_stream_t *results);
 
+/**
+ * Failure details.
+ */
+struct neo4j_failure_details
+{
+    /** The failure code. */
+    const char *code;
+    /**
+     * The complete failure message.
+     *
+     * @attention This may contain UTF-8 multi-byte characters.
+     */
+    const char *message;
+    /**
+     * The human readable description of the failure.
+     *
+     * @attention This may contain UTF-8 multi-byte characters.
+     */
+    const char *description;
+    /**
+     * The line of statement text that the failure relates to.
+     *
+     * Will be 0 if the failure was not related to a line of statement text.
+     */
+    unsigned int line;
+    /**
+     * The column of statement text that the failure relates to.
+     *
+     * Will be 0 if the failure was not related to a line of statement text.
+     */
+    unsigned int column;
+    /**
+     * The character offset into the statement text that the failure relates to.
+     *
+     * Will be 0 if the failure is related to the first character of the
+     * statement text, or if the failure was not related to the statement text.
+     */
+    unsigned int offset;
+    /**
+     * A string providing context around where the failure occurred.
+     *
+     * @attention This may contain UTF-8 multi-byte characters.
+     *
+     * Will be `NULL` if the failure was not related to the statement text.
+     */
+    const char *context;
+    /**
+     * The offset into the context where the failure occurred.
+     *
+     * Will be 0 if the failure was not related to a line of statement text.
+     */
+    unsigned int context_offset;
+};
+
+/**
+ * Return the details of a statement evaluation failure.
+ *
+ * When neo4j_check_failure() returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
+ * then this function can be used to get the details of the failure.
+ *
+ * @attention Note that the returned pointer is only valid whilst the result
+ * stream has not been closed.
+ *
+ * @param [results] The result stream.
+ * @return A pointer to the failure details, or `NULL` if no failure details
+ *         were available.
+ */
+const struct neo4j_failure_details *neo4j_failure_details(
+        neo4j_result_stream_t *results);
+
 
 #define NEO4J_READ_ONLY_STATEMENT 0
 #define NEO4J_WRITE_ONLY_STATEMENT 1

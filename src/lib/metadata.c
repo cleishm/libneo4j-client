@@ -23,6 +23,8 @@
 #include <stddef.h>
 
 
+static int parse_failure_message(struct neo4j_failure_details *details,
+        const char *message, neo4j_mpool_t *mpool);
 static struct neo4j_statement_execution_step *meta_execution_steps(
         neo4j_value_t map, const char *description, const char *key_name,
         neo4j_mpool_t *mpool, neo4j_logger_t *logger);
@@ -86,8 +88,8 @@ void neo4j_metadata_log(neo4j_logger_t *logger, uint_fast8_t level,
 }
 
 
-int neo4j_meta_failure_details(const char **code, const char **message, const
-        neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
+int neo4j_meta_failure_details(struct neo4j_failure_details *details,
+        const neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
         neo4j_logger_t *logger)
 {
     size_t pdepth = neo4j_mpool_depth(*mpool);
@@ -105,8 +107,18 @@ int neo4j_meta_failure_details(const char **code, const char **message, const
         goto failure;
     }
 
-    *code = code_string;
-    *message = message_string;
+    details->code = code_string;
+    details->message = message_string;
+    // The message contains a lot of detail that needs to be parsed out.
+    // Hopefully neo4j will start to provide these as separate attributes in
+    // the response, avoiding the need for parsing and the risk created
+    // due to the dependence on the specific format of the string.
+    // Ref: https://github.com/neo4j/neo4j/issues/7318
+    if (parse_failure_message(details, message_string, mpool))
+    {
+        goto failure;
+    }
+
     return 0;
 
     int errsv;
@@ -115,6 +127,83 @@ failure:
     neo4j_mpool_drainto(mpool, pdepth);
     errno = errsv;
     return -1;
+}
+
+
+int parse_failure_message(struct neo4j_failure_details *details,
+        const char *s, neo4j_mpool_t *mpool)
+{
+    details->description = s;
+    details->line = 0;
+    details->column = 0;
+    details->offset = 0;
+    details->context = NULL;
+    details->context_offset = 0;
+
+    // Assume that messages containing position information always include
+    // it at the end of the first line as " (line xx, column yy (offset zz))\n"
+    const char *position = strstr(s, " (line ");
+    if (position == NULL)
+    {
+        return 0;
+    }
+
+    unsigned int line;
+    unsigned int column;
+    unsigned int offset;
+    if (sscanf(position, " (line %u, column %u (offset: %u))",
+                &line, &column, &offset) != 3)
+    {
+        return 0;
+    }
+
+    const char *pend = strchr(position, '\n');
+    if (pend == NULL)
+    {
+        return 0;
+    }
+
+    const char *context = pend + 1;
+    if (*context != '"')
+    {
+        return 0;
+    }
+
+    const char *cend = strchr(context, '\n');
+    if (cend == NULL || (cend - context) <= 2 || *(cend-1) != '"')
+    {
+        return 0;
+    }
+
+    size_t coffset = strspn(cend+1, " ");
+    if (coffset == 0 || *(cend+1+coffset) != '^')
+    {
+        return 0;
+    }
+
+    ++context;
+    --cend;
+    --coffset;
+
+    char *description = alloc_string(neo4j_ustring(s, position - s), mpool);
+    if (description == NULL)
+    {
+        return -1;
+    }
+
+    char *ctx = alloc_string(neo4j_ustring(context, cend - context), mpool);
+    if (ctx == NULL)
+    {
+        return -1;
+    }
+
+    details->description = description;
+    details->line = line;
+    details->column = column;
+    details->offset = offset;
+    details->context = ctx;
+    details->context_offset = coffset;
+    return 0;
 }
 
 
