@@ -19,7 +19,6 @@
 
 #include "state.h"
 
-
 typedef struct evaluation_continuation evaluation_continuation_t;
 struct evaluation_continuation
 {

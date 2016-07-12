@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "evaluate.h"
 #include "authentication.h"
+#include "batch.h"
 #include "connect.h"
 #include "render.h"
 #include <cypher-parser.h>
@@ -45,6 +46,7 @@ static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_set(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_unset(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_source(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_status(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
@@ -61,6 +63,7 @@ static struct shell_command shell_commands[] =
       { "reset", eval_reset },
       { "set", eval_set },
       { "unset", eval_unset },
+      { "source", eval_source },
       { "status", eval_status },
       { "unexport", eval_unexport },
       { "width", eval_width },
@@ -152,8 +155,7 @@ int evaluate_command(shell_state_t *state, const cypher_astnode_t *command)
 
 int eval_connect(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const cypher_astnode_t *arg =
-            cypher_ast_command_get_argument(command, 0);
+    const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
 
     if (arg == NULL)
     {
@@ -313,8 +315,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 
 int eval_format(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const cypher_astnode_t *arg =
-            cypher_ast_command_get_argument(command, 0);
+    const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
     if (arg == NULL)
     {
         fprintf(state->err, ":format requires a rendering format "
@@ -388,6 +389,19 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
+int eval_source(shell_state_t *state, const cypher_astnode_t *command)
+{
+    const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
+    if (arg == NULL)
+    {
+        fprintf(state->err, ":source requires a filename\n");
+        return -1;
+    }
+
+    return source(state, cypher_ast_string_get_value(arg));
+}
+
+
 int eval_unset(shell_state_t *state, const cypher_astnode_t *command)
 {
     if (cypher_ast_command_narguments(command) == 0)
@@ -434,8 +448,7 @@ int eval_status(shell_state_t *state, const cypher_astnode_t *command)
 
 int eval_width(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const cypher_astnode_t *arg =
-            cypher_ast_command_get_argument(command, 0);
+    const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
     if (arg == NULL)
     {
         fprintf(state->err, ":width requires an integer value, or 'auto'\n");
@@ -721,8 +734,8 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
                 pos.column + details->column - 1 : details->column;
         pos.line += (details->line - 1);
 
-        fprintf(state->err, "%s:%u:%u: %s\n", "<stdin>", pos.line, pos.column,
-                details->description);
+        fprintf(state->err, "%s:%u:%u: %s\n", state->infile, pos.line,
+                pos.column, details->description);
         if (details->context != NULL)
         {
             unsigned int offset = is_indented?

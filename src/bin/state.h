@@ -35,6 +35,7 @@ struct shell_state
     char *outfile;
     FILE *output;
     bool interactive;
+    const char *infile;
     bool password_prompt;
     const char *histfile;
     unsigned int pipeline_max;
@@ -52,6 +53,9 @@ struct shell_state
     void **exports_storage;
     size_t exports_cap;
     unsigned int nexports;
+
+    unsigned int source_max_depth;
+    unsigned int source_depth;
 };
 
 

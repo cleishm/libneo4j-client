@@ -159,6 +159,10 @@ Reset the session with the server, aborting any open transactions.
 Set various shell options. If no option name and value paris are specified,
 then the list of current options and their values will be displayed.
 .TP
+.I :source <file>
+Read and evaluate commands and statements in the specified file. Evaluation
+will stop if any error is encountered.
+.TP
 .I :status
 Show the client connection status, which indicates if the client is
 disconnected or connected to a server. If the latter, the connection URI is

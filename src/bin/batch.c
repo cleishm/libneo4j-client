@@ -55,20 +55,59 @@ static int finalize(shell_state_t *state, evaluation_queue_t *queue,
         unsigned int n);
 
 
-int batch(shell_state_t *state)
+int source(shell_state_t *state, const char *filename)
+{
+    if (state->source_depth >= state->source_max_depth)
+    {
+        fprintf(state->err, "Too many nested calls to `:source`\n");
+        return -1;
+    }
+
+    FILE *stream = fopen(filename, "r");
+    if (stream == NULL)
+    {
+        fprintf(state->err, "Unable to read file '%s': %s\n",
+                filename, strerror(errno));
+        return -1;
+    }
+    bool interactive = state->interactive;
+    state->interactive = false;
+    const char *prev_infile = state->infile;
+    state->infile = filename;
+    ++(state->source_depth);
+    int result = batch(state, stream);
+    fclose(stream);
+    --(state->source_depth);
+    state->infile = prev_infile;
+    state->interactive = interactive;
+    if (result == 0 && interactive && state->outfile != NULL)
+    {
+        fprintf(state->out, "<Output redirected to '%s'>\n", state->outfile);
+    }
+    return result;
+}
+
+
+int batch(shell_state_t *state, FILE *stream)
 {
     evaluation_queue_t *queue = calloc(1, sizeof(evaluation_queue_t) +
             (state->pipeline_max * sizeof(struct evaluation)));
     if (queue == NULL)
     {
+        neo4j_perror(state->err, errno, "unexpected error");
         return -1;
     }
     queue->capacity = state->pipeline_max;
 
     int result = -1;
     struct parse_callback_data cbdata = { .state = state, .queue = queue };
-    if (cypher_quick_fparse(state->in, parse_callback, &cbdata, 0))
+    int err = cypher_quick_fparse(stream, parse_callback, &cbdata, 0);
+    if (err)
     {
+        if (err != -2)
+        {
+            neo4j_perror(state->err, errno, "unexpected error");
+        }
         goto cleanup;
     }
 
@@ -96,7 +135,11 @@ int parse_callback(void *data, const char *s, size_t n,
         struct cypher_input_range range, bool eof)
 {
     struct parse_callback_data *cbdata = (struct parse_callback_data *)data;
-    return evaluate(cbdata->state, cbdata->queue, s, n, range.start);
+    if (evaluate(cbdata->state, cbdata->queue, s, n, range.start))
+    {
+        return -2;
+    }
+    return 0;
 }
 
 
@@ -106,10 +149,10 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     if (is_command(directive))
     {
         // drain queue before running commands
-        if (finalize(state, queue, queue->depth))
+        int err = finalize(state, queue, queue->depth);
+        if (err)
         {
-            neo4j_perror(state->err, errno, "unexpected error");
-            return -1;
+            return err;
         }
         const char *command = temp_copy(state, directive, n);
         if (command == NULL)

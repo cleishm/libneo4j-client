@@ -51,6 +51,7 @@ const char *shortopts = "hp:Pu:v";
 #define NOHIST_OPT 1007
 #define VERSION_OPT 1008
 #define PIPELINE_MAX_OPT 1009
+#define SOURCE_MAX_DEPTH_OPT 1010
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -65,6 +66,7 @@ static struct option longopts[] =
       { "known-hosts", required_argument, NULL, KNOWN_HOSTS_OPT },
       { "no-known-hosts", no_argument, NULL, NO_KNOWN_HOSTS_OPT },
       { "pipeline-max", required_argument, NULL, PIPELINE_MAX_OPT },
+      { "source-max-depth", required_argument, NULL, SOURCE_MAX_DEPTH_OPT },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
       { NULL, 0, NULL, 0 } };
@@ -236,6 +238,18 @@ int main(int argc, char *argv[])
                 neo4j_config_set_max_pipelined_requests(state.config, arg * 2);
             }
             break;
+        case SOURCE_MAX_DEPTH_OPT:
+            {
+                int arg = atoi(optarg);
+                if (arg < 1)
+                {
+                    fprintf(state.err, "Invalid source-max-depth '%s'\n",
+                            optarg);
+                    goto cleanup;
+                }
+                state.source_max_depth = arg;
+            }
+            break;
         case VERSION_OPT:
             fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);
             fprintf(state.out, "libneo4j-client: %s\n",
@@ -302,6 +316,7 @@ int main(int argc, char *argv[])
     {
         state.render = render_results_table;
         state.render_flags = NEO4J_RENDER_SHOW_NULLS;
+        state.infile = "<interactive>";
         if (interact(&state))
         {
             goto cleanup;
@@ -310,7 +325,8 @@ int main(int argc, char *argv[])
     else
     {
         state.render = render_results_csv;
-        if (batch(&state))
+        state.infile = "<stdin>";
+        if (batch(&state, state.in))
         {
             goto cleanup;
         }

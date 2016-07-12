@@ -22,6 +22,9 @@
 #include <string.h>
 
 
+#define NEO4J_DEFAULT_MAX_SOURCE_DEPTH 10
+
+
 int shell_state_init(shell_state_t *state, const char *prog_name,
         FILE *in, FILE *out, FILE *err, FILE *tty)
 {
@@ -38,6 +41,7 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     {
         return -1;
     }
+    state->source_max_depth = NEO4J_DEFAULT_MAX_SOURCE_DEPTH;
     return 0;
 }
 

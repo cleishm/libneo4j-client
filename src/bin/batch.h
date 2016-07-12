@@ -19,6 +19,8 @@
 
 #include "state.h"
 
-int batch(shell_state_t *state);
+int source(shell_state_t *state, const char *filename);
+
+int batch(shell_state_t *state, FILE *stream);
 
 #endif/*NEO4J_BATCH_H*/
