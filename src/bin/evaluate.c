@@ -105,16 +105,23 @@ struct options
     bool allow_null;
     int (*unset)(shell_state_t *state);
     const char *(*get)(shell_state_t *state, char *buf, size_t n);
+    const char *description;
 };
 
 static struct options options[] =
-    { { "echo", set_echo, true, unset_echo, get_echo },
-      { "insecure", set_insecure, true, unset_insecure, get_insecure },
-      { "format", set_format, false, NULL, get_format },
-      { "output", set_output, false, NULL, NULL },
-      { "outfile", set_outfile, false, unset_outfile, get_outfile },
-      { "username", set_username, false, unset_username, get_username },
-      { "width", set_width, false, unset_width, get_width },
+    { { "echo", set_echo, true, unset_echo, get_echo,
+          "echo non-interactive commands before rendering results" },
+      { "insecure", set_insecure, true, unset_insecure, get_insecure,
+          "do not attempt to establish secure connections" },
+      { "format", set_format, false, NULL, get_format,
+          "set the output format (`table` or `csv`)." },
+      { "output", set_output, false, NULL, NULL, NULL },
+      { "outfile", set_outfile, false, unset_outfile, get_outfile,
+          "redirect output to a file" },
+      { "username", set_username, false, unset_username, get_username,
+          "the default username for connections" },
+      { "width", set_width, false, unset_width, get_width,
+          "the width to render tables (`auto` for term width)" },
       { NULL, false, NULL } };
 
 
@@ -307,9 +314,11 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 ":connect '<url>'       Connect to the specified URL\n"
 ":connect host[:port]   Connect to the specified host (and optional port)\n"
 ":disconnect            Disconnect the client from the server\n"
+":export                Display currently exported parameters\n"
 ":export name=val ...   Export parameters for queries\n"
 ":unexport name ...     Unexport parameters for queries\n"
 ":reset                 Reset the session with the server\n"
+":set                   Display current option values\n"
 ":set option=value ...  Set shell options\n"
 ":unset option ...      Unset shell options\n"
 ":status                Show the client connection status\n"
@@ -357,8 +366,12 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
         {
             if (options[i].get != NULL)
             {
-                fprintf(state->out, " %s=%s\n", options[i].name, 
-                    options[i].get(state, buf, sizeof(buf)));
+                const char *name = options[i].name;
+                const char *val = options[i].get(state, buf, sizeof(buf));
+                unsigned int end_offset = strlen(name) + strlen(val) + 3;
+                fprintf(state->out, " %s=%s %*s// %s\n", name, val,
+                        (end_offset < 20)? 20 - end_offset : 0, "",
+                        options[i].description);
             }
         }
         return 0;
