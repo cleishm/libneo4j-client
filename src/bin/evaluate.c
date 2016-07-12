@@ -73,18 +73,27 @@ static struct shell_command shell_commands[] =
 static int option_set(shell_state_t *state, const char *name,
         const char *value);
 static int option_unset(shell_state_t *state, const char *name);
+
+static int set_echo(shell_state_t *state, const char *value);
+static int unset_echo(shell_state_t *state);
+static const char *get_echo(shell_state_t *state, char *buf, size_t n);
+
 static int set_insecure(shell_state_t *state, const char *value);
 static int unset_insecure(shell_state_t *state);
 static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
+
 static int set_format(shell_state_t *state, const char *value);
 static int set_output(shell_state_t *state, const char *value);
 static const char *get_format(shell_state_t *state, char *buf, size_t n);
+
 static int set_outfile(shell_state_t *state, const char *value);
 static int unset_outfile(shell_state_t *state);
 static const char *get_outfile(shell_state_t *state, char *buf, size_t n);
+
 static int set_username(shell_state_t *state, const char *value);
 static int unset_username(shell_state_t *state);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
+
 static int set_width(shell_state_t *state, const char *value);
 static int unset_width(shell_state_t *state);
 static const char * get_width(shell_state_t *state, char *buf, size_t n);
@@ -99,7 +108,8 @@ struct options
 };
 
 static struct options options[] =
-    { { "insecure", set_insecure, true, unset_insecure, get_insecure },
+    { { "echo", set_echo, true, unset_echo, get_echo },
+      { "insecure", set_insecure, true, unset_insecure, get_insecure },
       { "format", set_format, false, NULL, get_format },
       { "output", set_output, false, NULL, NULL },
       { "outfile", set_outfile, false, unset_outfile, get_outfile },
@@ -519,6 +529,38 @@ int option_unset(shell_state_t *state, const char *name)
 
     fprintf(state->err, "Unknown option '%s'\n", name);
     return -1;
+}
+
+
+int set_echo(shell_state_t *state, const char *value)
+{
+    if (value == NULL || strcmp(value, "on") == 0)
+    {
+        state->batch_echo = true;
+    }
+    else if (strcmp(value, "off") == 0)
+    {
+        state->batch_echo = false;
+    }
+    else
+    {
+        fprintf(state->err, "Must set echo to 'on' or 'off'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_echo(shell_state_t *state)
+{
+    state->batch_echo = false;
+    return 0;
+}
+
+
+const char *get_echo(shell_state_t *state, char *buf, size_t n)
+{
+    return (state->batch_echo)? "on" : "off";
 }
 
 

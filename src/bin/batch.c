@@ -25,6 +25,7 @@
 
 struct evaluation
 {
+    char *statement;
     char *buffer;
     size_t buffer_capacity;
     evaluation_continuation_t continuation;
@@ -53,6 +54,7 @@ static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n, struct cypher_input_position pos);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
         unsigned int n);
+static void echo(shell_state_t *state, const char * restrict format, ...);
 
 
 int source(shell_state_t *state, const char *filename)
@@ -160,6 +162,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
             neo4j_perror(state->err, errno, "unexpected error");
             return -1;
         }
+        echo(state, "%s", command);
         return evaluate_command_string(state, command);
     }
 
@@ -185,14 +188,14 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     ++(queue->depth);
 
     struct evaluation *e = &(queue->directives[i]);
-    const char *statement = strncpy_alloc(&(e->buffer), &(e->buffer_capacity),
+    e->statement = strncpy_alloc(&(e->buffer), &(e->buffer_capacity),
             directive, n);
-    if (statement == NULL)
+    if (e->statement == NULL)
     {
         neo4j_perror(state->err, errno, "unexpected error");
         return -1;
     }
-    e->continuation = evaluate_statement(state, statement, pos);
+    e->continuation = evaluate_statement(state, e->statement, pos);
     return 0;
 }
 
@@ -203,17 +206,35 @@ int finalize(shell_state_t *state, evaluation_queue_t *queue, unsigned int n)
     while (n-- > 0)
     {
         assert(queue->next < queue->capacity);
-        evaluation_continuation_t *continuation =
-                &(queue->directives[queue->next].continuation);
+        struct evaluation *e = &(queue->directives[queue->next]);
         if (++(queue->next) >= queue->capacity)
         {
             queue->next = 0;
         }
         --(queue->depth);
+        echo(state, "%s;\n", e->statement);
+        evaluation_continuation_t *continuation = &(e->continuation);
         if (continuation->complete(continuation, state))
         {
             return -1;
         }
     }
     return 0;
+}
+
+
+void echo(shell_state_t *state, const char * restrict format, ...)
+{
+    if (!state->batch_echo)
+    {
+        return;
+    }
+    for (unsigned int i = state->source_depth + 1; i > 0; --i)
+    {
+        fputc('+', state->out);
+    }
+    va_list ap;
+    va_start(ap, format);
+    vfprintf(state->out, format, ap);
+    va_end(ap);
 }
