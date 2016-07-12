@@ -39,19 +39,20 @@ char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n)
 }
 
 
-void trim_statement(const char **s, size_t *n)
+void trim_statement(const char **s, size_t *n,
+        struct cypher_input_position *pos)
 {
-    // Skip all whitespace lines before the statement, but not whitespace
-    // at the start of the same line. This helps error position indicators from
-    // Neo4j to be a little more helpful
-    // (see: https://github.com/neo4j/neo4j/issues/7318).
+    // Skip all whitespace at the start of the statement, and update pos.
     const char *e = *s + *n;
-    for (const char *p = *s; p < e && isspace(*p); ++p)
+    for (; *s < e && isspace(**s); ++(*s))
     {
-        if (*p == '\n')
+        ++(pos->column);
+        ++(pos->offset);
+        --(*n);
+        if (**s == '\n')
         {
-            *n -= ((p+1) - *s);
-            *s = p+1;
+            ++(pos->line);
+            pos->column = 1;
         }
     }
 

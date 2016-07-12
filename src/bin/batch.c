@@ -50,7 +50,7 @@ struct parse_callback_data
 static int parse_callback(void *data, const char *s, size_t n,
         struct cypher_input_range range, bool eof);
 static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
-        const char *directive, size_t n);
+        const char *directive, size_t n, struct cypher_input_position pos);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
         unsigned int n);
 
@@ -96,12 +96,12 @@ int parse_callback(void *data, const char *s, size_t n,
         struct cypher_input_range range, bool eof)
 {
     struct parse_callback_data *cbdata = (struct parse_callback_data *)data;
-    return evaluate(cbdata->state, cbdata->queue, s, n);
+    return evaluate(cbdata->state, cbdata->queue, s, n, range.start);
 }
 
 
 int evaluate(shell_state_t *state, evaluation_queue_t *queue,
-        const char *directive, size_t n)
+        const char *directive, size_t n, struct cypher_input_position pos)
 {
     if (is_command(directive))
     {
@@ -120,13 +120,13 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         return evaluate_command_string(state, command);
     }
 
-    trim_statement(&directive, &n);
+    trim_statement(&directive, &n, &pos);
     if (n == 0)
     {
         return 0;
     }
 
-    assert (queue->depth <= queue->capacity);
+    assert(queue->depth <= queue->capacity);
     if ((queue->depth >= queue->capacity) && finalize(state, queue, 1))
     {
         neo4j_perror(state->err, errno, "unexpected error");
@@ -149,7 +149,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         neo4j_perror(state->err, errno, "unexpected error");
         return -1;
     }
-    e->continuation = evaluate_statement(state, statement);
+    e->continuation = evaluate_statement(state, statement, pos);
     return 0;
 }
 
@@ -161,7 +161,7 @@ int finalize(shell_state_t *state, evaluation_queue_t *queue, unsigned int n)
     {
         assert(queue->next < queue->capacity);
         evaluation_continuation_t *continuation =
-            &(queue->directives[queue->next].continuation);
+                &(queue->directives[queue->next].continuation);
         if (++(queue->next) >= queue->capacity)
         {
             queue->next = 0;

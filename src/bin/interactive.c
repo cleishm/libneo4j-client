@@ -358,12 +358,13 @@ int process_segment(void *data, cypher_parse_segment_t *segment)
     {
         const char *s = cbdata->input + range.start.offset;
         size_t n = range.end.offset - range.start.offset;
-        trim_statement(&s, &n);
+        struct cypher_input_position pos = range.start;
+        trim_statement(&s, &n, &pos);
         if (n > 0)
         {
             const char *statement = temp_copy(cbdata->state, s, n);
             evaluation_continuation_t continuation =
-                evaluate_statement(cbdata->state, statement);
+                    evaluate_statement(cbdata->state, statement, pos);
             r = continuation.complete(&continuation, cbdata->state);
         }
     }

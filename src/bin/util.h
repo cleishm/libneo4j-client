@@ -18,6 +18,7 @@
 #define NEO4J_UTIL_H
 
 #include <arpa/inet.h>
+#include <cypher-parser.h>
 #include <netdb.h>
 #include <stdlib.h>
 
@@ -42,6 +43,7 @@
 
 char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
 
-void trim_statement(const char **s, size_t *n);
+void trim_statement(const char **s, size_t *n,
+        struct cypher_input_position *pos);
 
 #endif/*NEO4J_UTIL_H*/

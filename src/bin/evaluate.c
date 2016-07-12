@@ -658,12 +658,12 @@ const char *get_width(shell_state_t *state, char *buf, size_t n)
 
 
 evaluation_continuation_t evaluate_statement(shell_state_t *state,
-        const char *statement)
+        const char *statement, struct cypher_input_position pos)
 {
     if (state->session == NULL)
     {
         evaluation_continuation_t continuation =
-            { .complete = not_connected_error, .data = NULL };
+                { .complete = not_connected_error, .pos = pos, .data = NULL };
         return continuation;
     }
 
@@ -672,12 +672,14 @@ evaluation_continuation_t evaluate_statement(shell_state_t *state,
     if (results == NULL)
     {
         evaluation_continuation_t continuation =
-            { .complete = run_failure, .data = (void *)(long)errno };
+                { .complete = run_failure,
+                  .pos = pos,
+                  .data = (void *)(long)errno };
         return continuation;
     }
 
     evaluation_continuation_t continuation =
-        { .complete = render_result, .data = results };
+            { .complete = render_result, .pos = pos, .data = results };
     return continuation;
 }
 
@@ -711,12 +713,22 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
 
         const struct neo4j_failure_details *details =
                 neo4j_failure_details(results);
-        fprintf(state->err, "%s:%u:%u: %s\n", "<stdin>", details->line,
-                details->column, details->description);
+
+        struct cypher_input_position pos = self->pos;
+        bool is_indented = (details->line == 1 && pos.column > 1);
+        pos.offset += details->offset;
+        pos.column = (details->line == 1)?
+                pos.column + details->column - 1 : details->column;
+        pos.line += (details->line - 1);
+
+        fprintf(state->err, "%s:%u:%u: %s\n", "<stdin>", pos.line, pos.column,
+                details->description);
         if (details->context != NULL)
         {
-            fprintf(state->err, "%s\n%*s^\n", details->context,
-                    details->context_offset, "");
+            unsigned int offset = is_indented?
+                    details->context_offset + 3 : details->context_offset;
+            fprintf(state->err, "%s%s\n%*s^\n", is_indented? "..." : "",
+                    details->context, offset, "");
         }
         goto cleanup;
     }
