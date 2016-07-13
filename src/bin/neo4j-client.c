@@ -39,7 +39,7 @@
 #define NEO4J_HISTORY_FILE "client-history"
 
 
-const char *shortopts = "hp:Pu:v";
+const char *shortopts = "hi:o:p:Pu:v";
 
 #define HISTFILE_OPT 1000
 #define CA_FILE_OPT 1001
@@ -72,7 +72,9 @@ static struct option longopts[] =
       { "known-hosts", required_argument, NULL, KNOWN_HOSTS_OPT },
       { "no-known-hosts", no_argument, NULL, NO_KNOWN_HOSTS_OPT },
       { "pipeline-max", required_argument, NULL, PIPELINE_MAX_OPT },
+      { "source", required_argument, NULL, 'i' },
       { "source-max-depth", required_argument, NULL, SOURCE_MAX_DEPTH_OPT },
+      { "output", required_argument, NULL, 'o' },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
       { NULL, 0, NULL, 0 } };
@@ -100,6 +102,13 @@ static void usage(FILE *s, const char *prog_name)
 " --known-hosts=file  Set the path to the known-hosts file.\n"
 " --no-known-hosts    Do not do host checking via known-hosts (use only TLS\n"
 "                     certificate verification).\n"
+" --output file, -o file\n"
+"                     Redirect output to the specified file. Must be\n"
+"                     specified in conjunction with --source/-i, and may be\n"
+"                     specified multiple times.\n"
+" --source file, -i file\n"
+"                     Read input from the specified file. May be specified\n"
+"                     multiple times.\n"
 " --verbose, -v       Increase logging verbosity.\n"
 " --version           Output the version of neo4j-client and dependencies.\n"
 "\n"
@@ -111,6 +120,15 @@ static void usage(FILE *s, const char *prog_name)
 "directives are read from stdin.\n",
         prog_name);
 }
+
+
+struct file_io_request
+{
+    const char *filename;
+    bool is_input;
+};
+
+#define NEO4J_MAX_FILE_IO_ARGS 128
 
 
 int main(int argc, char *argv[])
@@ -131,6 +149,8 @@ int main(int argc, char *argv[])
 
     uint8_t log_level = NEO4J_LOG_WARN;
     struct neo4j_logger_provider *provider = NULL;
+    struct file_io_request file_io_requests[NEO4J_MAX_FILE_IO_ARGS];
+    unsigned int nfile_io_requests = 0;
 
     neo4j_client_init();
 
@@ -257,6 +277,17 @@ int main(int argc, char *argv[])
                 neo4j_config_set_max_pipelined_requests(state.config, arg * 2);
             }
             break;
+        case 'i':
+            state.interactive = false;
+            if (nfile_io_requests >= NEO4J_MAX_FILE_IO_ARGS)
+            {
+                fprintf(state.err, "Too many --source and/or --output args\n");
+                goto cleanup;
+            }
+            file_io_requests[nfile_io_requests].filename = optarg;
+            file_io_requests[nfile_io_requests].is_input = true;
+            ++nfile_io_requests;
+            break;
         case SOURCE_MAX_DEPTH_OPT:
             {
                 int arg = atoi(optarg);
@@ -269,6 +300,16 @@ int main(int argc, char *argv[])
                 state.source_max_depth = arg;
             }
             break;
+        case 'o':
+            if (nfile_io_requests >= NEO4J_MAX_FILE_IO_ARGS)
+            {
+                fprintf(state.err, "Too many --source and/or --output args\n");
+                goto cleanup;
+            }
+            file_io_requests[nfile_io_requests].filename = optarg;
+            file_io_requests[nfile_io_requests].is_input = false;
+            ++nfile_io_requests;
+            break;
         case VERSION_OPT:
             fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);
             fprintf(state.out, "libneo4j-client: %s\n",
@@ -280,6 +321,14 @@ int main(int argc, char *argv[])
             goto cleanup;
         }
     }
+
+    if (nfile_io_requests > 0 &&
+            !file_io_requests[nfile_io_requests-1].is_input)
+    {
+        fprintf(stderr, "--output/-o must be followed by --source/-i\n");
+        goto cleanup;
+    }
+
     argc -= optind;
     argv += optind;
 
@@ -339,6 +388,25 @@ int main(int argc, char *argv[])
         if (interact(&state))
         {
             goto cleanup;
+        }
+    }
+    else if (nfile_io_requests > 0)
+    {
+        state.render = render_results_csv;
+        for (unsigned int i = 0; i < nfile_io_requests; ++i)
+        {
+            const char *filename = file_io_requests[i].filename;
+            if (!file_io_requests[i].is_input)
+            {
+                if (redirect_output(&state, filename))
+                {
+                    goto cleanup;
+                }
+            }
+            else if (source(&state, filename))
+            {
+                goto cleanup;
+            }
         }
     }
     else

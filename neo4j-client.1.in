@@ -91,8 +91,15 @@ By default, the file is \fI$(HOME)/.neo4j/neo4j_known_certs\fR.
 .I \-\-no-known-hosts
 Do not do host checking via known-hosts (use only TLS certificate verification).
 .TP
-.I \-v, \-\-verbose
-Increase the logging verbosity. Each invocation increases the verbosity. Each
+.I \-\-output file, \-o file
+Redirect output to the specified file. Must be specified in conjunction with
+\fI--source\fR/\fI-i\fR, and may be specified multiple times.
+.TP
+.I \-\-source file, \-i file
+Read input from the specified file. May be specified multiple times.
+.TP
+.I \-\-verbose, \-v
+Increase the logging verbosity. Each use increases the verbosity. Each
 verbosity level roughly equates to logging of warnings, general information,
 debug output and trace information.
 .TP
@@ -113,10 +120,11 @@ will be presented to the user in table format (by default), using the full
 width of the terminal.
 .SH NON-INTERACTIVE (BATCH) MODE
 When \fBneo4j\-client\fR is started with standard intput connected to a pipe,
-it will read statements from the pipe and evaluate each. Any error in
-evaluation will cause \fBneo4j\-client\fR to terminate without evaluating any
-further input. Results from statements sent to Neo4j will be output in CSV
-format (by default).
+or when the \fI--source\fR/\fI-i\fR argument is specified, statements will be
+read from the pipe or the specified file(s).  Any error in evaluation will
+cause \fBneo4j\-client\fR to terminate without evaluating any further input.
+By default, results will be output in CSV format, although this may be
+changed using \fI:set format=(csv|table)\fR.
 .SH USAGE
 Once started, commands and statements can be entered at the \fBneo4j\-client\fR
 prompt. Commands always begin with a colon (:) and conclude at the end of the
@@ -174,10 +182,10 @@ Show the client connection status, which indicates if the client is
 disconnected or connected to a server. If the latter, the connection URI is
 output.
 .TP
-.I ":output (table|csv)"
+.I ":format (table|csv)"
 Set the output format to either table or CSV.
 
-Equivalent to `:set output=(table|csv)`.
+Equivalent to `:set format=(table|csv)`.
 .TP
 .I ":width <n>"
 Set the output width for table rendering. \fIn\fR is either an integer between
