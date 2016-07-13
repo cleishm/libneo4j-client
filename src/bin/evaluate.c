@@ -789,14 +789,20 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
                 pos.column + details->column - 1 : details->column;
         pos.line += (details->line - 1);
 
-        fprintf(state->err, "%s:%u:%u: %s\n", state->infile, pos.line,
-                pos.column, details->description);
+        fprintf(state->err, "%s%s:%u:%u:%s %serror:%s %s%s%s\n",
+                state->error_colorize->pos[0], state->infile, pos.line,
+                pos.column, state->error_colorize->pos[1],
+                state->error_colorize->def[0], state->error_colorize->def[1],
+                state->error_colorize->msg[0], details->description,
+                state->error_colorize->msg[1]);
         if (details->context != NULL)
         {
             unsigned int offset = is_indented?
                     details->context_offset + 3 : details->context_offset;
-            fprintf(state->err, "%s%s\n%*s^\n", is_indented? "..." : "",
-                    details->context, offset, "");
+            fprintf(state->err, "%s%s%s\n%*s^%s\n",
+                    state->error_colorize->ctx[0],
+                    is_indented? "..." : "", details->context, offset, "",
+                    state->error_colorize->ctx[1]);
         }
         goto cleanup;
     }

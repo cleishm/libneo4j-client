@@ -40,6 +40,12 @@ By default, history is saved to \fI$(HOME)/.neo4j/client-history\fR.
 .I \-\-no-history
 Do not save the command history.
 .TP
+.I \-\-colorize
+Enable colorization of output and errors using ANSI escape sequences.
+.TP
+.I \-\-no-colorize
+Disable colorization of output and errors even when connected to a TTY.
+.TP
 .I \-\-ca\-file=cert.pem
 Specify a file containing trusted certificates (and CRLs). The file should
 contain one or more certificates in PEM format.

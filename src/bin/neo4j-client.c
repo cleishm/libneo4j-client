@@ -52,6 +52,8 @@ const char *shortopts = "hp:Pu:v";
 #define VERSION_OPT 1008
 #define PIPELINE_MAX_OPT 1009
 #define SOURCE_MAX_DEPTH_OPT 1010
+#define COLORIZE_OPT 1011
+#define NO_COLORIZE_OPT 1012
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -59,6 +61,10 @@ static struct option longopts[] =
       { "no-history", no_argument, NULL, NOHIST_OPT },
       { "ca-file", required_argument, NULL, CA_FILE_OPT },
       { "ca-directory", required_argument, NULL, CA_DIRECTORY_OPT },
+      { "colorize", no_argument, NULL, COLORIZE_OPT },
+      { "colourise", no_argument, NULL, COLORIZE_OPT },
+      { "no-colorize", no_argument, NULL, NO_COLORIZE_OPT },
+      { "no-colourise", no_argument, NULL, NO_COLORIZE_OPT },
       { "insecure", no_argument, NULL, INSECURE_OPT },
       { "non-interactive", no_argument, NULL, NON_INTERACTIVE_OPT },
       { "username", required_argument, NULL, 'u' },
@@ -79,6 +85,8 @@ static void usage(FILE *s, const char *prog_name)
 " --help, -h          Output this usage information.\n"
 " --history=file      Use the specified file for saving history.\n"
 " --no-history        Do not save history.\n"
+" --colorize          Colorize output using ANSI escape sequences.\n"
+" --no-colorize       Disable colorization even when outputting to a TTY.\n"
 " --ca-file=cert.pem  Specify a file containing trusted certificates.\n"
 " --ca-directory=dir  Specify a directory containing trusted certificates.\n"
 " --insecure          Do not attempt to establish a secure connection.\n"
@@ -146,6 +154,11 @@ int main(int argc, char *argv[])
     }
     state.histfile = histfile;
 
+    if (isatty(fileno(stderr)))
+    {
+        state.error_colorize = ansi_error_colorization;
+    }
+
     int c;
     while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) >= 0)
     {
@@ -174,6 +187,12 @@ int main(int argc, char *argv[])
                 neo4j_perror(state.err, errno, "unexpected error");
                 goto cleanup;
             }
+            break;
+        case COLORIZE_OPT:
+            state.error_colorize = ansi_error_colorization;
+            break;
+        case NO_COLORIZE_OPT:
+            state.error_colorize = no_error_colorization;
             break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;

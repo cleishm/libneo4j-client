@@ -17,6 +17,7 @@
 #ifndef NEO4J_STATE_H
 #define NEO4J_STATE_H
 
+#include "colorization.h"
 #include "util.h"
 #include <neo4j-client.h>
 #include <cypher-parser.h>
@@ -45,6 +46,8 @@ struct shell_state
     neo4j_session_t *session;
     char *temp_buffer;
     size_t temp_buffer_capacity;
+    const struct interactive_colorization *interactive_colorize;
+    const struct error_colorization *error_colorize;
     int (*render)(shell_state_t *state, neo4j_result_stream_t *results);
     int width;
     uint_fast16_t render_flags;
