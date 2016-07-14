@@ -49,7 +49,7 @@ Otherwise, please see [Building](#building) below.
 neo4j-client Usage
 ------------------
 
-Example usage:
+Example interactive usage:
 
 ```console
 $ neo4j-client -u neo4j localhost
@@ -97,23 +97,31 @@ neo4j> MATCH (n:Person) RETURN n LIMIT 3;
 +----------------------------------------------------------------------------+
 neo4j>
 neo4j> :set
- insecure=no
- format=table
- username="neo4j"
- width=auto
-neo4j>
-neo4j> :set output=csv
-neo4j>
-neo4j> MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3;
-"name","born"
-"Keanu Reeves",1964
-"Carrie-Anne Moss",1967
-"Laurence Fishburne",1961
+ echo=off           // echo non-interactive commands before rendering results
+ insecure=no        // do not attempt to establish secure connections
+ format=table       // set the output format (`table` or `csv`).
+ outfile=           // redirect output to a file
+ username="neo4j"   // the default username for connections
+ width=auto         // the width to render tables (`auto` for term width)
 neo4j>
 neo4j> :quit
 $
 ```
 
+Example non-interactive usage:
+
+```console
+$ echo "MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3" | \
+        neo4j-client -u neo4j -P localhost > result.csv
+Password: *****
+$
+$ cat output.csv
+"name","born"
+"Keanu Reeves",1964
+"Carrie-Anne Moss",1967
+"Laurence Fishburne",1961
+$
+```
 
 libneo4j-client
 ---------------

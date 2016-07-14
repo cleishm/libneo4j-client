@@ -197,7 +197,8 @@ Equivalent to `:set width=<n>`.
 .SH EXAMPLES
 Start \fBneo4j\-client\fR in interactive mode, and run a query:
 
-    $ neo4j-client neo4j://localhost:7687
+    $ neo4j-client -u neo4j localhost
+    Password: *****
     neo4j> MATCH (n:Person) RETURN n.name, n.born LIMIT 4;
     +-----------------------------+-----------------------------+
     | n.name                      | n.born                      |
@@ -210,11 +211,13 @@ Start \fBneo4j\-client\fR in interactive mode, and run a query:
     neo4j> :quit
     $
 
-Evaluate a query using \fBneo4j\-client\fR in non-interactive (batch) mode,
-saving the output to a csv file:
+Evaluate a query in non-interactive (batch) mode, saving the output to a csv
+file:
 
     $ echo "MATCH (n:Person) RETURN n.name, n.born LIMIT 4;" | \\
-            neo4j\-client neo4j://localhost:7687 > result.csv
+            neo4j\-client -u neo4j -P localhost > result.csv
+    Password: *****
+    $
     $ cat result.csv
     "n.name","n.born"
     "Keanu Reeves",1964
@@ -222,6 +225,22 @@ saving the output to a csv file:
     "Laurence Fishburne",1961
     "Hugo Weaving",1960
     $
+
+Evaluate a source file, and save the output:
+
+    $ neo4j\-client -u neo4j -p pass -o result.csv -i query.cyp
+    $
+    $ cat query.cyp
+    MATCH (n:Person) RETURN n.name, n.born LIMIT 4;
+    $
+    $ cat result.csv
+    "n.name","n.born"
+    "Keanu Reeves",1964
+    "Carrie-Anne Moss",1967
+    "Laurence Fishburne",1961
+    "Hugo Weaving",1960
+    $
+
 .SH ERRORS
 In interactive mode, \fBneo4j\-client\fR attempts to exit cleanly (with
 \fI$?\fR set to 0) when the session is terminated via the use of \fI:quit\fR,
