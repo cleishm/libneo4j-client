@@ -14,27 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_EVALUATE_H
-#define NEO4J_EVALUATE_H
+#ifndef NEO4J_COMMANDS_H
+#define NEO4J_COMMANDS_H
 
 #include "state.h"
 
-static inline bool is_command(const char *directive)
-{
-    return (directive[0] == ':');
-}
+int run_command(shell_state_t *state, const cypher_astnode_t *command);
 
-int evaluate_command(shell_state_t *state, const char *command, size_t n);
-
-typedef struct evaluation_continuation evaluation_continuation_t;
-
-evaluation_continuation_t *evaluate_statement(shell_state_t *state,
-        const char *statement, size_t n, struct cypher_input_position pos);
-
-int complete_evaluation(evaluation_continuation_t *continuation,
-        shell_state_t *state);
-
-int abort_evaluation(evaluation_continuation_t *continuation,
-        shell_state_t *state);
-
-#endif/*NEO4J_EVALUATE_H*/
+#endif/*NEO4J_COMMANDS_H*/

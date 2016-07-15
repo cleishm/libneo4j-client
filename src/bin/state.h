@@ -59,7 +59,7 @@ struct shell_state
 
     unsigned int source_max_depth;
     unsigned int source_depth;
-    bool batch_echo;
+    bool echo;
 };
 
 

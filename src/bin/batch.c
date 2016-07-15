@@ -23,21 +23,12 @@
 #include <errno.h>
 
 
-struct evaluation
-{
-    char *statement;
-    char *buffer;
-    size_t buffer_capacity;
-    evaluation_continuation_t continuation;
-};
-
-
 typedef struct evaluation_queue
 {
     unsigned int next;
     unsigned int depth;
     unsigned int capacity;
-    struct evaluation directives[];
+    evaluation_continuation_t *continuations[];
 } evaluation_queue_t;
 
 
@@ -54,7 +45,7 @@ static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n, struct cypher_input_position pos);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
         unsigned int n);
-static void echo(shell_state_t *state, const char * restrict format, ...);
+static int abort_outstanding(shell_state_t *state, evaluation_queue_t *queue);
 
 
 int source(shell_state_t *state, const char *filename)
@@ -93,7 +84,7 @@ int source(shell_state_t *state, const char *filename)
 int batch(shell_state_t *state, FILE *stream)
 {
     evaluation_queue_t *queue = calloc(1, sizeof(evaluation_queue_t) +
-            (state->pipeline_max * sizeof(struct evaluation)));
+            (state->pipeline_max * sizeof(evaluation_continuation_t *)));
     if (queue == NULL)
     {
         neo4j_perror(state->err, errno, "unexpected error");
@@ -123,9 +114,10 @@ int batch(shell_state_t *state, FILE *stream)
     int errsv;
 cleanup:
     errsv = errno;
-    for (unsigned int i = queue->capacity; i-- > 0; )
+    if (abort_outstanding(state, queue) && result == 0)
     {
-        free(queue->directives[i].buffer);
+        errsv = errno;
+        result = -1;
     }
     free(queue);
     errno = errsv;
@@ -161,14 +153,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         {
             return err;
         }
-        const char *command = temp_copy(state, directive, n);
-        if (command == NULL)
-        {
-            neo4j_perror(state->err, errno, "unexpected error");
-            return -1;
-        }
-        echo(state, "%s", command);
-        return evaluate_command_string(state, command);
+        return evaluate_command(state, directive, n);
     }
 
     assert(queue->depth <= queue->capacity);
@@ -179,22 +164,21 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     }
     assert (queue->depth < queue->capacity);
 
+    evaluation_continuation_t *continuation =
+            evaluate_statement(state, directive, n, pos);
+    if (continuation == NULL)
+    {
+        neo4j_perror(state->err, errno, "unexpected error");
+        return -1;
+    }
+
     unsigned int i = queue->next + queue->depth;
     if (i >= queue->capacity)
     {
         i -= queue->capacity;
     }
+    queue->continuations[i] = continuation;
     ++(queue->depth);
-
-    struct evaluation *e = &(queue->directives[i]);
-    e->statement = strncpy_alloc(&(e->buffer), &(e->buffer_capacity),
-            directive, n);
-    if (e->statement == NULL)
-    {
-        neo4j_perror(state->err, errno, "unexpected error");
-        return -1;
-    }
-    e->continuation = evaluate_statement(state, e->statement, pos);
     return 0;
 }
 
@@ -205,15 +189,14 @@ int finalize(shell_state_t *state, evaluation_queue_t *queue, unsigned int n)
     while (n-- > 0)
     {
         assert(queue->next < queue->capacity);
-        struct evaluation *e = &(queue->directives[queue->next]);
+        evaluation_continuation_t *continuation =
+                queue->continuations[queue->next];
         if (++(queue->next) >= queue->capacity)
         {
             queue->next = 0;
         }
         --(queue->depth);
-        echo(state, "%s;\n", e->statement);
-        evaluation_continuation_t *continuation = &(e->continuation);
-        if (continuation->complete(continuation, state))
+        if (complete_evaluation(continuation, state))
         {
             return -1;
         }
@@ -222,18 +205,29 @@ int finalize(shell_state_t *state, evaluation_queue_t *queue, unsigned int n)
 }
 
 
-void echo(shell_state_t *state, const char * restrict format, ...)
+int abort_outstanding(shell_state_t *state, evaluation_queue_t *queue)
 {
-    if (!state->batch_echo)
+    int result = 0;
+    int err;
+    while (queue->depth > 0)
     {
-        return;
+        assert(queue->next < queue->capacity);
+        evaluation_continuation_t *continuation =
+                queue->continuations[queue->next];
+        if (++(queue->next) >= queue->capacity)
+        {
+            queue->next = 0;
+        }
+        --(queue->depth);
+        if (abort_evaluation(continuation, state) && result == 0)
+        {
+            err = errno;
+            result = -1;
+        }
     }
-    for (unsigned int i = state->source_depth + 1; i > 0; --i)
+    if (result != 0)
     {
-        fputc('+', state->out);
+        errno = err;
     }
-    va_list ap;
-    va_start(ap, format);
-    vfprintf(state->out, format, ap);
-    va_end(ap);
+    return result;
 }

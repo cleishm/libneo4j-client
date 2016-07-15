@@ -123,6 +123,39 @@ $ cat output.csv
 $
 ```
 
+Evaluating source files, e.g.:
+
+```console
+$ cat query.cyp
+:set echo
+:export name='Emil'
+
+// Create a person node if it doesn't exist
+begin;
+MERGE (:Person {name: {name}});
+commit;
+
+// return the total number of people
+MATCH (n:Person)
+RETURN count(n);
+$
+$ neo4j-client -u neo4j -p pass -o result.out -i query.cyp
+$ cat result.out
++:export name='Emil'
++begin;
++MERGE (:Person {name: {name}});
+Nodes created: 1
+Properties set: 1
+Labels added: 1
++commit;
++MATCH (n:Person)
+ RETURN count(n);
+"count(n)"
+137
+$
+```
+
+
 libneo4j-client
 ---------------
 

@@ -7,12 +7,16 @@ neo4j_client_SOURCES = neo4j-client.c \
 	batch.h \
 	colorization.c \
 	colorization.h \
+	commands.c \
+	commands.h \
 	connect.c \
 	connect.h \
 	evaluate.c \
 	evaluate.h \
 	interactive.c \
 	interactive.h \
+	options.c \
+	options.h \
 	readpass.c \
 	readpass.h \
 	render.c \

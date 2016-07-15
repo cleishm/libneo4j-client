@@ -14,27 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_EVALUATE_H
-#define NEO4J_EVALUATE_H
+#ifndef NEO4J_OPTIONS_H
+#define NEO4J_OPTIONS_H
 
 #include "state.h"
 
-static inline bool is_command(const char *directive)
-{
-    return (directive[0] == ':');
-}
+int option_set(shell_state_t *state, const char *name, const char *value);
+int option_unset(shell_state_t *state, const char *name);
 
-int evaluate_command(shell_state_t *state, const char *command, size_t n);
+void options_display(shell_state_t *state, FILE *stream);
 
-typedef struct evaluation_continuation evaluation_continuation_t;
+int set_format(shell_state_t *state, const char *value);
+int set_width(shell_state_t *state, const char *value);
 
-evaluation_continuation_t *evaluate_statement(shell_state_t *state,
-        const char *statement, size_t n, struct cypher_input_position pos);
-
-int complete_evaluation(evaluation_continuation_t *continuation,
-        shell_state_t *state);
-
-int abort_evaluation(evaluation_continuation_t *continuation,
-        shell_state_t *state);
-
-#endif/*NEO4J_EVALUATE_H*/
+#endif/*NEO4J_OPTIONS_H*/
