@@ -36,7 +36,8 @@ static int check_processable(void *data, const char *segment, size_t n,
         struct cypher_input_range range, bool eof);
 static int process_input(shell_state_t *state, const char *input, size_t length,
         const char **end);
-static int process_segment(void *data, cypher_parse_segment_t *segment);
+static int process_segment(void *data, const char *directive, size_t n,
+        struct cypher_input_range range, bool eof);
 
 
 int interact(shell_state_t *state)
@@ -319,8 +320,7 @@ int process_input(shell_state_t *state, const char *input, size_t length,
     struct process_data cbdata =
         { .state = state, .input = input, .last_offset = 0, .result = 0 };
 
-    if (cypher_uparse_each(line, length + 1, process_segment, &cbdata,
-                NULL, NULL, 0))
+    if (cypher_quick_uparse(line, length + 1, process_segment, &cbdata, 0))
     {
         neo4j_perror(state->err, errno, "unexpected error");
         return -1;
@@ -335,38 +335,41 @@ int process_input(shell_state_t *state, const char *input, size_t length,
 }
 
 
-int process_segment(void *data, cypher_parse_segment_t *segment)
+int process_segment(void *data, const char *directive, size_t n,
+        struct cypher_input_range range, bool eof)
 {
     struct process_data *cbdata = (struct process_data *)data;
 
-    if (cypher_parse_segment_eof(segment))
+    if (eof)
     {
         assert(cbdata->result == 0);
+        cbdata->last_offset = range.start.offset;
         return 1;
     }
 
-    const cypher_astnode_t *directive =
-            cypher_parse_segment_get_directive(segment);
-    struct cypher_input_range range = cypher_parse_segment_get_range(segment);
+    if (n == 0)
+    {
+        return 0;
+    }
+
+    // ensure null terminated
+    const char *s = temp_copy(cbdata->state, directive, n);
+    if (s == NULL)
+    {
+        neo4j_perror(cbdata->state->err, errno, "unexpected error");
+        return -1;
+    }
 
     int r = 0;
-    if (cypher_astnode_instanceof(directive, CYPHER_AST_COMMAND))
+    if (is_command(s))
     {
-        r = evaluate_command(cbdata->state, directive);
+        r = evaluate_command_string(cbdata->state, s);
     }
     else
     {
-        const char *s = cbdata->input + range.start.offset;
-        size_t n = range.end.offset - range.start.offset;
-        struct cypher_input_position pos = range.start;
-        trim_statement(&s, &n, &pos);
-        if (n > 0)
-        {
-            const char *statement = temp_copy(cbdata->state, s, n);
-            evaluation_continuation_t continuation =
-                    evaluate_statement(cbdata->state, statement, pos);
-            r = continuation.complete(&continuation, cbdata->state);
-        }
+        evaluation_continuation_t continuation =
+                evaluate_statement(cbdata->state, s, range.start);
+        r = continuation.complete(&continuation, cbdata->state);
     }
 
     cbdata->last_offset = range.end.offset;

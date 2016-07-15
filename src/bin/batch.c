@@ -148,6 +148,11 @@ int parse_callback(void *data, const char *s, size_t n,
 int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         const char *directive, size_t n, struct cypher_input_position pos)
 {
+    if (n == 0)
+    {
+        return 0;
+    }
+
     if (is_command(directive))
     {
         // drain queue before running commands
@@ -164,12 +169,6 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         }
         echo(state, "%s", command);
         return evaluate_command_string(state, command);
-    }
-
-    trim_statement(&directive, &n, &pos);
-    if (n == 0)
-    {
-        return 0;
     }
 
     assert(queue->depth <= queue->capacity);

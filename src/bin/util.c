@@ -37,27 +37,3 @@ char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n)
     (*dest)[n] = '\0';
     return *dest;
 }
-
-
-void trim_statement(const char **s, size_t *n,
-        struct cypher_input_position *pos)
-{
-    // Skip all whitespace at the start of the statement, and update pos.
-    const char *e = *s + *n;
-    for (; *s < e && isspace(**s); ++(*s))
-    {
-        ++(pos->column);
-        ++(pos->offset);
-        --(*n);
-        if (**s == '\n')
-        {
-            ++(pos->line);
-            pos->column = 1;
-        }
-    }
-
-    // trim all space (and ';') from the end
-    for (--e; *n > 0 && (*e == '\0' || *e == ';' || isspace(*e));
-            --e, --(*n))
-        ;
-}
