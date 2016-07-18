@@ -125,7 +125,7 @@ static void usage(FILE *s, const char *prog_name)
 
 struct file_io_request
 {
-    const char *filename;
+    char *filename;
     bool is_input;
 };
 
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
                 fprintf(state.err, "Too many --source and/or --output args\n");
                 goto cleanup;
             }
-            file_io_requests[nfile_io_requests].filename = optarg;
+            file_io_requests[nfile_io_requests].filename = strdup(optarg);
             file_io_requests[nfile_io_requests].is_input = true;
             ++nfile_io_requests;
             break;
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
                 fprintf(state.err, "Too many --source and/or --output args\n");
                 goto cleanup;
             }
-            file_io_requests[nfile_io_requests].filename = optarg;
+            file_io_requests[nfile_io_requests].filename = strdup(optarg);
             file_io_requests[nfile_io_requests].is_input = false;
             ++nfile_io_requests;
             break;
@@ -431,6 +431,10 @@ cleanup:
     if (provider != NULL)
     {
         neo4j_std_logger_provider_free(provider);
+    }
+    for (unsigned int i = 0; i < nfile_io_requests; ++i)
+    {
+        free(file_io_requests[i].filename);
     }
     if (tty != NULL)
     {

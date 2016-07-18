@@ -65,6 +65,14 @@ void shell_state_destroy(shell_state_t *state)
     }
     neo4j_config_free(state->config);
     free(state->temp_buffer);
+
+    for (unsigned int i = 0; i < state->nexports; ++i)
+    {
+        free(state->exports_storage[i]);
+    }
+    free(state->exports);
+    free(state->exports_storage);
+
     memset(state, 0, sizeof(shell_state_t));
 }
 
