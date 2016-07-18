@@ -23,6 +23,7 @@
 #include "render.h"
 #include "state.h"
 #include "verification.h"
+#include <cypher-parser.h>
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
@@ -314,6 +315,8 @@ int main(int argc, char *argv[])
             fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);
             fprintf(state.out, "libneo4j-client: %s\n",
                     libneo4j_client_version());
+            fprintf(state.out, "libcypher-parser: %s\n",
+                    libcypher_parser_version());
             result = EXIT_SUCCESS;
             goto cleanup;
         default:
