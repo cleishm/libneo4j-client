@@ -14,13 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_BATCH_H
-#define NEO4J_BATCH_H
+#ifndef NEO4J_COMMANDS_H
+#define NEO4J_COMMANDS_H
 
 #include "state.h"
 
-int source(shell_state_t *state, const char *filename);
+int run_command(shell_state_t *state, const cypher_astnode_t *command);
 
-int batch(shell_state_t *state, FILE *stream);
-
-#endif/*NEO4J_BATCH_H*/
+#endif/*NEO4J_COMMANDS_H*/

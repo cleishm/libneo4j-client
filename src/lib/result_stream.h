@@ -57,6 +57,19 @@ struct neo4j_result_stream
      */
     const char *(*error_message)(neo4j_result_stream_t *self);
 
+    /*
+     * Return the details of a failure.
+     *
+     * When neo4j_check_failure() returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
+     * then this function can be used to get the details of the failure.
+     *
+     * @param [self] This result stream.
+     * @return A pointer to the failure details, or `NULL` if no failure
+     *         details were available.
+     */
+    const struct neo4j_failure_details *(*failure_details)(
+            neo4j_result_stream_t *self);
+
     /**
      * Get the number of fields in a result stream.
      *

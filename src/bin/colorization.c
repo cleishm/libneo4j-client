@@ -15,25 +15,22 @@
  * limitations under the License.
  */
 #include "../../config.h"
-#include "util.h"
-#include <assert.h>
-#include <ctype.h>
-#include <string.h>
+#include "colorization.h"
 
 
-char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n)
-{
-    if (*cap < n+1)
-    {
-        char *updated = realloc(*dest, n+1);
-        if (updated == NULL)
-        {
-            return NULL;
-        }
-        *dest = updated;
-        *cap = n+1;
-    }
-    strncpy(*dest, s, n+1);
-    (*dest)[n] = '\0';
-    return *dest;
-}
+static struct error_colorization _no_error_colorization =
+    { .def = { "", "" },
+      .pos = { "", "" },
+      .msg = { "", "" },
+      .ctx = { "", "" } };
+
+static struct error_colorization _ansi_error_colorization =
+    { .def = { ANSI_COLOR_RED ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
+      .pos = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
+      .msg = { ANSI_COLOR_RESET, "" },
+      .ctx = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET } };
+
+const struct error_colorization *no_error_colorization =
+        &_no_error_colorization;
+const struct error_colorization *ansi_error_colorization =
+        &_ansi_error_colorization;

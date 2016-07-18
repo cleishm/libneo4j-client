@@ -46,6 +46,14 @@ const char *neo4j_error_message(neo4j_result_stream_t *results)
 }
 
 
+const struct neo4j_failure_details *neo4j_failure_details(
+        neo4j_result_stream_t *results)
+{
+    REQUIRE(results != NULL, NULL);
+    return results->failure_details(results);
+}
+
+
 unsigned int neo4j_nfields(neo4j_result_stream_t *results)
 {
     REQUIRE(results != NULL, -1);
@@ -156,8 +164,7 @@ struct run_result_stream
     struct neo4j_statement_plan *statement_plan;
     struct neo4j_update_counts update_counts;
     int failure;
-    const char *error_code;
-    const char *error_message;
+    struct neo4j_failure_details failure_details;
     unsigned int nfields;
     const char *const *fields;
     result_record_t *records;
@@ -171,6 +178,8 @@ static run_result_stream_t *run_rs_open(neo4j_session_t *session);
 static int run_rs_check_failure(neo4j_result_stream_t *self);
 static const char *run_rs_error_code(neo4j_result_stream_t *self);
 static const char *run_rs_error_message(neo4j_result_stream_t *self);
+const struct neo4j_failure_details *run_rs_failure_details(
+        neo4j_result_stream_t *results);
 static unsigned int run_rs_nfields(neo4j_result_stream_t *results);
 static const char *run_rs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
@@ -318,6 +327,7 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     result_stream->check_failure = run_rs_check_failure;
     result_stream->error_code = run_rs_error_code;
     result_stream->error_message = run_rs_error_message;
+    result_stream->failure_details = run_rs_failure_details;
     result_stream->nfields = run_rs_nfields;
     result_stream->fieldname = run_rs_fieldname;
     result_stream->fetch_next = run_rs_fetch_next;
@@ -356,7 +366,7 @@ const char *run_rs_error_code(neo4j_result_stream_t *self)
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, NULL);
-    return results->error_code;
+    return results->failure_details.code;
 }
 
 
@@ -365,7 +375,17 @@ const char *run_rs_error_message(neo4j_result_stream_t *self)
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
     REQUIRE(results != NULL, NULL);
-    return results->error_message;
+    return results->failure_details.message;
+}
+
+
+const struct neo4j_failure_details *run_rs_failure_details(
+        neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
+    REQUIRE(results != NULL, NULL);
+    return &(results->failure_details);
 }
 
 
@@ -936,9 +956,8 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
                 *metadata);
     }
 
-    if (neo4j_meta_failure_details(&(results->error_code),
-                &(results->error_message), *metadata, &(results->mpool),
-                description, results->logger))
+    if (neo4j_meta_failure_details(&(results->failure_details), *metadata,
+                &(results->mpool), description, results->logger))
     {
         set_failure(results, errno);
         return -1;
@@ -955,6 +974,5 @@ void set_failure(run_result_stream_t *results, int error)
     results->failure = error;
     results->streaming = false;
     results->awaiting_records = 0;
-    results->error_code = NULL;
-    results->error_message = NULL;
+    memset(&(results->failure_details), 0, sizeof(results->failure_details));
 }
