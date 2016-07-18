@@ -420,6 +420,12 @@ const char *neo4j_connection_username(const neo4j_connection_t *connection)
 }
 
 
+bool neo4j_connection_is_secure(const neo4j_connection_t *connection)
+{
+    return !(connection->insecure);
+}
+
+
 int neo4j_connection_send(neo4j_connection_t *connection,
         neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc)
 {

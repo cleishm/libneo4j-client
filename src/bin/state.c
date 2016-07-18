@@ -17,8 +17,12 @@
 #include "../../config.h"
 #include "state.h"
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+
+#define NEO4J_DEFAULT_MAX_SOURCE_DEPTH 10
 
 
 int shell_state_init(shell_state_t *state, const char *prog_name,
@@ -30,12 +34,15 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->out = out;
     state->err = err;
     state->tty = tty;
+    state->output = out;
     state->pipeline_max = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS / 2;
     state->config = neo4j_new_config();
     if (state->config == NULL)
     {
         return -1;
     }
+    state->source_max_depth = NEO4J_DEFAULT_MAX_SOURCE_DEPTH;
+    state->error_colorize = no_error_colorization;
     return 0;
 }
 
@@ -51,8 +58,57 @@ void shell_state_destroy(shell_state_t *state)
     {
         neo4j_close(state->connection);
     }
+    if (state->outfile != NULL)
+    {
+        free(state->outfile);
+        fclose(state->output);
+    }
     neo4j_config_free(state->config);
     free(state->temp_buffer);
+
+    for (unsigned int i = 0; i < state->nexports; ++i)
+    {
+        free(state->exports_storage[i]);
+    }
+    free(state->exports);
+    free(state->exports_storage);
+
+    memset(state, 0, sizeof(shell_state_t));
+}
+
+
+int redirect_output(shell_state_t *state, const char *filename)
+{
+    char *outfile = NULL;
+    FILE *output = state->out;
+
+    if (filename != NULL && *filename != '\0' && strcmp(filename, "-") != 0)
+    {
+        outfile = strdup(filename);
+        if (outfile == NULL)
+        {
+            fprintf(state->err, "Unexpected error: %s", strerror(errno));
+            return -1;
+        }
+
+        output = fopen(filename, "w");
+        if (output == NULL)
+        {
+            fprintf(state->err, "Unable to open output file '%s': %s\n",
+                    filename, strerror(errno));
+            return -1;
+        }
+    }
+
+    if (state->outfile != NULL)
+    {
+        free(state->outfile);
+        fclose(state->output);
+    }
+
+    state->outfile = outfile;
+    state->output = output;
+    return 0;
 }
 
 
@@ -134,5 +190,25 @@ void shell_state_unexport(shell_state_t *state, neo4j_value_t name)
             --(state->nexports);
             return;
         }
+    }
+}
+
+
+void display_status(FILE* stream, shell_state_t *state)
+{
+    if (state->connection == NULL)
+    {
+        fprintf(stream, "Not connected\n");
+    }
+    else
+    {
+        const char *username = neo4j_connection_username(state->connection);
+        const char *hostname = neo4j_connection_hostname(state->connection);
+        unsigned int port = neo4j_connection_port(state->connection);
+        bool secure = neo4j_connection_is_secure(state->connection);
+        fprintf(stream, "Connected to 'neo4j://%s%s%s:%u'%s\n",
+                (username != NULL)? username : "",
+                (username != NULL)? "@" : "", hostname, port,
+                secure? "" : " (insecure)");
     }
 }

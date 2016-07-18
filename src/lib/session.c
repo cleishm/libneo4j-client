@@ -652,11 +652,10 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     }
 
     const neo4j_config_t *config = neo4j_session_config(session);
-    const char *code;
-    const char *message;
+    struct neo4j_failure_details details;
     neo4j_mpool_t mpool =
         neo4j_mpool(config->allocator, config->mpool_block_size);
-    if (neo4j_meta_failure_details(&code, &message, *metadata, &mpool,
+    if (neo4j_meta_failure_details(&details, *metadata, &mpool,
                 description, session->logger))
     {
         return -1;
@@ -664,18 +663,20 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 
     int result = -1;
 
-    if (strcmp(code, "Neo.ClientError.Security.EncryptionRequired") == 0)
+    if (strcmp("Neo.ClientError.Security.EncryptionRequired",
+            details.code) == 0)
     {
         errno = NEO4J_SERVER_REQUIRES_SECURE_CONNECTION;
         goto cleanup;
     }
-    if (strcmp(code, "Neo.ClientError.Security.Unauthorized") == 0)
+    if (strcmp("Neo.ClientError.Security.Unauthorized", details.code) == 0)
     {
         ((struct init_cdata *)cdata)->error = NEO4J_INVALID_CREDENTIALS;
         result = 0;
         goto cleanup;
     }
-    if (strcmp(code, "Neo.ClientError.Security.AuthenticationRateLimit") == 0)
+    if (strcmp("Neo.ClientError.Security.AuthenticationRateLimit",
+            details.code) == 0)
     {
         ((struct init_cdata *)cdata)->error = NEO4J_AUTH_RATE_LIMIT;
         result = 0;
@@ -683,7 +684,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     }
 
     neo4j_log_error(session->logger, "session initalization failed: %s",
-            message);
+            details.message);
     errno = NEO4J_UNEXPECTED_ERROR;
 
 cleanup:

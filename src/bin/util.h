@@ -18,6 +18,7 @@
 #define NEO4J_UTIL_H
 
 #include <arpa/inet.h>
+#include <cypher-parser.h>
 #include <netdb.h>
 #include <stdlib.h>
 
@@ -41,7 +42,5 @@
 #define NEO4J_MAXHOSTLEN (MAXHOSTNAMELEN + 1 + MAXSERVNAMELEN)
 
 char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
-
-void trim_statement(const char **s, size_t *n);
 
 #endif/*NEO4J_UTIL_H*/

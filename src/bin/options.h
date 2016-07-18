@@ -14,13 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_BATCH_H
-#define NEO4J_BATCH_H
+#ifndef NEO4J_OPTIONS_H
+#define NEO4J_OPTIONS_H
 
 #include "state.h"
 
-int source(shell_state_t *state, const char *filename);
+int option_set(shell_state_t *state, const char *name, const char *value);
+int option_unset(shell_state_t *state, const char *name);
 
-int batch(shell_state_t *state, FILE *stream);
+void options_display(shell_state_t *state, FILE *stream);
 
-#endif/*NEO4J_BATCH_H*/
+int set_format(shell_state_t *state, const char *value);
+int set_width(shell_state_t *state, const char *value);
+
+#endif/*NEO4J_OPTIONS_H*/
