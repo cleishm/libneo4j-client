@@ -84,7 +84,7 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
         {
             neo4j_log_warn(logger,
                     "Replacing previously truncated server fingerprint (for details, "
-                    "see https://github.com/cleishm/libneo4j-client/releases/tag/v1.0.1)");
+                    "see https://github.com/cleishm/libneo4j-client/releases/tag/v1.1.0)");
             result = update_stored_fingerprint(file, host, fingerprint, logger);
             goto cleanup;
         }
