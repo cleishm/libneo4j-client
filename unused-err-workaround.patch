@@ -1,0 +1,13 @@
+--- src/bin/batch.c
++++ src/bin/batch.c
+@@ -116,8 +116,8 @@ cleanup:
+     errsv = errno;
+     if (abort_outstanding(state, queue) && result == 0)
+     {
+-        errsv = errno;
+-        result = -1;
++        free(queue);
++        return -1;
+     }
+     free(queue);
+     errno = errsv;
