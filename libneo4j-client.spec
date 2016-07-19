@@ -129,9 +129,9 @@ of results to tables or CSV.
 - Upstream release 0.9.2
 * Mon Apr 25 2016 Chris Leishman <chris@leishman.org> - 0.9.1-1
 - Upstream release 0.9.1
-* Tue Mar 09 2016 Chris Leishman <chris@leishman.org> - 0.9.0-1
+* Wed Mar 09 2016 Chris Leishman <chris@leishman.org> - 0.9.0-1
 - Upstream release 0.9.0
-* Tue Feb 11 2016 Chris Leishman <chris@leishman.org> - 0.8.1-1
+* Thu Feb 11 2016 Chris Leishman <chris@leishman.org> - 0.8.1-1
 - Upstream release 0.8.1
 * Tue Feb 09 2016 Chris Leishman <chris@leishman.org> - 0.8.0-1
 - Upstream release 0.8.0
