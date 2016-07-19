@@ -14,8 +14,8 @@
 #
 Summary: Client library for the Neo4j graph database
 Name: libneo4j-client
-Version: 1.0.0
-Release: 2%{?dist}
+Version: 1.1.0
+Release: 1%{?dist}
 Group: System Environment/Libraries
 License: Apache-2.0
 URL: https://github.com/cleishm/libneo4j-client
@@ -119,6 +119,8 @@ of results to tables or CSV.
 #------------------------------------------------------------------------------
 
 %changelog
+* Mon Jul 18 2016 Chris Leishman <chris@leishman.org> - 1.1.0-1
+- Upstream release 1.1.0
 * Thu Jun 30 2016 Chris Leishman <chris@leishman.org> - 1.0.0-2
 - Changed -devel package names to remove soname
 * Mon Jun 27 2016 Chris Leishman <chris@leishman.org> - 1.0.0-1
