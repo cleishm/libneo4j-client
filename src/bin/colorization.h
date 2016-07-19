@@ -14,13 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef NEO4J_BATCH_H
-#define NEO4J_BATCH_H
+#ifndef NEO4J_COLORIZATION_H
+#define NEO4J_COLORIZATION_H
 
-#include "state.h"
 
-int source(shell_state_t *state, const char *filename);
+#define ANSI_COLOR_RESET "\x1b[0m"
+#define ANSI_COLOR_BOLD "\x1b[1m"
+#define ANSI_COLOR_RED "\x1b[31m"
 
-int batch(shell_state_t *state, FILE *stream);
 
-#endif/*NEO4J_BATCH_H*/
+struct error_colorization
+{
+    const char *def[2];
+    const char *pos[2];
+    const char *msg[2];
+    const char *ctx[2];
+};
+
+
+extern const struct error_colorization *no_error_colorization;
+extern const struct error_colorization *ansi_error_colorization;
+
+
+#endif/*NEO4J_COLORIZATION_H*/

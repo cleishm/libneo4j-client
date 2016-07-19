@@ -338,7 +338,7 @@ int verify(SSL *ssl, const char *hostname, int port,
 
     int result = -1;
 
-    char fingerprint[SHA512_DIGEST_LENGTH * 2];
+    char fingerprint[SHA512_DIGEST_LENGTH * 2 + 1];
     if (cert_fingerprint(cert, fingerprint, sizeof(fingerprint), logger))
     {
         goto cleanup;

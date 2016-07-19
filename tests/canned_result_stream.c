@@ -43,13 +43,15 @@ struct canned_result_stream
     size_t nresults;
     size_t next_result;
 
-    const char *error_message;
+    struct neo4j_failure_details failure_details;
 };
 
 
 static int crs_check_failure(neo4j_result_stream_t *self);
 static const char *crs_error_code(neo4j_result_stream_t *self);
 static const char *crs_error_message(neo4j_result_stream_t *self);
+static const struct neo4j_failure_details *crs_failure_details(
+        neo4j_result_stream_t *self);
 static unsigned int crs_nfields(neo4j_result_stream_t *self);
 static const char *crs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
@@ -91,6 +93,7 @@ neo4j_result_stream_t *neo4j_canned_result_stream(
     rs->check_failure = crs_check_failure;
     rs->error_code = crs_error_code;
     rs->error_message = crs_error_message;
+    rs->failure_details = crs_failure_details;
     rs->nfields = crs_nfields;
     rs->fieldname = crs_fieldname;
     rs->fetch_next = crs_fetch_next;
@@ -103,7 +106,8 @@ void neo4j_crs_set_error(neo4j_result_stream_t *self, const char *msg)
 {
     canned_result_stream_t *crs = container_of(self,
             canned_result_stream_t, _result_stream);
-    crs->error_message = msg;
+    crs->failure_details.message = msg;
+    crs->failure_details.description = msg;
 }
 
 
@@ -111,7 +115,7 @@ int crs_check_failure(neo4j_result_stream_t *self)
 {
     canned_result_stream_t *crs = container_of(self,
             canned_result_stream_t, _result_stream);
-    return (crs->error_message == NULL)? 0 : 1;
+    return (crs->failure_details.message == NULL)? 0 : 1;
 }
 
 
@@ -125,7 +129,17 @@ const char *crs_error_message(neo4j_result_stream_t *self)
 {
     canned_result_stream_t *crs = container_of(self,
             canned_result_stream_t, _result_stream);
-    return crs->error_message;
+    return crs->failure_details.message;
+}
+
+
+const struct neo4j_failure_details *crs_failure_details(
+        neo4j_result_stream_t *self)
+{
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
+    return (crs->failure_details.message == NULL)? NULL :
+        &(crs->failure_details);
 }
 
 
