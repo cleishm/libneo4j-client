@@ -761,6 +761,9 @@ const char *neo4j_ustring_value(neo4j_value_t value);
  *
  * Note that the result is undefined if the value is not of type NEO4J_STRING.
  *
+ * @attention The content copied to the buffer may contain UTF-8 multi-byte
+ *         characters.
+ *
  * @param [value] The neo4j string.
  * @param [buffer] A pointer to a buffer for storing the string. The pointer
  *         must remain valid, and the content unchanged, for the lifetime of
@@ -1585,6 +1588,17 @@ __neo4j_pure
 const char *neo4j_connection_username(const neo4j_connection_t *connection);
 
 
+/**
+ * Check if a given connection uses TLS.
+ *
+ * @param [connection] The neo4j connection.
+ * @return `true` if the connection was established over TLS, and `false`
+ *         otherwise.
+ */
+__neo4j_pure
+bool neo4j_connection_is_secure(const neo4j_connection_t *connection);
+
+
 /*
  * =====================================
  * session
@@ -1655,7 +1669,8 @@ bool neo4j_credentials_expired(const neo4j_session_t *session);
  * result stream is closed.
  *
  * @param [session] The session to evaluate the statement in.
- * @param [statement] The statement to be evaluated.
+ * @param [statement] The statement to be evaluated. This must be a `NULL`
+ *         terminated string and may contain UTF-8 multi-byte characters.
  * @param [params] The parameters for the statement, which must be a value of
  *         type NEO4J_MAP or #neo4j_null.
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
@@ -1673,7 +1688,8 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  * neo4j_check_failure().
  *
  * @param [session] The session to evaluate the statement in.
- * @param [statement] The statement to be evaluated.
+ * @param [statement] The statement to be evaluated. This must be a `NULL`
+ *         terminated string and may contain UTF-8 multi-byte characters.
  * @param [params] The parameters for the statement, which must be a value of
  *         type NEO4J_MAP or #neo4j_null.
  * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
@@ -1718,8 +1734,9 @@ unsigned int neo4j_nfields(neo4j_result_stream_t *results);
  *
  * @param [results] The result stream.
  * @param [index] The field index to get the name of.
- * @return The name of the field, as a NULL terminated string,
- *         or NULL if an error occurs (errno will be set).
+ * @return The name of the field, or `NULL` if an error occurs
+ *         (errno will be set). If returned, the name will be a `NULL`
+ *         terminated string and may contain UTF-8 multi-byte characters.
  */
 const char *neo4j_fieldname(neo4j_result_stream_t *results,
         unsigned int index);
@@ -1768,7 +1785,7 @@ int neo4j_close_results(neo4j_result_stream_t *results);
  * stream has not been closed.
  *
  * @param [results] The result stream.
- * @return A `NULL` terminated string reprenting the error code, or NULL
+ * @return A `NULL` terminated string reprenting the error code, or `NULL`
  *         if the stream has not failed or the failure was not
  *         `NEO4J_STATEMENT_EVALUATION_FAILED`.
  */
@@ -1785,11 +1802,82 @@ const char *neo4j_error_code(neo4j_result_stream_t *results);
  * stream has not been closed.
  *
  * @param [results] The result stream.
- * @return A `NULL` terminated string containing the error message, or NULL
- *         if the stream has not failed or the failure was not
- *         `NEO4J_STATEMENT_EVALUATION_FAILED`.
+ * @return The error message, or `NULL` if the stream has not failed or the
+ *         failure was not `NEO4J_STATEMENT_EVALUATION_FAILED`. If returned,
+ *         the message will be a `NULL` terminated string and may contain UTF-8
+ *         mutli-byte characters.
  */
 const char *neo4j_error_message(neo4j_result_stream_t *results);
+
+/**
+ * Failure details.
+ */
+struct neo4j_failure_details
+{
+    /** The failure code. */
+    const char *code;
+    /**
+     * The complete failure message.
+     *
+     * @attention This may contain UTF-8 multi-byte characters.
+     */
+    const char *message;
+    /**
+     * The human readable description of the failure.
+     *
+     * @attention This may contain UTF-8 multi-byte characters.
+     */
+    const char *description;
+    /**
+     * The line of statement text that the failure relates to.
+     *
+     * Will be 0 if the failure was not related to a line of statement text.
+     */
+    unsigned int line;
+    /**
+     * The column of statement text that the failure relates to.
+     *
+     * Will be 0 if the failure was not related to a line of statement text.
+     */
+    unsigned int column;
+    /**
+     * The character offset into the statement text that the failure relates to.
+     *
+     * Will be 0 if the failure is related to the first character of the
+     * statement text, or if the failure was not related to the statement text.
+     */
+    unsigned int offset;
+    /**
+     * A string providing context around where the failure occurred.
+     *
+     * @attention This may contain UTF-8 multi-byte characters.
+     *
+     * Will be `NULL` if the failure was not related to the statement text.
+     */
+    const char *context;
+    /**
+     * The offset into the context where the failure occurred.
+     *
+     * Will be 0 if the failure was not related to a line of statement text.
+     */
+    unsigned int context_offset;
+};
+
+/**
+ * Return the details of a statement evaluation failure.
+ *
+ * When neo4j_check_failure() returns `NEO4J_STATEMENT_EVALUATION_FAILED`,
+ * then this function can be used to get the details of the failure.
+ *
+ * @attention Note that the returned pointer is only valid whilst the result
+ * stream has not been closed.
+ *
+ * @param [results] The result stream.
+ * @return A pointer to the failure details, or `NULL` if no failure details
+ *         were available.
+ */
+const struct neo4j_failure_details *neo4j_failure_details(
+        neo4j_result_stream_t *results);
 
 
 #define NEO4J_READ_ONLY_STATEMENT 0

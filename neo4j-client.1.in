@@ -40,6 +40,12 @@ By default, history is saved to \fI$(HOME)/.neo4j/client-history\fR.
 .I \-\-no-history
 Do not save the command history.
 .TP
+.I \-\-colorize
+Enable colorization of output and errors using ANSI escape sequences.
+.TP
+.I \-\-no-colorize
+Disable colorization of output and errors even when connected to a TTY.
+.TP
 .I \-\-ca\-file=cert.pem
 Specify a file containing trusted certificates (and CRLs). The file should
 contain one or more certificates in PEM format.
@@ -85,8 +91,15 @@ By default, the file is \fI$(HOME)/.neo4j/neo4j_known_certs\fR.
 .I \-\-no-known-hosts
 Do not do host checking via known-hosts (use only TLS certificate verification).
 .TP
-.I \-v, \-\-verbose
-Increase the logging verbosity. Each invocation increases the verbosity. Each
+.I \-\-output file, \-o file
+Redirect output to the specified file. Must be specified in conjunction with
+\fI--source\fR/\fI-i\fR, and may be specified multiple times.
+.TP
+.I \-\-source file, \-i file
+Read input from the specified file. May be specified multiple times.
+.TP
+.I \-\-verbose, \-v
+Increase the logging verbosity. Each use increases the verbosity. Each
 verbosity level roughly equates to logging of warnings, general information,
 debug output and trace information.
 .TP
@@ -107,10 +120,11 @@ will be presented to the user in table format (by default), using the full
 width of the terminal.
 .SH NON-INTERACTIVE (BATCH) MODE
 When \fBneo4j\-client\fR is started with standard intput connected to a pipe,
-it will read statements from the pipe and evaluate each. Any error in
-evaluation will cause \fBneo4j\-client\fR to terminate without evaluating any
-further input. Results from statements sent to Neo4j will be output in CSV
-format (by default).
+or when the \fI--source\fR/\fI-i\fR argument is specified, statements will be
+read from the pipe or the specified file(s).  Any error in evaluation will
+cause \fBneo4j\-client\fR to terminate without evaluating any further input.
+By default, results will be output in CSV format, although this may be
+changed using \fI:set format=(csv|table)\fR.
 .SH USAGE
 Once started, commands and statements can be entered at the \fBneo4j\-client\fR
 prompt. Commands always begin with a colon (:) and conclude at the end of the
@@ -159,27 +173,32 @@ Reset the session with the server, aborting any open transactions.
 Set various shell options. If no option name and value paris are specified,
 then the list of current options and their values will be displayed.
 .TP
+.I :source <file>
+Read and evaluate commands and statements in the specified file. Evaluation
+will stop if any error is encountered.
+.TP
 .I :status
 Show the client connection status, which indicates if the client is
 disconnected or connected to a server. If the latter, the connection URI is
 output.
 .TP
-.I ":output (table|csv)"
+.I ":format (table|csv)"
 Set the output format to either table or CSV.
 
-Equivalent to `:set output=(table|csv)`.
+Equivalent to `:set format=(table|csv)`.
 .TP
 .I ":width <n>"
 Set the output width for table rendering. \fIn\fR is either an integer between
-2 and 4095, or \fIauto\fR. In interactive mode, the default is \fIauto\fR,
-which sets the output width to match the width of the terminal. In
-non-interactive (batch) mode, the default is 70.
+2 and 4095, or "auto". In interactive mode, the default is "auto",
+which sets the output width to match the width of the terminal (or to 70
+characters if the output is not a terminal).
 
 Equivalent to `:set width=<n>`.
 .SH EXAMPLES
 Start \fBneo4j\-client\fR in interactive mode, and run a query:
 
-    $ neo4j-client neo4j://localhost:7687
+    $ neo4j-client -u neo4j localhost
+    Password: *****
     neo4j> MATCH (n:Person) RETURN n.name, n.born LIMIT 4;
     +-----------------------------+-----------------------------+
     | n.name                      | n.born                      |
@@ -192,11 +211,13 @@ Start \fBneo4j\-client\fR in interactive mode, and run a query:
     neo4j> :quit
     $
 
-Evaluate a query using \fBneo4j\-client\fR in non-interactive (batch) mode,
-saving the output to a csv file:
+Evaluate a query in non-interactive (batch) mode, saving the output to a csv
+file:
 
     $ echo "MATCH (n:Person) RETURN n.name, n.born LIMIT 4;" | \\
-            neo4j\-client neo4j://localhost:7687 > result.csv
+            neo4j\-client -u neo4j -P localhost > result.csv
+    Password: *****
+    $
     $ cat result.csv
     "n.name","n.born"
     "Keanu Reeves",1964
@@ -204,6 +225,22 @@ saving the output to a csv file:
     "Laurence Fishburne",1961
     "Hugo Weaving",1960
     $
+
+Evaluate a source file, and save the output:
+
+    $ neo4j\-client -u neo4j -p pass -o result.csv -i query.cyp
+    $
+    $ cat query.cyp
+    MATCH (n:Person) RETURN n.name, n.born LIMIT 4;
+    $
+    $ cat result.csv
+    "n.name","n.born"
+    "Keanu Reeves",1964
+    "Carrie-Anne Moss",1967
+    "Laurence Fishburne",1961
+    "Hugo Weaving",1960
+    $
+
 .SH ERRORS
 In interactive mode, \fBneo4j\-client\fR attempts to exit cleanly (with
 \fI$?\fR set to 0) when the session is terminated via the use of \fI:quit\fR,

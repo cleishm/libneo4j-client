@@ -17,6 +17,7 @@
 #ifndef NEO4J_STATE_H
 #define NEO4J_STATE_H
 
+#include "colorization.h"
 #include "util.h"
 #include <neo4j-client.h>
 #include <cypher-parser.h>
@@ -32,7 +33,10 @@ struct shell_state
     FILE *out;
     FILE *err;
     FILE *tty;
+    char *outfile;
+    FILE *output;
     bool interactive;
+    const char *infile;
     bool password_prompt;
     const char *histfile;
     unsigned int pipeline_max;
@@ -42,6 +46,8 @@ struct shell_state
     neo4j_session_t *session;
     char *temp_buffer;
     size_t temp_buffer_capacity;
+    const struct interactive_colorization *interactive_colorize;
+    const struct error_colorization *error_colorize;
     int (*render)(shell_state_t *state, neo4j_result_stream_t *results);
     int width;
     uint_fast16_t render_flags;
@@ -50,12 +56,20 @@ struct shell_state
     void **exports_storage;
     size_t exports_cap;
     unsigned int nexports;
+
+    unsigned int source_max_depth;
+    unsigned int source_depth;
+    bool echo;
 };
 
 
 int shell_state_init(shell_state_t *state, const char *prog_name,
         FILE *in, FILE *out, FILE *err, FILE *tty);
+
 void shell_state_destroy(shell_state_t *state);
+
+
+int redirect_output(shell_state_t *state, const char *filename);
 
 
 int shell_state_add_export(shell_state_t *state, neo4j_value_t name,
@@ -63,10 +77,15 @@ int shell_state_add_export(shell_state_t *state, neo4j_value_t name,
 
 void shell_state_unexport(shell_state_t *state, neo4j_value_t name);
 
+
 static inline neo4j_value_t shell_state_get_exports(shell_state_t *state)
 {
     return neo4j_map(state->exports, state->nexports);
+
 }
+
+
+void display_status(FILE* stream, shell_state_t *state);
 
 
 static inline char *temp_copy(shell_state_t *state, const char *s, size_t n)

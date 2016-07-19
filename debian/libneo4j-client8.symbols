@@ -49,6 +49,7 @@ libneo4j-client.so.8 libneo4j-client8 #MINVER#
  neo4j_config_will_attempt_empty_password@Base 1.0.0
  neo4j_connect@Base 0.9.0
  neo4j_connection_hostname@Base 1.0.0
+ neo4j_connection_is_secure@Base 1.1.0
  neo4j_connection_port@Base 1.0.0
  neo4j_connection_username@Base 1.0.0
  neo4j_credentials_expired@Base 1.0.0
@@ -58,6 +59,7 @@ libneo4j-client.so.8 libneo4j-client8 #MINVER#
  neo4j_eq@Base 0.9.0
  neo4j_error_code@Base 0.9.0
  neo4j_error_message@Base 0.9.0
+ neo4j_failure_details@Base 1.1.0
  neo4j_fetch_next@Base 0.9.0
  neo4j_fieldname@Base 0.9.0
  neo4j_float@Base 0.9.0

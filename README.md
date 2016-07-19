@@ -1,18 +1,13 @@
-libneo4j-client
-===============
+neo4j-client
+============
 
 
 About
 -----
 
-libneo4j-client is a client library and command line shell for Neo4j. The
-client library is written in C, and is intended as a foundation on which basic
-tools and drivers for various languages may be built. libneo4j-client takes
-care of all the detail of establishing a session with a Neo4j server, sending
-statements for evaluation, and retrieving results.
-
-neo4j-client, the command line shell, is included with the libneo4j-client
-distribution and uses libneo4j-client for all interaction with Neo4j server.
+neo4j-client is a command shell for Neo4j. It supports secure connections
+to Neo4j server, sending of statements (including multiline statements),
+persistent command history, and rendering of results to tables or CSV.
 
 For more details, see [the project page](https://git.io/libneo4j-client) and
 the [FAQ](https://github.com/cleishm/libneo4j-client/wiki/FAQ).
@@ -21,14 +16,14 @@ the [FAQ](https://github.com/cleishm/libneo4j-client/wiki/FAQ).
 Requirements
 ------------
 
-libneo4j-client is known to work on GNU/Linux, Mac OS X and FreeBSD. It
+neo4j-client is known to work on GNU/Linux, Mac OS X and FreeBSD. It
 requires neo4j 3.0.0 or later.
 
 
 Getting Started
 ---------------
 
-If you're using Mac OS X, libneo4j-client can be installed using homebrew:
+If you're using Mac OS X, neo4j-client can be installed using homebrew:
 
 ```console
 $ brew install cleishm/neo4j/neo4j-client
@@ -54,27 +49,43 @@ Otherwise, please see [Building](#building) below.
 neo4j-client Usage
 ------------------
 
-neo4j-client is a command shell for Neo4j. It supports secure connections
-to Neo4j server, sending of statements (including multiline statements),
-persistent command history, and rendering of results to tables or CSV.
-
-Basic usage:
+Example interactive usage:
 
 ```console
-$ neo4j-client -v neo4j://localhost:7687
+$ neo4j-client -u neo4j localhost
 The authenticity of host 'localhost:7687' could not be established.
 TLS certificate fingerprint is ded0fd2e893cd0b579f47f7798e10cb68dfa2fd3bc9b3c973157da81bab451d74f9452ba99a9c5f66dadb8a360959e5ebd8abb2d7c81230841e60531a96d268.
 Would you like to trust this host (NO/yes/once)? yes
-Username: neo4j
 Password: *****
 neo4j> :help
+Enter commands or cypher statements at the prompt.
+
+Commands always begin with a colon (:) and conclude at the end of the line,
+for example `:help`. Statements do not begin with a colon (:), may span
+multiple lines, are terminated with a semi-colon (;) and will be sent to
+the Neo4j server for evaluation.
+
+Available commands:
 :quit                  Exit the shell
 :connect '<url>'       Connect to the specified URL
+:connect host[:port]   Connect to the specified host (and optional port)
 :disconnect            Disconnect the client from the server
+:export                Display currently exported parameters
+:export name=val ...   Export parameters for queries
+:unexport name ...     Unexport parameters for queries
+:reset                 Reset the session with the server
+:set                   Display current option values
+:set option=value ...  Set shell options
+:unset option ...      Unset shell options
+:status                Show the client connection status
 :help                  Show usage information
-:output (table|csv)    Set the output format
-:width <n>             Set the number of columns in the table output
+:format (table|csv)    Set the output format
+:width (<n>|auto)      Set the number of columns in the table output
+
+For more information, see the neo4j-client(1) manpage.
 neo4j>
+neo4j> :status
+Connected to 'neo4j://neo4j@localhost:7687'
 neo4j>
 neo4j> MATCH (n:Person) RETURN n LIMIT 3;
 +----------------------------------------------------------------------------+
@@ -84,13 +95,74 @@ neo4j> MATCH (n:Person) RETURN n LIMIT 3;
 | (:Person{born:1967,name:"Carrie-Anne Moss"})                               |
 | (:Person{born:1961,name:"Laurence Fishburne"})                             |
 +----------------------------------------------------------------------------+
-neo4j> :exit
+neo4j>
+neo4j> :set
+ echo=off           // echo non-interactive commands before rendering results
+ insecure=no        // do not attempt to establish secure connections
+ format=table       // set the output format (`table` or `csv`).
+ outfile=           // redirect output to a file
+ username="neo4j"   // the default username for connections
+ width=auto         // the width to render tables (`auto` for term width)
+neo4j>
+neo4j> :quit
+$
+```
+
+Example non-interactive usage:
+
+```console
+$ echo "MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3" | \
+        neo4j-client -u neo4j -P localhost > result.csv
+Password: *****
+$
+$ cat output.csv
+"name","born"
+"Keanu Reeves",1964
+"Carrie-Anne Moss",1967
+"Laurence Fishburne",1961
+$
+```
+
+Evaluating source files, e.g.:
+
+```console
+$ cat query.cyp
+:set echo
+:export name='Emil'
+
+// Create a person node if it doesn't exist
+begin;
+MERGE (:Person {name: {name}});
+commit;
+
+// return the total number of people
+MATCH (n:Person)
+RETURN count(n);
+$
+$ neo4j-client -u neo4j -p pass -o result.out -i query.cyp
+$ cat result.out
++:export name='Emil'
++begin;
++MERGE (:Person {name: {name}});
+Nodes created: 1
+Properties set: 1
+Labels added: 1
++commit;
++MATCH (n:Person)
+ RETURN count(n);
+"count(n)"
+137
 $
 ```
 
 
-libneo4j-client Usage
----------------------
+libneo4j-client
+---------------
+
+libneo4j-client is a client library for Neo4j, written in C, and intended as a
+foundation on which basic tools and drivers for various languages may be built.
+libneo4j-client takes care of all the detail of establishing a session with a
+Neo4j server, sending statements for evaluation, and retrieving results.
 
 libneo4j-client provides a single C header file, `neo4j-client.h`, for
 inclusion in source code using the libneo4j-client API. The API is described in
@@ -175,8 +247,8 @@ int main(int argc, char *argv[])
 Building
 --------
 
-To build software using libneo4j-client, consider installing libneo4j-client
-using the package management system for your operating system (currently
+To use neo4j-client or libneo4j-client, consider installation using the package
+management system for your operating system (currently
 [Mac OS X](#getting_started),
 [Debian](https://packages.debian.org/source/sid/libneo4j-client),
 [Ubuntu](#getting_started),
@@ -184,7 +256,7 @@ using the package management system for your operating system (currently
 [CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
 [openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed)).
 
-If libneo4j-client is not available via your package management system,
+If neo4j-client is not available via your package management system,
 please [download the latest release](
 https://github.com/cleishm/libneo4j-client/releases), unpack and then:
 
@@ -200,8 +272,8 @@ configure with `--without-tls`.
 neo4j-client also requires some dependencies to build, including
 [libedit](http://thrysoee.dk/editline/) and
 [libcypher-parser](https://git.io/libcypher-parser). If these are not available,
-the library can be built without neo4j-client, by invoking configure with
-`--disable-tools`.
+just the library can be built (without neo4j-client), by invoking configure
+with `--disable-tools`.
 
 Building from the GitHub repository requires a few extra steps. Firstly, some
 additional tooling is required, including autoconf, automake and libtool.
@@ -235,8 +307,7 @@ More detail about this workaround can be found via `brew info openssl`.
 Support
 -------
 
-Having trouble with libneo4j-client or neo4j-client? Please raise any issues
-with usage on
+Having trouble with neo4j-client? Please raise any issues with usage on
 [StackOverflow](http://stackoverflow.com/questions/tagged/neo4j-client). If
 you've found a bug in the code, please raise an issue on
 [GitHub](https://github.com/cleishm/libneo4j-client) and include details of how
@@ -246,7 +317,7 @@ to reproduce the bug.
 Contributing
 ------------
 
-Contributions to libneo4j-client are encouraged and should be made via pull
+Contributions to neo4j-client are encouraged and should be made via pull
 requests made to the [GitHub repository](
 https://github.com/cleishm/libneo4j-client). Please include test cases where
 possible, and use a style and approach consistent with the rest of the library.
@@ -259,7 +330,7 @@ on the requirements.
 License
 -------
 
-libneo4j-client is licensed under the [Apache License, Version 2.0](
+neo4j-client is licensed under the [Apache License, Version 2.0](
 http://www.apache.org/licenses/LICENSE-2.0).
 
 Unless required by applicable law or agreed to in writing, software distributed

@@ -61,10 +61,8 @@ void neo4j_metadata_log(neo4j_logger_t *logger, uint_fast8_t level,
  *
  * @internal
  *
- * @param [code] A pointer that will be updated to reference a null terminated
- *         string containing the failure code.
- * @param [message] A pointer that will be updated to reference a null
- *         terminated string containing the failure message.
+ * @param [details] A pointer to a failure details struct that will be
+ *         populated after successful return.
  * @param [map] The metadata map.
  * @param [mpool] A memory pool to allocate strings in.
  * @param [description] A description of the message, for use when logging
@@ -73,7 +71,7 @@ void neo4j_metadata_log(neo4j_logger_t *logger, uint_fast8_t level,
  * @return 0 on success, or -1 if an error occurs (errno will be set).
  */
 __neo4j_must_check
-int neo4j_meta_failure_details(const char **code, const char **message,
+int neo4j_meta_failure_details(struct neo4j_failure_details *details,
         neo4j_value_t map, neo4j_mpool_t *mpool, const char *description,
         neo4j_logger_t *logger);
 

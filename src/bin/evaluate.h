@@ -19,23 +19,22 @@
 
 #include "state.h"
 
-
-typedef struct evaluation_continuation evaluation_continuation_t;
-struct evaluation_continuation
-{
-    int (*complete)(evaluation_continuation_t *self, shell_state_t *state);
-    void *data;
-};
-
-
 static inline bool is_command(const char *directive)
 {
     return (directive[0] == ':');
 }
 
-int evaluate_command(shell_state_t *state, const cypher_astnode_t *command);
-int evaluate_command_string(shell_state_t *state, const char *command);
-evaluation_continuation_t evaluate_statement(shell_state_t *state,
-        const char *statement);
+int evaluate_command(shell_state_t *state, const char *command, size_t n);
+
+typedef struct evaluation_continuation evaluation_continuation_t;
+
+evaluation_continuation_t *evaluate_statement(shell_state_t *state,
+        const char *statement, size_t n, struct cypher_input_position pos);
+
+int complete_evaluation(evaluation_continuation_t *continuation,
+        shell_state_t *state);
+
+int abort_evaluation(evaluation_continuation_t *continuation,
+        shell_state_t *state);
 
 #endif/*NEO4J_EVALUATE_H*/

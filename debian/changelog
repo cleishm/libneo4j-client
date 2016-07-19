@@ -1,9 +1,20 @@
+libneo4j-client (1.1.0-1) xenial; urgency=high
+
+  * New upstream release 1.1.0.
+    - Adds multiple improvements to neo4j-client
+    - Fixes an important security issue where server fingerprints were
+      shortened by 1 char
+    - Improves error output
+
+ -- Chris Leishman <chris@leishman.org>  Mon, 18 Jul 2016 15:40:50 +0000
+
 libneo4j-client (1.0.0-2ubuntu1) xenial; urgency=low
 
   * Rename -dev package to remove the soname. Closes: #829052
   * Add support for Multi-Arch.
+  * Updated debian/copyright.
 
- -- Chris Leishman <chris@leishman.org>  Wed, 29 Jun 2016 21:02:28 +0000
+ -- Chris Leishman <chris@leishman.org>  Fri, 01 Jul 2016 22:27:30 +0000
 
 libneo4j-client (1.0.0-1ubuntu1) xenial; urgency=low
 
