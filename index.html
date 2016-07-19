@@ -95,7 +95,7 @@ $ <span class="pl-s1">sudo apt-get install neo4j-client libneo4j-client-dev</spa
 to Neo4j server, sending of statements (including multiline statements),
 persistent command history, and rendering of results to tables or CSV.</p>
 
-<p>Example usage:</p>
+<p id="neo4j-client-example-interactive">Example interactive usage:</p>
 
 <div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">neo4j-client -u neo4j localhost</span>
 <span class="pl-mo">The authenticity of host 'localhost:7687' could not be established.</span>
@@ -143,6 +143,49 @@ persistent command history, and rendering of results to tables or CSV.</p>
 <span class="pl-k">"Laurence Fishburne",1961</span>
 <span class="pl-mo">neo4j&gt;</span>
 <span class="pl-mo">neo4j&gt; </span><span class="pl-mb">:quit</span>
+$</pre></div>
+
+<p id="neo4j-client-example-non-interactive">Example non-interactive usage:</p>
+
+<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">echo "</span><span class="pl-mo">MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3</span><span class="pl-mb">" | \</span>
+<span class="pl-mb">     neo4j-client -u neo4j -P localhost &gt; result.csv</span>
+<span class="pl-mo">Password: </span><span class="pl-mb">*****</span>
+$
+$ <span class="pl-mb">cat result.csv</span>
+<span class="pl-k">"name","born"</span>
+<span class="pl-k">"Keanu Reeves",1964</span>
+<span class="pl-k">"Carrie-Anne Moss",1967</span>
+<span class="pl-k">"Laurence Fishburne",1961</span>
+$</pre></div>
+
+<p id="neo4j-client-example-evaluating-source">Evaluating source files:</p>
+
+<div class="highlight highlight-text-shell-session"><pre>$ <span class="pl-mb">cat query.cyp</span>
+<span class="pl-k">:set echo</span>
+<span class="pl-k">:export name='Emil'</span>
+
+<span class="pl-k">// Create a person node if it doesn't exist</span>
+<span class="pl-k">begin;</span>
+<span class="pl-k">MERGE (:Person {name: {name}});</span>
+<span class="pl-k">commit;</span>
+
+<span class="pl-k">// return the total number of people</span>
+<span class="pl-k">MATCH (n:Person)</span>
+<span class="pl-k">RETURN count(n);</span>
+$
+$ <span class="pl-mb">neo4j-client -u neo4j -p pass -o result.out -i query.cyp</span>
+$ <span class="pl-mb">cat result.out</span>
+<span class="pl-k">+:export name='Emil'</span>
+<span class="pl-k">+begin;</span>
+<span class="pl-k">+MERGE (:Person {name: {name}});</span>
+<span class="pl-k">Nodes created: 1</span>
+<span class="pl-k">Properties set: 1</span>
+<span class="pl-k">Labels added: 1</span>
+<span class="pl-k">+commit;</span>
+<span class="pl-k">+MATCH (n:Person)</span>
+<span class="pl-k"> RETURN count(n);</span>
+<span class="pl-k">"count(n)"</span>
+<span class="pl-k">137</span>
 $</pre></div>
 
 <h2>
