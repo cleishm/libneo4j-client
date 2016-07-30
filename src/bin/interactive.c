@@ -170,6 +170,8 @@ int editline_setup(shell_state_t *state, EditLine **el, History **el_history)
         return -1;
     }
 
+    el_set(*el, EL_SETTY, "-d", "intr=", NULL);
+
     el_set(*el, EL_ADDFN, "ed-literal-newline",
             "Add a literal newline", literal_newline);
     el_set(*el, EL_ADDFN, "ed-check-line",
@@ -181,6 +183,8 @@ int editline_setup(shell_state_t *state, EditLine **el, History **el_history)
     el_set(*el, EL_BIND, "-a", "\n", "ed-check-line", NULL);
     el_set(*el, EL_BIND, "-a", "k", "ed-prev-line", NULL);
     el_set(*el, EL_BIND, "-a", "j", "ed-next-line", NULL);
+    el_set(*el, EL_BIND, "^C", "ed-start-over", NULL);
+    el_set(*el, EL_BIND, "-a", "^C", "ed-start-over", NULL);
 
     el_source(*el, NULL);
 
