@@ -32,12 +32,12 @@ static int setup_history(shell_state_t *state, History *el_history);
 static char *prompt(EditLine *el);
 static unsigned char literal_newline(EditLine *el, int ch);
 static unsigned char check_line(EditLine *el, int ch);
-static int check_processable(void *data, const char *segment, size_t n,
-        struct cypher_input_range range, bool eof);
+static int check_processable(void *data,
+        const cypher_quick_parse_segment_t *segment);
 static int process_input(shell_state_t *state, const char *input, size_t length,
         size_t *end_offset);
-static int process_segment(void *data, const char *directive, size_t n,
-        struct cypher_input_range range, bool eof);
+static int process_segment(void *data,
+        const cypher_quick_parse_segment_t *segment);
 
 
 int interact(shell_state_t *state)
@@ -306,11 +306,10 @@ unsigned char check_line(EditLine *el, int ch)
 }
 
 
-int check_processable(void *data, const char *segment, size_t n,
-        struct cypher_input_range range, bool eof)
+int check_processable(void *data, const cypher_quick_parse_segment_t *segment)
 {
     bool *processable = (bool *)data;
-    *processable = !eof;
+    *processable = !cypher_quick_parse_segment_is_eof(segment);
     return 1;
 }
 
@@ -341,12 +340,16 @@ int process_input(shell_state_t *state, const char *input, size_t length,
 }
 
 
-int process_segment(void *data, const char *directive, size_t n,
-        struct cypher_input_range range, bool eof)
+int process_segment(void *data,
+        const cypher_quick_parse_segment_t *segment)
 {
     struct process_data *cbdata = (struct process_data *)data;
+    size_t n;
+    const char *s = cypher_quick_parse_segment_get_text(segment, &n);
+    struct cypher_input_range range =
+            cypher_quick_parse_segment_get_range(segment);
 
-    if (eof)
+    if (cypher_quick_parse_segment_is_eof(segment))
     {
         assert(cbdata->result == 0);
         cbdata->end_offset = range.start.offset;
@@ -359,14 +362,14 @@ int process_segment(void *data, const char *directive, size_t n,
     }
 
     int r = 0;
-    if (is_command(directive))
+    if (cypher_quick_parse_segment_is_command(segment))
     {
-        r = evaluate_command(cbdata->state, directive, n);
+        r = evaluate_command(cbdata->state, s, n);
     }
     else
     {
         evaluation_continuation_t *continuation =
-                evaluate_statement(cbdata->state, directive, n, range.start);
+                evaluate_statement(cbdata->state, s, n, range.start);
         if (continuation == NULL)
         {
             neo4j_perror(cbdata->state->err, errno, "unexpected error");
