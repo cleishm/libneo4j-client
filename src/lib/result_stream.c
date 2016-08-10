@@ -580,7 +580,8 @@ int run_rs_close(neo4j_result_stream_t *self)
 neo4j_value_t run_result_field(const neo4j_result_t *self,
         unsigned int index)
 {
-    const result_record_t *record = (const result_record_t *)self;
+    const result_record_t *record = container_of(self,
+            result_record_t, _result);
     REQUIRE(record != NULL, neo4j_null);
     return neo4j_list_get(record->list, index);
 }
