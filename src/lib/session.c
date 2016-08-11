@@ -129,13 +129,23 @@ failure:
 }
 
 
-static int session_clear(neo4j_session_t *session)
+/**
+ * End all jobs in the session and drain all requests
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @return 0 on success, <0 on error (errno will be set).
+ */
+int session_clear(neo4j_session_t *session)
 {
     REQUIRE(session != NULL, -1);
     REQUIRE(session->connection != NULL, -1);
     int err = 0;
     int errsv = errno;
 
+    // notify all jobs first, so that they can handle received
+    // responses appropriately
     for (neo4j_job_t *job = session->jobs; job != NULL;)
     {
         neo4j_job_notify_session_ending(job);
@@ -145,6 +155,7 @@ static int session_clear(neo4j_session_t *session)
     }
     session->jobs = NULL;
 
+    // Receive responses to inflight requests
     if (!session->failed && receive_responses(session, NULL))
     {
         err = -1;
@@ -152,6 +163,7 @@ static int session_clear(neo4j_session_t *session)
         session->failed = true;
     }
 
+    // drain any remaining requests
     if (drain_queued_requests(session) && err == 0)
     {
         err = -1;
@@ -261,6 +273,21 @@ int neo4j_detach_job(neo4j_session_t *session, neo4j_job_t *job)
 }
 
 
+/**
+ * Process requests and responses for a session.
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @param [condition] A pointer to a condition flag, that must remain
+ *         greater than zero for processing of responses to continue. This
+ *         allows processing to be stopped when sufficient responses have
+ *         been received to satisfy the current demands. If `NULL`, then
+ *         processing will continue until there are no further outstanding
+ *         requests (or a failure occurs).
+ * @return 0 on success, -1 if a error occurs (errno will be set and all
+ *         requests will be drained).
+ */
 int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
 {
     REQUIRE(session != NULL, -1);
@@ -309,6 +336,16 @@ error:
 }
 
 
+/**
+ * Send queued requests.
+ *
+ * @internal
+ *
+ * Sends requests, up to the maximum allowed for pipelining by the config.
+ *
+ * @param [session] The session.
+ * @return 0 on success, -1 if an error occurs (errno will be set).
+ */
 int send_requests(neo4j_session_t *session)
 {
     assert(session != NULL);
@@ -339,6 +376,22 @@ int send_requests(neo4j_session_t *session)
 }
 
 
+/**
+ * Receive responses to inflight requests.
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @param [condition] A pointer to a condition flag, that must remain
+ *         greater than zero for processing of responses to continue. This
+ *         allows processing to be stopped when sufficient responses have
+ *         been received to satisfy the current demands. If `NULL`, then
+ *         processing will continue until there are no further outstanding
+ *         requests (or a failure occurs).
+ * @return 0 on success, -1 if a error occurs (errno will be set), and >0 if
+ *         a valid FAILURE message is received (in which case, all inflight
+ *         requests will be drained).
+ */
 int receive_responses(neo4j_session_t *session, const unsigned int *condition)
 {
     assert(session != NULL);
@@ -396,10 +449,23 @@ int receive_responses(neo4j_session_t *session, const unsigned int *condition)
         }
     }
 
+    assert(!failure || session->inflight_requests == 0);
     return failure? 1 : 0;
 }
 
 
+/**
+ * Send IGNORED to all queued requests.
+ *
+ * @internal
+ *
+ * This will also generate IGNORED for all inflight requests, so this
+ * method should only be called when there are no inflight requests or
+ * when a terminal error has occured and the connection will be closed.
+ *
+ * @param [session] The session.
+ * @return 0 on success, -1 if an error occurs (errno will be set).
+ */
 int drain_queued_requests(neo4j_session_t *session)
 {
     assert(session != NULL);
@@ -431,6 +497,19 @@ int drain_queued_requests(neo4j_session_t *session)
 }
 
 
+/**
+ * Add a queued request.
+ *
+ * @internal
+ *
+ * The returned pointer will be to a request struct already added to the tail
+ * of the queue. It MUST be populated with valid attributes before any other
+ * session methods are invoked.
+ *
+ * @param [session] The session.
+ * @return The queued request, which MUST be populated with valid attributes,
+ *         or `NULL` if an error occurs (errno will be set).
+ */
 struct neo4j_request *new_request(neo4j_session_t *session)
 {
     assert(session != NULL);
@@ -465,6 +544,13 @@ struct neo4j_request *new_request(neo4j_session_t *session)
 }
 
 
+/**
+ * Pop a request off the head of the queue.
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ */
 void pop_request(neo4j_session_t* session)
 {
     assert(session != NULL);
