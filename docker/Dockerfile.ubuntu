@@ -1,29 +1,27 @@
 FROM ubuntu:latest
 RUN apt-get update
 RUN apt-get -y upgrade
+RUN apt-get install -y build-essential debhelper dh-autoreconf devscripts
+RUN apt-get install -y autotools-dev automake libtool pkg-config
+RUN apt-get install -y check
+RUN apt-get install -y doxygen
+RUN apt-get install -y git git-buildpackage
+RUN apt-get install -y libedit-dev
+RUN apt-get install -y libssl-dev
+RUN apt-get install -y man
+RUN apt-get install -y valgrind
+RUN apt-get install -y vim
+
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository ppa:cleishm/neo4j
 RUN apt-get update
-RUN apt-get install -y \
-        autotools-dev \
-        automake \
-        build-essential \
-        check \
-        debhelper \
-        dh-autoreconf \
-        devscripts \
-        doxygen \
-        git \
-        git-buildpackage \
-        libcypher-parser-dev \
-        libedit-dev \
-        libssl-dev \
-        libtool \
-        man \
-        pkg-config \
-        valgrind \
-        vim
+RUN apt-get install -y libcypher-parser-dev
 
-ADD dput.cf /root/.dput.cf
-ENV DEBEMAIL=chris@leishman.org DEBFULLNAME="Chris Leishman"
-ADD bashrc /root/.bashrc
+RUN useradd -m debian
+RUN echo "debian ALL=NOPASSWD:ALL" >> /etc/sudoers
+USER debian
+WORKDIR /home/debian
+
+ENV GIT_AUTHOR_NAME="Chris Leishman" GIT_COMMITTER_NAME="Chris Leishman"
+ENV EMAIL=chris@leishman.org
+ENV DEBFULLNAME="Chris Leishman" DEBEMAIL=chris@leishman.org

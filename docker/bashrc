@@ -1,2 +1,0 @@
-git config --global user.email "${DEBEMAIL}"
-git config --global user.name "${DEBFULLNAME}"

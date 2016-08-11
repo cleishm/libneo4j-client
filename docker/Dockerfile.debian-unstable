@@ -16,11 +16,19 @@ RUN cp /etc/devscripts.conf /root/.devscripts
 RUN echo 'DSCVERIFY_KEYRINGS="~/.gnupg/pubring.gpg"' >> /root/.devscripts
 RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 565E89E0
 
-RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.4.0-1.dsc && \
-    (cd libcypher-parser-0.4.0 && debuild -us -uc) && \
-    dpkg -i libcypher-parser7_0.4.0-1_amd64.deb libcypher-parser-dev_0.4.0-1_amd64.deb && \
+RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.5.0-1.dsc && \
+    (cd libcypher-parser-0.5.0 && debuild -us -uc) && \
+    dpkg -i libcypher-parser8_0.5.0-1_amd64.deb libcypher-parser-dev_0.5.0-1_amd64.deb && \
     rm -rf libcypher-parser* cypher-lint*
 
-ADD dput.cf /root/.dput.cf
-ENV DEBEMAIL=chris@leishman.org DEBFULLNAME="Chris Leishman"
-ADD bashrc /root/.bashrc
+RUN useradd -m debian
+RUN echo "debian ALL=NOPASSWD:ALL" >> /etc/sudoers
+ADD dput.cf /home/debian/.dput.cf
+RUN chown debian:debian /home/debian/.dput.cf
+
+USER debian
+WORKDIR /home/debian
+
+ENV GIT_AUTHOR_NAME="Chris Leishman" GIT_COMMITTER_NAME="Chris Leishman"
+ENV EMAIL=chris@leishman.org
+ENV DEBFULLNAME="Chris Leishman" DEBEMAIL=chris@leishman.org
