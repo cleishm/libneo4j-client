@@ -42,6 +42,7 @@ static int process_segment(void *data,
 
 int interact(shell_state_t *state)
 {
+    int result = -1;
     EditLine *el = NULL;
     History *el_history = NULL;
 
@@ -121,6 +122,8 @@ int interact(shell_state_t *state)
         }
     }
 
+    result = 0;
+
     if (input == NULL)
     {
         fputc('\n', state->out);
@@ -135,7 +138,7 @@ cleanup:
     {
         el_end(el);
     }
-    return -1;
+    return result;
 }
 
 
