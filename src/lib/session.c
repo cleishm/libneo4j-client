@@ -30,6 +30,7 @@ static_assert(NEO4J_REQUEST_ARGV_PREALLOC >= 2,
 
 static int session_start(neo4j_session_t *session);
 static int session_clear(neo4j_session_t *session);
+
 static int send_requests(neo4j_session_t *session);
 static int receive_responses(neo4j_session_t *session,
         const unsigned int *condition);
@@ -43,9 +44,6 @@ static int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 static int ack_failure(neo4j_session_t *session);
 static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
-       const neo4j_value_t *argv, uint16_t argc);
-static int reset(neo4j_session_t *session);
-static int reset_callback(void *cdata, neo4j_message_type_t type,
        const neo4j_value_t *argv, uint16_t argc);
 
 
@@ -140,7 +138,12 @@ failure:
 int session_clear(neo4j_session_t *session)
 {
     REQUIRE(session != NULL, -1);
-    REQUIRE(session->connection != NULL, -1);
+    if (session->connection == NULL)
+    {
+        errno = NEO4J_SESSION_ENDED;
+        return -1;
+    }
+
     int err = 0;
     int errsv = errno;
 
@@ -148,7 +151,7 @@ int session_clear(neo4j_session_t *session)
     // responses appropriately
     for (neo4j_job_t *job = session->jobs; job != NULL;)
     {
-        neo4j_job_notify_session_ending(job);
+        neo4j_job_abort(job, NEO4J_SESSION_ENDED);
         neo4j_job_t *next = job->next;
         job->next = NULL;
         job = next;
@@ -171,6 +174,107 @@ int session_clear(neo4j_session_t *session)
         session->failed = true;
     }
     assert(session->request_queue_depth == 0);
+
+    errno = errsv;
+    return err;
+}
+
+
+int neo4j_reset_session(neo4j_session_t *session)
+{
+    REQUIRE(session != NULL, -1);
+    if (session->connection == NULL)
+    {
+        errno = NEO4J_SESSION_ENDED;
+        return -1;
+    }
+    if (session->failed)
+    {
+        errno = NEO4J_SESSION_FAILED;
+        return -1;
+    }
+
+    const neo4j_config_t *config = neo4j_session_config(session);
+    neo4j_mpool_t mpool =
+            neo4j_mpool(config->allocator, config->mpool_block_size);
+    int err = 0;
+    int errsv = errno;
+
+    // notify all jobs first, so that they can handle received
+    // responses appropriately
+    for (neo4j_job_t *job = session->jobs; job != NULL;)
+    {
+        neo4j_job_abort(job, NEO4J_SESSION_RESET);
+        neo4j_job_t *next = job->next;
+        job->next = NULL;
+        job = next;
+    }
+    session->jobs = NULL;
+
+    // immediately send RESET request onto the connection
+    if (neo4j_connection_send(session->connection, NEO4J_RESET_MESSAGE, NULL, 0))
+    {
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+        goto cleanup;
+    }
+
+    neo4j_log_trace(session->logger, "sent RESET in %p", (void *)session);
+
+    // process any already inflight requests
+    if (receive_responses(session, NULL) < 0)
+    {
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+        goto cleanup;
+    }
+
+    // receive response to RESET
+    neo4j_message_type_t type;
+    const neo4j_value_t *argv;
+    uint16_t argc;
+    if (neo4j_connection_recv(session->connection, &mpool, &type, &argv, &argc))
+    {
+        neo4j_log_trace_errno(session->logger,
+                "neo4j_connection_recv failed");
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+        goto cleanup;
+    }
+
+    neo4j_log_debug(session->logger, "rcvd %s in response to RESET in %p",
+            neo4j_message_type_str(type), (void *)session);
+
+    if (type != NEO4J_SUCCESS_MESSAGE)
+    {
+        neo4j_log_error(session->logger,
+                "unexpected %s message received in %p"
+                " (expected SUCCESS in response to RESET)",
+                neo4j_message_type_str(type), (void *)session);
+        err = -1;
+        errsv = EPROTO;
+        session->failed = true;
+        goto cleanup;
+    }
+
+cleanup:
+    // ensure queue is empty
+    if (drain_queued_requests(session) && err == 0)
+    {
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+    }
+
+    neo4j_mpool_drain(&mpool);
+
+    if (err == 0)
+    {
+        neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
+    }
 
     errno = errsv;
     return err;
@@ -206,21 +310,6 @@ int neo4j_end_session(neo4j_session_t *session)
     free(session);
     errno = errsv;
     return err;
-}
-
-
-int neo4j_reset_session(neo4j_session_t *session)
-{
-    if (session_clear(session))
-    {
-        return -1;
-    }
-    if (reset(session))
-    {
-        return -1;
-    }
-    neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
-    return 0;
 }
 
 
@@ -822,54 +911,6 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     }
 
     neo4j_log_trace(session->logger, "ACK_FAILURE complete in %p",
-            (void *)session);
-    return 0;
-}
-
-
-int reset(neo4j_session_t *session)
-{
-    assert(session != NULL);
-
-    struct neo4j_request *req = new_request(session);
-    if (req == NULL)
-    {
-        return -1;
-    }
-    req->type = NEO4J_RESET_MESSAGE;
-    req->argc = 0;
-    req->receive = reset_callback;
-    req->cdata = session;
-
-    neo4j_log_trace(session->logger, "enqu RESET (%p) in %p",
-            (void *)req, (void *)session);
-
-    return neo4j_session_sync(session, NULL);
-}
-
-
-int reset_callback(void *cdata, neo4j_message_type_t type,
-        const neo4j_value_t *argv, uint16_t argc)
-{
-    assert(cdata != NULL);
-    neo4j_session_t *session = (neo4j_session_t *)cdata;
-
-    if (type == NEO4J_IGNORED_MESSAGE)
-    {
-        // only when draining after connection close
-        return 0;
-    }
-    if (type != NEO4J_SUCCESS_MESSAGE)
-    {
-        neo4j_log_error(session->logger,
-                "unexpected %s message received in %p"
-                " (expected SUCCESS in response to RESET)",
-                neo4j_message_type_str(type), (void *)session);
-        errno = EPROTO;
-        return -1;
-    }
-
-    neo4j_log_trace(session->logger, "RESET complete in %p",
             (void *)session);
     return 0;
 }

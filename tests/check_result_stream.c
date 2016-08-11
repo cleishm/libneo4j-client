@@ -77,7 +77,7 @@ static void setup(void)
     ck_assert_ptr_ne(connection, NULL);
 
     neo4j_value_t empty_map = neo4j_map(NULL, 0);
-    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // RUN
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     session = neo4j_new_session(connection);
     ck_assert_ptr_ne(session, NULL);
 
@@ -514,15 +514,25 @@ START_TEST (test_run_skips_results_after_session_reset)
     queue_record(server_ios); // PULL_ALL
     queue_record(server_ios); // PULL_ALL
     queue_stream_end_success(server_ios); // PULL_ALL
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
 
     ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
+
+    const neo4j_value_t *argv;
+    uint16_t argc;
+    neo4j_message_type_t type = recv_message(server_ios, &mpool,
+            &argv, &argc);
+    ck_assert(type == NEO4J_RUN_MESSAGE);
+    type = recv_message(server_ios, &mpool, &argv, &argc);
+    ck_assert(type == NEO4J_PULL_ALL_MESSAGE);
+
     ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
 
     neo4j_reset_session(session);
 
     ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
-    ck_assert_int_eq(errno, NEO4J_SESSION_ENDED);
-    ck_assert_int_eq(neo4j_check_failure(results), NEO4J_SESSION_ENDED);
+    ck_assert_int_eq(errno, NEO4J_SESSION_RESET);
+    ck_assert_int_eq(neo4j_check_failure(results), NEO4J_SESSION_RESET);
 
     ck_assert_int_eq(neo4j_close_results(results), 0);
     ck_assert(rb_is_empty(in_rb));

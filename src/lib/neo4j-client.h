@@ -401,6 +401,7 @@ struct neo4j_connection_factory
 #define NEO4J_NO_PLAN_AVAILABLE -35
 #define NEO4J_AUTH_RATE_LIMIT -36
 #define NEO4J_TLS_MALFORMED_CERTIFICATE -37
+#define NEO4J_SESSION_RESET -38
 
 /**
  * Print the error message corresponding to an error number.
