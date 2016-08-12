@@ -64,6 +64,7 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
     neo4j_log_debug(logger, "new session (%p) on %p",
             (void *)session, (void *)connection);
 
+    atomic_flag_clear(&(session->processing));
     session->connection = connection;
     session->logger = logger;
     if (session_start(session))
@@ -143,6 +144,11 @@ int session_clear(neo4j_session_t *session)
         errno = NEO4J_SESSION_ENDED;
         return -1;
     }
+    if (atomic_flag_test_and_set(&(session->processing)))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
 
     int err = 0;
     int errsv = errno;
@@ -175,6 +181,7 @@ int session_clear(neo4j_session_t *session)
     }
     assert(session->request_queue_depth == 0);
 
+    atomic_flag_clear(&(session->processing));
     errno = errsv;
     return err;
 }
@@ -191,6 +198,11 @@ int neo4j_reset_session(neo4j_session_t *session)
     if (session->failed)
     {
         errno = NEO4J_SESSION_FAILED;
+        return -1;
+    }
+    if (atomic_flag_test_and_set(&(session->processing)))
+    {
+        errno = NEO4J_SESSION_BUSY;
         return -1;
     }
 
@@ -276,6 +288,7 @@ cleanup:
         neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
     }
 
+    atomic_flag_clear(&(session->processing));
     errno = errsv;
     return err;
 }
@@ -387,13 +400,20 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
         errno = NEO4J_SESSION_FAILED;
         return -1;
     }
+    if (atomic_flag_test_and_set(&(session->processing)))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
 
     while (*condition > 0 && session->request_queue_depth > 0)
     {
         int result = receive_responses(session, condition);
         if (result < 0)
         {
-            goto error;
+            goto cleanup;
         }
         if (result > 0)
         {
@@ -401,27 +421,33 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
             if (drain_queued_requests(session))
             {
                 assert(session->request_queue_depth == 0);
+                atomic_flag_clear(&(session->processing));
                 return -1;
             }
             assert(session->request_queue_depth == 0);
+            atomic_flag_clear(&(session->processing));
             return ack_failure(session);
         }
 
         if (send_requests(session))
         {
-            goto error;
+            goto cleanup;
         }
     }
 
-    return 0;
+    err = 0;
 
     int errsv;
-error:
+cleanup:
     errsv = errno;
-    drain_queued_requests(session);
-    assert(session->request_queue_depth == 0);
+    if (err)
+    {
+        drain_queued_requests(session);
+        assert(session->request_queue_depth == 0);
+    }
+    atomic_flag_clear(&(session->processing));
     errno = errsv;
-    return -1;
+    return err;
 }
 
 
@@ -926,10 +952,17 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), -1);
     REQUIRE(callback != NULL, -1);
 
+    if (atomic_flag_test_and_set(&(session->processing)))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
     {
-        return -1;
+        goto cleanup;
     }
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
@@ -943,7 +976,11 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     neo4j_log_trace(session->logger, "enqu RUN{\"%s\"} (%p) in %p",
             statement, (void *)req, (void *)session);
 
-    return 0;
+    err = 0;
+
+cleanup:
+    atomic_flag_clear(&(session->processing));
+    return err;
 }
 
 
@@ -954,10 +991,17 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(mpool != NULL, -1);
     REQUIRE(callback != NULL, -1);
 
+    if (atomic_flag_test_and_set(&(session->processing)))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
     {
-        return -1;
+        goto cleanup;
     }
 
     req->type = NEO4J_PULL_ALL_MESSAGE;
@@ -970,7 +1014,11 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     neo4j_log_trace(session->logger, "enqu PULL_ALL (%p) in %p",
             (void *)req, (void *)session);
 
-    return 0;
+    err = 0;
+
+cleanup:
+    atomic_flag_clear(&(session->processing));
+    return err;
 }
 
 
@@ -981,10 +1029,17 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(mpool != NULL, -1);
     REQUIRE(callback != NULL, -1);
 
+    if (atomic_flag_test_and_set(&(session->processing)))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
     {
-        return -1;
+        goto cleanup;
     }
 
     req->type = NEO4J_DISCARD_ALL_MESSAGE;
@@ -997,5 +1052,9 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     neo4j_log_trace(session->logger, "enqu DISCARD_ALL (%p) in %p",
             (void *)req, (void *)session);
 
-    return 0;
+    err = 0;
+
+cleanup:
+    atomic_flag_clear(&(session->processing));
+    return err;
 }

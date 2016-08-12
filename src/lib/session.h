@@ -21,6 +21,7 @@
 #include "connection.h"
 #include "job.h"
 #include "memory.h"
+#include <stdatomic.h>
 
 
 /**
@@ -62,6 +63,7 @@ struct neo4j_session
     neo4j_connection_t *connection;
     neo4j_logger_t *logger;
 
+    atomic_flag processing;
     bool credentials_expired;
     bool failed;
 

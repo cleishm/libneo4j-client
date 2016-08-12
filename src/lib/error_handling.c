@@ -94,6 +94,8 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Server presented a malformed TLS certificate";
     case NEO4J_SESSION_RESET:
         return "Session has been reset";
+    case NEO4J_SESSION_BUSY:
+        return "Session cannot be accessed concurrently";
     default:
 #ifdef STRERROR_R_CHAR_P
         return strerror_r(errnum, buf, buflen);
