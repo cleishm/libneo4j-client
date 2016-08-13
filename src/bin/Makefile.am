@@ -29,8 +29,8 @@ neo4j_client_SOURCES = neo4j-client.c \
 	verification.h
 
 neo4j_client_CPPFLAGS = \
-	-I${top_builddir}/src/lib \
+	-I$(top_srcdir)/src/lib \
 	$(LIBEDIT_CFLAGS) $(CYPHER_PARSER_CFLAGS)
 neo4j_client_LDADD = \
-	${top_builddir}/src/lib/libneo4j-client.la \
+	$(top_builddir)/src/lib/libneo4j-client.la \
 	$(LIBEDIT_LIBS) $(CYPHER_PARSER_LIBS)

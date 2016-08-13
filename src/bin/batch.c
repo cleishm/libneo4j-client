@@ -39,10 +39,10 @@ struct parse_callback_data
 };
 
 
-static int parse_callback(void *data, const char *s, size_t n,
-        struct cypher_input_range range, bool eof);
+static int parse_callback(void *data,
+        const cypher_quick_parse_segment_t *segment);
 static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
-        const char *directive, size_t n, struct cypher_input_position pos);
+        const cypher_quick_parse_segment_t *segment);
 static int finalize(shell_state_t *state, evaluation_queue_t *queue,
         unsigned int n);
 static int abort_outstanding(shell_state_t *state, evaluation_queue_t *queue);
@@ -116,8 +116,8 @@ cleanup:
     errsv = errno;
     if (abort_outstanding(state, queue) && result == 0)
     {
-        errsv = errno;
-        result = -1;
+        free(queue);
+        return -1;
     }
     free(queue);
     errno = errsv;
@@ -125,11 +125,10 @@ cleanup:
 }
 
 
-int parse_callback(void *data, const char *s, size_t n,
-        struct cypher_input_range range, bool eof)
+int parse_callback(void *data, const cypher_quick_parse_segment_t *segment)
 {
     struct parse_callback_data *cbdata = (struct parse_callback_data *)data;
-    if (evaluate(cbdata->state, cbdata->queue, s, n, range.start))
+    if (evaluate(cbdata->state, cbdata->queue, segment))
     {
         return -2;
     }
@@ -138,14 +137,16 @@ int parse_callback(void *data, const char *s, size_t n,
 
 
 int evaluate(shell_state_t *state, evaluation_queue_t *queue,
-        const char *directive, size_t n, struct cypher_input_position pos)
+        const cypher_quick_parse_segment_t *segment)
 {
+    size_t n;
+    const char *s = cypher_quick_parse_segment_get_text(segment, &n);
     if (n == 0)
     {
         return 0;
     }
 
-    if (is_command(directive))
+    if (cypher_quick_parse_segment_is_command(segment))
     {
         // drain queue before running commands
         int err = finalize(state, queue, queue->depth);
@@ -153,7 +154,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         {
             return err;
         }
-        return evaluate_command(state, directive, n);
+        return evaluate_command(state, s, n);
     }
 
     assert(queue->depth <= queue->capacity);
@@ -164,8 +165,11 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     }
     assert (queue->depth < queue->capacity);
 
+    struct cypher_input_range range =
+            cypher_quick_parse_segment_get_range(segment);
+
     evaluation_continuation_t *continuation =
-            evaluate_statement(state, directive, n, pos);
+            evaluate_statement(state, s, n, range.start);
     if (continuation == NULL)
     {
         neo4j_perror(state->err, errno, "unexpected error");
