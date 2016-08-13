@@ -825,7 +825,6 @@ int await(run_result_stream_t *results, const unsigned int *condition)
 {
     if (*condition > 0 && neo4j_session_sync(results->session, condition))
     {
-        neo4j_log_trace_errno(results->logger, "neo4j_session_sync failed");
         set_failure(results, errno);
         return -1;
     }

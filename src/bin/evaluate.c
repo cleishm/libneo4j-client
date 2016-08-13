@@ -139,7 +139,8 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     {
         if (errno == NEO4J_SESSION_RESET)
         {
-            fprintf(state->err, "interrupted\n");
+            fprintf(state->err, "interrupted"
+                    " (any open transaction has been rolled back)\n");
             goto cleanup;
         }
         else if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
