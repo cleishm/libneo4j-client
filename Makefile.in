@@ -1090,20 +1090,13 @@ src/.doc/neo4j-client.h: src/lib/neo4j-client.h
 
 docker-check:
 	$(MAKE) dist
-	id=`docker create -i debian-unstable-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && CK_TIMEOUT_MULTIPLIER=2 make check'` && \
-	trap "docker rm $$id" EXIT && \
-	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
-	docker start -i $$id
+	docker run --rm -v $(abs_builddir):/$(PACKAGE) -ti debian-unstable-dev \
+		sh -c 'tar xzmf /$(PACKAGE)/$(DIST_ARCHIVES) && cd $(distdir) && ./configure --enable-silent-rules && make check'
 
 docker-valgrind:
 	$(MAKE) dist
-	id=`docker create -i debian-unstable-dev \
-		sh -c 'cd $(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && ./configure --enable-silent-rules && CK_TIMEOUT_MULTIPLIER=2 make check && CK_FORK=no CK_TIMEOUT_MULTIPLIER=2 valgrind --suppressions=valgrind.suppressions --leak-check=full ./tests/check_libneo4j-client'` && \
-	trap "docker rm $$id" EXIT && \
-	docker cp - $$id:/ < $(PACKAGE_TARNAME)-$(PACKAGE_VERSION).tar.gz && \
-	docker cp valgrind.suppressions $$id:/$(PACKAGE_TARNAME)-$(PACKAGE_VERSION) && \
-	docker start -i $$id
+	docker run --rm -v $(abs_builddir):/$(PACKAGE) -ti debian-unstable-dev \
+		sh -c 'tar xzmf /$(PACKAGE)/$(DIST_ARCHIVES) && cd $(distdir) && ./configure --enable-silent-rules --disable-debug && make check && CK_FORK=no valgrind --suppressions="/$(PACKAGE)/valgrind.suppressions" --leak-check=full --show-leak-kinds=all ./tests/check_$(PACKAGE)'
 
 clean-local:
 	rm -rf doc src/.doc

@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <limits.h>
 #include <neo4j-client.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -122,6 +123,11 @@ static void usage(FILE *s, const char *prog_name)
         prog_name);
 }
 
+static shell_state_t state;
+
+
+static void interrupt_handler(int signal);
+
 
 struct file_io_request
 {
@@ -155,7 +161,6 @@ int main(int argc, char *argv[])
 
     neo4j_client_init();
 
-    shell_state_t state;
     int result = EXIT_FAILURE;
 
     if (shell_state_init(&state, prog_name, stdin, stdout, stderr, tty))
@@ -383,6 +388,12 @@ int main(int argc, char *argv[])
         // can't fail
     }
 
+    if (signal(SIGINT, interrupt_handler) == SIG_ERR)
+    {
+        perror("unexpected error");
+        goto cleanup;
+    }
+
     if (state.interactive)
     {
         state.render = render_results_table;
@@ -442,4 +453,13 @@ cleanup:
     }
     neo4j_client_cleanup();
     return result;
+}
+
+
+void interrupt_handler(int signal)
+{
+    if (state.session != NULL && neo4j_reset_session(state.session))
+    {
+        neo4j_perror(stderr, errno, "reset failed");
+    }
 }

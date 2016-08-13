@@ -2,6 +2,7 @@ lib_LTLIBRARIES = libneo4j-client.la
 
 include_HEADERS = neo4j-client.h
 libneo4j_client_la_SOURCES = \
+	atomic.h \
 	error_handling.c \
 	buffering_iostream.c \
 	buffering_iostream.h \
@@ -76,4 +77,4 @@ libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 #    increment age.
 # 4. If any interfaces have been removed or changed since the last public
 #    release, then set age to 0.
-libneo4j_client_la_LDFLAGS = -version-info 9:0:1
+libneo4j_client_la_LDFLAGS = -version-info 10:0:1

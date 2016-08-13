@@ -30,9 +30,11 @@ static_assert(NEO4J_REQUEST_ARGV_PREALLOC >= 2,
 
 static int session_start(neo4j_session_t *session);
 static int session_clear(neo4j_session_t *session);
+static int session_reset(neo4j_session_t *session);
+
 static int send_requests(neo4j_session_t *session);
 static int receive_responses(neo4j_session_t *session,
-        const unsigned int *condition);
+        const unsigned int *condition, bool interruptable);
 static int drain_queued_requests(neo4j_session_t *session);
 
 static struct neo4j_request *new_request(neo4j_session_t *session);
@@ -43,9 +45,6 @@ static int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 static int ack_failure(neo4j_session_t *session);
 static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
-       const neo4j_value_t *argv, uint16_t argc);
-static int reset(neo4j_session_t *session);
-static int reset_callback(void *cdata, neo4j_message_type_t type,
        const neo4j_value_t *argv, uint16_t argc);
 
 
@@ -68,6 +67,8 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
 
     session->connection = connection;
     session->logger = logger;
+    neo4j_atomic_bool_init(&(session->processing), false);
+    neo4j_atomic_bool_init(&(session->reset_requested), false);
     if (session_start(session))
     {
         goto failure;
@@ -87,6 +88,12 @@ failure:
     neo4j_logger_release(logger);
     errno = errsv;
     return NULL;
+}
+
+
+static inline bool interrupted(neo4j_session_t *session)
+{
+    return neo4j_atomic_bool_get(&(session->reset_requested));
 }
 
 
@@ -129,29 +136,51 @@ failure:
 }
 
 
-static int session_clear(neo4j_session_t *session)
+/**
+ * End all jobs in the session and drain all requests
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @return 0 on success, <0 on error (errno will be set).
+ */
+int session_clear(neo4j_session_t *session)
 {
     REQUIRE(session != NULL, -1);
-    REQUIRE(session->connection != NULL, -1);
+    if (session->connection == NULL)
+    {
+        errno = NEO4J_SESSION_ENDED;
+        return -1;
+    }
+    if (neo4j_atomic_bool_set(&(session->processing), true))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
     int err = 0;
     int errsv = errno;
 
+    // notify all jobs first, so that they can handle received
+    // responses appropriately
     for (neo4j_job_t *job = session->jobs; job != NULL;)
     {
-        neo4j_job_notify_session_ending(job);
+        neo4j_job_abort(job, NEO4J_SESSION_ENDED);
         neo4j_job_t *next = job->next;
         job->next = NULL;
         job = next;
     }
     session->jobs = NULL;
 
-    if (!session->failed && receive_responses(session, NULL))
+    // Receive responses to inflight requests
+    if (!session->failed && receive_responses(session, NULL, false))
     {
         err = -1;
         errsv = errno;
         session->failed = true;
     }
 
+    // drain any remaining requests
     if (drain_queued_requests(session) && err == 0)
     {
         err = -1;
@@ -159,6 +188,88 @@ static int session_clear(neo4j_session_t *session)
         session->failed = true;
     }
     assert(session->request_queue_depth == 0);
+
+    neo4j_atomic_bool_set(&(session->processing), false);
+    errno = errsv;
+    return err;
+}
+
+
+int session_reset(neo4j_session_t *session)
+{
+    assert(session != NULL);
+    assert(session->connection != NULL);
+
+    const neo4j_config_t *config = neo4j_session_config(session);
+    neo4j_mpool_t mpool =
+            neo4j_mpool(config->allocator, config->mpool_block_size);
+    int err = 0;
+    int errsv = errno;
+
+    // notify all jobs first, so that they can handle received
+    // responses appropriately
+    for (neo4j_job_t *job = session->jobs; job != NULL;)
+    {
+        neo4j_job_abort(job, NEO4J_SESSION_RESET);
+        neo4j_job_t *next = job->next;
+        job->next = NULL;
+        job = next;
+    }
+    session->jobs = NULL;
+
+    // process any already inflight requests
+    if (receive_responses(session, NULL, false) < 0)
+    {
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+        goto cleanup;
+    }
+
+    // receive response to RESET
+    neo4j_message_type_t type;
+    const neo4j_value_t *argv;
+    uint16_t argc;
+    if (neo4j_connection_recv(session->connection, &mpool, &type, &argv, &argc))
+    {
+        neo4j_log_trace_errno(session->logger,
+                "neo4j_connection_recv failed");
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+        goto cleanup;
+    }
+
+    neo4j_log_debug(session->logger, "rcvd %s in response to RESET in %p",
+            neo4j_message_type_str(type), (void *)session);
+
+    if (type != NEO4J_SUCCESS_MESSAGE)
+    {
+        neo4j_log_error(session->logger,
+                "unexpected %s message received in %p"
+                " (expected SUCCESS in response to RESET)",
+                neo4j_message_type_str(type), (void *)session);
+        err = -1;
+        errsv = EPROTO;
+        session->failed = true;
+        goto cleanup;
+    }
+
+cleanup:
+    // ensure queue is empty
+    if (drain_queued_requests(session) && err == 0)
+    {
+        err = -1;
+        errsv = errno;
+        session->failed = true;
+    }
+
+    neo4j_mpool_drain(&mpool);
+
+    if (err == 0)
+    {
+        neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
+    }
 
     errno = errsv;
     return err;
@@ -199,16 +310,41 @@ int neo4j_end_session(neo4j_session_t *session)
 
 int neo4j_reset_session(neo4j_session_t *session)
 {
-    if (session_clear(session))
+    REQUIRE(session != NULL, -1);
+    if (session->connection == NULL)
     {
+        errno = NEO4J_SESSION_ENDED;
         return -1;
     }
-    if (reset(session))
+    if (session->failed)
     {
+        errno = NEO4J_SESSION_FAILED;
         return -1;
     }
-    neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
-    return 0;
+
+    // immediately send RESET request onto the connection
+    if (neo4j_connection_send(session->connection, NEO4J_RESET_MESSAGE, NULL, 0))
+    {
+        session->failed = true;
+        return -1;
+    }
+
+    neo4j_log_trace(session->logger, "sent RESET in %p", (void *)session);
+
+    // Check and set the reset_requested sentinal and then check if processing
+    // is already taking place.
+    if (neo4j_atomic_bool_set(&(session->reset_requested), true) ||
+        neo4j_atomic_bool_set(&(session->processing), true))
+    {
+        return 0;
+    }
+
+    int err = session_reset(session);
+    // clear reset_requested BEFORE ending processing, to ensure it is not
+    // set if processing resumes
+    neo4j_atomic_bool_set(&(session->reset_requested), false);
+    neo4j_atomic_bool_set(&(session->processing), false);
+    return err;
 }
 
 
@@ -261,6 +397,21 @@ int neo4j_detach_job(neo4j_session_t *session, neo4j_job_t *job)
 }
 
 
+/**
+ * Process requests and responses for a session.
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @param [condition] A pointer to a condition flag, that must remain
+ *         greater than zero for processing of responses to continue. This
+ *         allows processing to be stopped when sufficient responses have
+ *         been received to satisfy the current demands. If `NULL`, then
+ *         processing will continue until there are no further outstanding
+ *         requests (or a failure occurs).
+ * @return 0 on success, -1 if a error occurs (errno will be set and all
+ *         requests will be drained).
+ */
 int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
 {
     REQUIRE(session != NULL, -1);
@@ -271,13 +422,25 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
         errno = NEO4J_SESSION_FAILED;
         return -1;
     }
-
-    while (*condition > 0 && session->request_queue_depth > 0)
+    if (neo4j_atomic_bool_set(&(session->processing), true))
     {
-        int result = receive_responses(session, condition);
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
+
+    while (*condition > 0 && session->request_queue_depth > 0 &&
+            !interrupted(session))
+    {
+        int result = receive_responses(session, condition, true);
         if (result < 0)
         {
-            goto error;
+            goto cleanup;
+        }
+        if (result == 1)
+        {
+            break;
         }
         if (result > 0)
         {
@@ -285,30 +448,57 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
             if (drain_queued_requests(session))
             {
                 assert(session->request_queue_depth == 0);
+                neo4j_atomic_bool_set(&(session->processing), false);
                 return -1;
             }
             assert(session->request_queue_depth == 0);
+            neo4j_atomic_bool_set(&(session->processing), false);
             return ack_failure(session);
         }
 
         if (send_requests(session))
         {
-            goto error;
+            goto cleanup;
         }
     }
 
-    return 0;
+    if (interrupted(session))
+    {
+        if (!session_reset(session))
+        {
+            errno = NEO4J_SESSION_RESET;
+        }
+        neo4j_atomic_bool_set(&(session->reset_requested), false);
+    }
+    else
+    {
+        err = 0;
+    }
 
     int errsv;
-error:
+cleanup:
     errsv = errno;
-    drain_queued_requests(session);
-    assert(session->request_queue_depth == 0);
+    if (err)
+    {
+        drain_queued_requests(session);
+        assert(session->request_queue_depth == 0);
+    }
+    neo4j_atomic_bool_set(&(session->processing), false);
     errno = errsv;
-    return -1;
+    return err;
 }
 
 
+/**
+ * Send queued requests.
+ *
+ * @internal
+ *
+ * Sends requests, up to the maximum allowed for pipelining by the config.
+ *
+ * @param [session] The session.
+ * @return 0 on success, -1 if an error occurs (errno will be set).
+ */
 int send_requests(neo4j_session_t *session)
 {
     assert(session != NULL);
@@ -317,7 +507,7 @@ int send_requests(neo4j_session_t *session)
 
     for (unsigned int i = session->inflight_requests;
             i < session->request_queue_depth &&
-            i < config->max_pipelined_requests; ++i)
+            i < config->max_pipelined_requests && !interrupted(session); ++i)
     {
         int offset =
             (session->request_queue_head + i) % session->request_queue_size;
@@ -339,14 +529,34 @@ int send_requests(neo4j_session_t *session)
 }
 
 
-int receive_responses(neo4j_session_t *session, const unsigned int *condition)
+/**
+ * Receive responses to inflight requests.
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ * @param [condition] A pointer to a condition flag, that must remain
+ *         greater than zero for processing of responses to continue. This
+ *         allows processing to be stopped when sufficient responses have
+ *         been received to satisfy the current demands. If `NULL`, then
+ *         processing will continue until there are no further outstanding
+ *         requests (or a failure occurs).
+ * @param [interruptable] If `true`, setting of `reset_requested` will interrupt
+ *         receiving of results.
+ * @return 0 on success, -1 if a error occurs (errno will be set), 1 if
+ *         interrupted, and >1 if a valid FAILURE message is received (in which
+ *         case, all inflight requests will have been drained).
+ */
+int receive_responses(neo4j_session_t *session, const unsigned int *condition,
+        bool interruptable)
 {
     assert(session != NULL);
     ENSURE_NOT_NULL(unsigned int, condition, 1);
     neo4j_connection_t *connection = session->connection;
 
     bool failure = false;
-    while ((failure || *condition > 0) && session->inflight_requests > 0)
+    while ((failure || *condition > 0) && session->inflight_requests > 0 &&
+            (!interruptable || !interrupted(session)))
     {
         neo4j_message_type_t type;
         const neo4j_value_t *argv;
@@ -396,10 +606,28 @@ int receive_responses(neo4j_session_t *session, const unsigned int *condition)
         }
     }
 
-    return failure? 1 : 0;
+    if (interruptable && interrupted(session))
+    {
+        return 1;
+    }
+
+    assert(!failure || session->inflight_requests == 0);
+    return failure? 2 : 0;
 }
 
 
+/**
+ * Send IGNORED to all queued requests.
+ *
+ * @internal
+ *
+ * This will also generate IGNORED for all inflight requests, so this
+ * method should only be called when there are no inflight requests or
+ * when a terminal error has occured and the connection will be closed.
+ *
+ * @param [session] The session.
+ * @return 0 on success, -1 if an error occurs (errno will be set).
+ */
 int drain_queued_requests(neo4j_session_t *session)
 {
     assert(session != NULL);
@@ -431,6 +659,19 @@ int drain_queued_requests(neo4j_session_t *session)
 }
 
 
+/**
+ * Add a queued request.
+ *
+ * @internal
+ *
+ * The returned pointer will be to a request struct already added to the tail
+ * of the queue. It MUST be populated with valid attributes before any other
+ * session methods are invoked.
+ *
+ * @param [session] The session.
+ * @return The queued request, which MUST be populated with valid attributes,
+ *         or `NULL` if an error occurs (errno will be set).
+ */
 struct neo4j_request *new_request(neo4j_session_t *session)
 {
     assert(session != NULL);
@@ -465,6 +706,13 @@ struct neo4j_request *new_request(neo4j_session_t *session)
 }
 
 
+/**
+ * Pop a request off the head of the queue.
+ *
+ * @internal
+ *
+ * @param [session] The session.
+ */
 void pop_request(neo4j_session_t* session)
 {
     assert(session != NULL);
@@ -741,54 +989,6 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
 }
 
 
-int reset(neo4j_session_t *session)
-{
-    assert(session != NULL);
-
-    struct neo4j_request *req = new_request(session);
-    if (req == NULL)
-    {
-        return -1;
-    }
-    req->type = NEO4J_RESET_MESSAGE;
-    req->argc = 0;
-    req->receive = reset_callback;
-    req->cdata = session;
-
-    neo4j_log_trace(session->logger, "enqu RESET (%p) in %p",
-            (void *)req, (void *)session);
-
-    return neo4j_session_sync(session, NULL);
-}
-
-
-int reset_callback(void *cdata, neo4j_message_type_t type,
-        const neo4j_value_t *argv, uint16_t argc)
-{
-    assert(cdata != NULL);
-    neo4j_session_t *session = (neo4j_session_t *)cdata;
-
-    if (type == NEO4J_IGNORED_MESSAGE)
-    {
-        // only when draining after connection close
-        return 0;
-    }
-    if (type != NEO4J_SUCCESS_MESSAGE)
-    {
-        neo4j_log_error(session->logger,
-                "unexpected %s message received in %p"
-                " (expected SUCCESS in response to RESET)",
-                neo4j_message_type_str(type), (void *)session);
-        errno = EPROTO;
-        return -1;
-    }
-
-    neo4j_log_trace(session->logger, "RESET complete in %p",
-            (void *)session);
-    return 0;
-}
-
-
 int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
         const char *statement, neo4j_value_t params,
         neo4j_response_recv_t callback, void *cdata)
@@ -799,10 +999,17 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), -1);
     REQUIRE(callback != NULL, -1);
 
+    if (neo4j_atomic_bool_set(&(session->processing), true))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
     {
-        return -1;
+        goto cleanup;
     }
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
@@ -816,7 +1023,11 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     neo4j_log_trace(session->logger, "enqu RUN{\"%s\"} (%p) in %p",
             statement, (void *)req, (void *)session);
 
-    return 0;
+    err = 0;
+
+cleanup:
+    neo4j_atomic_bool_set(&(session->processing), false);
+    return err;
 }
 
 
@@ -827,10 +1038,17 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(mpool != NULL, -1);
     REQUIRE(callback != NULL, -1);
 
+    if (neo4j_atomic_bool_set(&(session->processing), true))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
     {
-        return -1;
+        goto cleanup;
     }
 
     req->type = NEO4J_PULL_ALL_MESSAGE;
@@ -843,7 +1061,11 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     neo4j_log_trace(session->logger, "enqu PULL_ALL (%p) in %p",
             (void *)req, (void *)session);
 
-    return 0;
+    err = 0;
+
+cleanup:
+    neo4j_atomic_bool_set(&(session->processing), false);
+    return err;
 }
 
 
@@ -854,10 +1076,17 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(mpool != NULL, -1);
     REQUIRE(callback != NULL, -1);
 
+    if (neo4j_atomic_bool_set(&(session->processing), true))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+
+    int err = -1;
     struct neo4j_request *req = new_request(session);
     if (req == NULL)
     {
-        return -1;
+        goto cleanup;
     }
 
     req->type = NEO4J_DISCARD_ALL_MESSAGE;
@@ -870,5 +1099,9 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     neo4j_log_trace(session->logger, "enqu DISCARD_ALL (%p) in %p",
             (void *)req, (void *)session);
 
-    return 0;
+    err = 0;
+
+cleanup:
+    neo4j_atomic_bool_set(&(session->processing), false);
+    return err;
 }

@@ -23,28 +23,29 @@
 #include <unistd.h>
 
 
-struct posix_iostream {
+struct neo4j_posix_iostream {
     neo4j_iostream_t _iostream;
     int fd;
 };
 
 
-static ssize_t posix_read(neo4j_iostream_t *self, void *buf, size_t nbyte);
-static ssize_t posix_readv(neo4j_iostream_t *self,
+static ssize_t neo4j_posix_read(neo4j_iostream_t *self, void *buf, size_t nbyte);
+static ssize_t neo4j_posix_readv(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt);
-static ssize_t posix_write(neo4j_iostream_t *self,
+static ssize_t neo4j_posix_write(neo4j_iostream_t *self,
         const void *buf, size_t nbyte);
-static ssize_t posix_writev(neo4j_iostream_t *self,
+static ssize_t neo4j_posix_writev(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt);
-static int posix_flush(neo4j_iostream_t *self);
-static int posix_close(neo4j_iostream_t *self);
+static int neo4j_posix_flush(neo4j_iostream_t *self);
+static int neo4j_posix_close(neo4j_iostream_t *self);
 
 
 neo4j_iostream_t *neo4j_posix_iostream(int fd)
 {
     REQUIRE(fd >= 0, NULL);
 
-    struct posix_iostream *ios = calloc(1, sizeof(struct posix_iostream));
+    struct neo4j_posix_iostream *ios =
+            calloc(1, sizeof(struct neo4j_posix_iostream));
     if (ios == NULL)
     {
         return NULL;
@@ -53,20 +54,20 @@ neo4j_iostream_t *neo4j_posix_iostream(int fd)
     ios->fd = fd;
 
     neo4j_iostream_t *iostream = &(ios->_iostream);
-    iostream->read = posix_read;
-    iostream->readv = posix_readv;
-    iostream->write = posix_write;
-    iostream->writev = posix_writev;
-    iostream->flush = posix_flush;
-    iostream->close = posix_close;
+    iostream->read = neo4j_posix_read;
+    iostream->readv = neo4j_posix_readv;
+    iostream->write = neo4j_posix_write;
+    iostream->writev = neo4j_posix_writev;
+    iostream->flush = neo4j_posix_flush;
+    iostream->close = neo4j_posix_close;
     return iostream;
 }
 
 
-ssize_t posix_read(neo4j_iostream_t *self, void *buf, size_t nbyte)
+ssize_t neo4j_posix_read(neo4j_iostream_t *self, void *buf, size_t nbyte)
 {
-    struct posix_iostream *ios = container_of(self,
-            struct posix_iostream, _iostream);
+    struct neo4j_posix_iostream *ios = container_of(self,
+            struct neo4j_posix_iostream, _iostream);
     if (ios->fd < 0)
     {
         errno = EPIPE;
@@ -76,11 +77,11 @@ ssize_t posix_read(neo4j_iostream_t *self, void *buf, size_t nbyte)
 }
 
 
-ssize_t posix_readv(neo4j_iostream_t *self,
+ssize_t neo4j_posix_readv(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt)
 {
-    struct posix_iostream *ios = container_of(self,
-            struct posix_iostream, _iostream);
+    struct neo4j_posix_iostream *ios = container_of(self,
+            struct neo4j_posix_iostream, _iostream);
     if (ios->fd < 0)
     {
         errno = EPIPE;
@@ -94,10 +95,10 @@ ssize_t posix_readv(neo4j_iostream_t *self,
 }
 
 
-ssize_t posix_write(neo4j_iostream_t *self, const void *buf, size_t nbyte)
+ssize_t neo4j_posix_write(neo4j_iostream_t *self, const void *buf, size_t nbyte)
 {
-    struct posix_iostream *ios = container_of(self,
-            struct posix_iostream, _iostream);
+    struct neo4j_posix_iostream *ios = container_of(self,
+            struct neo4j_posix_iostream, _iostream);
     if (ios->fd < 0)
     {
         errno = EPIPE;
@@ -107,11 +108,11 @@ ssize_t posix_write(neo4j_iostream_t *self, const void *buf, size_t nbyte)
 }
 
 
-ssize_t posix_writev(neo4j_iostream_t *self,
+ssize_t neo4j_posix_writev(neo4j_iostream_t *self,
         const struct iovec *iov, unsigned int iovcnt)
 {
-    struct posix_iostream *ios = container_of(self,
-            struct posix_iostream, _iostream);
+    struct neo4j_posix_iostream *ios = container_of(self,
+            struct neo4j_posix_iostream, _iostream);
     if (ios->fd < 0)
     {
         errno = EPIPE;
@@ -125,16 +126,16 @@ ssize_t posix_writev(neo4j_iostream_t *self,
 }
 
 
-int posix_flush(neo4j_iostream_t *self)
+int neo4j_posix_flush(neo4j_iostream_t *self)
 {
     return 0;
 }
 
 
-int posix_close(neo4j_iostream_t *self)
+int neo4j_posix_close(neo4j_iostream_t *self)
 {
-    struct posix_iostream *ios = container_of(self,
-            struct posix_iostream, _iostream);
+    struct neo4j_posix_iostream *ios = container_of(self,
+            struct neo4j_posix_iostream, _iostream);
     if (ios->fd < 0)
     {
         errno = EPIPE;

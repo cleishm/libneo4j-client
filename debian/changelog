@@ -1,3 +1,12 @@
+libneo4j-client (1.2.0-1) xenial; urgency=medium
+
+  * New upstream release 1.2.0
+    - Handle ^C interrupts cleanly in neo4j-client
+    - Fix various compilation issues. Closes: #833900
+    - Add support for multi-line client commands
+
+ -- Chris Leishman <chris@leishman.org>  Sat, 13 Aug 2016 15:59:58 +0000
+
 libneo4j-client (1.1.0-1) xenial; urgency=high
 
   * New upstream release 1.1.0.

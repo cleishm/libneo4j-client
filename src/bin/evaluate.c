@@ -137,7 +137,13 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     int result = -1;
     if (state->render(state, self->results))
     {
-        if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
+        if (errno == NEO4J_SESSION_RESET)
+        {
+            fprintf(state->err, "interrupted"
+                    " (any open transaction has been rolled back)\n");
+            goto cleanup;
+        }
+        else if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
         {
             neo4j_perror(state->err, errno, "unexpected error");
             goto cleanup;
