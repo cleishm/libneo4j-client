@@ -70,8 +70,10 @@ int interact(shell_state_t *state)
         line[length] = '\n';
         fputc('\n', state->out);
 
+        el_set(el, EL_SETTY, "-d", "intr=^C", NULL);
         size_t end_offset;
         int r = process_input(state, line, length + 1, &end_offset);
+        el_set(el, EL_SETTY, "-d", "intr=", NULL);
         if (r < 0)
         {
             goto cleanup;
