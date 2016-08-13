@@ -18,10 +18,10 @@
 #define NEO4J_SESSION_H
 
 #include "neo4j-client.h"
+#include "atomic.h"
 #include "connection.h"
 #include "job.h"
 #include "memory.h"
-#include <stdatomic.h>
 
 
 /**
@@ -66,6 +66,7 @@ struct neo4j_session
     atomic_flag processing;
     bool credentials_expired;
     bool failed;
+    atomic_bool reset_requested;
 
     struct neo4j_request *request_queue;
     unsigned int request_queue_size;

@@ -30,10 +30,11 @@ static_assert(NEO4J_REQUEST_ARGV_PREALLOC >= 2,
 
 static int session_start(neo4j_session_t *session);
 static int session_clear(neo4j_session_t *session);
+static int session_reset(neo4j_session_t *session);
 
 static int send_requests(neo4j_session_t *session);
 static int receive_responses(neo4j_session_t *session,
-        const unsigned int *condition);
+        const unsigned int *condition, bool interruptable);
 static int drain_queued_requests(neo4j_session_t *session);
 
 static struct neo4j_request *new_request(neo4j_session_t *session);
@@ -64,9 +65,10 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
     neo4j_log_debug(logger, "new session (%p) on %p",
             (void *)session, (void *)connection);
 
-    atomic_flag_clear(&(session->processing));
     session->connection = connection;
     session->logger = logger;
+    atomic_flag_clear(&(session->processing));
+    atomic_bool_init(&(session->reset_requested), false);
     if (session_start(session))
     {
         goto failure;
@@ -86,6 +88,12 @@ failure:
     neo4j_logger_release(logger);
     errno = errsv;
     return NULL;
+}
+
+
+static inline bool interrupted(neo4j_session_t *session)
+{
+    return atomic_bool_value(&(session->reset_requested));
 }
 
 
@@ -165,7 +173,7 @@ int session_clear(neo4j_session_t *session)
     session->jobs = NULL;
 
     // Receive responses to inflight requests
-    if (!session->failed && receive_responses(session, NULL))
+    if (!session->failed && receive_responses(session, NULL, false))
     {
         err = -1;
         errsv = errno;
@@ -187,24 +195,10 @@ int session_clear(neo4j_session_t *session)
 }
 
 
-int neo4j_reset_session(neo4j_session_t *session)
+int session_reset(neo4j_session_t *session)
 {
-    REQUIRE(session != NULL, -1);
-    if (session->connection == NULL)
-    {
-        errno = NEO4J_SESSION_ENDED;
-        return -1;
-    }
-    if (session->failed)
-    {
-        errno = NEO4J_SESSION_FAILED;
-        return -1;
-    }
-    if (atomic_flag_test_and_set(&(session->processing)))
-    {
-        errno = NEO4J_SESSION_BUSY;
-        return -1;
-    }
+    assert(session != NULL);
+    assert(session->connection != NULL);
 
     const neo4j_config_t *config = neo4j_session_config(session);
     neo4j_mpool_t mpool =
@@ -223,19 +217,8 @@ int neo4j_reset_session(neo4j_session_t *session)
     }
     session->jobs = NULL;
 
-    // immediately send RESET request onto the connection
-    if (neo4j_connection_send(session->connection, NEO4J_RESET_MESSAGE, NULL, 0))
-    {
-        err = -1;
-        errsv = errno;
-        session->failed = true;
-        goto cleanup;
-    }
-
-    neo4j_log_trace(session->logger, "sent RESET in %p", (void *)session);
-
     // process any already inflight requests
-    if (receive_responses(session, NULL) < 0)
+    if (receive_responses(session, NULL, false) < 0)
     {
         err = -1;
         errsv = errno;
@@ -288,7 +271,6 @@ cleanup:
         neo4j_log_debug(session->logger, "session reset (%p)", (void *)session);
     }
 
-    atomic_flag_clear(&(session->processing));
     errno = errsv;
     return err;
 }
@@ -322,6 +304,46 @@ int neo4j_end_session(neo4j_session_t *session)
     session->logger = NULL;
     free(session);
     errno = errsv;
+    return err;
+}
+
+
+int neo4j_reset_session(neo4j_session_t *session)
+{
+    REQUIRE(session != NULL, -1);
+    if (session->connection == NULL)
+    {
+        errno = NEO4J_SESSION_ENDED;
+        return -1;
+    }
+    if (session->failed)
+    {
+        errno = NEO4J_SESSION_FAILED;
+        return -1;
+    }
+
+    // immediately send RESET request onto the connection
+    if (neo4j_connection_send(session->connection, NEO4J_RESET_MESSAGE, NULL, 0))
+    {
+        session->failed = true;
+        return -1;
+    }
+
+    neo4j_log_trace(session->logger, "sent RESET in %p", (void *)session);
+
+    // Check and set the reset_requested sentinal and then check if processing
+    // is already taking place.
+    if (!atomic_bool_cmp_set(&(session->reset_requested), false, true) ||
+        atomic_flag_test_and_set(&(session->processing)))
+    {
+        return 0;
+    }
+
+    int err = session_reset(session);
+    // clear reset_requested BEFORE ending processing, to ensure it is not
+    // set if processing resumes
+    atomic_bool_set(&(session->reset_requested), false);
+    atomic_flag_clear(&(session->processing));
     return err;
 }
 
@@ -408,12 +430,17 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
 
     int err = -1;
 
-    while (*condition > 0 && session->request_queue_depth > 0)
+    while (*condition > 0 && session->request_queue_depth > 0 &&
+            !interrupted(session))
     {
-        int result = receive_responses(session, condition);
+        int result = receive_responses(session, condition, true);
         if (result < 0)
         {
             goto cleanup;
+        }
+        if (result == 1)
+        {
+            break;
         }
         if (result > 0)
         {
@@ -435,7 +462,18 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
         }
     }
 
-    err = 0;
+    if (interrupted(session))
+    {
+        if (!session_reset(session))
+        {
+            errno = NEO4J_SESSION_RESET;
+        }
+        atomic_bool_set(&(session->reset_requested), false);
+    }
+    else
+    {
+        err = 0;
+    }
 
     int errsv;
 cleanup:
@@ -469,7 +507,7 @@ int send_requests(neo4j_session_t *session)
 
     for (unsigned int i = session->inflight_requests;
             i < session->request_queue_depth &&
-            i < config->max_pipelined_requests; ++i)
+            i < config->max_pipelined_requests && !interrupted(session); ++i)
     {
         int offset =
             (session->request_queue_head + i) % session->request_queue_size;
@@ -503,18 +541,22 @@ int send_requests(neo4j_session_t *session)
  *         been received to satisfy the current demands. If `NULL`, then
  *         processing will continue until there are no further outstanding
  *         requests (or a failure occurs).
- * @return 0 on success, -1 if a error occurs (errno will be set), and >0 if
- *         a valid FAILURE message is received (in which case, all inflight
- *         requests will be drained).
+ * @param [interruptable] If `true`, setting of `reset_requested` will interrupt
+ *         receiving of results.
+ * @return 0 on success, -1 if a error occurs (errno will be set), 1 if
+ *         interrupted, and >1 if a valid FAILURE message is received (in which
+ *         case, all inflight requests will have been drained).
  */
-int receive_responses(neo4j_session_t *session, const unsigned int *condition)
+int receive_responses(neo4j_session_t *session, const unsigned int *condition,
+        bool interruptable)
 {
     assert(session != NULL);
     ENSURE_NOT_NULL(unsigned int, condition, 1);
     neo4j_connection_t *connection = session->connection;
 
     bool failure = false;
-    while ((failure || *condition > 0) && session->inflight_requests > 0)
+    while ((failure || *condition > 0) && session->inflight_requests > 0 &&
+            (!interruptable || !interrupted(session)))
     {
         neo4j_message_type_t type;
         const neo4j_value_t *argv;
@@ -564,8 +606,13 @@ int receive_responses(neo4j_session_t *session, const unsigned int *condition)
         }
     }
 
+    if (interruptable && interrupted(session))
+    {
+        return 1;
+    }
+
     assert(!failure || session->inflight_requests == 0);
-    return failure? 1 : 0;
+    return failure? 2 : 0;
 }
 
 

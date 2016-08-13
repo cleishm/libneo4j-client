@@ -2,6 +2,7 @@ lib_LTLIBRARIES = libneo4j-client.la
 
 include_HEADERS = neo4j-client.h
 libneo4j_client_la_SOURCES = \
+	atomic.h \
 	error_handling.c \
 	buffering_iostream.c \
 	buffering_iostream.h \
