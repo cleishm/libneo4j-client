@@ -22,21 +22,21 @@
 typedef struct neo4j_job neo4j_job_t;
 struct neo4j_job
 {
-    void (*notify_session_ending)(neo4j_job_t *self);
+    void (*abort)(neo4j_job_t *self, int err);
     neo4j_job_t *next;
 };
 
 
 /**
- * Notify a job that the session it is attached to in ending.
+ * Notify a job that it should abort.
  *
  * @internal
  *
  * @param [job] The job to notify.
  */
-static inline void neo4j_job_notify_session_ending(neo4j_job_t *job)
+static inline void neo4j_job_abort(neo4j_job_t *job, int err)
 {
-    job->notify_session_ending(job);
+    job->abort(job, err);
 }
 
 #endif/*NEO4J_JOB_H*/

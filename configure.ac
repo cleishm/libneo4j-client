@@ -14,7 +14,7 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[1.1.0])
+AC_INIT([libneo4j-client],[1.2.0])
 AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -49,6 +49,7 @@ AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([endian.h sys/endian.h libkern/OSByteOrder.h])
+AC_CHECK_HEADERS([stdatomic.h])
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_FUNC_STRERROR_R
@@ -180,9 +181,9 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit], [has_libedit=yes], [has_libedit=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_libedit" != "Xyes"],
   [AC_MSG_ERROR([libedit is required for building command line tools (specify --disable-tools to ignore)])])
 
-PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.4.0], [has_cypher_parser=yes], [has_cypher_parser=no])
+PKG_CHECK_MODULES([CYPHER_PARSER], [cypher-parser >= 0.5.0], [has_cypher_parser=yes], [has_cypher_parser=no])
 AS_IF([test "X$enable_tools" != "Xno" -a "X$has_cypher_parser" != "Xyes"],
-  [AC_MSG_ERROR([libcypher-parser (>= 0.4.0) is required for building command line tools (specify --disable-tools to ignore)])])
+  [AC_MSG_ERROR([libcypher-parser (>= 0.5.0) is required for building command line tools (specify --disable-tools to ignore)])])
 
 
 dnl Check if assertions should be disabled

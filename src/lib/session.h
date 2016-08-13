@@ -18,11 +18,26 @@
 #define NEO4J_SESSION_H
 
 #include "neo4j-client.h"
+#include "atomic.h"
 #include "connection.h"
 #include "job.h"
 #include "memory.h"
 
 
+/**
+ * Callback for receiving responses to requests.
+ *
+ * @internal
+ *
+ * @param [cdata] The opaque callback data.
+ * @param [type] The type of the response message.
+ * @param [argv] The response argument vector.
+ * @param [argc] The number of arguments in the argument vector.
+ * @return 0 if the response was processed successfully and no more
+ *        responses are expected for the request, <0 if an error occurs
+ *        (errno will be set), >0 if the response was processed successfully
+ *        and there are more responses expected for the request.
+ */
 typedef int (*neo4j_response_recv_t)(void *cdata, neo4j_message_type_t type,
             const neo4j_value_t *argv, uint16_t argc);
 
@@ -48,8 +63,10 @@ struct neo4j_session
     neo4j_connection_t *connection;
     neo4j_logger_t *logger;
 
+    neo4j_atomic_bool processing;
     bool credentials_expired;
     bool failed;
+    neo4j_atomic_bool reset_requested;
 
     struct neo4j_request *request_queue;
     unsigned int request_queue_size;

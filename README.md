@@ -115,7 +115,7 @@ $ echo "MATCH (n:Person) RETURN n.name AS name, n.born AS born LIMIT 3" | \
         neo4j-client -u neo4j -P localhost > result.csv
 Password: *****
 $
-$ cat output.csv
+$ cat result.csv
 "name","born"
 "Keanu Reeves",1964
 "Carrie-Anne Moss",1967
