@@ -196,7 +196,7 @@ static neo4j_value_t run_result_field(const neo4j_result_t *self,
 static neo4j_result_t *run_result_retain(neo4j_result_t *self);
 static void run_result_release(neo4j_result_t *self);
 
-static void notify_session_ending(neo4j_job_t *job);
+static void abort_job(neo4j_job_t *job, int err);
 static int run_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 static int pull_all_callback(void *cdata, neo4j_message_type_t type,
@@ -315,7 +315,7 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     results->statement_type = -1;
     results->refcount = 1;
 
-    results->job.notify_session_ending = notify_session_ending;
+    results->job.abort = abort_job;
     if (neo4j_attach_job(session, &(results->job)))
     {
         neo4j_log_debug_errno(results->logger,
@@ -580,7 +580,8 @@ int run_rs_close(neo4j_result_stream_t *self)
 neo4j_value_t run_result_field(const neo4j_result_t *self,
         unsigned int index)
 {
-    const result_record_t *record = (const result_record_t *)self;
+    const result_record_t *record = container_of(self,
+            result_record_t, _result);
     REQUIRE(record != NULL, neo4j_null);
     return neo4j_list_get(record->list, index);
 }
@@ -604,7 +605,7 @@ void run_result_release(neo4j_result_t *self)
 }
 
 
-void notify_session_ending(neo4j_job_t *job)
+void abort_job(neo4j_job_t *job, int err)
 {
     run_result_stream_t *results = container_of(job,
             run_result_stream_t, job);
@@ -617,7 +618,7 @@ void notify_session_ending(neo4j_job_t *job)
     results->session = NULL;
     if (results->streaming && results->failure == 0)
     {
-        set_failure(results, NEO4J_SESSION_ENDED);
+        set_failure(results, err);
     }
 }
 
@@ -824,7 +825,6 @@ int await(run_result_stream_t *results, const unsigned int *condition)
 {
     if (*condition > 0 && neo4j_session_sync(results->session, condition))
     {
-        neo4j_log_trace_errno(results->logger, "neo4j_session_sync failed");
         set_failure(results, errno);
         return -1;
     }

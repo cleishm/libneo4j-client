@@ -19,11 +19,6 @@
 
 #include "state.h"
 
-static inline bool is_command(const char *directive)
-{
-    return (directive[0] == ':');
-}
-
 int evaluate_command(shell_state_t *state, const char *command, size_t n);
 
 typedef struct evaluation_continuation evaluation_continuation_t;
