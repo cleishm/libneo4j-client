@@ -17,15 +17,55 @@
 #ifndef NEO4J_ATOMIC_H
 #define NEO4J_ATOMIC_H
 
+#ifdef HAVE_STDATOMIC_H
+
 #include <stdatomic.h>
 
-#define atomic_bool_init atomic_init
-#define atomic_bool_set atomic_store
-#define atomic_bool_value atomic_load
-static inline bool atomic_bool_cmp_set(atomic_bool *v, bool expected,
-        bool desired)
+typedef struct
 {
-    return atomic_compare_exchange_strong(v, &expected, desired);
+    atomic_bool value;
+} neo4j_atomic_bool;
+
+static inline void neo4j_atomic_bool_init(neo4j_atomic_bool *b, bool v)
+{
+    atomic_init(&(b->value), v);
 }
+
+static inline bool neo4j_atomic_bool_set(neo4j_atomic_bool *b, bool v)
+{
+    return atomic_exchange(&(b->value), v);
+}
+
+static inline bool neo4j_atomic_bool_get(neo4j_atomic_bool *b)
+{
+    return atomic_load(&(b->value));
+}
+
+#elif defined(__GNUC__)
+
+typedef struct
+{
+    bool value;
+} neo4j_atomic_bool;
+
+static inline void neo4j_atomic_bool_init(neo4j_atomic_bool *b, bool v)
+{
+    b->value = v;
+}
+
+static inline bool neo4j_atomic_bool_set(neo4j_atomic_bool *b, bool v)
+{
+    return __sync_val_compare_and_swap(&(b->value), !v, v);
+}
+
+static inline bool neo4j_atomic_bool_get(neo4j_atomic_bool *b)
+{
+    __sync_synchronize();
+    return b->value;
+}
+
+#else
+#error Missing atomics implementation (stdatomic)
+#endif
 
 #endif/*NEO4J_ATOMIC_H*/

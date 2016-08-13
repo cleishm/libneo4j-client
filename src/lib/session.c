@@ -67,8 +67,8 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
 
     session->connection = connection;
     session->logger = logger;
-    atomic_flag_clear(&(session->processing));
-    atomic_bool_init(&(session->reset_requested), false);
+    neo4j_atomic_bool_init(&(session->processing), false);
+    neo4j_atomic_bool_init(&(session->reset_requested), false);
     if (session_start(session))
     {
         goto failure;
@@ -93,7 +93,7 @@ failure:
 
 static inline bool interrupted(neo4j_session_t *session)
 {
-    return atomic_bool_value(&(session->reset_requested));
+    return neo4j_atomic_bool_get(&(session->reset_requested));
 }
 
 
@@ -152,7 +152,7 @@ int session_clear(neo4j_session_t *session)
         errno = NEO4J_SESSION_ENDED;
         return -1;
     }
-    if (atomic_flag_test_and_set(&(session->processing)))
+    if (neo4j_atomic_bool_set(&(session->processing), true))
     {
         errno = NEO4J_SESSION_BUSY;
         return -1;
@@ -189,7 +189,7 @@ int session_clear(neo4j_session_t *session)
     }
     assert(session->request_queue_depth == 0);
 
-    atomic_flag_clear(&(session->processing));
+    neo4j_atomic_bool_set(&(session->processing), false);
     errno = errsv;
     return err;
 }
@@ -333,8 +333,8 @@ int neo4j_reset_session(neo4j_session_t *session)
 
     // Check and set the reset_requested sentinal and then check if processing
     // is already taking place.
-    if (!atomic_bool_cmp_set(&(session->reset_requested), false, true) ||
-        atomic_flag_test_and_set(&(session->processing)))
+    if (neo4j_atomic_bool_set(&(session->reset_requested), true) ||
+        neo4j_atomic_bool_set(&(session->processing), true))
     {
         return 0;
     }
@@ -342,8 +342,8 @@ int neo4j_reset_session(neo4j_session_t *session)
     int err = session_reset(session);
     // clear reset_requested BEFORE ending processing, to ensure it is not
     // set if processing resumes
-    atomic_bool_set(&(session->reset_requested), false);
-    atomic_flag_clear(&(session->processing));
+    neo4j_atomic_bool_set(&(session->reset_requested), false);
+    neo4j_atomic_bool_set(&(session->processing), false);
     return err;
 }
 
@@ -422,7 +422,7 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
         errno = NEO4J_SESSION_FAILED;
         return -1;
     }
-    if (atomic_flag_test_and_set(&(session->processing)))
+    if (neo4j_atomic_bool_set(&(session->processing), true))
     {
         errno = NEO4J_SESSION_BUSY;
         return -1;
@@ -448,11 +448,11 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
             if (drain_queued_requests(session))
             {
                 assert(session->request_queue_depth == 0);
-                atomic_flag_clear(&(session->processing));
+                neo4j_atomic_bool_set(&(session->processing), false);
                 return -1;
             }
             assert(session->request_queue_depth == 0);
-            atomic_flag_clear(&(session->processing));
+            neo4j_atomic_bool_set(&(session->processing), false);
             return ack_failure(session);
         }
 
@@ -468,7 +468,7 @@ int neo4j_session_sync(neo4j_session_t *session, const unsigned int *condition)
         {
             errno = NEO4J_SESSION_RESET;
         }
-        atomic_bool_set(&(session->reset_requested), false);
+        neo4j_atomic_bool_set(&(session->reset_requested), false);
     }
     else
     {
@@ -483,7 +483,7 @@ cleanup:
         drain_queued_requests(session);
         assert(session->request_queue_depth == 0);
     }
-    atomic_flag_clear(&(session->processing));
+    neo4j_atomic_bool_set(&(session->processing), false);
     errno = errsv;
     return err;
 }
@@ -999,7 +999,7 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), -1);
     REQUIRE(callback != NULL, -1);
 
-    if (atomic_flag_test_and_set(&(session->processing)))
+    if (neo4j_atomic_bool_set(&(session->processing), true))
     {
         errno = NEO4J_SESSION_BUSY;
         return -1;
@@ -1026,7 +1026,7 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     err = 0;
 
 cleanup:
-    atomic_flag_clear(&(session->processing));
+    neo4j_atomic_bool_set(&(session->processing), false);
     return err;
 }
 
@@ -1038,7 +1038,7 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(mpool != NULL, -1);
     REQUIRE(callback != NULL, -1);
 
-    if (atomic_flag_test_and_set(&(session->processing)))
+    if (neo4j_atomic_bool_set(&(session->processing), true))
     {
         errno = NEO4J_SESSION_BUSY;
         return -1;
@@ -1064,7 +1064,7 @@ int neo4j_session_pull_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     err = 0;
 
 cleanup:
-    atomic_flag_clear(&(session->processing));
+    neo4j_atomic_bool_set(&(session->processing), false);
     return err;
 }
 
@@ -1076,7 +1076,7 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     REQUIRE(mpool != NULL, -1);
     REQUIRE(callback != NULL, -1);
 
-    if (atomic_flag_test_and_set(&(session->processing)))
+    if (neo4j_atomic_bool_set(&(session->processing), true))
     {
         errno = NEO4J_SESSION_BUSY;
         return -1;
@@ -1102,6 +1102,6 @@ int neo4j_session_discard_all(neo4j_session_t *session, neo4j_mpool_t *mpool,
     err = 0;
 
 cleanup:
-    atomic_flag_clear(&(session->processing));
+    neo4j_atomic_bool_set(&(session->processing), false);
     return err;
 }

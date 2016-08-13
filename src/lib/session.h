@@ -63,10 +63,10 @@ struct neo4j_session
     neo4j_connection_t *connection;
     neo4j_logger_t *logger;
 
-    atomic_flag processing;
+    neo4j_atomic_bool processing;
     bool credentials_expired;
     bool failed;
-    atomic_bool reset_requested;
+    neo4j_atomic_bool reset_requested;
 
     struct neo4j_request *request_queue;
     unsigned int request_queue_size;
