@@ -931,7 +931,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         goto cleanup;
     }
 
-    neo4j_log_error(session->logger, "session initalization failed: %s",
+    neo4j_log_error(session->logger, "session initialization failed: %s",
             details.message);
     errno = NEO4J_UNEXPECTED_ERROR;
 
