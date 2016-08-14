@@ -84,7 +84,8 @@ static struct option longopts[] =
 static void usage(FILE *s, const char *prog_name)
 {
     fprintf(s,
-"usage: %s [OPTIONS] [URL | host[:port]]\n"
+"usage: %s [OPTIONS] URL\n"
+"       %s [OPTIONS] host [port]\n"
 "options:\n"
 " --help, -h          Output this usage information.\n"
 " --history=file      Use the specified file for saving history.\n"
@@ -120,7 +121,7 @@ static void usage(FILE *s, const char *prog_name)
 "If the shell is run connected to a TTY, then an interactive command prompt\n"
 "is shown. Use `:exit` to quit. If the shell is not connected to a TTY, then\n"
 "directives are read from stdin.\n",
-        prog_name);
+        prog_name, prog_name);
 }
 
 static shell_state_t state;
@@ -340,7 +341,7 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
 
-    if (argc > 1)
+    if (argc > 2)
     {
         usage(state.err, prog_name);
         goto cleanup;
@@ -377,7 +378,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (argc >= 1 && db_connect(&state, argv[0]))
+    if (argc >= 1 && db_connect(&state, argv[0], (argc > 1)? argv[1] : NULL))
     {
         goto cleanup;
     }
