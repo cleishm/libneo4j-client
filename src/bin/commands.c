@@ -87,24 +87,28 @@ int run_command(shell_state_t *state, const cypher_astnode_t *command)
 
 int eval_connect(shell_state_t *state, const cypher_astnode_t *command)
 {
-    const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
-
-    if (arg == NULL)
+    if (cypher_ast_command_narguments(command) == 0)
     {
         fprintf(state->err,
-                ":connect requires a URL or host:port to connect to\n");
+                ":connect requires a URL or a host and port to connect to\n");
         return -1;
     }
-    if (cypher_ast_command_narguments(command) > 1)
+    if (cypher_ast_command_narguments(command) > 2)
     {
-        fprintf(state->err, ":connect requires a single argument\n");
+        fprintf(state->err, ":connect requires two arguments at most\n");
         return -1;
     }
 
+    const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
     assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
     const char *connect_string = cypher_ast_string_get_value(arg);
 
-    return db_connect(state, connect_string);
+    const cypher_astnode_t *arg2 = cypher_ast_command_get_argument(command, 1);
+    assert(arg2 == NULL || cypher_astnode_instanceof(arg2, CYPHER_AST_STRING));
+    const char *port_string = (arg2 != NULL)?
+            cypher_ast_string_get_value(arg2) : NULL;
+
+    return db_connect(state, connect_string, port_string);
 }
 
 
@@ -227,7 +231,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 "Available commands:\n"
 ":quit                  Exit the shell\n"
 ":connect '<url>'       Connect to the specified URL\n"
-":connect host[:port]   Connect to the specified host (and optional port)\n"
+":connect host [port]   Connect to the specified host (and optional port)\n"
 ":disconnect            Disconnect the client from the server\n"
 ":export                Display currently exported parameters\n"
 ":export name=val ...   Export parameters for queries\n"
