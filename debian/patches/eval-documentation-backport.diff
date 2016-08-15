@@ -1,0 +1,25 @@
+Backport fix to --eval/-e documentation
+--- a/neo4j-client.1.in
++++ b/neo4j-client.1.in
+@@ -98,6 +98,9 @@
+ .I \-\-source file, \-i file
+ Read input from the specified file. May be specified multiple times.
+ .TP
++.I \-\-eval script, \-e script
++Evaluate the argument string. May be specified multiple times.
++.TP
+ .I \-\-verbose, \-v
+ Increase the logging verbosity. Each use increases the verbosity. Each
+ verbosity level roughly equates to logging of warnings, general information,
+--- a/src/bin/neo4j-client.c
++++ b/src/bin/neo4j-client.c
+@@ -114,7 +114,8 @@
+ "                     Read input from the specified file. May be specified\n"
+ "                     multiple times.\n"
+ " --eval script, -e script\n"
+-"                     Evaluate the script. May be specified multiple times\n"
++"                     Evaluate the argument string. May be specified multiple\n"
++"                     times.\n"
+ " --verbose, -v       Increase logging verbosity.\n"
+ " --version           Output the version of neo4j-client and dependencies.\n"
+ "\n"
