@@ -41,7 +41,7 @@
 #define NEO4J_HISTORY_FILE "client-history"
 
 
-const char *shortopts = "hi:o:p:Pu:v";
+const char *shortopts = "e:hi:o:p:Pu:v";
 
 #define HISTFILE_OPT 1000
 #define CA_FILE_OPT 1001
@@ -76,6 +76,7 @@ static struct option longopts[] =
       { "pipeline-max", required_argument, NULL, PIPELINE_MAX_OPT },
       { "source", required_argument, NULL, 'i' },
       { "source-max-depth", required_argument, NULL, SOURCE_MAX_DEPTH_OPT },
+      { "eval", required_argument, NULL, 'e' },
       { "output", required_argument, NULL, 'o' },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
@@ -84,7 +85,8 @@ static struct option longopts[] =
 static void usage(FILE *s, const char *prog_name)
 {
     fprintf(s,
-"usage: %s [OPTIONS] [URL | host[:port]]\n"
+"usage: %s [OPTIONS] URL\n"
+"       %s [OPTIONS] host [port]\n"
 "options:\n"
 " --help, -h          Output this usage information.\n"
 " --history=file      Use the specified file for saving history.\n"
@@ -111,6 +113,8 @@ static void usage(FILE *s, const char *prog_name)
 " --source file, -i file\n"
 "                     Read input from the specified file. May be specified\n"
 "                     multiple times.\n"
+" --eval script, -e script\n"
+"                     Evaluate the script. May be specified multiple times\n"
 " --verbose, -v       Increase logging verbosity.\n"
 " --version           Output the version of neo4j-client and dependencies.\n"
 "\n"
@@ -120,22 +124,25 @@ static void usage(FILE *s, const char *prog_name)
 "If the shell is run connected to a TTY, then an interactive command prompt\n"
 "is shown. Use `:exit` to quit. If the shell is not connected to a TTY, then\n"
 "directives are read from stdin.\n",
-        prog_name);
+        prog_name, prog_name);
 }
 
 static shell_state_t state;
 
-
-static void interrupt_handler(int signal);
-
-
-struct file_io_request
+struct io_handler
 {
-    char *filename;
-    bool is_input;
+    char *arg;
+    bool is_output;
+    int (*handle)(shell_state_t *state, const char *arg);
 };
 
-#define NEO4J_MAX_FILE_IO_ARGS 128
+#define NEO4J_MAX_IO_ARGS 128
+
+static void interrupt_handler(int signal);
+static int add_io_handler(struct io_handler *io_handlers,
+        unsigned int *nio_handlers,
+        const char *arg, bool is_output,
+        int (*handler)(shell_state_t *state, const char *arg));
 
 
 int main(int argc, char *argv[])
@@ -156,8 +163,8 @@ int main(int argc, char *argv[])
 
     uint8_t log_level = NEO4J_LOG_WARN;
     struct neo4j_logger_provider *provider = NULL;
-    struct file_io_request file_io_requests[NEO4J_MAX_FILE_IO_ARGS];
-    unsigned int nfile_io_requests = 0;
+    struct io_handler io_handlers[NEO4J_MAX_IO_ARGS];
+    unsigned int nio_handlers = 0;
 
     neo4j_client_init();
 
@@ -285,14 +292,11 @@ int main(int argc, char *argv[])
             break;
         case 'i':
             state.interactive = false;
-            if (nfile_io_requests >= NEO4J_MAX_FILE_IO_ARGS)
+            if (add_io_handler(io_handlers, &nio_handlers,
+                        optarg, false, source))
             {
-                fprintf(state.err, "Too many --source and/or --output args\n");
                 goto cleanup;
             }
-            file_io_requests[nfile_io_requests].filename = strdup(optarg);
-            file_io_requests[nfile_io_requests].is_input = true;
-            ++nfile_io_requests;
             break;
         case SOURCE_MAX_DEPTH_OPT:
             {
@@ -306,15 +310,20 @@ int main(int argc, char *argv[])
                 state.source_max_depth = arg;
             }
             break;
-        case 'o':
-            if (nfile_io_requests >= NEO4J_MAX_FILE_IO_ARGS)
+        case 'e':
+            state.interactive = false;
+            if (add_io_handler(io_handlers, &nio_handlers,
+                        optarg, false, eval))
             {
-                fprintf(state.err, "Too many --source and/or --output args\n");
                 goto cleanup;
             }
-            file_io_requests[nfile_io_requests].filename = strdup(optarg);
-            file_io_requests[nfile_io_requests].is_input = false;
-            ++nfile_io_requests;
+            break;
+        case 'o':
+            if (add_io_handler(io_handlers, &nio_handlers,
+                        optarg, true, redirect_output))
+            {
+                goto cleanup;
+            }
             break;
         case VERSION_OPT:
             fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);
@@ -330,17 +339,17 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (nfile_io_requests > 0 &&
-            !file_io_requests[nfile_io_requests-1].is_input)
+    if (nio_handlers > 0 && io_handlers[nio_handlers-1].is_output)
     {
-        fprintf(stderr, "--output/-o must be followed by --source/-i\n");
+        fprintf(stderr,
+                "--output/-o must be followed by --source/-i or --eval/-e\n");
         goto cleanup;
     }
 
     argc -= optind;
     argv += optind;
 
-    if (argc > 1)
+    if (argc > 2)
     {
         usage(state.err, prog_name);
         goto cleanup;
@@ -377,7 +386,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (argc >= 1 && db_connect(&state, argv[0]))
+    if (argc >= 1 && db_connect(&state, argv[0], (argc > 1)? argv[1] : NULL))
     {
         goto cleanup;
     }
@@ -405,20 +414,12 @@ int main(int argc, char *argv[])
             goto cleanup;
         }
     }
-    else if (nfile_io_requests > 0)
+    else if (nio_handlers > 0)
     {
         state.render = render_results_csv;
-        for (unsigned int i = 0; i < nfile_io_requests; ++i)
+        for (unsigned int i = 0; i < nio_handlers; ++i)
         {
-            const char *filename = file_io_requests[i].filename;
-            if (!file_io_requests[i].is_input)
-            {
-                if (redirect_output(&state, filename))
-                {
-                    goto cleanup;
-                }
-            }
-            else if (source(&state, filename))
+            if (io_handlers[i].handle(&state, io_handlers[i].arg))
             {
                 goto cleanup;
             }
@@ -443,9 +444,9 @@ cleanup:
     {
         neo4j_std_logger_provider_free(provider);
     }
-    for (unsigned int i = 0; i < nfile_io_requests; ++i)
+    for (unsigned int i = 0; i < nio_handlers; ++i)
     {
-        free(file_io_requests[i].filename);
+        free(io_handlers[i].arg);
     }
     if (tty != NULL)
     {
@@ -453,6 +454,24 @@ cleanup:
     }
     neo4j_client_cleanup();
     return result;
+}
+
+
+int add_io_handler(struct io_handler *io_handlers, unsigned int *nio_handlers,
+        const char *arg, bool is_output,
+        int (*handler)(shell_state_t *state, const char *arg))
+{
+    if (*nio_handlers >= NEO4J_MAX_IO_ARGS)
+    {
+        fprintf(state.err,
+                "Too many --source, --eval and/or --output args\n");
+        return -1;
+    }
+    io_handlers[*nio_handlers].arg = strdup(arg);
+    io_handlers[*nio_handlers].is_output = is_output;
+    io_handlers[*nio_handlers].handle = handler;
+    ++(*nio_handlers);
+    return 0;
 }
 
 

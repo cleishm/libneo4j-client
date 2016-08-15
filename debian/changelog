@@ -1,3 +1,10 @@
+libneo4j-client (1.2.1-1) unstable; urgency=medium
+
+  * New upstream release 1.2.1
+    - Improvements to neo4j-client
+
+ -- Chris Leishman <chris@leishman.org>  Mon, 15 Aug 2016 18:30:43 +0000
+
 libneo4j-client (1.2.0-1) unstable; urgency=medium
 
   * New upstream release 1.2.0

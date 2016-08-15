@@ -39,6 +39,12 @@ struct parse_callback_data
 };
 
 
+static int parse_string(void *data, struct parse_callback_data *cdata);
+static int parse_stream(void *data, struct parse_callback_data *cdata);
+static int process(shell_state_t *state,
+        int (*parse)(void *data, struct parse_callback_data *cdata),
+        void *parse_data);
+
 static int parse_callback(void *data,
         const cypher_quick_parse_segment_t *segment);
 static int evaluate(shell_state_t *state, evaluation_queue_t *queue,
@@ -81,7 +87,33 @@ int source(shell_state_t *state, const char *filename)
 }
 
 
+int eval(shell_state_t *state, const char *script)
+{
+    return process(state, parse_string, (void *)(uintptr_t)script);
+}
+
+
 int batch(shell_state_t *state, FILE *stream)
+{
+    return process(state, parse_stream, (void *)stream);
+}
+
+
+int parse_string(void *data, struct parse_callback_data *cdata)
+{
+    return cypher_quick_parse((const char *)data, parse_callback, cdata, 0);
+}
+
+
+int parse_stream(void *data, struct parse_callback_data *cdata)
+{
+    return cypher_quick_fparse((FILE *)data, parse_callback, cdata, 0);
+}
+
+
+int process(shell_state_t *state,
+        int (*parse)(void *data, struct parse_callback_data *cdata),
+        void *parse_data)
 {
     evaluation_queue_t *queue = calloc(1, sizeof(evaluation_queue_t) +
             (state->pipeline_max * sizeof(evaluation_continuation_t *)));
@@ -93,8 +125,8 @@ int batch(shell_state_t *state, FILE *stream)
     queue->capacity = state->pipeline_max;
 
     int result = -1;
-    struct parse_callback_data cbdata = { .state = state, .queue = queue };
-    int err = cypher_quick_fparse(stream, parse_callback, &cbdata, 0);
+    struct parse_callback_data cdata = { .state = state, .queue = queue };
+    int err = parse(parse_data, &cdata);
     if (err)
     {
         if (err != -2)
