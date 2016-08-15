@@ -16,9 +16,9 @@ RUN cp /etc/devscripts.conf /root/.devscripts
 RUN echo 'DSCVERIFY_KEYRINGS="~/.gnupg/pubring.gpg"' >> /root/.devscripts
 RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 565E89E0
 
-RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.5.0-1.dsc && \
-    (cd libcypher-parser-0.5.0 && debuild -us -uc) && \
-    dpkg -i libcypher-parser8_0.5.0-1_amd64.deb libcypher-parser-dev_0.5.0-1_amd64.deb && \
+RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.5.1-1.dsc && \
+    (cd libcypher-parser-0.5.1 && debuild -us -uc) && \
+    dpkg -i libcypher-parser8_0.5.1-1_amd64.deb libcypher-parser-dev_0.5.1-1_amd64.deb && \
     rm -rf libcypher-parser* cypher-lint*
 
 RUN useradd -m debian
