@@ -98,6 +98,9 @@ Redirect output to the specified file. Must be specified in conjunction with
 .I \-\-source file, \-i file
 Read input from the specified file. May be specified multiple times.
 .TP
+.I \-\-eval script, \-e script
+Evaluate the argument string. May be specified multiple times.
+.TP
 .I \-\-verbose, \-v
 Increase the logging verbosity. Each use increases the verbosity. Each
 verbosity level roughly equates to logging of warnings, general information,
