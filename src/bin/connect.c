@@ -21,12 +21,12 @@
 #include <errno.h>
 
 
-static int parse_host_port(shell_state_t *state, const char *s,
-        char *hostname, size_t hostname_len, unsigned int *port);
+static int check_url(shell_state_t *state, const char *url_string);
 static int update_password_and_reconnect(shell_state_t *state);
 
 
-int db_connect(shell_state_t *state, const char *connect_string)
+int db_connect(shell_state_t *state, const char *connect_string,
+        const char *port_string)
 {
     if (state->session != NULL && db_disconnect(state))
     {
@@ -36,23 +36,35 @@ int db_connect(shell_state_t *state, const char *connect_string)
 
     neo4j_connection_t *connection;
 
-    char hostname[NEO4J_MAXHOSTLEN];
-    unsigned int port;
-    int r = parse_host_port(state, connect_string, hostname,
-            sizeof(hostname), &port);
-    if (r < 0)
+    if (port_string != NULL)
     {
-        return -1;
-    }
-    if (r == 0)
-    {
-        connection = neo4j_tcp_connect(hostname, port, state->config,
+        char *port_end;
+        long port = strtol(port_string, &port_end, 10);
+        if (*port_end != '\0' || port <= 0 || port > UINT16_MAX)
+        {
+            fprintf(state->err, "invalid port '%s'\n", port_string);
+            return -1;
+        }
+        connection = neo4j_tcp_connect(connect_string, port, state->config,
                 state->connect_flags);
     }
     else
     {
-        connection = neo4j_connect(connect_string, state->config,
-                state->connect_flags);
+        int r = check_url(state, connect_string);
+        if (r < 0)
+        {
+            return -1;
+        }
+        if (r == 0)
+        {
+            connection = neo4j_connect(connect_string, state->config,
+                    state->connect_flags);
+        }
+        else
+        {
+            connection = neo4j_tcp_connect(connect_string, 0, state->config,
+                    state->connect_flags);
+        }
     }
 
     if (connection == NULL)
@@ -96,51 +108,28 @@ int db_connect(shell_state_t *state, const char *connect_string)
 }
 
 
-int parse_host_port(shell_state_t *state, const char *s,
-        char *hostname, size_t hostname_len, unsigned int *port)
+int check_url(shell_state_t *state, const char *url_string)
 {
-    size_t hlen = strcspn(s, "/:");
-    const char *host_end = s + hlen;
-    if (*host_end == '/')
+    const char *colon = strchr(url_string, ':');
+    if (colon == NULL)
     {
         return 1;
     }
-    if (hlen >= hostname_len)
+    else if (*(colon + 1) == '/' && *(colon + 2) == '/')
     {
-        fprintf(state->err, "hostname is too long\n");
-        return -1;
+        return 0;
     }
-
-    if (*host_end == '\0')
-    {
-        *port = 0;
-    }
-    else if (*(host_end + 1) == '/')
-    {
-        return 1;
-    }
-    else if (*(host_end + 1) == '\0')
+    else if (*(colon + 1) == '\0')
     {
         fprintf(state->err, "Invalid URL '%s' "
-                "(you may need to put quotes around the whole URL)\n", s);
+                "(you may need to put quotes around the whole URL)\n",
+                url_string);
         return -1;
     }
     else
     {
-        assert(*host_end == ':');
-        char *port_end;
-        long p = strtol(host_end+1, &port_end, 10);
-        if (*port_end != '\0' || p <= 0 || p > UINT16_MAX)
-        {
-            fprintf(state->err, "invalid port '%s'\n", host_end+1);
-            return -1;
-        }
-        *port = (unsigned int)p;
+        return 1;
     }
-
-    memcpy(hostname, s, hlen);
-    hostname[hlen] = '\0';
-    return 0;
 }
 
 
