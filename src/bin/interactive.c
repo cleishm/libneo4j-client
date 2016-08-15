@@ -383,7 +383,9 @@ int process_segment(void *data,
         r = complete_evaluation(continuation, cbdata->state);
     }
 
-    cbdata->end_offset = range.end.offset;
+    struct cypher_input_position next =
+            cypher_quick_parse_segment_get_next(segment);
+    cbdata->end_offset = next.offset;
     cbdata->result = (r > 0)? r : 0;
     return cbdata->result;
 }

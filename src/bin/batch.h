@@ -21,6 +21,8 @@
 
 int source(shell_state_t *state, const char *filename);
 
+int eval(shell_state_t *state, const char *script);
+
 int batch(shell_state_t *state, FILE *stream);
 
 #endif/*NEO4J_BATCH_H*/
