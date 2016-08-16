@@ -5,7 +5,7 @@ neo4j-client
 About
 -----
 
-neo4j-client is a command shell for Neo4j. It supports secure connections
+neo4j-client is a command shell (CLI) for Neo4j. It supports secure connections
 to Neo4j server, sending of statements (including multiline statements),
 persistent command history, and rendering of results to tables or CSV.
 
@@ -68,7 +68,7 @@ the Neo4j server for evaluation.
 Available commands:
 :quit                  Exit the shell
 :connect '<url>'       Connect to the specified URL
-:connect host[:port]   Connect to the specified host (and optional port)
+:connect host [port]   Connect to the specified host (and optional port)
 :disconnect            Disconnect the client from the server
 :export                Display currently exported parameters
 :export name=val ...   Export parameters for queries
