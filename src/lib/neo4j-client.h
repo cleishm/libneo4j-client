@@ -2062,6 +2062,8 @@ void neo4j_release(neo4j_result_t *result);
  *
  * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
  * @param [width] The width of the table to render.
@@ -2080,6 +2082,8 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
  *
  * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
  * @param [flags] A bitmask of flags to control rendering.
@@ -2095,6 +2099,8 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
  * Flags can be specified, as a bitmask, to control rendering. There are
  * no flags that currently affect this function and a value of 0 or
  * `NEO4J_RENDER_DEFAULT` should be specified.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
  *
  * @param [stream] The stream to render to.
  * @param [plan] The statement plan to render.
