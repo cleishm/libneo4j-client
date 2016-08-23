@@ -30,6 +30,7 @@ check_libneo4j_client_CHECKS = \
 	check_serialization.c \
 	check_session.c \
 	check_tofu.c \
+	check_u8.c \
 	check_uri.c \
 	check_util.c \
 	check_values.c

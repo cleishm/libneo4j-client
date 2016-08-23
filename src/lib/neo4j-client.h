@@ -593,7 +593,7 @@ const char *neo4j_typestr(neo4j_type_t t);
 char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
 
 /**
- * Get a string representation of a neo4j value.
+ * Get a UTF-8 string representation of a neo4j value.
  *
  * Writes as much of the representation as possible into the buffer,
  * ensuring it is always `NULL` terminated.
@@ -607,7 +607,7 @@ char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
 size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n);
 
 /**
- * Print a string representation of a neo4j value to a stream.
+ * Print a UTF-8 string representation of a neo4j value to a stream.
  *
  * @param [value] The neo4j value.
  * @param [stream] The stream to print to.
@@ -1453,43 +1453,6 @@ void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
  */
 ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
 
-/**
- * Obtain the parent directory of a specified path.
- *
- * Any trailing '/' characters are not counted as part of the directory name.
- * If `path` is `NULL`, the empty string, or contains no '/' characters, the
- * path "." is placed into the result buffer.
- *
- * @param [path] The path.
- * @param [buffer] A buffer to place the parent directory path into, or `NULL`.
- * @param [n] The length of the buffer.
- * @return The length of the parent directory path, or -1 if an error
- *         occurs (errno will be set).
- */
-ssize_t neo4j_dirname(const char *path, char *buffer, size_t n);
-
-/**
- * Obtain the basename of a specified path.
- *
- * @param [path] The path.
- * @param [buffer] A buffer to place the base name into, or `NULL`.
- * @param [n] The length of the buffer.
- * @return The length of the base name, or -1 if an error occurs (errno will be
- *         set).
- */
-ssize_t neo4j_basename(const char *path, char *buffer, size_t n);
-
-/**
- * Create a directory and any required parent directories.
- *
- * Directories are created with default permissions as per the users umask.
- *
- * @param [path] The path of the directory to create.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
- */
-__neo4j_must_check
-int neo4j_mkdir_p(const char *path);
-
 
 /*
  * =====================================
@@ -2142,6 +2105,100 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
 __neo4j_must_check
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         unsigned int width, uint_fast32_t flags);
+
+
+/*
+ * =====================================
+ * utility methods
+ * =====================================
+ */
+
+/**
+ * Obtain the parent directory of a specified path.
+ *
+ * Any trailing '/' characters are not counted as part of the directory name.
+ * If `path` is `NULL`, the empty string, or contains no '/' characters, the
+ * path "." is placed into the result buffer.
+ *
+ * @param [path] The path.
+ * @param [buffer] A buffer to place the parent directory path into, or `NULL`.
+ * @param [n] The length of the buffer.
+ * @return The length of the parent directory path, or -1 if an error
+ *         occurs (errno will be set).
+ */
+ssize_t neo4j_dirname(const char *path, char *buffer, size_t n);
+
+/**
+ * Obtain the basename of a specified path.
+ *
+ * @param [path] The path.
+ * @param [buffer] A buffer to place the base name into, or `NULL`.
+ * @param [n] The length of the buffer.
+ * @return The length of the base name, or -1 if an error occurs (errno will be
+ *         set).
+ */
+ssize_t neo4j_basename(const char *path, char *buffer, size_t n);
+
+/**
+ * Create a directory and any required parent directories.
+ *
+ * Directories are created with default permissions as per the users umask.
+ *
+ * @param [path] The path of the directory to create.
+ * @return 0 on success, or -1 if an error occurs (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_mkdir_p(const char *path);
+
+/**
+ * Return the number of bytes in a UTF-8 character.
+ *
+ * @param [s] The sequence of bytes containing the character.
+ * @param [n] The maximum number of bytes to inspect.
+ * @return The length, in bytes, of the UTF-8 character, or -1 if a
+ *         decoding error occurs (errno will be set).
+ */
+int neo4j_u8clen(const char *s, size_t n);
+
+/**
+ * Return the column width of a UTF-8 character.
+ *
+ * @param [s] The sequence of bytes containing the character.
+ * @param [n] The maximum number of bytes to inspect.
+ * @return The width, in columns, of the UTF-8 character, or -1 if the
+ *         character is unprintable or cannot be decoded.
+ */
+int neo4j_u8cwidth(const char *s, size_t n);
+
+/**
+ * Return the Unicode codepoint of a UTF-8 character.
+ *
+ * @param [s] The sequence of bytes containing the character.
+ * @param [n] A ponter to a `size_t` containing the maximum number of bytes
+ *        to inspect. On successful return, this will be updated to contain
+ *        the number of bytes consumed by the character.
+ * @return The codepoint, or -1 if a decoding error occurs (errno will be set).
+ */
+int neo4j_u8codepoint(const char *s, size_t *n);
+
+/**
+ * Return the column width of a Unicode codepoint.
+ *
+ * @param [cp] The codepoint value.
+ * @return The width, in columns, of the Unicode codepoint, or -1 if the
+ *         codepoint is unprintable.
+ */
+int neo4j_u8cpwidth(int cp);
+
+
+/**
+ * Return the column width of a UTF-8 string.
+ *
+ * @param [s] The UTF-8 encoded string.
+ * @param [n] The maximum number of bytes to inspect.
+ * @return The width, in columns, of the UTF-8 string.
+ */
+int neo4j_u8cswidth(const char *s, size_t n);
 
 
 #pragma GCC visibility pop
