@@ -18,9 +18,11 @@
 #include "commands.h"
 #include "batch.h"
 #include "connect.h"
+#include "evaluate.h"
 #include "options.h"
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 
 
 struct shell_command
@@ -30,6 +32,10 @@ struct shell_command
         struct cypher_input_position pos);
 };
 
+static int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 static int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command,
@@ -46,6 +52,8 @@ static int eval_quit(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
+static int eval_rollback(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 static int eval_set(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_unset(shell_state_t *state, const cypher_astnode_t *command,
@@ -60,7 +68,9 @@ static int eval_width(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 
 static struct shell_command shell_commands[] =
-    { { "connect", eval_connect },
+    { { "begin", eval_begin },
+      { "commit", eval_commit },
+      { "connect", eval_connect },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
       { "export", eval_export },
@@ -69,6 +79,7 @@ static struct shell_command shell_commands[] =
       { "output", eval_output },
       { "quit", eval_quit },
       { "reset", eval_reset },
+      { "rollback", eval_rollback },
       { "set", eval_set },
       { "unset", eval_unset },
       { "source", eval_source },
@@ -98,6 +109,56 @@ int run_command(shell_state_t *state, const cypher_astnode_t *command,
     print_error(state, pos,
             "Unknown command '%s' (for usage, enter `:help`)", name);
     return -1;
+}
+
+
+int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        print_error(state, pos, ":begin does not take any arguments");
+        return -1;
+    }
+
+    bool echo = state->echo;
+    state->echo = false;
+    unsigned int nexports = state->nexports;
+    state->nexports = 0;
+    int err = evaluate_statement(state, "begin", 5, pos);
+    state->echo = echo;
+    state->nexports = nexports;
+    if (err)
+    {
+        print_error_errno(state, pos, errno, "unexpected error");
+        return -1;
+    }
+    return 0;
+}
+
+
+int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        print_error(state, pos, ":commit does not take any arguments");
+        return -1;
+    }
+
+    bool echo = state->echo;
+    state->echo = false;
+    unsigned int nexports = state->nexports;
+    state->nexports = 0;
+    int err = evaluate_statement(state, "commit", 6, pos);
+    state->echo = echo;
+    state->nexports = nexports;
+    if (err)
+    {
+        print_error_errno(state, pos, errno, "unexpected error");
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -229,6 +290,31 @@ int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
         return -1;
     }
     neo4j_reset_session(state->session);
+    return 0;
+}
+
+
+int eval_rollback(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        print_error(state, pos, ":rollback does not take any arguments");
+        return -1;
+    }
+
+    bool echo = state->echo;
+    state->echo = false;
+    unsigned int nexports = state->nexports;
+    state->nexports = 0;
+    int err = evaluate_statement(state, "rollback", 8, pos);
+    state->echo = echo;
+    state->nexports = nexports;
+    if (err)
+    {
+        print_error_errno(state, pos, errno, "unexpected error");
+        return -1;
+    }
     return 0;
 }
 
