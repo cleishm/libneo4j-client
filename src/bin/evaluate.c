@@ -61,7 +61,21 @@ struct evaluation_continuation
 };
 
 
-evaluation_continuation_t *evaluate_statement(shell_state_t *state,
+int evaluate_statement(shell_state_t *state, const char *statement, size_t n,
+        struct cypher_input_position pos)
+{
+    evaluation_continuation_t *continuation =
+            prepare_statement(state, statement, n, pos);
+    if (continuation == NULL)
+    {
+        print_error_errno(state, pos, errno, "unexpected error");
+        return -1;
+    }
+    return complete_evaluation(continuation, state);
+}
+
+
+evaluation_continuation_t *prepare_statement(shell_state_t *state,
         const char *statement, size_t n, struct cypher_input_position pos)
 {
     evaluation_continuation_t *continuation = calloc(1,

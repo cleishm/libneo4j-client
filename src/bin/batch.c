@@ -201,7 +201,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     assert(queue->depth < queue->capacity);
 
     evaluation_continuation_t *continuation =
-            evaluate_statement(state, s, n, range.start);
+            prepare_statement(state, s, n, range.start);
     if (continuation == NULL)
     {
         neo4j_perror(state->err, errno, "unexpected error");

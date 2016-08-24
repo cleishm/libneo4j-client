@@ -22,9 +22,12 @@
 int evaluate_command(shell_state_t *state, const char *command, size_t n,
         struct cypher_input_position pos);
 
+int evaluate_statement(shell_state_t *state, const char *statement, size_t n,
+        struct cypher_input_position pos);
+
 typedef struct evaluation_continuation evaluation_continuation_t;
 
-evaluation_continuation_t *evaluate_statement(shell_state_t *state,
+evaluation_continuation_t *prepare_statement(shell_state_t *state,
         const char *statement, size_t n, struct cypher_input_position pos);
 
 int complete_evaluation(evaluation_continuation_t *continuation,

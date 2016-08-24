@@ -373,14 +373,7 @@ int process_segment(void *data,
     }
     else
     {
-        evaluation_continuation_t *continuation =
-                evaluate_statement(cbdata->state, s, n, range.start);
-        if (continuation == NULL)
-        {
-            neo4j_perror(cbdata->state->err, errno, "unexpected error");
-            return -1;
-        }
-        r = complete_evaluation(continuation, cbdata->state);
+        r = evaluate_statement(cbdata->state, s, n, range.start);
     }
 
     struct cypher_input_position next =
