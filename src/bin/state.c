@@ -77,6 +77,90 @@ void shell_state_destroy(shell_state_t *state)
 }
 
 
+static int valert(shell_state_t *state, struct cypher_input_position pos,
+        const char *type, const char *fmt, va_list ap)
+{
+    int written = 0;
+    int r;
+
+    if (state->infile != NULL)
+    {
+        r = fprintf(state->err, "%s%s:%u:%u:%s %s%s:%s ",
+            state->error_colorize->pos[0], state->infile, pos.line,
+            pos.column, state->error_colorize->pos[1],
+            state->error_colorize->typ[0], type, state->error_colorize->typ[1]);
+        if (r < 0)
+        {
+            return -1;
+        }
+        written += r;
+    }
+
+    r = fprintf(state->err, "%s", state->error_colorize->msg[0]);
+    if (r < 0)
+    {
+        return -1;
+    }
+    written += r;
+
+    r = vfprintf(state->err, fmt, ap);
+    if (r < 0)
+    {
+        return -1;
+    }
+    written += r;
+    r = fprintf(state->err, "%s\n", state->error_colorize->msg[1]);
+    if (r < 0)
+    {
+        return -1;
+    }
+    written += r;
+    return written;
+}
+
+
+static int alert(shell_state_t *state, struct cypher_input_position pos,
+        const char *type, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int r = valert(state, pos, type, fmt, ap);
+    va_end(ap);
+    return r;
+}
+
+
+int print_error(shell_state_t *state, struct cypher_input_position pos,
+        const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int r = valert(state, pos, "error", fmt, ap);
+    va_end(ap);
+    return r;
+}
+
+
+int print_error_errno(shell_state_t *state, struct cypher_input_position pos,
+        int err, const char *msg)
+{
+    char buf[256];
+    return alert(state, pos, "error", "%s: %s", msg,
+            neo4j_strerror(err, buf, sizeof(buf)));
+}
+
+
+int print_warning(shell_state_t *state, struct cypher_input_position pos,
+        const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int r = valert(state, pos, "warning", fmt, ap);
+    va_end(ap);
+    return r;
+}
+
+
 int redirect_output(shell_state_t *state, const char *filename)
 {
     char *outfile = NULL;

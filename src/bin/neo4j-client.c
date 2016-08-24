@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 
     if (shell_state_init(&state, prog_name, stdin, stdout, stderr, tty))
     {
-        neo4j_perror(state.err, errno, "unexpected error");
+        neo4j_perror(stderr, errno, "unexpected error");
         goto cleanup;
     }
 
@@ -387,7 +387,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (argc >= 1 && db_connect(&state, argv[0], (argc > 1)? argv[1] : NULL))
+    if (argc >= 1 && db_connect(&state, cypher_input_position_zero,
+                argv[0], (argc > 1)? argv[1] : NULL))
     {
         goto cleanup;
     }

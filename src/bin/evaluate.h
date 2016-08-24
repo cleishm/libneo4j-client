@@ -19,7 +19,8 @@
 
 #include "state.h"
 
-int evaluate_command(shell_state_t *state, const char *command, size_t n);
+int evaluate_command(shell_state_t *state, const char *command, size_t n,
+        struct cypher_input_position pos);
 
 typedef struct evaluation_continuation evaluation_continuation_t;
 

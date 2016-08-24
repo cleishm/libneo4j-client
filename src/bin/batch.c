@@ -178,6 +178,9 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         return 0;
     }
 
+    struct cypher_input_range range =
+            cypher_quick_parse_segment_get_range(segment);
+
     if (cypher_quick_parse_segment_is_command(segment))
     {
         // drain queue before running commands
@@ -186,7 +189,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         {
             return err;
         }
-        return evaluate_command(state, s, n);
+        return evaluate_command(state, s, n, range.start);
     }
 
     assert(queue->depth <= queue->capacity);
@@ -195,10 +198,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
         neo4j_perror(state->err, errno, "unexpected error");
         return -1;
     }
-    assert (queue->depth < queue->capacity);
-
-    struct cypher_input_range range =
-            cypher_quick_parse_segment_get_range(segment);
+    assert(queue->depth < queue->capacity);
 
     evaluation_continuation_t *continuation =
             evaluate_statement(state, s, n, range.start);

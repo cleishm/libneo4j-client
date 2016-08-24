@@ -26,23 +26,38 @@
 struct shell_command
 {
     const char *name;
-    int (*action)(shell_state_t *state, const cypher_astnode_t *command);
+    int (*action)(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 };
 
-static int eval_connect(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_export(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_help(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_format(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_output(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_quit(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_reset(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_set(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_unset(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_source(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_status(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command);
-static int eval_width(shell_state_t *state, const cypher_astnode_t *command);
+static int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_export(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_help(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_format(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_output(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_quit(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_set(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_unset(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_source(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_status(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_width(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 
 static struct shell_command shell_commands[] =
     { { "connect", eval_connect },
@@ -63,7 +78,8 @@ static struct shell_command shell_commands[] =
       { NULL, NULL } };
 
 
-int run_command(shell_state_t *state, const cypher_astnode_t *command)
+int run_command(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     assert(cypher_astnode_instanceof(command, CYPHER_AST_COMMAND));
     const cypher_astnode_t *node = cypher_ast_command_get_name(command);
@@ -75,27 +91,28 @@ int run_command(shell_state_t *state, const cypher_astnode_t *command)
     {
         if (strcmp(shell_commands[i].name, name) == 0)
         {
-            return shell_commands[i].action(state, command);
+            return shell_commands[i].action(state, command, pos);
         }
     }
 
-    fprintf(state->err, "Unknown command '%s' (for usage, enter `:help`)\n",
-            name);
+    print_error(state, pos,
+            "Unknown command '%s' (for usage, enter `:help`)", name);
     return -1;
 }
 
 
-int eval_connect(shell_state_t *state, const cypher_astnode_t *command)
+int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) == 0)
     {
-        fprintf(state->err,
-                ":connect requires a URL or a host and port to connect to\n");
+        print_error(state, pos,
+                ":connect requires a URL or a host and port to connect to");
         return -1;
     }
     if (cypher_ast_command_narguments(command) > 2)
     {
-        fprintf(state->err, ":connect requires two arguments at most\n");
+        print_error(state, pos, ":connect requires two arguments at most");
         return -1;
     }
 
@@ -108,23 +125,25 @@ int eval_connect(shell_state_t *state, const cypher_astnode_t *command)
     const char *port_string = (arg2 != NULL)?
             cypher_ast_string_get_value(arg2) : NULL;
 
-    return db_connect(state, connect_string, port_string);
+    return db_connect(state, pos, connect_string, port_string);
 }
 
 
-int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command)
+int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) != 0)
     {
-        fprintf(state->err, ":disconnect does not take any arguments\n");
+        print_error(state, pos, ":disconnect does not take any arguments");
         return -1;
     }
 
-    return db_disconnect(state);
+    return db_disconnect(state, pos);
 }
 
 
-int eval_export(shell_state_t *state, const cypher_astnode_t *command)
+int eval_export(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) == 0)
     {
@@ -167,12 +186,13 @@ int eval_export(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_unexport(shell_state_t *state, const cypher_astnode_t *command)
+int eval_unexport(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) == 0)
     {
-        fprintf(state->err, ":unexport requires parameter name(s) "
-                "to stop exporting\n");
+        print_error(state, pos, ":unexport requires parameter name(s) "
+                "to stop exporting");
         return -1;
     }
 
@@ -194,17 +214,18 @@ int eval_unexport(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_reset(shell_state_t *state, const cypher_astnode_t *command)
+int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) != 0)
     {
-        fprintf(state->err, ":reset does not take any arguments\n");
+        print_error(state, pos, ":reset does not take any arguments");
         return -1;
     }
 
     if (state->session == NULL)
     {
-        fprintf(state->err, "ERROR: not connected\n");
+        print_error(state, pos, "not connected");
         return -1;
     }
     neo4j_reset_session(state->session);
@@ -212,11 +233,12 @@ int eval_reset(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_help(shell_state_t *state, const cypher_astnode_t *command)
+int eval_help(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) != 0)
     {
-        fprintf(state->err, ":help does not take any arguments\n");
+        print_error(state, pos, ":help does not take any arguments");
         return -1;
     }
 
@@ -251,13 +273,14 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_format(shell_state_t *state, const cypher_astnode_t *command)
+int eval_format(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
     if (arg == NULL)
     {
-        fprintf(state->err, ":format requires a rendering format "
-                "(table or csv)\n");
+        print_error(state, pos, ":format requires a rendering format "
+                "(table or csv)");
         return -1;
     }
 
@@ -267,16 +290,18 @@ int eval_format(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_output(shell_state_t *state, const cypher_astnode_t *command)
+int eval_output(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
-    fprintf(state->err,
-            "WARNING: `:output` is deprecated. "
-            "Use `:format` (or `:set format=value`) instead.\n");
-    return eval_format(state, command);
+    print_warning(state, pos,
+            "`:output` is deprecated. "
+            "Use `:format` (or `:set format=value`) instead.");
+    return eval_format(state, command, pos);
 }
 
 
-int eval_set(shell_state_t *state, const cypher_astnode_t *command)
+int eval_set(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) == 0)
     {
@@ -319,12 +344,13 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_source(shell_state_t *state, const cypher_astnode_t *command)
+int eval_source(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
     if (arg == NULL)
     {
-        fprintf(state->err, ":source requires a filename\n");
+        print_error(state, pos, ":source requires a filename");
         return -1;
     }
 
@@ -332,11 +358,12 @@ int eval_source(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_unset(shell_state_t *state, const cypher_astnode_t *command)
+int eval_unset(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) == 0)
     {
-        fprintf(state->err, ":unset requires at least one option name\n");
+        print_error(state, pos, ":unset requires at least one option name");
         return -1;
     }
 
@@ -364,11 +391,12 @@ int eval_unset(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_status(shell_state_t *state, const cypher_astnode_t *command)
+int eval_status(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) != 0)
     {
-        fprintf(state->err, ":status does not take any arguments\n");
+        print_error(state, pos, ":status does not take any arguments");
         return -1;
     }
     display_status(state->out, state);
@@ -376,12 +404,13 @@ int eval_status(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_width(shell_state_t *state, const cypher_astnode_t *command)
+int eval_width(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
     if (arg == NULL)
     {
-        fprintf(state->err, ":width requires an integer value, or 'auto'\n");
+        print_error(state, pos, ":width requires an integer value, or 'auto'");
         return -1;
     }
 
@@ -391,11 +420,12 @@ int eval_width(shell_state_t *state, const cypher_astnode_t *command)
 }
 
 
-int eval_quit(shell_state_t *state, const cypher_astnode_t *command)
+int eval_quit(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
 {
     if (cypher_ast_command_narguments(command) != 0)
     {
-        fprintf(state->err, ":quit does not take any arguments\n");
+        print_error(state, pos, ":quit does not take any arguments");
         return -1;
     }
 

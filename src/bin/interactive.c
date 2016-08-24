@@ -369,7 +369,7 @@ int process_segment(void *data,
     int r = 0;
     if (cypher_quick_parse_segment_is_command(segment))
     {
-        r = evaluate_command(cbdata->state, s, n);
+        r = evaluate_command(cbdata->state, s, n, range.start);
     }
     else
     {
