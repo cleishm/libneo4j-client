@@ -772,8 +772,10 @@ int initialize(neo4j_session_t *session, unsigned int attempts)
         req->receive = initialize_callback;
         req->cdata = &cdata;
 
-        neo4j_log_trace(session->logger, "enqu INIT{\"%s\"} (%p) in %p",
-                client_id, (void *)req, (void *)session);
+        neo4j_log_trace(session->logger,
+                "enqu INIT{\"%s\", {scheme: basic, principal: \"%s\", "
+                "credentials: ****}} (%p) in %p",
+                client_id, username, (void *)req, (void *)session);
 
         if (neo4j_session_sync(session, NULL))
         {
@@ -1020,8 +1022,13 @@ int neo4j_session_run(neo4j_session_t *session, neo4j_mpool_t *mpool,
     req->receive = callback;
     req->cdata = cdata;
 
-    neo4j_log_trace(session->logger, "enqu RUN{\"%s\"} (%p) in %p",
-            statement, (void *)req, (void *)session);
+    if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+    {
+        char buf[1024];
+        neo4j_log_trace(session->logger, "enqu RUN{\"%s\", %s} (%p) in %p",
+                statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
+                (void *)req, (void *)session);
+    }
 
     err = 0;
 
