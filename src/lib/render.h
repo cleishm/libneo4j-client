@@ -21,7 +21,23 @@
 
 #define NEO4J_FIELD_BUFFER_INITIAL_CAPACITY 1024
 
-extern const char NEO4J_RENDER_TABLE_LINE[NEO4J_RENDER_MAX_WIDTH];
-extern const char NEO4J_RENDER_CELL_LINE[NEO4J_RENDER_MAX_WIDTH];
+uint_fast32_t normalize_render_flags(uint_fast32_t flags);
+
+typedef enum
+{
+    LINE_TOP,
+    LINE_MIDDLE,
+    LINE_BOTTOM
+} line_position_t;
+
+int render_line(FILE *stream, unsigned int ncolumns,
+        unsigned int *widths, line_position_t position,
+        bool undersize, uint_fast32_t flags);
+
+typedef int (*render_row_callback_t)(
+        void *cdata, FILE *stream, unsigned int n, unsigned int width);
+int render_row(FILE *stream, unsigned int ncolumns,
+        unsigned int *widths, bool undersize, uint_fast32_t flags,
+        render_row_callback_t callback, void *cdata);
 
 #endif/*NEO4J_RENDER_H*/

@@ -22,9 +22,27 @@
 #include <assert.h>
 
 
-static int render_hr(FILE *stream, unsigned int nfields,
-        unsigned int column_width, bool undersize);
-static int write_field(FILE *stream, const char *s, unsigned int width);
+struct render_fieldname_data
+{
+    neo4j_result_stream_t *results;
+    uint_fast32_t flags;
+};
+
+struct render_result_field_data
+{
+    neo4j_result_t *result;
+    char **buffer;
+    size_t *bufcap;
+    uint_fast32_t flags;
+};
+
+static int render_fieldname(void *data, FILE *stream, unsigned int n,
+        unsigned int width);
+static int render_result_field(void *data, FILE *stream, unsigned int n,
+        unsigned int width);
+
+static int write_field(FILE *stream, const char *s, unsigned int width,
+        uint_fast32_t flags);
 static int write_field_value(FILE *stream, neo4j_value_t value, char **buf,
         size_t *bufcap, unsigned int width, uint_fast32_t flags);
 static size_t value_tostring(neo4j_value_t *value, char *buf, size_t n,
@@ -55,6 +73,8 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         return 0;
     }
 
+    flags = normalize_render_flags(flags);
+
     // calculate size of columns, and set undersize if there's less columns
     // than fields
     unsigned int column_width = (nfields == 0 || width <= (nfields+1))? 0 :
@@ -69,72 +89,52 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
     }
     assert(column_width >= 2 || nfields == 0);
 
+    // create array of column widths
+    unsigned int *widths = NULL;
+    if (nfields > 0 &&
+            (widths = malloc(nfields * sizeof(unsigned int))) == NULL)
+    {
+        return -1;
+    }
+    for (unsigned int i = 0; i < nfields; ++i)
+    {
+        widths[i] = column_width;
+    }
+
     // allocate a buffer for staging values before output
     char *buffer = NULL;
     size_t bufcap = column_width;
     if (column_width > 0 && (buffer = malloc(bufcap)) == NULL)
     {
-        return -1;
+        goto failure;
     }
 
-    if (render_hr(stream, nfields, column_width, undersize))
+    if (render_line(stream, nfields, widths, LINE_TOP, undersize, flags))
     {
         goto failure;
     }
 
-    // render header
-    unsigned int field_width = column_width - 2;
-    for (unsigned int i = 0; i < nfields; ++i)
-    {
-        if (fputs("| ", stream) == EOF)
-        {
-            goto failure;
-        }
-
-        const char *fieldname = neo4j_fieldname(results, i);
-        int overflow = write_field(stream, fieldname, field_width);
-        if (overflow < 0)
-        {
-            goto failure;
-        }
-        if (fputc(overflow? '=' : ' ', stream) == EOF)
-        {
-            goto failure;
-        }
-    }
-    if (fputs(undersize? "|=\n" : "|\n", stream) == EOF)
+    struct render_fieldname_data data = { .results = results, .flags = flags };
+    if (render_row(stream, nfields, widths, undersize, flags,
+            render_fieldname, &data))
     {
         goto failure;
     }
 
-    if (render_hr(stream, nfields, column_width, undersize))
+    if (render_line(stream, nfields, widths, LINE_MIDDLE, undersize, flags))
     {
         goto failure;
     }
 
+    // render body
     neo4j_result_t *result;
     while ((result = neo4j_fetch_next(results)) != NULL)
     {
-        for (unsigned int i = 0; i < nfields; ++i)
-        {
-            if (fputs("| ", stream) == EOF)
-            {
-                goto failure;
-            }
-
-            neo4j_value_t value = neo4j_result_field(result, i);
-            int overflow = write_field_value(stream, value, &buffer, &bufcap,
-                    field_width, flags);
-            if (overflow < 0)
-            {
-                goto failure;
-            }
-            if (fputc(overflow? '=' : ' ', stream) == EOF)
-            {
-                goto failure;
-            }
-        }
-        if (fputs(undersize? "|=\n" : "|\n", stream) == EOF)
+        struct render_result_field_data data =
+            { .result = result, .flags = flags,
+              .buffer = &buffer, .bufcap = &bufcap };
+        if (render_row(stream, nfields, widths, undersize, flags,
+                render_result_field, &data))
         {
             goto failure;
         }
@@ -147,7 +147,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_hr(stream, nfields, column_width, undersize))
+    if (render_line(stream, nfields, widths, LINE_BOTTOM, undersize, flags))
     {
         goto failure;
     }
@@ -157,6 +157,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         return -1;
     }
 
+    free(widths);
     free(buffer);
     return 0;
 
@@ -164,39 +165,39 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
 failure:
     errsv = errno;
     fflush(stream);
-    if (buffer != NULL)
-    {
-        free(buffer);
-    }
+    free(widths);
+    free(buffer);
     errno = errsv;
     return -1;
 }
 
 
-int render_hr(FILE *stream, unsigned int nfields, unsigned int column_width,
-        bool undersize)
+int render_fieldname(void *data, FILE *stream, unsigned int n,
+        unsigned int width)
 {
-    assert(column_width < NEO4J_RENDER_MAX_WIDTH-1);
-    column_width++;
-    for (unsigned int i = 0; i < nfields; ++i)
-    {
-        if (fwrite(NEO4J_RENDER_TABLE_LINE, sizeof(char),
-                    column_width, stream) < column_width)
-        {
-            return -1;
-        }
-    }
-    if (fputs(undersize? "+=\n" : "+\n", stream) == EOF)
-    {
-        return -1;
-    }
-    return 0;
+    struct render_fieldname_data *cdata =
+            (struct render_fieldname_data *)data;
+    const char *name = neo4j_fieldname(cdata->results, n);
+    return write_field(stream, name, width, cdata->flags);
 }
 
 
-int write_field(FILE *stream, const char *s, unsigned int width)
+int render_result_field(void *data, FILE *stream, unsigned int n,
+        unsigned int width)
 {
-    while (width > 0 && *s != '\0')
+    struct render_result_field_data *cdata =
+            (struct render_result_field_data *)data;
+    neo4j_value_t value = neo4j_result_field(cdata->result, n);
+    return write_field_value(stream, value, cdata->buffer, cdata->bufcap,
+            width, cdata->flags);
+}
+
+
+int write_field(FILE *stream, const char *s, unsigned int width,
+        uint_fast32_t flags)
+{
+    unsigned int used = 0;
+    while (used < width && *s != '\0')
     {
         size_t b = SIZE_MAX;
         int cp = neo4j_u8codepoint(s, &b);
@@ -205,40 +206,31 @@ int write_field(FILE *stream, const char *s, unsigned int width)
             return -1;
         }
         assert(b > 0);
-        int w = neo4j_u8cpwidth(cp);
-        if (w < 0)
+        int w;
+        if ((b > 1 && (flags & NEO4J_RENDER_ASCII)) ||
+                (w = neo4j_u8cpwidth(cp)) < 0)
         {
-            s += b;
             w = write_unprintable(stream, cp, width);
             if (w < 0)
             {
                 return -1;
             }
-            if ((unsigned int)w > width)
+        }
+        else
+        {
+            if ((used + w) > width)
             {
-                width = 0;
                 break;
             }
-            width -= w;
-            continue;
-        }
-        if ((unsigned int)w > width)
-        {
-            break;
-        }
-        if (fwrite(s, sizeof(char), b, stream) < b)
-        {
-            return -1;
+            if (fwrite(s, sizeof(char), b, stream) < b)
+            {
+                return -1;
+            }
         }
         s += b;
-        width -= w;
+        used += w;
     }
-    if (width > 0 && fwrite(NEO4J_RENDER_CELL_LINE+1, sizeof(char),
-            width, stream) < width)
-    {
-        return -1;
-    }
-    return (*s != '\0')? 1 : 0;
+    return (*s != '\0')? used + 1 : used;
 }
 
 
@@ -279,7 +271,7 @@ int write_field_value(FILE *stream, neo4j_value_t value, char **buf,
         *buf = newbuf;
     } while (true);
 
-    return write_field(stream, *buf, width);
+    return write_field(stream, *buf, width, flags);
 }
 
 

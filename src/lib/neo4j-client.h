@@ -2052,13 +2052,15 @@ void neo4j_release(neo4j_result_t *result);
 #define NEO4J_RENDER_DEFAULT 0
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
+#define NEO4J_RENDER_ASCII (1<<2)
+#define NEO4J_RENDER_ASCII_ART (1<<3)
 
 /**
  * Render a result stream as a table.
  *
  * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flags `NEO4J_RENDER_SHOW_NULL` and
- * `NEO4J_RENDER_QUOTE_STRINGS`.
+ * method respects the flags `NEO4J_RENDER_SHOW_NULL`,
+ * `NEO4J_RENDER_QUOTE_STRINGS` and `NEO4J_RENDER_ASCII`.
  *
  * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
@@ -2096,9 +2098,10 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
 /**
  * Render a statement plan as a table.
  *
- * Flags can be specified, as a bitmask, to control rendering. There are
- * no flags that currently affect this function and a value of 0 or
- * `NEO4J_RENDER_DEFAULT` should be specified.
+ * Flags can be specified, as a bitmask, to control rendering. This rendering
+ * method respects the flag `NEO4J_RENDER_ASCII`.
+ *
+ * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
