@@ -81,10 +81,8 @@ neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection)
     int errsv;
 failure:
     errsv = errno;
-    if (session != NULL)
-    {
-        free(session);
-    }
+    free(session->server_id);
+    free(session);
     neo4j_logger_release(logger);
     errno = errsv;
     return NULL;
@@ -302,6 +300,7 @@ int neo4j_end_session(neo4j_session_t *session)
     session->connection = NULL;
     neo4j_logger_release(session->logger);
     session->logger = NULL;
+    free(session->server_id);
     free(session);
     errno = errsv;
     return err;
@@ -345,6 +344,12 @@ int neo4j_reset_session(neo4j_session_t *session)
     neo4j_atomic_bool_set(&(session->reset_requested), false);
     neo4j_atomic_bool_set(&(session->processing), false);
     return err;
+}
+
+
+const char *neo4j_server_id(const neo4j_session_t *session)
+{
+    return session->server_id;
 }
 
 
@@ -872,6 +877,16 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         neo4j_value_t ce = neo4j_map_get(*metadata, "credentials_expired");
         session->credentials_expired =
                 (neo4j_type(ce) == NEO4J_BOOL && neo4j_bool_value(ce));
+        neo4j_value_t si = neo4j_map_get(*metadata, "server");
+        if (neo4j_type(si) == NEO4J_STRING)
+        {
+            session->server_id = strndup(neo4j_ustring_value(si),
+                    neo4j_string_length(si));
+            if (session->server_id == NULL)
+            {
+                return -1;
+            }
+        }
         return 0;
     }
 

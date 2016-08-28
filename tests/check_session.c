@@ -172,6 +172,44 @@ START_TEST (test_new_session_sends_init_with_clientid_and_auth)
 END_TEST
 
 
+START_TEST (test_session_init_credentials_valid)
+{
+    neo4j_map_entry_t init_metadata_entries[1];
+    init_metadata_entries[0] =
+        neo4j_map_entry("server", neo4j_string("neo4j/1.2.3"));
+    neo4j_value_t map = neo4j_map(init_metadata_entries, 1);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &map, 1); // INIT
+
+    neo4j_session_t *session = neo4j_new_session(connection);
+    ck_assert_ptr_ne(session, NULL);
+
+    ck_assert(!neo4j_credentials_expired(session));
+    ck_assert_str_eq(neo4j_server_id(session), "neo4j/1.2.3");
+
+    neo4j_end_session(session);
+}
+END_TEST
+
+
+START_TEST (test_session_init_credentials_expired)
+{
+    neo4j_map_entry_t init_metadata_entries[1];
+    init_metadata_entries[0] =
+        neo4j_map_entry("credentials_expired", neo4j_bool(true));
+    neo4j_value_t map = neo4j_map(init_metadata_entries, 1);
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &map, 1); // INIT
+
+    neo4j_session_t *session = neo4j_new_session(connection);
+    ck_assert_ptr_ne(session, NULL);
+
+    ck_assert(neo4j_credentials_expired(session));
+    ck_assert_ptr_eq(neo4j_server_id(session), NULL);
+
+    neo4j_end_session(session);
+}
+END_TEST
+
+
 START_TEST (test_new_session_fails_on_init_failure)
 {
     neo4j_config_set_logger_provider(connection->config, NULL);
@@ -541,6 +579,8 @@ TCase* session_tcase(void)
     TCase *tc = tcase_create("session");
     tcase_add_checked_fixture(tc, setup, teardown);
     tcase_add_test(tc, test_new_session_sends_init_with_clientid_and_auth);
+    tcase_add_test(tc, test_session_init_credentials_valid);
+    tcase_add_test(tc, test_session_init_credentials_expired);
     tcase_add_test(tc, test_new_session_fails_on_init_failure);
     tcase_add_test(tc, test_new_session_fails_if_connection_is_dead);
     tcase_add_test(tc, test_new_session_fails_if_session_active);

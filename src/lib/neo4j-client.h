@@ -1620,6 +1620,15 @@ neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session);
 __neo4j_pure
 bool neo4j_credentials_expired(const neo4j_session_t *session);
 
+/**
+ * Get the server ID string.
+ *
+ * @param [session] The session.
+ * @return The server ID string, or `NULL` if none was available.
+ */
+__neo4j_pure
+const char *neo4j_server_id(const neo4j_session_t *session);
+
 
 /*
  * =====================================

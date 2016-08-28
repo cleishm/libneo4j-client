@@ -286,15 +286,21 @@ void display_status(FILE* stream, shell_state_t *state)
     }
     else
     {
+        assert(state->session != NULL);
         const char *username = neo4j_connection_username(state->connection);
         const char *hostname = neo4j_connection_hostname(state->connection);
         bool ipv6 = (strchr(hostname, ':') != NULL);
         unsigned int port = neo4j_connection_port(state->connection);
         bool secure = neo4j_connection_is_secure(state->connection);
-        fprintf(stream, "Connected to 'neo4j://%s%s%s%s%s:%u'%s\n",
+        const char *server_id = neo4j_server_id(state->session);
+        fprintf(stream, "Connected to 'neo4j://%s%s%s%s%s:%u'%s%s%s%s\n",
                 (username != NULL)? username : "",
                 (username != NULL)? "@" : "",
                 ipv6? "[" : "", hostname, ipv6? "]" : "",
-                port, secure? "" : " (insecure)");
+                port,
+                secure? "" : " (insecure)",
+                (server_id != NULL)? " [" : "",
+                (server_id != NULL)? server_id : "",
+                (server_id != NULL)? "]" : "");
     }
 }
