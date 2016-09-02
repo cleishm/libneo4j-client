@@ -542,7 +542,10 @@ size_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
     }
 
     assert(neo4j_type(v->fields[2]) == NEO4J_MAP);
-    l += neo4j_map_str(&(v->fields[2]), buf+l, (l < n)? n-l : 0);
+    if (neo4j_map_size(v->fields[2]) > 0)
+    {
+        l += neo4j_map_str(&(v->fields[2]), buf+l, (l < n)? n-l : 0);
+    }
 
     if ((l+1) < n)
     {
@@ -592,12 +595,15 @@ ssize_t neo4j_node_fprint(const neo4j_value_t *value, FILE *stream)
     }
 
     assert(neo4j_type(v->fields[2]) == NEO4J_MAP);
-    ssize_t ll = neo4j_map_fprint(&(v->fields[2]), stream);
-    if (ll < 0)
+    if (neo4j_map_size(v->fields[2]) > 0)
     {
-        return -1;
+        ssize_t ll = neo4j_map_fprint(&(v->fields[2]), stream);
+        if (ll < 0)
+        {
+            return -1;
+        }
+        l += (size_t)ll;
     }
-    l += (size_t)ll;
 
     if (fputc(')', stream) == EOF)
     {
@@ -619,9 +625,13 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
 
     if (n > 0)
     {
-        buf[0] = '[';
+        buf[0] = '-';
+        if (n > 1)
+        {
+            buf[1] = '[';
+        }
     }
-    size_t l = 1;
+    size_t l = 2;
 
     int idx = (v->nfields == 5)? 3 : 1;
     assert(neo4j_type(v->fields[idx]) == NEO4J_STRING);
@@ -634,13 +644,20 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
     l += identifier_str(buf+l, (l < n)? n-l : 0, &(v->fields[idx]));
 
     assert(neo4j_type(v->fields[idx+1]) == NEO4J_MAP);
-    l += neo4j_map_str(&(v->fields[idx+1]), buf+l, (l < n)? n-l : 0);
+    if (neo4j_map_size(v->fields[idx+1]) > 0)
+    {
+        l += neo4j_map_str(&(v->fields[idx+1]), buf+l, (l < n)? n-l : 0);
+    }
 
     if ((l+1) < n)
     {
         buf[l] = ']';
+        if ((l+2) < n)
+        {
+            buf[l+1] = '-';
+        }
     }
-    l++;
+    l+=2;
     if (n > 0)
     {
         buf[minzu(n - 1, l)] = '\0';
@@ -656,11 +673,11 @@ ssize_t neo4j_rel_fprint(const neo4j_value_t *value, FILE *stream)
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     assert(v->nfields == 5 || v->nfields == 3);
 
-    if (fputs("[:", stream) == EOF)
+    if (fputs("-[:", stream) == EOF)
     {
         return -1;
     }
-    size_t l = 2;
+    size_t l = 3;
 
     int idx = (v->nfields == 5)? 3 : 1;
     assert(neo4j_type(v->fields[idx]) == NEO4J_STRING);
@@ -673,18 +690,21 @@ ssize_t neo4j_rel_fprint(const neo4j_value_t *value, FILE *stream)
     l += (size_t)ll;
 
     assert(neo4j_type(v->fields[idx+1]) == NEO4J_MAP);
-    ll = neo4j_map_fprint(&(v->fields[idx+1]), stream);
-    if (ll < 0)
+    if (neo4j_map_size(v->fields[idx+1]) > 0)
     {
-        return -1;
+        ll = neo4j_map_fprint(&(v->fields[idx+1]), stream);
+        if (ll < 0)
+        {
+            return -1;
+        }
+        l += (size_t)ll;
     }
-    l += (size_t)ll;
 
-    if (fputc(']', stream) == EOF)
+    if (fputs("]-", stream) == EOF)
     {
         return -1;
     }
-    return ++l;
+    return l+2;
 }
 
 
@@ -737,19 +757,9 @@ size_t neo4j_path_str(const neo4j_value_t *value, char *buf, size_t n)
             }
             l++;
         }
-        if ((l+1) < n)
-        {
-            buf[l] = '-';
-        }
-        l++;
 
         l += neo4j_rel_str(&(rels->items[ridx]), buf+l, (l < n)? n-l : 0);
 
-        if ((l+1) < n)
-        {
-            buf[l] = '-';
-        }
-        l++;
         if (ridx_val->value > 0)
         {
             if ((l+1) < n)
@@ -821,11 +831,6 @@ ssize_t neo4j_path_fprint(const neo4j_value_t *value, FILE *stream)
             }
             l++;
         }
-        if (fputc('-', stream) == EOF)
-        {
-            return -1;
-        }
-        l++;
 
         ll = neo4j_rel_fprint(&(rels->items[ridx]), stream);
         if (ll < 0)
@@ -834,11 +839,6 @@ ssize_t neo4j_path_fprint(const neo4j_value_t *value, FILE *stream)
         }
         l += (size_t)ll;
 
-        if (fputc('-', stream) == EOF)
-        {
-            return -1;
-        }
-        l++;
         if (ridx_val->value > 0)
         {
             if (fputc('>', stream) == EOF)
