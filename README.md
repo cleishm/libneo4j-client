@@ -9,6 +9,9 @@ neo4j-client is a command shell (CLI) for Neo4j. It supports secure connections
 to Neo4j server, sending of statements (including multiline statements),
 persistent command history, and rendering of results to tables or CSV.
 
+neo4j-client utilizes the [Bolt Network Protocol](http://boltprotocol.org), and
+will work with any server that supports Bolt.
+
 For more details, see [the project page](https://git.io/libneo4j-client) and
 the [FAQ](https://github.com/cleishm/libneo4j-client/wiki/FAQ).
 
