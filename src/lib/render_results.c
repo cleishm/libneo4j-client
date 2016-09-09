@@ -109,7 +109,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_line(stream, nfields, widths, LINE_TOP, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_TOP, undersize, flags))
     {
         goto failure;
     }
@@ -121,7 +121,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_line(stream, nfields, widths, LINE_MIDDLE, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_MIDDLE, undersize, flags))
     {
         goto failure;
     }
@@ -147,7 +147,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_line(stream, nfields, widths, LINE_BOTTOM, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_BOTTOM, undersize, flags))
     {
         goto failure;
     }

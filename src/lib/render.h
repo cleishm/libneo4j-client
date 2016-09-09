@@ -25,13 +25,31 @@ uint_fast32_t normalize_render_flags(uint_fast32_t flags);
 
 typedef enum
 {
-    LINE_TOP,
-    LINE_MIDDLE,
-    LINE_BOTTOM
-} line_position_t;
+    HLINE_TOP,
+    HLINE_MIDDLE,
+    HLINE_BOTTOM
+} hline_position_t;
 
-int render_line(FILE *stream, unsigned int ncolumns,
-        unsigned int *widths, line_position_t position,
+typedef enum
+{
+    HORIZONTAL_LINE,
+    VERTICAL_LINE,
+    TOP_LEFT_CORNER,
+    TOP_MIDDLE_CORNER,
+    TOP_RIGHT_CORNER,
+    MIDDLE_LEFT_CORNER,
+    MIDDLE_MIDDLE_CORNER,
+    MIDDLE_RIGHT_CORNER,
+    BOTTOM_LEFT_CORNER,
+    BOTTOM_MIDDLE_CORNER,
+    BOTTOM_RIGHT_CORNER
+} border_line_t;
+
+int render_border_line(FILE *stream, border_line_t line_type,
+        uint_fast32_t flags);
+
+int render_hrule(FILE *stream, unsigned int ncolumns,
+        unsigned int *widths, hline_position_t position,
         bool undersize, uint_fast32_t flags);
 
 typedef int (*render_row_callback_t)(

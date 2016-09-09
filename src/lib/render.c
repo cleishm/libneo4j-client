@@ -22,26 +22,49 @@
 #endif
 
 
-static const char *ascii_corners[] = { "+", "+", "+" };
-static const char *ascii_rule = "-";
-static const char *ascii_bar = "|";
+struct border_glifs
+{
+    const char *horizontal_line;
+    const char *vertical_line;
+    const char *top_corners[3];
+    const char *middle_corners[3];
+    const char *bottom_corners[3];
+};
+
+
+static const struct border_glifs ascii_border_glifs =
+    { .horizontal_line = "-",
+      .vertical_line = "|",
+      .top_corners = { "+", "+", "+" },
+      .middle_corners = { "+", "+", "+" },
+      .bottom_corners = { "+", "+", "+" } };
 
 #if HAVE_LANGINFO_CODESET
-static const char *u8_top_corners[] = { u8"\u250C", u8"\u252C", u8"\u2510" };
-static const char *u8_mid_corners[] = { u8"\u251C", u8"\u253C", u8"\u2524" };
-static const char *u8_bot_corners[] = { u8"\u2514", u8"\u2534", u8"\u2518" };
-static const char *u8_rule = u8"\u2500";
-static const char *u8_bar = u8"\u2502";
+static const struct border_glifs u8_border_glifs =
+    { .horizontal_line = u8"\u2500",
+      .vertical_line = u8"\u2502",
+      .top_corners = { u8"\u250C", u8"\u252C", u8"\u2510" },
+      .middle_corners = { u8"\u251C", u8"\u253C", u8"\u2524" },
+      .bottom_corners = { u8"\u2514", u8"\u2534", u8"\u2518" } };
 #endif
 
 
 uint_fast32_t normalize_render_flags(uint_fast32_t flags)
 {
 #if HAVE_LANGINFO_CODESET
-    if ((flags & NEO4J_RENDER_ASCII) ||
-        (strcmp(nl_langinfo(CODESET), "UTF-8") != 0))
+    // check if the codeset will support extended border drawing,
+    // and set NEO4J_RENDER_ASCII_ART if it will not.
+    if (flags & NEO4J_RENDER_ASCII)
     {
         flags |= NEO4J_RENDER_ASCII_ART;
+    }
+    else
+    {
+        const char *codeset = nl_langinfo(CODESET);
+        if (strcmp(codeset, "UTF-8") != 0)
+        {
+            flags |= NEO4J_RENDER_ASCII_ART;
+        }
     }
 #else
     flags |= NEO4J_RENDER_ASCII_ART;
@@ -50,30 +73,88 @@ uint_fast32_t normalize_render_flags(uint_fast32_t flags)
 }
 
 
-int render_line(FILE *stream, unsigned int ncolumns,
-        unsigned int *widths, line_position_t position,
-        bool undersize, uint_fast32_t flags)
+static const struct border_glifs *glifs_for_encoding(uint_fast32_t flags)
 {
-    const char *rule = ascii_rule;
-    const char **corners = ascii_corners;
 #if HAVE_LANGINFO_CODESET
     if (!(flags & NEO4J_RENDER_ASCII_ART))
     {
-        rule = u8_rule;
-        switch (position)
-        {
-        case LINE_TOP:
-            corners = u8_top_corners;
-            break;
-        case LINE_BOTTOM:
-            corners = u8_bot_corners;
-            break;
-        default:
-            corners = u8_mid_corners;
-            break;
-        }
+        return &u8_border_glifs;
     }
 #endif
+    return &ascii_border_glifs;
+}
+
+
+int render_border_line(FILE *stream, border_line_t line_type,
+        uint_fast32_t flags)
+{
+    const struct border_glifs *glifs = glifs_for_encoding(flags);
+    const char *glif;
+    switch (line_type)
+    {
+    case HORIZONTAL_LINE:
+        glif = glifs->horizontal_line;
+        break;
+    case VERTICAL_LINE:
+        glif = glifs->vertical_line;
+        break;
+    case TOP_LEFT_CORNER:
+        glif = glifs->top_corners[0];
+        break;
+    case TOP_MIDDLE_CORNER:
+        glif = glifs->top_corners[1];
+        break;
+    case TOP_RIGHT_CORNER:
+        glif = glifs->top_corners[2];
+        break;
+    case MIDDLE_LEFT_CORNER:
+        glif = glifs->middle_corners[0];
+        break;
+    case MIDDLE_MIDDLE_CORNER:
+        glif = glifs->middle_corners[1];
+        break;
+    case MIDDLE_RIGHT_CORNER:
+        glif = glifs->middle_corners[2];
+        break;
+    case BOTTOM_LEFT_CORNER:
+        glif = glifs->bottom_corners[0];
+        break;
+    case BOTTOM_MIDDLE_CORNER:
+        glif = glifs->bottom_corners[1];
+        break;
+    default:
+        assert(line_type == BOTTOM_RIGHT_CORNER);
+        glif = glifs->bottom_corners[2];
+        break;
+    }
+
+    if (fputs(glif, stream) == EOF)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+int render_hrule(FILE *stream, unsigned int ncolumns,
+        unsigned int *widths, hline_position_t position,
+        bool undersize, uint_fast32_t flags)
+{
+    const struct border_glifs *glifs = glifs_for_encoding(flags);
+    const char * const *corners;
+    switch (position)
+    {
+    case HLINE_TOP:
+        corners = glifs->top_corners;
+        break;
+    case HLINE_BOTTOM:
+        corners = glifs->bottom_corners;
+        break;
+    default:
+        assert(position == HLINE_MIDDLE);
+        corners = glifs->middle_corners;
+        break;
+    }
     for (unsigned int i = 0, corner = 0; i < ncolumns; ++i)
     {
         if (widths[i] == 0)
@@ -87,7 +168,7 @@ int render_line(FILE *stream, unsigned int ncolumns,
         corner = 1;
         for (unsigned int w = widths[i]; w > 0; --w)
         {
-            if (fputs(rule, stream) == EOF)
+            if (fputs(glifs->horizontal_line, stream) == EOF)
             {
                 return -1;
             }
@@ -97,7 +178,7 @@ int render_line(FILE *stream, unsigned int ncolumns,
     {
         return -1;
     }
-    if (undersize && fputs(rule, stream) == EOF)
+    if (undersize && fputs(glifs->horizontal_line, stream) == EOF)
     {
         return -1;
     }
@@ -113,20 +194,15 @@ int render_row(FILE *stream, unsigned int ncolumns,
         unsigned int *widths, bool undersize, uint_fast32_t flags,
         render_row_callback_t callback, void *cdata)
 {
-    const char *bar = ascii_bar;
-#if HAVE_LANGINFO_CODESET
-    if (!(flags & NEO4J_RENDER_ASCII_ART))
-    {
-        bar = u8_bar;
-    }
-#endif
+    const struct border_glifs *glifs = glifs_for_encoding(flags);
     for (unsigned int i = 0; i < ncolumns; ++i)
     {
         if (widths[i] == 0)
         {
             continue;
         }
-        if (fputs(bar, stream) == EOF || fputc(' ', stream) == EOF)
+        if (fputs(glifs->vertical_line, stream) == EOF ||
+                fputc(' ', stream) == EOF)
         {
             return -1;
         }
@@ -149,7 +225,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
             return -1;
         }
     }
-    if (fputs(bar, stream) == EOF)
+    if (fputs(glifs->vertical_line, stream) == EOF)
     {
         return -1;
     }

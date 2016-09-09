@@ -84,7 +84,7 @@ int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
     calculate_widths(widths, plan, width);
     bool undersize = (widths[5] == 0);
 
-    if (render_line(stream, 6, widths, LINE_TOP, undersize, flags))
+    if (render_hrule(stream, 6, widths, HLINE_TOP, undersize, flags))
     {
         goto failure;
     }
@@ -94,7 +94,7 @@ int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         goto failure;
     }
 
-    if (render_line(stream, 6, widths, LINE_MIDDLE, undersize, flags))
+    if (render_hrule(stream, 6, widths, HLINE_MIDDLE, undersize, flags))
     {
         goto failure;
     }
@@ -105,7 +105,7 @@ int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         goto failure;
     }
 
-    if (render_line(stream, 6, widths, LINE_BOTTOM, undersize, flags))
+    if (render_hrule(stream, 6, widths, HLINE_BOTTOM, undersize, flags))
     {
         goto failure;
     }
@@ -140,8 +140,6 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
         char **args_buffer, size_t *args_bufcap, unsigned int widths[6],
         uint_fast32_t flags)
 {
-    const char *bar = (flags & NEO4J_RENDER_ASCII_ART)? "|" : "\u2502";
-
     struct neo4j_statement_execution_step **sources = step->sources;
     for (unsigned int i = 0; i < step->nsources; ++i)
     {
@@ -169,20 +167,23 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
         return -1;
     }
 
-    if (widths[1] > 0 && (fputs(bar, stream) == EOF ||
-             fprintf(stream, " %*lld ", widths[1] - 2,
+    if (widths[1] > 0 && (
+            render_border_line(stream, VERTICAL_LINE, flags) ||
+            fprintf(stream, " %*lld ", widths[1] - 2,
                  llround(step->estimated_rows)) < 0))
     {
         return -1;
     }
 
-    if (widths[2] > 0 && (fputs(bar, stream) == EOF ||
+    if (widths[2] > 0 && (
+            render_border_line(stream, VERTICAL_LINE, flags) ||
             fprintf(stream, " %*lld ", widths[2] - 2, step->rows) < 0))
     {
         return -1;
     }
 
-    if (widths[3] > 0 && (fputs(bar, stream) == EOF ||
+    if (widths[3] > 0 && (
+            render_border_line(stream, VERTICAL_LINE, flags) ||
             fprintf(stream, " %*lld ", widths[3] - 2, step->db_hits) < 0))
     {
         return -1;
@@ -216,7 +217,7 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
     {
         if (widths[4] > 0)
         {
-            if (fputs(bar, stream) == EOF ||
+            if (render_border_line(stream, VERTICAL_LINE, flags) ||
                     fprintf(stream, " %-*.*s ", ids_width, ids_width, ids) < 0)
             {
                 return -1;
@@ -230,10 +231,10 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
 
         if (widths[5] > 0)
         {
-            if (fputs(bar, stream) == EOF ||
+            if (render_border_line(stream, VERTICAL_LINE, flags) ||
                     fprintf(stream, " %-*.*s ", args_width,
                         args_width, args) < 0 ||
-                    fputs(bar, stream) == EOF)
+                    render_border_line(stream, VERTICAL_LINE, flags))
             {
                 return -1;
             }
@@ -243,7 +244,8 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
                 args = args_end;
             }
         }
-        else if (fputs(bar, stream) == EOF || fputc('=', stream) == EOF)
+        else if (render_border_line(stream, VERTICAL_LINE, flags) ||
+                fputc('=', stream) == EOF)
         {
             return -1;
         }
@@ -270,12 +272,11 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
 int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
         unsigned int width, uint_fast32_t flags)
 {
-    const char *bar = (flags & NEO4J_RENDER_ASCII_ART)? "|" : "\u2502";
-
     unsigned int offset = 0;
     do
     {
-        if (fputs(bar, stream) == EOF || fputc(' ', stream) == EOF)
+        if (render_border_line(stream, VERTICAL_LINE, flags) ||
+                fputc(' ', stream) == EOF)
         {
             return -1;
         }
@@ -409,18 +410,17 @@ ssize_t build_args_value(neo4j_value_t args, char **buffer, size_t *bufcap)
 int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
         uint_fast32_t flags)
 {
-    const char *bar = (flags & NEO4J_RENDER_ASCII_ART)? "|" : "\u2502";
-
     size_t width = 0;
     while (width < op_depth*2)
     {
-        if (fputs(bar, stream) == EOF || fputc(' ', stream) == EOF)
+        if (render_border_line(stream, VERTICAL_LINE, flags) ||
+                fputc(' ', stream) == EOF)
         {
             return -1;
         }
         width += 2;
     }
-    if (fputs(bar, stream) == EOF)
+    if (render_border_line(stream, VERTICAL_LINE, flags))
     {
         return -1;
     }
@@ -440,7 +440,7 @@ int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
         {
             continue;
         }
-        if (fputs(bar, stream) == EOF)
+        if (render_border_line(stream, VERTICAL_LINE, flags))
         {
             return -1;
         }
@@ -460,7 +460,6 @@ int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
 int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         unsigned int widths[6], uint_fast32_t flags)
 {
-    const char *bar = (flags & NEO4J_RENDER_ASCII_ART)? "|" : "\u2502";
     if (widths[0] == 0)
     {
         if (render_row(stream, 0, NULL, true, flags, NULL, NULL))
@@ -473,13 +472,14 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
     size_t width = 0;
     while (width < op_depth*2)
     {
-        if (fputs(bar, stream) == EOF || fputc(' ', stream) == EOF)
+        if (render_border_line(stream, VERTICAL_LINE, flags) ||
+                fputc(' ', stream) == EOF)
         {
             return -1;
         }
         width += 2;
     }
-    if (fputs(bar, stream) == EOF)
+    if (render_border_line(stream, VERTICAL_LINE, flags))
     {
         return -1;
     }
@@ -497,7 +497,7 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         }
     }
 
-    if (render_line(stream, 5, widths+1, LINE_MIDDLE, (widths[5] == 0), flags))
+    if (render_hrule(stream, 5, widths+1, HLINE_MIDDLE, (widths[5]==0), flags))
     {
         return -1;
     }
