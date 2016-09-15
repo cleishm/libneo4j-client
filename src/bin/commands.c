@@ -73,6 +73,7 @@ static struct shell_command shell_commands[] =
       { "connect", eval_connect },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
+      { "param", eval_export },
       { "export", eval_export },
       { "help", eval_help },
       { "format", eval_format },
