@@ -19,6 +19,9 @@ RUN apt-get install -y libcypher-parser-dev
 
 RUN useradd -m debian
 RUN echo "debian ALL=NOPASSWD:ALL" >> /etc/sudoers
+ADD devscripts /home/debian/.devscripts
+RUN chown -R debian:debian /home/debian
+
 USER debian
 WORKDIR /home/debian
 

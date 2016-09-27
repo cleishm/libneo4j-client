@@ -11,20 +11,15 @@ RUN apt-get install -y libssl-dev
 RUN apt-get install -y man
 RUN apt-get install -y valgrind
 RUN apt-get install -y vim
-
-RUN cp /etc/devscripts.conf /root/.devscripts
-RUN echo 'DSCVERIFY_KEYRINGS="~/.gnupg/pubring.gpg"' >> /root/.devscripts
-RUN gpg --keyserver pool.sks-keyservers.net --recv-keys 565E89E0
-
-RUN dget https://mentors.debian.net/debian/pool/main/libc/libcypher-parser/libcypher-parser_0.5.1-1.dsc && \
-    (cd libcypher-parser-0.5.1 && debuild -us -uc) && \
-    dpkg -i libcypher-parser8_0.5.1-1_amd64.deb libcypher-parser-dev_0.5.1-1_amd64.deb && \
-    rm -rf libcypher-parser* cypher-lint*
+RUN apt-get install -y procps
+RUN apt-get install -y gnupg1
+RUN apt-get install -y libcypher-parser-dev
 
 RUN useradd -m debian
 RUN echo "debian ALL=NOPASSWD:ALL" >> /etc/sudoers
 ADD dput.cf /home/debian/.dput.cf
-RUN chown debian:debian /home/debian/.dput.cf
+ADD devscripts /home/debian/.devscripts
+RUN chown -R debian:debian /home/debian
 
 USER debian
 WORKDIR /home/debian
