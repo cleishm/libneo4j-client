@@ -349,6 +349,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 ":set                   Display current option values\n"
 ":set option=value ...  Set shell options\n"
 ":unset option ...      Unset shell options\n"
+":source file           Evaluate statements from the specified input file\n"
 ":status                Show the client connection status\n"
 ":help                  Show usage information\n"
 ":format (table|csv)    Set the output format\n"
