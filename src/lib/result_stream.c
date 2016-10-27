@@ -56,7 +56,7 @@ const struct neo4j_failure_details *neo4j_failure_details(
 
 unsigned int neo4j_nfields(neo4j_result_stream_t *results)
 {
-    REQUIRE(results != NULL, -1);
+    REQUIRE(results != NULL, 0);
     return results->nfields(results);
 }
 
@@ -393,13 +393,13 @@ unsigned int run_rs_nfields(neo4j_result_stream_t *self)
 {
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
-    REQUIRE(results != NULL, -1);
+    REQUIRE(results != NULL, 0);
 
     if (results->failure != 0 || await(results, &(results->starting)))
     {
         assert(results->failure != 0);
         errno = results->failure;
-        return -1;
+        return 0;
     }
     return results->nfields;
 }

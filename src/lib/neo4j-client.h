@@ -1695,8 +1695,8 @@ int neo4j_check_failure(neo4j_result_stream_t *results);
  * Get the number of fields in a result stream.
  *
  * @param [results] The result stream.
- * @return The number of fields in the result, or -1 if an error occurs
- *         (errno will be set).
+ * @return The number of fields in the result, or 0 if no fields were available
+ *         or if an error occurrs (errno will be set).
  */
 unsigned int neo4j_nfields(neo4j_result_stream_t *results);
 
