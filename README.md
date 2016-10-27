@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
     }
 
     neo4j_result_t *result = neo4j_fetch_next(results);
-    if (results == NULL)
+    if (result == NULL)
     {
         neo4j_perror(stderr, errno, "Failed to fetch result");
         return EXIT_FAILURE;
