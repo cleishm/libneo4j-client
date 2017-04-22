@@ -35,6 +35,10 @@
 
 static neo4j_mutex_t *thread_locks;
 
+#ifndef HAVE_ASN1_STRING_GET0_DATA
+#define ASN1_STRING_get0_data(x) ASN1_STRING_data(x)
+#endif
+
 #ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 static void locking_callback(int mode, int type, const char *file, int line);
 #endif
@@ -526,7 +530,8 @@ int check_subject_alt_name(X509* cert, const char *hostname,
             continue;
         }
 
-        char *name_str = (char *)ASN1_STRING_data(name->d.dNSName);
+        const char *name_str =
+                (const char *)ASN1_STRING_get0_data(name->d.dNSName);
         // check that there isn't a null in the asn1 string
         if (strlen(name_str) != (size_t)ASN1_STRING_length(name->d.dNSName))
         {
@@ -566,7 +571,7 @@ int check_common_name(X509 *cert, const char *hostname, neo4j_logger_t *logger)
     {
         return -1;
     }
-    const char *cn_str = (const char *)ASN1_STRING_data(asn1);
+    const char *cn_str = (const char *)ASN1_STRING_get0_data(asn1);
     // check that there isn't a null in the asn1 string
     if (strlen(cn_str) != (size_t)ASN1_STRING_length(asn1))
     {

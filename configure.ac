@@ -155,7 +155,7 @@ AS_IF([test "X$has_openssl" = "Xyes"],
    REQUIRES="$REQUIRES, openssl >= 0.9.7"
    save_LIBS="$LIBS"
    LIBS="$OPENSSL_LIBS $LIBS"
-   AC_CHECK_FUNCS([CRYPTO_set_locking_callback BIO_meth_new],[],[])
+   AC_CHECK_FUNCS([CRYPTO_set_locking_callback BIO_meth_new ASN1_STRING_get0_data],[],[])
    LIBS="$save_LIBS"
   ])
 AM_CONDITIONAL([HAVE_OPENSSL], [test "X$has_openssl" = "Xyes"])
