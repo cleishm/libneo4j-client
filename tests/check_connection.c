@@ -436,13 +436,37 @@ START_TEST (test_fails_if_init_failure)
     uint32_t version = htonl(1);
     rb_append(in_rb, &version, sizeof(version));
 
+    failure_metadata_entries[0] = neo4j_map_entry("code",
+            neo4j_string("Neo.ClientError.Security.Unauthorized"));
     queue_message(server_ios, NEO4J_FAILURE_MESSAGE,
             &failure_metadata, 1); // INIT
+    queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
     neo4j_connection_t *connection = neo4j_connect(
             "neo4j://localhost:7687", config, 0);
     ck_assert_ptr_eq(connection, NULL);
-    ck_assert_int_eq(errno, NEO4J_UNEXPECTED_ERROR);
+    ck_assert_int_eq(errno, NEO4J_INVALID_CREDENTIALS);
+}
+END_TEST
+
+
+START_TEST (test_fails_if_init_failure_and_close)
+{
+    neo4j_config_set_logger_provider(config, NULL);
+
+    uint32_t version = htonl(1);
+    rb_append(in_rb, &version, sizeof(version));
+
+    failure_metadata_entries[0] = neo4j_map_entry("code",
+            neo4j_string("Neo.ClientError.Security.Unauthorized"));
+    queue_message(server_ios, NEO4J_FAILURE_MESSAGE,
+            &failure_metadata, 1); // INIT
+    // No response to ACK_FAILURE
+
+    neo4j_connection_t *connection = neo4j_connect(
+            "neo4j://localhost:7687", config, 0);
+    ck_assert_ptr_eq(connection, NULL);
+    ck_assert_int_eq(errno, NEO4J_INVALID_CREDENTIALS);
 }
 END_TEST
 
@@ -782,6 +806,7 @@ TCase* connection_tcase(void)
     tcase_add_test(tc, test_fails_if_connection_factory_fails);
     tcase_add_test(tc, test_fails_if_unknown_protocol);
     tcase_add_test(tc, test_fails_if_init_failure);
+    tcase_add_test(tc, test_fails_if_init_failure_and_close);
     tcase_add_test(tc, test_fails_if_connection_closes);
     tcase_add_test(tc, test_drains_outstanding_requests_on_close);
     tcase_add_test(tc, test_awaits_inflight_requests_on_close);

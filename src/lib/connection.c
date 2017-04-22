@@ -1136,6 +1136,10 @@ int initialize(neo4j_connection_t *connection, unsigned int attempts)
 
         if (neo4j_session_sync(connection, NULL))
         {
+            if (cdata.error != 0)
+            {
+                errno = cdata.error;
+            }
             return -1;
         }
 
