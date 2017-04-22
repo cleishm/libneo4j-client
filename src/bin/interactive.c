@@ -236,7 +236,7 @@ int setup_history(shell_state_t *state, History *el_history)
 char *prompt(EditLine *el)
 {
     shell_state_t *state;
-    if (el_get(el, EL_CLIENTDATA, &state) == 0 && state->session != NULL)
+    if (el_get(el, EL_CLIENTDATA, &state) == 0 && state->connection != NULL)
     {
         return "neo4j> ";
     }

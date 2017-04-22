@@ -50,10 +50,6 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
 void shell_state_destroy(shell_state_t *state)
 {
     assert(state != NULL);
-    if (state->session != NULL)
-    {
-        neo4j_end_session(state->session);
-    }
     if (state->connection != NULL)
     {
         neo4j_close(state->connection);
@@ -286,13 +282,12 @@ void display_status(FILE* stream, shell_state_t *state)
     }
     else
     {
-        assert(state->session != NULL);
         const char *username = neo4j_connection_username(state->connection);
         const char *hostname = neo4j_connection_hostname(state->connection);
         bool ipv6 = (strchr(hostname, ':') != NULL);
         unsigned int port = neo4j_connection_port(state->connection);
         bool secure = neo4j_connection_is_secure(state->connection);
-        const char *server_id = neo4j_server_id(state->session);
+        const char *server_id = neo4j_server_id(state->connection);
         fprintf(stream, "Connected to 'neo4j://%s%s%s%s%s:%u'%s%s%s%s\n",
                 (username != NULL)? username : "",
                 (username != NULL)? "@" : "",

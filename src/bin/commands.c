@@ -285,12 +285,12 @@ int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
         return -1;
     }
 
-    if (state->session == NULL)
+    if (state->connection == NULL)
     {
         print_error(state, pos, "not connected");
         return -1;
     }
-    neo4j_reset_session(state->session);
+    neo4j_reset(state->connection);
     return 0;
 }
 

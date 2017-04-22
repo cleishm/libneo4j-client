@@ -88,13 +88,13 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
     memcpy(continuation->statement, statement, n);
     continuation->pos = pos;
 
-    if (state->session == NULL)
+    if (state->connection == NULL)
     {
         continuation->complete = not_connected_error;
         return continuation;
     }
 
-    continuation->results = neo4j_run(state->session,
+    continuation->results = neo4j_run(state->connection,
             continuation->statement, shell_state_get_exports(state));
     if (continuation->results == NULL)
     {

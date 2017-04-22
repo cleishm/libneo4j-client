@@ -212,15 +212,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    neo4j_session_t *session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        neo4j_perror(stderr, errno, "Failed to start session");
-        return EXIT_FAILURE;
-    }
-
     neo4j_result_stream_t *results =
-            neo4j_run(session, "RETURN 'hello world'", neo4j_null);
+            neo4j_run(connection, "RETURN 'hello world'", neo4j_null);
     if (results == NULL)
     {
         neo4j_perror(stderr, errno, "Failed to run statement");
@@ -239,7 +232,6 @@ int main(int argc, char *argv[])
     printf("%s\n", neo4j_tostring(value, buf, sizeof(buf)));
 
     neo4j_close_results(results);
-    neo4j_end_session(session);
     neo4j_close(connection);
     neo4j_client_cleanup();
     return EXIT_SUCCESS;

@@ -48,7 +48,6 @@ struct shell_state
     neo4j_config_t *config;
     uint_fast32_t connect_flags;
     neo4j_connection_t *connection;
-    neo4j_session_t *session;
     char *temp_buffer;
     size_t temp_buffer_capacity;
     const struct interactive_colorization *interactive_colorize;

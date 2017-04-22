@@ -479,7 +479,7 @@ int add_io_handler(struct io_handler *io_handlers, unsigned int *nio_handlers,
 
 void interrupt_handler(int signal)
 {
-    if (state.session != NULL && neo4j_reset_session(state.session))
+    if (state.connection != NULL && neo4j_reset(state.connection))
     {
         neo4j_perror(stderr, errno, "reset failed");
     }

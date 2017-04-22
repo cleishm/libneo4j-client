@@ -30,11 +30,11 @@ static int update_password_and_reconnect(shell_state_t *state,
 int db_connect(shell_state_t *state, struct cypher_input_position pos,
         const char *connect_string, const char *port_string)
 {
-    if (state->session != NULL && db_disconnect(state, pos))
+    if (state->connection != NULL && db_disconnect(state, pos))
     {
         return -1;
     }
-    assert(state->session == NULL);
+    assert(state->connection == NULL);
 
     neo4j_connection_t *connection;
 
@@ -87,19 +87,9 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
         return -1;
     }
 
-    neo4j_session_t *session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        print_error_errno(state, pos, errno, "connection failed");
-        neo4j_end_session(session);
-        neo4j_close(connection);
-        return -1;
-    }
-
     state->connection = connection;
-    state->session = session;
 
-    if (state->password_prompt && neo4j_credentials_expired(session) &&
+    if (state->password_prompt && neo4j_credentials_expired(connection) &&
             update_password_and_reconnect(state, pos))
     {
         assert(state->connection == NULL);
@@ -140,9 +130,7 @@ int update_password_and_reconnect(shell_state_t *state,
         struct cypher_input_position pos)
 {
     neo4j_connection_t *connection = state->connection;
-    neo4j_session_t *session = state->session;
     state->connection = NULL;
-    state->session = NULL;
 
     neo4j_config_t *config = NULL;
 
@@ -172,7 +160,7 @@ int update_password_and_reconnect(shell_state_t *state,
     fprintf(state->tty,
             "The current password has expired and must be changed.\n");
     char password[NEO4J_MAXPASSWORDLEN];
-    if (change_password(state, session, password, sizeof(password)))
+    if (change_password(state, connection, password, sizeof(password)))
     {
         goto failure_cleanup;
     }
@@ -187,8 +175,6 @@ int update_password_and_reconnect(shell_state_t *state,
         goto failure;
     }
 
-    neo4j_end_session(session);
-    session = NULL;
     neo4j_close(connection);
 
     connection = neo4j_tcp_connect(hostname, port, config,
@@ -198,14 +184,7 @@ int update_password_and_reconnect(shell_state_t *state,
         goto failure;
     }
 
-    session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        goto failure;
-    }
-
     state->connection = connection;
-    state->session = session;
     free(hostname);
     neo4j_config_free(config);
     return 0;
@@ -213,10 +192,6 @@ int update_password_and_reconnect(shell_state_t *state,
 failure:
     print_error_errno(state, pos, errno, "connection failed");
 failure_cleanup:
-    if (session != NULL)
-    {
-        neo4j_end_session(session);
-    }
     if (connection != NULL)
     {
         neo4j_close(connection);
@@ -229,13 +204,11 @@ failure_cleanup:
 
 int db_disconnect(shell_state_t *state, struct cypher_input_position pos)
 {
-    if (state->session == NULL)
+    if (state->connection == NULL)
     {
         print_error(state, pos, "not connected");
         return -1;
     }
-    neo4j_end_session(state->session);
-    state->session = NULL;
     neo4j_close(state->connection);
     state->connection = NULL;
     return 0;

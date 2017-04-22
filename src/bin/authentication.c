@@ -52,7 +52,7 @@ int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
 }
 
 
-int change_password(shell_state_t *state, neo4j_session_t *session,
+int change_password(shell_state_t *state, neo4j_connection_t *connection,
         char *password, size_t pwlen)
 {
     assert(state->tty != NULL);
@@ -85,7 +85,7 @@ int change_password(shell_state_t *state, neo4j_session_t *session,
     neo4j_map_entry_t param =
             neo4j_map_entry("password", neo4j_string(password));
     // FIXME: should use neo4j_send, but that results in a failure.
-    neo4j_result_stream_t *results = neo4j_run(session,
+    neo4j_result_stream_t *results = neo4j_run(connection,
             "CALL dbms.changePassword({password})", neo4j_map(&param, 1));
     if (results == NULL)
     {

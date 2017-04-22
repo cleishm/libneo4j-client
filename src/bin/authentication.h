@@ -23,7 +23,7 @@
 int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
         int error, char *username, size_t usize, char *password, size_t psize);
 
-int change_password(shell_state_t *state, neo4j_session_t *session,
+int change_password(shell_state_t *state, neo4j_connection_t *connection,
         char *password, size_t pwlen);
 
 #endif/*NEO4J_AUTHENTICATION_H*/

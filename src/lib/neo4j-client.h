@@ -66,11 +66,6 @@ typedef struct neo4j_config neo4j_config_t;
 typedef struct neo4j_connection neo4j_connection_t;
 
 /**
- * A session within a connection.
- */
-typedef struct neo4j_session neo4j_session_t;
-
-/**
  * A stream of results from a job.
  */
 typedef struct neo4j_result_stream neo4j_result_stream_t;
@@ -379,8 +374,6 @@ struct neo4j_connection_factory
 #define NEO4J_PROTOCOL_NEGOTIATION_FAILED -14
 #define NEO4J_INVALID_CREDENTIALS -15
 #define NEO4J_CONNECTION_CLOSED -16
-#define NEO4J_TOO_MANY_SESSIONS -17
-#define NEO4J_SESSION_ACTIVE -18
 #define NEO4J_SESSION_FAILED -19
 #define NEO4J_SESSION_ENDED -20
 #define NEO4J_UNCLOSED_RESULT_STREAM -21
@@ -435,7 +428,7 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen);
  * A memory allocator for neo4j client.
  *
  * This will be used to allocate regions of memory as required by
- * a session, for buffers, etc.
+ * a connection, for buffers, etc.
  */
 struct neo4j_memory_allocator
 {
@@ -1512,8 +1505,6 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
  * Close a connection to a neo4j server.
  *
  * @param [connection] The connection to close. This pointer will be invalid
- *         after the function returns, except when an error occurs and errno is
- *         set to NEO4J_SESSION_ACTIVE.
  *         after the function returns.
  * @return 0 on success, or -1 on error (errno will be set).
  */
@@ -1571,63 +1562,35 @@ bool neo4j_connection_is_secure(const neo4j_connection_t *connection);
  */
 
 /**
- * Create a new session for the given connection.
- *
- * @param [connection] The connection over which to establish the session.
- * @return A pointer to a `neo4j_session_t` structure, or `NULL` on error
- *         (errno will be set).
- */
-__neo4j_must_check
-neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection);
-
-/**
- * End a session with a neo4j server.
- *
- * @param [session] The session to end. The pointer will be invalid after the
- *         function returns.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
- */
-int neo4j_end_session(neo4j_session_t *session);
-
-/**
  * Reset a session.
  *
- * Invoking this function causes all server-held state for the session to be
+ * Invoking this function causes all server-held state for the connection to be
  * cleared, including rolling back any open transactions, and causes any
  * existing result stream to be terminated.
  *
- * @param [session] The session to reset.
+ * @param [connection] The connection to reset.
  * @return 0 on sucess, or -1 on error (errno will be set).
  */
-int neo4j_reset_session(neo4j_session_t *session);
-
-/**
- * Obtain the connection associated with a session.
- *
- * @param [session] The session.
- * @return The connection for the session.
- */
-__neo4j_pure
-neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session);
+int neo4j_reset(neo4j_connection_t *connection);
 
 /**
  * Check if the server indicated that credentials have expired.
  *
- * @param [session] The session.
+ * @param [connection] The connection.
  * @return `true` if the server indicated that credentials have expired,
  *         and `false` otherwise.
  */
 __neo4j_pure
-bool neo4j_credentials_expired(const neo4j_session_t *session);
+bool neo4j_credentials_expired(const neo4j_connection_t *connection);
 
 /**
  * Get the server ID string.
  *
- * @param [session] The session.
+ * @param [connection] The connection.
  * @return The server ID string, or `NULL` if none was available.
  */
 __neo4j_pure
-const char *neo4j_server_id(const neo4j_session_t *session);
+const char *neo4j_server_id(const neo4j_connection_t *connection);
 
 
 /*
@@ -1642,7 +1605,7 @@ const char *neo4j_server_id(const neo4j_session_t *session);
  * @attention The statement and the params must remain valid until the returned
  * result stream is closed.
  *
- * @param [session] The session to evaluate the statement in.
+ * @param [connection] The connection.
  * @param [statement] The statement to be evaluated. This must be a `NULL`
  *         terminated string and may contain UTF-8 multi-byte characters.
  * @param [params] The parameters for the statement, which must be a value of
@@ -1650,7 +1613,7 @@ const char *neo4j_server_id(const neo4j_session_t *session);
  * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
  */
 __neo4j_must_check
-neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
+neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
 /**
@@ -1660,7 +1623,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  * provide any results. It can be used to check for evaluation errors using
  * neo4j_check_failure().
  *
- * @param [session] The session to evaluate the statement in.
+ * @param [connection] The connection.
  * @param [statement] The statement to be evaluated. This must be a `NULL`
  *         terminated string and may contain UTF-8 multi-byte characters.
  * @param [params] The parameters for the statement, which must be a value of
@@ -1668,7 +1631,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
  */
 __neo4j_must_check
-neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
+neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
 
