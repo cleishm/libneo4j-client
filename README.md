@@ -5,9 +5,12 @@ neo4j-client
 About
 -----
 
-neo4j-client is a command shell for Neo4j. It supports secure connections
+neo4j-client is a command shell (CLI) for Neo4j. It supports secure connections
 to Neo4j server, sending of statements (including multiline statements),
 persistent command history, and rendering of results to tables or CSV.
+
+neo4j-client utilizes the [Bolt Network Protocol](http://boltprotocol.org), and
+will work with any server that supports Bolt.
 
 For more details, see [the project page](https://git.io/libneo4j-client) and
 the [FAQ](https://github.com/cleishm/libneo4j-client/wiki/FAQ).
@@ -68,7 +71,7 @@ the Neo4j server for evaluation.
 Available commands:
 :quit                  Exit the shell
 :connect '<url>'       Connect to the specified URL
-:connect host[:port]   Connect to the specified host (and optional port)
+:connect host [port]   Connect to the specified host (and optional port)
 :disconnect            Disconnect the client from the server
 :export                Display currently exported parameters
 :export name=val ...   Export parameters for queries
@@ -209,15 +212,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    neo4j_session_t *session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        neo4j_perror(stderr, errno, "Failed to start session");
-        return EXIT_FAILURE;
-    }
-
     neo4j_result_stream_t *results =
-            neo4j_run(session, "RETURN 'hello world'", neo4j_null);
+            neo4j_run(connection, "RETURN 'hello world'", neo4j_null);
     if (results == NULL)
     {
         neo4j_perror(stderr, errno, "Failed to run statement");
@@ -225,7 +221,7 @@ int main(int argc, char *argv[])
     }
 
     neo4j_result_t *result = neo4j_fetch_next(results);
-    if (results == NULL)
+    if (result == NULL)
     {
         neo4j_perror(stderr, errno, "Failed to fetch result");
         return EXIT_FAILURE;
@@ -236,7 +232,6 @@ int main(int argc, char *argv[])
     printf("%s\n", neo4j_tostring(value, buf, sizeof(buf)));
 
     neo4j_close_results(results);
-    neo4j_end_session(session);
     neo4j_close(connection);
     neo4j_client_cleanup();
     return EXIT_SUCCESS;

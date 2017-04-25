@@ -43,12 +43,11 @@ libneo4j_client_la_SOURCES = \
 	ring_buffer.h \
 	serialization.c \
 	serialization.h \
-	session.c \
-	session.h \
 	thread.c \
 	thread.h \
 	tofu.c \
 	tofu.h \
+	u8.c \
 	uri.c \
 	uri.h \
 	util.c \
@@ -77,4 +76,4 @@ libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 #    increment age.
 # 4. If any interfaces have been removed or changed since the last public
 #    release, then set age to 0.
-libneo4j_client_la_LDFLAGS = -version-info 10:0:1
+libneo4j_client_la_LDFLAGS = -version-info 11:0:0

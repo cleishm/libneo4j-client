@@ -16,10 +16,10 @@
  */
 #include "../../config.h"
 #include "result_stream.h"
+#include "connection.h"
 #include "client_config.h"
 #include "job.h"
 #include "metadata.h"
-#include "session.h"
 #include "util.h"
 #include <assert.h>
 #include <stddef.h>
@@ -56,7 +56,7 @@ const struct neo4j_failure_details *neo4j_failure_details(
 
 unsigned int neo4j_nfields(neo4j_result_stream_t *results)
 {
-    REQUIRE(results != NULL, -1);
+    REQUIRE(results != NULL, 0);
     return results->nfields(results);
 }
 
@@ -151,7 +151,7 @@ struct run_result_stream
 {
     neo4j_result_stream_t _result_stream;
 
-    neo4j_session_t *session;
+    neo4j_connection_t *connection;
     neo4j_job_t job;
     neo4j_logger_t *logger;
     neo4j_memory_allocator_t *allocator;
@@ -174,7 +174,7 @@ struct run_result_stream
 };
 
 
-static run_result_stream_t *run_rs_open(neo4j_session_t *session);
+static run_result_stream_t *run_rs_open(neo4j_connection_t *connection);
 static int run_rs_check_failure(neo4j_result_stream_t *self);
 static const char *run_rs_error_code(neo4j_result_stream_t *self);
 static const char *run_rs_error_message(neo4j_result_stream_t *self);
@@ -214,20 +214,20 @@ static int set_eval_failure(run_result_stream_t *results,
 static void set_failure(run_result_stream_t *results, int error);
 
 
-neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
+neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params)
 {
-    REQUIRE(session != NULL, NULL);
+    REQUIRE(connection != NULL, NULL);
     REQUIRE(statement != NULL, NULL);
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
 
-    run_result_stream_t *results = run_rs_open(session);
+    run_result_stream_t *results = run_rs_open(connection);
     if (results == NULL)
     {
         return NULL;
     }
 
-    if (neo4j_session_run(session, &(results->mpool), statement, params,
+    if (neo4j_session_run(connection, &(results->mpool), statement, params,
             run_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_run failed");
@@ -235,7 +235,7 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
     }
     (results->refcount)++;
 
-    if (neo4j_session_pull_all(results->session, &(results->record_mpool),
+    if (neo4j_session_pull_all(results->connection, &(results->record_mpool),
             pull_all_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_pull_all failed");
@@ -256,32 +256,32 @@ failure:
 }
 
 
-neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
+neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params)
 {
-    REQUIRE(session != NULL, NULL);
+    REQUIRE(connection != NULL, NULL);
     REQUIRE(statement != NULL, NULL);
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
 
-    run_result_stream_t *results = run_rs_open(session);
+    run_result_stream_t *results = run_rs_open(connection);
     if (results == NULL)
     {
         return NULL;
     }
 
-    if (neo4j_session_run(session, &(results->mpool), statement, params,
+    if (neo4j_session_run(connection, &(results->mpool), statement, params,
             run_callback, results))
     {
-        neo4j_log_debug_errno(results->logger, "neo4j_session_run failed");
+        neo4j_log_debug_errno(results->logger, "neo4j_connection_run failed");
         goto failure;
     }
     (results->refcount)++;
 
-    if (neo4j_session_discard_all(results->session, &(results->mpool),
+    if (neo4j_session_discard_all(results->connection, &(results->mpool),
             discard_all_callback, results))
     {
         neo4j_log_debug_errno(results->logger,
-                "neo4j_session_discard_all failed");
+                "neo4j_connection_discard_all failed");
         goto failure;
     }
     (results->refcount)++;
@@ -299,15 +299,15 @@ failure:
 }
 
 
-run_result_stream_t *run_rs_open(neo4j_session_t *session)
+run_result_stream_t *run_rs_open(neo4j_connection_t *connection)
 {
-    assert(session != NULL);
-    neo4j_config_t *config = neo4j_session_config(session);
+    assert(connection != NULL);
+    neo4j_config_t *config = connection->config;
 
     run_result_stream_t *results = neo4j_calloc(config->allocator,
             NULL, 1, sizeof(run_result_stream_t));
 
-    results->session = session;
+    results->connection = connection;
     results->logger = neo4j_get_logger(config, "results");
     results->allocator = config->allocator;
     results->mpool = neo4j_std_mpool(config);
@@ -316,10 +316,10 @@ run_result_stream_t *run_rs_open(neo4j_session_t *session)
     results->refcount = 1;
 
     results->job.abort = abort_job;
-    if (neo4j_attach_job(session, &(results->job)))
+    if (neo4j_attach_job(connection, &(results->job)))
     {
         neo4j_log_debug_errno(results->logger,
-                "failed to attach job to session");
+                "failed to attach job to connection");
         goto failure;
     }
 
@@ -393,13 +393,13 @@ unsigned int run_rs_nfields(neo4j_result_stream_t *self)
 {
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
-    REQUIRE(results != NULL, -1);
+    REQUIRE(results != NULL, 0);
 
     if (results->failure != 0 || await(results, &(results->starting)))
     {
         assert(results->failure != 0);
         errno = results->failure;
-        return -1;
+        return 0;
     }
     return results->nfields;
 }
@@ -548,10 +548,10 @@ int run_rs_close(neo4j_result_stream_t *self)
     // even if await fails, queued messages should still be drained
     assert(results->refcount == 0);
 
-    if (results->session != NULL)
+    if (results->connection != NULL)
     {
-        neo4j_detach_job(results->session, (neo4j_job_t *)&(results->job));
-        results->session = NULL;
+        neo4j_detach_job(results->connection, (neo4j_job_t *)&(results->job));
+        results->connection = NULL;
     }
 
     if (results->last_fetched != NULL)
@@ -609,13 +609,13 @@ void abort_job(neo4j_job_t *job, int err)
 {
     run_result_stream_t *results = container_of(job,
             run_result_stream_t, job);
-    if (results == NULL || results->session == NULL)
+    if (results == NULL || results->connection == NULL)
     {
         return;
     }
 
     job->next = NULL;
-    results->session = NULL;
+    results->connection = NULL;
     if (results->streaming && results->failure == 0)
     {
         set_failure(results, err);
@@ -630,12 +630,12 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     assert(argc == 0 || argv != NULL);
     run_result_stream_t *results = (run_result_stream_t *)cdata;
     neo4j_logger_t *logger = results->logger;
-    neo4j_session_t *session = results->session;
+    neo4j_connection_t *connection = results->connection;
 
     results->starting = false;
     --(results->refcount);
 
-    if (session == NULL)
+    if (connection == NULL)
     {
         return 0;
     }
@@ -655,11 +655,11 @@ int run_callback(void *cdata, neo4j_message_type_t type,
 
     char description[128];
     snprintf(description, sizeof(description), "%s in %p (response to RUN)",
-            neo4j_message_type_str(type), (void *)session);
+            neo4j_message_type_str(type), (void *)connection);
 
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
-        neo4j_log_error(logger, "unexpected %s", description);
+        neo4j_log_error(logger, "Unexpected %s", description);
         set_failure(results, errno = EPROTO);
         return -1;
     }
@@ -672,7 +672,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
 
-    if (neo4j_log_is_enabled(session->logger, NEO4J_LOG_TRACE))
+    if (neo4j_log_is_enabled(connection->logger, NEO4J_LOG_TRACE))
     {
         neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
@@ -738,23 +738,23 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
         const char *src_message_type, const neo4j_value_t *argv, uint16_t argc)
 {
     neo4j_logger_t *logger = results->logger;
-    neo4j_session_t *session = results->session;
+    neo4j_connection_t *connection = results->connection;
 
-    if (session == NULL)
+    if (connection == NULL)
     {
         return 0;
     }
 
-    neo4j_config_t *config = neo4j_session_config(session);
+    neo4j_config_t *config = connection->config;
 
     if (type == NEO4J_IGNORED_MESSAGE)
     {
         if (results->failure == 0)
         {
             neo4j_log_error(logger,
-                    "unexpected IGNORED message received in %p"
+                    "Unexpected IGNORED message received in %p"
                     " (in response to %s, yet no failure occurred)",
-                    (void *)session, src_message_type);
+                    (void *)connection, src_message_type);
             set_failure(results, errno = EPROTO);
             return -1;
         }
@@ -770,16 +770,16 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
         neo4j_log_error(logger,
-                "unexpected %s message received in %p"
+                "Unexpected %s message received in %p"
                 " (in response to %s)", neo4j_message_type_str(type),
-                (void *)session, src_message_type);
+                (void *)connection, src_message_type);
         set_failure(results, errno = EPROTO);
         return -1;
     }
 
     char description[128];
     snprintf(description, sizeof(description), "SUCCESS in %p (response to %s)",
-            (void *)session, src_message_type);
+            (void *)connection, src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
             description, logger);
@@ -823,7 +823,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
 int await(run_result_stream_t *results, const unsigned int *condition)
 {
-    if (*condition > 0 && neo4j_session_sync(results->session, condition))
+    if (*condition > 0 && neo4j_session_sync(results->connection, condition))
     {
         set_failure(results, errno);
         return -1;
@@ -836,13 +836,13 @@ int append_result(run_result_stream_t *results,
         const neo4j_value_t *argv, uint16_t argc)
 {
     assert(results != NULL);
-    neo4j_session_t *session = results->session;
+    neo4j_connection_t *connection = results->connection;
 
     if (argc != 1)
     {
         neo4j_log_error(results->logger,
-                "invalid number of fields in RECORD message received in %p",
-                (void *)session);
+                "Invalid number of fields in RECORD message received in %p",
+                (void *)connection);
         errno = EPROTO;
         return -1;
     }
@@ -853,8 +853,8 @@ int append_result(run_result_stream_t *results,
     if (arg_type != NEO4J_LIST)
     {
         neo4j_log_error(results->logger,
-                "invalid field in RECORD message received in %p"
-                " (got %s, expected List)", (void *)session,
+                "Invalid field in RECORD message received in %p"
+                " (got %s, expected List)", (void *)connection,
                 neo4j_typestr(arg_type));
         errno = EPROTO;
         return -1;
@@ -867,8 +867,8 @@ int append_result(run_result_stream_t *results,
         return 0;
     }
 
-    assert(session != NULL);
-    neo4j_config_t *config = neo4j_session_config(session);
+    assert(connection != NULL);
+    neo4j_config_t *config = connection->config;
 
     result_record_t *record = neo4j_mpool_calloc(&(results->record_mpool),
             1, sizeof(result_record_t));
@@ -940,7 +940,7 @@ int set_eval_failure(run_result_stream_t *results, const char *src_message_type,
 
     char description[128];
     snprintf(description, sizeof(description), "FAILURE in %p (response to %s)",
-            (void *)(results->session), src_message_type);
+            (void *)(results->connection), src_message_type);
 
     const neo4j_value_t *metadata = neo4j_validate_metadata(argv, argc,
             description, results->logger);

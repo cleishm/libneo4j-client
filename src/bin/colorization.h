@@ -25,7 +25,7 @@
 
 struct error_colorization
 {
-    const char *def[2];
+    const char *typ[2];
     const char *pos[2];
     const char *msg[2];
     const char *ctx[2];

@@ -1,3 +1,12 @@
+libneo4j-client (2.0.0-1) unstable; urgency=medium
+
+  * New upstream release 2.0.0
+    - Removed neo4j_session_t in favour of working only with connections
+    - Replaced authentication callback mechanisms
+    - Support rendering of multibyte characters in table output
+
+ -- Chris Leishman <chris@leishman.org>  Tue, 25 Apr 2017 16:40:31 +0000
+
 libneo4j-client (1.2.1-1) unstable; urgency=medium
 
   * New upstream release 1.2.1
