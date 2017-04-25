@@ -1,4 +1,4 @@
-libneo4j-client.so.9 libneo4j-client9 #MINVER#
+libneo4j-client.so.11 libneo4j-client11 #MINVER#
  NEO4J_BOOL@Base 1.2.0
  NEO4J_FLOAT@Base 1.2.0
  NEO4J_IDENTITY@Base 1.2.0
@@ -30,8 +30,7 @@ libneo4j-client.so.9 libneo4j-client9 #MINVER#
  neo4j_config_set_TLS_private_key@Base 1.2.0
  neo4j_config_set_TLS_private_key_password@Base 1.2.0
  neo4j_config_set_TLS_private_key_password_callback@Base 1.2.0
- neo4j_config_set_attempt_empty_password@Base 1.2.0
- neo4j_config_set_authentication_reattempt_callback@Base 1.2.0
+ neo4j_config_set_basic_auth_callback@Base 2.0.0
  neo4j_config_set_client_id@Base 1.2.0
  neo4j_config_set_connection_factory@Base 1.2.0
  neo4j_config_set_known_hosts_file@Base 1.2.0
@@ -46,7 +45,6 @@ libneo4j-client.so.9 libneo4j-client9 #MINVER#
  neo4j_config_set_trust_known_hosts@Base 1.2.0
  neo4j_config_set_unverified_host_callback@Base 1.2.0
  neo4j_config_set_username@Base 1.2.0
- neo4j_config_will_attempt_empty_password@Base 1.2.0
  neo4j_connect@Base 1.2.0
  neo4j_connection_hostname@Base 1.2.0
  neo4j_connection_is_secure@Base 1.1.0
@@ -55,7 +53,6 @@ libneo4j-client.so.9 libneo4j-client9 #MINVER#
  neo4j_credentials_expired@Base 1.2.0
  neo4j_dirname@Base 1.2.0
  neo4j_dot_dir@Base 1.2.0
- neo4j_end_session@Base 1.2.0
  neo4j_eq@Base 1.2.0
  neo4j_error_code@Base 1.2.0
  neo4j_error_message@Base 1.2.0
@@ -79,7 +76,6 @@ libneo4j-client.so.9 libneo4j-client9 #MINVER#
  neo4j_map_size@Base 1.2.0
  neo4j_mkdir_p@Base 1.2.0
  neo4j_new_config@Base 1.2.0
- neo4j_new_session@Base 1.2.0
  neo4j_nfields@Base 1.2.0
  neo4j_node_identity@Base 1.2.0
  neo4j_node_labels@Base 1.2.0
@@ -99,12 +95,12 @@ libneo4j-client.so.9 libneo4j-client9 #MINVER#
  neo4j_render_csv@Base 1.2.0
  neo4j_render_plan_table@Base 1.2.0
  neo4j_render_table@Base 1.2.0
- neo4j_reset_session@Base 1.2.0
+ neo4j_reset@Base 2.0.0
  neo4j_result_field@Base 1.2.0
  neo4j_retain@Base 1.2.0
  neo4j_run@Base 1.2.0
  neo4j_send@Base 1.2.0
- neo4j_session_connection@Base 1.2.0
+ neo4j_server_id@Base 2.0.0
  neo4j_statement_plan@Base 1.2.0
  neo4j_statement_plan_release@Base 1.2.0
  neo4j_statement_type@Base 1.2.0
@@ -118,6 +114,11 @@ libneo4j-client.so.9 libneo4j-client9 #MINVER#
  neo4j_tcp_connect@Base 1.2.0
  neo4j_tostring@Base 1.2.0
  neo4j_typestr@Base 1.2.0
+ neo4j_u8clen@Base 2.0.0
+ neo4j_u8codepoint@Base 2.0.0
+ neo4j_u8cpwidth@Base 2.0.0
+ neo4j_u8cswidth@Base 2.0.0
+ neo4j_u8cwidth@Base 2.0.0
  neo4j_update_counts@Base 1.2.0
  neo4j_ustring@Base 1.2.0
  neo4j_ustring_value@Base 1.2.0

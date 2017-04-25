@@ -21,18 +21,39 @@
 #include <errno.h>
 
 
-static int check_url(shell_state_t *state, const char *url_string);
-static int update_password_and_reconnect(shell_state_t *state);
+#define NEO4J_MAX_AUTHENTICATION_ATTEMPTS 3
 
 
-int db_connect(shell_state_t *state, const char *connect_string,
-        const char *port_string)
+static int attempt_db_connect(shell_state_t *state,
+        struct cypher_input_position pos, const char *connect_string,
+        const char *port_string, int attempt);
+static int check_url(shell_state_t *state, struct cypher_input_position pos,
+        const char *url_string);
+static int update_password_and_reconnect(shell_state_t *state,
+        struct cypher_input_position pos);
+
+
+int db_connect(shell_state_t *state, struct cypher_input_position pos,
+        const char *connect_string, const char *port_string)
 {
-    if (state->session != NULL && db_disconnect(state))
+    if (state->connection != NULL && db_disconnect(state, pos))
     {
         return -1;
     }
-    assert(state->session == NULL);
+    assert(state->connection == NULL);
+
+    return attempt_db_connect(state, pos, connect_string, port_string, 0);
+}
+
+
+int attempt_db_connect(shell_state_t *state, struct cypher_input_position pos,
+        const char *connect_string, const char *port_string, int attempt)
+{
+    uint_fast32_t connect_flags = state->connect_flags;
+    if (attempt > 0)
+    {
+        connect_flags |= NEO4J_NO_URI_CREDENTIALS;
+    }
 
     neo4j_connection_t *connection;
 
@@ -42,15 +63,15 @@ int db_connect(shell_state_t *state, const char *connect_string,
         long port = strtol(port_string, &port_end, 10);
         if (*port_end != '\0' || port <= 0 || port > UINT16_MAX)
         {
-            fprintf(state->err, "invalid port '%s'\n", port_string);
+            print_error(state, pos, "Invalid port '%s'", port_string);
             return -1;
         }
         connection = neo4j_tcp_connect(connect_string, port, state->config,
-                state->connect_flags);
+                connect_flags);
     }
     else
     {
-        int r = check_url(state, connect_string);
+        int r = check_url(state, pos, connect_string);
         if (r < 0)
         {
             return -1;
@@ -58,12 +79,12 @@ int db_connect(shell_state_t *state, const char *connect_string,
         if (r == 0)
         {
             connection = neo4j_connect(connect_string, state->config,
-                    state->connect_flags);
+                    connect_flags);
         }
         else
         {
             connection = neo4j_tcp_connect(connect_string, 0, state->config,
-                    state->connect_flags);
+                    connect_flags);
         }
     }
 
@@ -72,33 +93,35 @@ int db_connect(shell_state_t *state, const char *connect_string,
         switch (errno)
         {
         case NEO4J_NO_SERVER_TLS_SUPPORT:
-            fprintf(state->err, "connection failed: A secure"
-                    " connection could not be esablished (try --insecure)\n");
+            print_error(state, pos, "Connection failed: A secure"
+                    " connection could not be esablished (try --insecure)");
             break;
         case NEO4J_INVALID_URI:
-            fprintf(state->err, "invalid URL '%s'\n", connect_string);
+            print_error(state, pos, "Invalid URL '%s'", connect_string);
             break;
+        case NEO4J_INVALID_CREDENTIALS:
+            if (state->password_prompt)
+            {
+                neo4j_perror(state->tty, errno, "Authentication failed");
+                if (attempt < NEO4J_MAX_AUTHENTICATION_ATTEMPTS)
+                {
+                    return attempt_db_connect(state, pos, connect_string,
+                            port_string, ++attempt);
+                }
+                break;
+            }
+            // fall through
         default:
-            neo4j_perror(state->err, errno, "connection failed");
+            print_error_errno(state, pos, errno, "Connection failed");
             break;
         }
         return -1;
     }
 
-    neo4j_session_t *session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        neo4j_perror(state->err, errno, "connection failed");
-        neo4j_end_session(session);
-        neo4j_close(connection);
-        return -1;
-    }
-
     state->connection = connection;
-    state->session = session;
 
-    if (state->password_prompt && neo4j_credentials_expired(session) &&
-            update_password_and_reconnect(state))
+    if (state->password_prompt && neo4j_credentials_expired(connection) &&
+            update_password_and_reconnect(state, pos))
     {
         assert(state->connection == NULL);
         return -1;
@@ -108,7 +131,8 @@ int db_connect(shell_state_t *state, const char *connect_string,
 }
 
 
-int check_url(shell_state_t *state, const char *url_string)
+int check_url(shell_state_t *state, struct cypher_input_position pos,
+        const char *url_string)
 {
     const char *colon = strchr(url_string, ':');
     if (colon == NULL)
@@ -121,8 +145,8 @@ int check_url(shell_state_t *state, const char *url_string)
     }
     else if (*(colon + 1) == '\0')
     {
-        fprintf(state->err, "Invalid URL '%s' "
-                "(you may need to put quotes around the whole URL)\n",
+        print_error(state, pos, "Invalid URL '%s' "
+                "(you may need to put quotes around the whole URL)",
                 url_string);
         return -1;
     }
@@ -133,12 +157,11 @@ int check_url(shell_state_t *state, const char *url_string)
 }
 
 
-int update_password_and_reconnect(shell_state_t *state)
+int update_password_and_reconnect(shell_state_t *state,
+        struct cypher_input_position pos)
 {
     neo4j_connection_t *connection = state->connection;
-    neo4j_session_t *session = state->session;
     state->connection = NULL;
-    state->session = NULL;
 
     neo4j_config_t *config = NULL;
 
@@ -153,8 +176,8 @@ int update_password_and_reconnect(shell_state_t *state)
     const char *username = neo4j_connection_username(connection);
     if (username == NULL)
     {
-        fprintf(state->err, "connection failed: "
-                "credentials have expired, yet no username was provided.\n");
+        print_error(state, pos, "Connection failed: "
+                "credentials have expired, yet no username was provided.");
         goto failure_cleanup;
     }
 
@@ -168,7 +191,7 @@ int update_password_and_reconnect(shell_state_t *state)
     fprintf(state->tty,
             "The current password has expired and must be changed.\n");
     char password[NEO4J_MAXPASSWORDLEN];
-    if (change_password(state, session, password, sizeof(password)))
+    if (change_password(state, connection, password, sizeof(password)))
     {
         goto failure_cleanup;
     }
@@ -183,8 +206,6 @@ int update_password_and_reconnect(shell_state_t *state)
         goto failure;
     }
 
-    neo4j_end_session(session);
-    session = NULL;
     neo4j_close(connection);
 
     connection = neo4j_tcp_connect(hostname, port, config,
@@ -194,25 +215,14 @@ int update_password_and_reconnect(shell_state_t *state)
         goto failure;
     }
 
-    session = neo4j_new_session(connection);
-    if (session == NULL)
-    {
-        goto failure;
-    }
-
     state->connection = connection;
-    state->session = session;
     free(hostname);
     neo4j_config_free(config);
     return 0;
 
 failure:
-    neo4j_perror(state->err, errno, "connection failed");
+    print_error_errno(state, pos, errno, "Connection failed");
 failure_cleanup:
-    if (session != NULL)
-    {
-        neo4j_end_session(session);
-    }
     if (connection != NULL)
     {
         neo4j_close(connection);
@@ -223,15 +233,13 @@ failure_cleanup:
 }
 
 
-int db_disconnect(shell_state_t *state)
+int db_disconnect(shell_state_t *state, struct cypher_input_position pos)
 {
-    if (state->session == NULL)
+    if (state->connection == NULL)
     {
-        fprintf(state->err, "ERROR: not connected\n");
+        print_error(state, pos, "Not connected");
         return -1;
     }
-    neo4j_end_session(state->session);
-    state->session = NULL;
     neo4j_close(state->connection);
     state->connection = NULL;
     return 0;

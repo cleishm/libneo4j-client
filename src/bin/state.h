@@ -26,6 +26,11 @@
 
 
 typedef struct shell_state shell_state_t;
+
+typedef int (*renderer_t)(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results);
+
 struct shell_state
 {
     const char *prog_name;
@@ -43,12 +48,11 @@ struct shell_state
     neo4j_config_t *config;
     uint_fast32_t connect_flags;
     neo4j_connection_t *connection;
-    neo4j_session_t *session;
     char *temp_buffer;
     size_t temp_buffer_capacity;
     const struct interactive_colorization *interactive_colorize;
     const struct error_colorization *error_colorize;
-    int (*render)(shell_state_t *state, neo4j_result_stream_t *results);
+    renderer_t render;
     int width;
     uint_fast16_t render_flags;
 
@@ -67,6 +71,15 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
         FILE *in, FILE *out, FILE *err, FILE *tty);
 
 void shell_state_destroy(shell_state_t *state);
+
+
+int print_error(shell_state_t *state, struct cypher_input_position pos,
+        const char *fmt, ...);
+int print_error_errno(shell_state_t *state, struct cypher_input_position pos,
+        int err, const char *msg);
+
+int print_warning(shell_state_t *state, struct cypher_input_position pos,
+        const char *fmt, ...);
 
 
 int redirect_output(shell_state_t *state, const char *filename);

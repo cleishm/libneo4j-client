@@ -19,13 +19,13 @@
 
 
 static struct error_colorization _no_error_colorization =
-    { .def = { "", "" },
+    { .typ = { "", "" },
       .pos = { "", "" },
       .msg = { "", "" },
       .ctx = { "", "" } };
 
 static struct error_colorization _ansi_error_colorization =
-    { .def = { ANSI_COLOR_RED ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
+    { .typ = { ANSI_COLOR_RED ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
       .pos = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
       .msg = { ANSI_COLOR_RESET, "" },
       .ctx = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET } };

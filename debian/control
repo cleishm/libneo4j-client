@@ -20,7 +20,7 @@ Description: Command line shell for the Neo4j graph database
  statements (including multiline statements), persistent command history, and
  rendering of results to tables or CSV.
 
-Package: libneo4j-client9
+Package: libneo4j-client11
 Provides: libneo4j-client
 Section: libs
 Architecture: any
@@ -36,7 +36,7 @@ Package: libneo4j-client-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: libneo4j-client9 (= ${binary:Version}), ${misc:Depends}
+Depends: libneo4j-client11 (= ${binary:Version}), ${misc:Depends}
 Breaks: libneo4j-client7-dev (<< 1.0.0-1), libneo4j-client8-dev (<< 1.0.0-2)
 Replaces: libneo4j-client7-dev (<< 1.0.0-1), libneo4j-client8-dev (<< 1.0.0-2)
 Suggests: pkg-config

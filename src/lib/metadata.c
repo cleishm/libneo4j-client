@@ -52,7 +52,7 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
 
     if (nfields != 1)
     {
-        neo4j_log_error(logger, "invalid number of fields in %s", description);
+        neo4j_log_error(logger, "Invalid number of fields in %s", description);
         errno = EPROTO;
         return NULL;
     }
@@ -61,7 +61,7 @@ const neo4j_value_t *neo4j_validate_metadata(const neo4j_value_t *fields,
     neo4j_type_t field_type = neo4j_type(fields[0]);
     if (field_type != NEO4J_MAP)
     {
-        neo4j_log_error(logger, "invalid field in %s: got %s, expected MAP",
+        neo4j_log_error(logger, "Invalid field in %s: got %s, expected MAP",
                 description, neo4j_typestr(field_type));
         errno = EPROTO;
         return NULL;
@@ -252,7 +252,7 @@ int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
     else
     {
         neo4j_log_error(logger,
-                "invalid metadata in %s: unrecognized 'type' value",
+                "Invalid metadata in %s: unrecognized 'type' value",
                 description);
         errno = EPROTO;
         return -1;
@@ -328,7 +328,7 @@ int neo4j_meta_update_counts(struct neo4j_update_counts *counts,
         if (count < 0)
         {
             neo4j_log_error(logger,
-                    "invalid field in %s: 'stats.%s' value out of range",
+                    "Invalid field in %s: 'stats.%s' value out of range",
                     description, field_names[i]);
             errno = EPROTO;
             return -1;
@@ -552,7 +552,7 @@ struct neo4j_statement_execution_step *meta_execution_steps(
             if (neo4j_type(child) != NEO4J_MAP)
             {
                 neo4j_log_error(logger,
-                        "invalid field in %s: %s is %s, expected Map",
+                        "Invalid field in %s: %s is %s, expected Map",
                         description, subpath,
                         neo4j_typestr(neo4j_type(child)));
                 errno = EPROTO;
@@ -591,7 +591,7 @@ int map_get_typed(neo4j_value_t *value, neo4j_value_t map, const char *path,
             *value = neo4j_null;
             return 0;
         }
-        neo4j_log_error(logger, "invalid metadata in %s: no '%s%s%s' property",
+        neo4j_log_error(logger, "Invalid metadata in %s: no '%s%s%s' property",
                 description, (path != NULL)? path : "",
                 (path != NULL)? "." : "", key);
         errno = EPROTO;
@@ -600,7 +600,7 @@ int map_get_typed(neo4j_value_t *value, neo4j_value_t map, const char *path,
     if (neo4j_type(val) != expected)
     {
         neo4j_log_error(logger,
-                "invalid field in %s: '%s%s%s' is %s, expected %s",
+                "Invalid field in %s: '%s%s%s' is %s, expected %s",
                 description, (path != NULL)? path : "",
                 (path != NULL)? "." : "", key, neo4j_typestr(neo4j_type(val)),
                 neo4j_typestr(expected));
@@ -702,7 +702,7 @@ int extract_string_list(const char * const **strings, unsigned int *nstrings,
         if (neo4j_type(sv) != NEO4J_STRING)
         {
             neo4j_log_error(logger,
-                    "invalid field in %s: %s%s%s[%d] is %s, expected String",
+                    "Invalid field in %s: %s%s%s[%d] is %s, expected String",
                     description, (path != NULL)? path : "",
                     (path != NULL)? "." : "", key, i,
                     neo4j_typestr(neo4j_type(sv)));

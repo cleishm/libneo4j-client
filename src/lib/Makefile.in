@@ -100,9 +100,9 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_prog_doxygen.m4 \
 	$(top_srcdir)/m4/ax_pthread.m4 \
 	$(top_srcdir)/m4/ax_thread_local.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
 	$(top_srcdir)/m4/macro_static_assert.m4 \
 	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/m4/prog_cc_c11.m4 \
 	$(top_srcdir)/m4/with_libs.m4 $(top_srcdir)/configure.ac
@@ -156,9 +156,9 @@ am__libneo4j_client_la_SOURCES_DIST = atomic.h error_handling.c \
 	posix_iostream.c posix_iostream.h render.c render.h \
 	render_plan.c render_results.c result_stream.c result_stream.h \
 	ring_buffer.c ring_buffer.h serialization.c serialization.h \
-	session.c session.h thread.c thread.h tofu.c tofu.h uri.c \
-	uri.h util.c util.h values.c values.h openssl.c openssl.h \
-	openssl_iostream.c openssl_iostream.h
+	thread.c thread.h tofu.c tofu.h u8.c uri.c uri.h util.c util.h \
+	values.c values.h openssl.c openssl.h openssl_iostream.c \
+	openssl_iostream.h
 @HAVE_OPENSSL_TRUE@@WITH_TLS_TRUE@am__objects_1 = libneo4j_client_la-openssl.lo \
 @HAVE_OPENSSL_TRUE@@WITH_TLS_TRUE@	libneo4j_client_la-openssl_iostream.lo
 am_libneo4j_client_la_OBJECTS = libneo4j_client_la-error_handling.lo \
@@ -178,8 +178,8 @@ am_libneo4j_client_la_OBJECTS = libneo4j_client_la-error_handling.lo \
 	libneo4j_client_la-result_stream.lo \
 	libneo4j_client_la-ring_buffer.lo \
 	libneo4j_client_la-serialization.lo \
-	libneo4j_client_la-session.lo libneo4j_client_la-thread.lo \
-	libneo4j_client_la-tofu.lo libneo4j_client_la-uri.lo \
+	libneo4j_client_la-thread.lo libneo4j_client_la-tofu.lo \
+	libneo4j_client_la-u8.lo libneo4j_client_la-uri.lo \
 	libneo4j_client_la-util.lo libneo4j_client_la-values.lo \
 	$(am__objects_1)
 libneo4j_client_la_OBJECTS = $(am_libneo4j_client_la_OBJECTS)
@@ -423,8 +423,8 @@ libneo4j_client_la_SOURCES = atomic.h error_handling.c \
 	posix_iostream.c posix_iostream.h render.c render.h \
 	render_plan.c render_results.c result_stream.c result_stream.h \
 	ring_buffer.c ring_buffer.h serialization.c serialization.h \
-	session.c session.h thread.c thread.h tofu.c tofu.h uri.c \
-	uri.h util.c util.h values.c values.h $(am__append_1)
+	thread.c thread.h tofu.c tofu.h u8.c uri.c uri.h util.c util.h \
+	values.c values.h $(am__append_1)
 libneo4j_client_la_CFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_CFLAGS) -Wpedantic -Wvla
 libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 # Updating the version-info:
@@ -436,7 +436,7 @@ libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 #    increment age.
 # 4. If any interfaces have been removed or changed since the last public
 #    release, then set age to 0.
-libneo4j_client_la_LDFLAGS = -version-info 10:0:1
+libneo4j_client_la_LDFLAGS = -version-info 11:0:0
 all: all-am
 
 .SUFFIXES:
@@ -539,9 +539,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-result_stream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-ring_buffer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-serialization.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-session.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-thread.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-tofu.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-u8.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-uri.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-util.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libneo4j_client_la-values.Plo@am__quote@
@@ -721,13 +721,6 @@ libneo4j_client_la-serialization.lo: serialization.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -c -o libneo4j_client_la-serialization.lo `test -f 'serialization.c' || echo '$(srcdir)/'`serialization.c
 
-libneo4j_client_la-session.lo: session.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -MT libneo4j_client_la-session.lo -MD -MP -MF $(DEPDIR)/libneo4j_client_la-session.Tpo -c -o libneo4j_client_la-session.lo `test -f 'session.c' || echo '$(srcdir)/'`session.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libneo4j_client_la-session.Tpo $(DEPDIR)/libneo4j_client_la-session.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='session.c' object='libneo4j_client_la-session.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -c -o libneo4j_client_la-session.lo `test -f 'session.c' || echo '$(srcdir)/'`session.c
-
 libneo4j_client_la-thread.lo: thread.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -MT libneo4j_client_la-thread.lo -MD -MP -MF $(DEPDIR)/libneo4j_client_la-thread.Tpo -c -o libneo4j_client_la-thread.lo `test -f 'thread.c' || echo '$(srcdir)/'`thread.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libneo4j_client_la-thread.Tpo $(DEPDIR)/libneo4j_client_la-thread.Plo
@@ -741,6 +734,13 @@ libneo4j_client_la-tofu.lo: tofu.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tofu.c' object='libneo4j_client_la-tofu.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -c -o libneo4j_client_la-tofu.lo `test -f 'tofu.c' || echo '$(srcdir)/'`tofu.c
+
+libneo4j_client_la-u8.lo: u8.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -MT libneo4j_client_la-u8.lo -MD -MP -MF $(DEPDIR)/libneo4j_client_la-u8.Tpo -c -o libneo4j_client_la-u8.lo `test -f 'u8.c' || echo '$(srcdir)/'`u8.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libneo4j_client_la-u8.Tpo $(DEPDIR)/libneo4j_client_la-u8.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='u8.c' object='libneo4j_client_la-u8.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -c -o libneo4j_client_la-u8.lo `test -f 'u8.c' || echo '$(srcdir)/'`u8.c
 
 libneo4j_client_la-uri.lo: uri.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libneo4j_client_la_CFLAGS) $(CFLAGS) -MT libneo4j_client_la-uri.lo -MD -MP -MF $(DEPDIR)/libneo4j_client_la-uri.Tpo -c -o libneo4j_client_la-uri.lo `test -f 'uri.c' || echo '$(srcdir)/'`uri.c

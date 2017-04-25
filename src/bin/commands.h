@@ -19,6 +19,7 @@
 
 #include "state.h"
 
-int run_command(shell_state_t *state, const cypher_astnode_t *command);
+int run_command(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 
 #endif/*NEO4J_COMMANDS_H*/

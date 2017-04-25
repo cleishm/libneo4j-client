@@ -66,11 +66,6 @@ typedef struct neo4j_config neo4j_config_t;
 typedef struct neo4j_connection neo4j_connection_t;
 
 /**
- * A session within a connection.
- */
-typedef struct neo4j_session neo4j_session_t;
-
-/**
  * A stream of results from a job.
  */
 typedef struct neo4j_result_stream neo4j_result_stream_t;
@@ -91,7 +86,7 @@ typedef struct neo4j_value neo4j_value_t;
 typedef uint8_t neo4j_type_t;
 
 /**
- * Function type for callback when passwords are required.
+ * Function type for callback when a passwords is required.
  *
  * Should copy the password into the supplied buffer, and return the
  * actual length of the password.
@@ -101,8 +96,29 @@ typedef uint8_t neo4j_type_t;
  * @param [len] The length of the buffer.
  * @return The length of the password as copied into the buffer.
  */
-typedef size_t (*neo4j_password_callback_t)(void *userdata,
+typedef ssize_t (*neo4j_password_callback_t)(void *userdata,
         char *buf, size_t len);
+
+/**
+ * Function type for callback when username and/or password is required.
+ *
+ * Should update the `NULL` terminated strings in the `username` and/or
+ * `password` buffers.
+ *
+ * @param [userdata] The user data for the callback.
+ * @param [host] The host description (typically "<hostname>:<port>").
+ * @param [username] A buffer of size `usize`, possibly containing a `NULL`
+ *         terminated default username.
+ * @param [usize] The size of the username buffer.
+ * @param [password] A buffer of size `psize`, possibly containing a `NULL`
+ *         terminated default password.
+ * @param [psize] The size of the password buffer.
+ * @return 0 on success, -1 on error (errno should be set).
+ */
+typedef int (*neo4j_basic_auth_callback_t)(void *userdata,
+        const char *host, char *username, size_t usize,
+        char *password, size_t psize);
+
 
 
 /*
@@ -136,7 +152,7 @@ const char *libneo4j_client_id(void);
  * This function should be invoked once per application including the neo4j
  * client library.
  *
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_client_init(void);
 
@@ -147,7 +163,7 @@ int neo4j_client_init(void);
  * Whilst it is not necessary to call this function, it can be useful
  * for clearing any allocated memory when testing with tools such as valgrind.
  *
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_client_cleanup(void);
 
@@ -357,8 +373,7 @@ struct neo4j_connection_factory
      * @param [config] The client configuration.
      * @param [flags] A bitmask of flags to control connections.
      * @param [logger] A logger that may be used for status logging.
-     * @return A new neo4j_iostream, or `NULL` if an error occurs
-     *         (errno will be set).
+     * @return A new `neo4j_iostream`, or `NULL` on error (errno will be set).
      */
     struct neo4j_iostream *(*tcp_connect)(struct neo4j_connection_factory *self,
             const char *hostname, unsigned int port,
@@ -380,8 +395,6 @@ struct neo4j_connection_factory
 #define NEO4J_PROTOCOL_NEGOTIATION_FAILED -14
 #define NEO4J_INVALID_CREDENTIALS -15
 #define NEO4J_CONNECTION_CLOSED -16
-#define NEO4J_TOO_MANY_SESSIONS -17
-#define NEO4J_SESSION_ACTIVE -18
 #define NEO4J_SESSION_FAILED -19
 #define NEO4J_SESSION_ENDED -20
 #define NEO4J_UNCLOSED_RESULT_STREAM -21
@@ -436,7 +449,7 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen);
  * A memory allocator for neo4j client.
  *
  * This will be used to allocate regions of memory as required by
- * a session, for buffers, etc.
+ * a connection, for buffers, etc.
  */
 struct neo4j_memory_allocator
 {
@@ -450,7 +463,7 @@ struct neo4j_memory_allocator
      *         deallocated at the same time. Context may be `NULL`, in which
      *         case it does not offer any guidance on deallocation.
      * @param [size] The amount of memory (in bytes) to allocate.
-     * @return A pointer to the allocated memory, or `NULL` if an error occurs
+     * @return A pointer to the allocated memory, or `NULL` on error
      *         (errno will be set).
      */
     void *(*alloc)(struct neo4j_memory_allocator *self, void *context,
@@ -469,7 +482,7 @@ struct neo4j_memory_allocator
      *         case it does not offer any guidance on deallocation.
      * @param [count] The number of objects to allocate.
      * @param [size] The size (in bytes) of each object.
-     * @return A pointer to the allocated memory, or `NULL` if an error occurs
+     * @return A pointer to the allocated memory, or `NULL` on error
      *         (errno will be set).
      */
     void *(*calloc)(struct neo4j_memory_allocator *self, void *context,
@@ -593,7 +606,7 @@ const char *neo4j_typestr(neo4j_type_t t);
 char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
 
 /**
- * Get a string representation of a neo4j value.
+ * Get a UTF-8 string representation of a neo4j value.
  *
  * Writes as much of the representation as possible into the buffer,
  * ensuring it is always `NULL` terminated.
@@ -607,12 +620,12 @@ char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n);
 size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n);
 
 /**
- * Print a string representation of a neo4j value to a stream.
+ * Print a UTF-8 string representation of a neo4j value to a stream.
  *
  * @param [value] The neo4j value.
  * @param [stream] The stream to print to.
- * @return The number of bytes written to the stream, or -1 if an error
- *         occurs (errno will be set).
+ * @return The number of bytes written to the stream, or -1 on error
+ *         (errno will be set).
  */
 ssize_t neo4j_fprint(neo4j_value_t value, FILE *stream);
 
@@ -845,7 +858,8 @@ unsigned int neo4j_map_size(neo4j_value_t value);
  *
  * @param [value] The neo4j map.
  * @param [index] The index of the entry to return.
- * @return The entry at the specified index, or `NULL` if the index is too large.
+ * @return The entry at the specified index, or `NULL` if the index
+ *         is too large.
  */
 __neo4j_pure
 const neo4j_map_entry_t *neo4j_map_getentry(neo4j_value_t value,
@@ -1039,8 +1053,8 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
  * The returned configuration must be later released using
  * neo4j_config_free().
  *
- * @return A pointer to a new neo4j client configuration, or `NULL` if an error
- *         occurs (errno will be set).
+ * @return A pointer to a new neo4j client configuration, or `NULL` on error
+ *         (errno will be set).
  */
 __neo4j_must_check
 neo4j_config_t *neo4j_new_config(void);
@@ -1094,7 +1108,7 @@ const char *neo4j_config_get_client_id(neo4j_config_t *config);
  * @param [config] The neo4j client configuration to update.
  * @param [username] The username to authenticate with. The string will be
  *         duplicated, and thus may point to temporary memory.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_username(neo4j_config_t *config, const char *username);
@@ -1119,73 +1133,25 @@ const char *neo4j_config_get_username(neo4j_config_t *config);
  * @param [config] The neo4j client configuration to update.
  * @param [password] The password to authenticate with. The string will be
  *         duplicated, and thus may point to temporary memory.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_password(neo4j_config_t *config, const char *password);
 
 /**
- * Attempt initial authentication with an empty password.
+ * Set the basic authentication callback.
  *
- * If an authentication re-attempt callback has been provided (see
- * neo4j_config_set_authentication_reattempt_callback()), and a password has
- * not been set in the config, or a connection URL does not contain a password,
- * then the default behaviour is to immediately call the authentication
- * re-attempt callback. If, however, this config property is set to true, then
- * authentication using an empty password will be attempted first.
+ * If a username and/or password is required for basic authentication and
+ * isn't available in the configuration or connection URI, then this callback
+ * will be invoked to obtain the username and/or password.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [value] Allow attempting to use an empty password for the first
- *         authentiation attempt.
- */
-void neo4j_config_set_attempt_empty_password(neo4j_config_t *config,
-        bool value);
-
-/**
- * Check if the configuration allows for auth attempts using an empty password.
- *
- * @param [config] The neo4j client configuration.
- * @return `true` if an attempt will be made, or `false` otherwise.
- */
-__neo4j_pure
-bool neo4j_config_will_attempt_empty_password(neo4j_config_t *config);
-
-#define NEO4J_AUTHENTICATION_REATTEMPT 0
-#define NEO4J_AUTHENTICATION_FAIL 1
-
-/**
- * Function type for callback when password authentication has failed.
- *
- * @param [userdata] The user data for the callback.
- * @param [host] The host description (typically "<hostname>:<port>").
- * @param [attempts] The number of previous attempts.
- * @param [error] The errno for the authentication failure.
- * @param [username] A buffer containing the null terminated username for
- *         which authentication was attempted.
- * @param [usize] The size of the username buffer.
- * @param [password] A buffer containing the null terminated password for
- *         which authentication was attempted.
- * @param [usize] The size of the password buffer.
- * @return `NEO4J_AUTHENTICATION_REATTEMPT` if the credentials have been
- *         updated and authentication should be re-attempted,
- *         `NEO4J_AUTHENTICATION_FAIL` if authentication should fail,
- *         and -1 if an error occurs (errno should be set).
- */
-typedef int (*neo4j_authentication_reattempt_callback_t)(void *userdata,
-        const char *host, unsigned int attempts, int error, char *username,
-        size_t usize, char *password, size_t psize);
-
-/**
- * Set the authentication re-attempt callback.
- *
- * @param [config] The neo4j client configuration to update.
- * @param [callback] The callback to be invoked whenever a authentication
- *         fails.
+ * @param [callback] The callback to be invoked.
  * @param [userdata] User data that will be supplied to the callback.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
-int neo4j_config_set_authentication_reattempt_callback(neo4j_config_t *config,
-        neo4j_authentication_reattempt_callback_t callback, void *userdata);
+int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
+        neo4j_basic_auth_callback_t callback, void *userdata);
 
 /**
  * Set the location of a TLS private key and certificate chain.
@@ -1195,7 +1161,7 @@ int neo4j_config_set_authentication_reattempt_callback(neo4j_config_t *config,
  *         and certificate chain. This string should remain allocated whilst
  *         the config is allocated _or if any connections opened with the
  *         config remain active_.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
@@ -1208,7 +1174,7 @@ int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
  * @param [callback] The callback to be invoked whenever a password for
  *         the certificate file is required.
  * @param [userdata] User data that will be supplied to the callback.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
@@ -1224,7 +1190,7 @@ int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
  * @param [password] The password for the certificate file. This string should
  *         remain allocated whilst the config is allocated _or if any
  *         connections opened with the config remain active_.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
@@ -1240,7 +1206,7 @@ int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
  * @param [path] The path to the PEM file containing the trusted CAs and CRLs.
  *         This string should remain allocated whilst the config is allocated
  *         _or if any connections opened with the config remain active_.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
@@ -1255,7 +1221,7 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
  * @param [path] The path to the directory of CAs and CRLs. This string should
  *         remain allocated whilst the config is allocated _or if any
  *         connections opened with the config remain active_.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
@@ -1274,7 +1240,7 @@ int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
  * @param [config] The neo4j client configuration to update.
  * @param [enable] `true` to enable trusting of known hosts, and `false` to
  *         disable this behaviour.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
@@ -1289,7 +1255,7 @@ int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
  * @param [path] The path to known hosts file. This string should
  *         remain allocated whilst the config is allocated _or if any
  *         connections opened with the config remain active_.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_config_set_known_hosts_file(neo4j_config_t *config, const char *path);
@@ -1317,8 +1283,7 @@ typedef enum
  *         `NEO4J_HOST_VERIFICATION_ACCEPT_ONCE` if the host should be accepted
  *         for just the one connection, `NEO4J_HOST_VERIFICATION_TRUST` if the
  *         fingerprint should be stored in the "known hosts" file and thus
- *         trusted for future connections, or -1 if an error occurs (errno
- *         should be set).
+ *         trusted for future connections, or -1 on error (errno should be set).
  */
 typedef int (*neo4j_unverified_host_callback_t)(void *userdata,
         const char *host, const char *fingerprint,
@@ -1331,7 +1296,7 @@ typedef int (*neo4j_unverified_host_callback_t)(void *userdata,
  * @param [callback] The callback to be invoked whenever a host verification
  *         fails.
  * @param [userdata] User data that will be supplied to the callback.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
         neo4j_unverified_host_callback_t callback, void *userdata);
@@ -1341,7 +1306,7 @@ int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
  *
  * @param [config] The neo4j client configuration to update.
  * @param [size] The I/O output buffer size.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
 
@@ -1350,7 +1315,7 @@ int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
  *
  * @param [config] The neo4j client configuration to update.
  * @param [size] The I/O input buffer size.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size);
 
@@ -1370,7 +1335,7 @@ void neo4j_config_set_logger_provider(neo4j_config_t *config,
  *
  * @param [config] The neo4j client configuration to update.
  * @param [size] The socket send buffer size, or 0 to use the system default.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
 
@@ -1381,7 +1346,7 @@ int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
  *
  * @param [config] The neo4j client configuration to update.
  * @param [size] The socket receive buffer size, or 0 to use the system default.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size);
 
@@ -1449,46 +1414,9 @@ void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
  * @param [append] The relative path to append to the dot directory, which
  *         may be `NULL`.
  * @return The length of the resulting path (not including the null
- *         terminating character), or -1 if an error occurs (errno will be set).
+ *         terminating character), or -1 on error (errno will be set).
  */
 ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
-
-/**
- * Obtain the parent directory of a specified path.
- *
- * Any trailing '/' characters are not counted as part of the directory name.
- * If `path` is `NULL`, the empty string, or contains no '/' characters, the
- * path "." is placed into the result buffer.
- *
- * @param [path] The path.
- * @param [buffer] A buffer to place the parent directory path into, or `NULL`.
- * @param [n] The length of the buffer.
- * @return The length of the parent directory path, or -1 if an error
- *         occurs (errno will be set).
- */
-ssize_t neo4j_dirname(const char *path, char *buffer, size_t n);
-
-/**
- * Obtain the basename of a specified path.
- *
- * @param [path] The path.
- * @param [buffer] A buffer to place the base name into, or `NULL`.
- * @param [n] The length of the buffer.
- * @return The length of the base name, or -1 if an error occurs (errno will be
- *         set).
- */
-ssize_t neo4j_basename(const char *path, char *buffer, size_t n);
-
-/**
- * Create a directory and any required parent directories.
- *
- * Directories are created with default permissions as per the users umask.
- *
- * @param [path] The path of the directory to create.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
- */
-__neo4j_must_check
-int neo4j_mkdir_p(const char *path);
 
 
 /*
@@ -1501,6 +1429,7 @@ int neo4j_mkdir_p(const char *path);
 
 #define NEO4J_CONNECT_DEFAULT 0
 #define NEO4J_INSECURE (1<<0)
+#define NEO4J_NO_URI_CREDENTIALS (1<<1)
 
 /**
  * Establish a connection to a neo4j server.
@@ -1509,7 +1438,8 @@ int neo4j_mkdir_p(const char *path);
  * - NEO4J_INSECURE - do not attempt to establish a secure connection. If a
  *   secure connection is required, then connect will fail with errno set to
  *   `NEO4J_SERVER_REQUIRES_SECURE_CONNECTION`.
- *
+ * - NEO4J_NO_URI_CREDENTIALS - do not use credentials provided in the
+ *   server URI (use credentials from the configuration instead).
  *
  * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
@@ -1550,9 +1480,8 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
  * Close a connection to a neo4j server.
  *
  * @param [connection] The connection to close. This pointer will be invalid
- *         after the function returns, except when an error occurs and errno is
- *         set to NEO4J_SESSION_ACTIVE.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ *         after the function returns.
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_close(neo4j_connection_t *connection);
 
@@ -1583,7 +1512,7 @@ unsigned int neo4j_connection_port(const neo4j_connection_t *connection);
  *
  * @param [connection] The neo4j connection.
  * @return A pointer to a username string, which will remain valid only whilst
- *         the connection remains open, or NULL if no username was associated
+ *         the connection remains open, or `NULL` if no username was associated
  *         with the connection.
  */
 __neo4j_pure
@@ -1608,54 +1537,35 @@ bool neo4j_connection_is_secure(const neo4j_connection_t *connection);
  */
 
 /**
- * Create a new session for the given connection.
- *
- * @param [connection] The connection over which to establish the session.
- * @return A pointer to a `neo4j_session_t` structure, or `NULL` on error
- *         (errno will be set).
- */
-__neo4j_must_check
-neo4j_session_t *neo4j_new_session(neo4j_connection_t *connection);
-
-/**
- * End a session with a neo4j server.
- *
- * @param [session] The session to end. The pointer will be invalid after the
- *         function returns.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
- */
-int neo4j_end_session(neo4j_session_t *session);
-
-/**
  * Reset a session.
  *
- * Invoking this function causes all server-held state for the session to be
+ * Invoking this function causes all server-held state for the connection to be
  * cleared, including rolling back any open transactions, and causes any
  * existing result stream to be terminated.
  *
- * @param [session] The session to reset.
- * @return 0 on sucess, or -1 if an error occurs (errno will be set).
+ * @param [connection] The connection to reset.
+ * @return 0 on sucess, or -1 on error (errno will be set).
  */
-int neo4j_reset_session(neo4j_session_t *session);
-
-/**
- * Obtain the connection associated with a session.
- *
- * @param [session] The session.
- * @return The connection for the session.
- */
-__neo4j_pure
-neo4j_connection_t *neo4j_session_connection(neo4j_session_t *session);
+int neo4j_reset(neo4j_connection_t *connection);
 
 /**
  * Check if the server indicated that credentials have expired.
  *
- * @param [session] The session.
+ * @param [connection] The connection.
  * @return `true` if the server indicated that credentials have expired,
  *         and `false` otherwise.
  */
 __neo4j_pure
-bool neo4j_credentials_expired(const neo4j_session_t *session);
+bool neo4j_credentials_expired(const neo4j_connection_t *connection);
+
+/**
+ * Get the server ID string.
+ *
+ * @param [connection] The connection.
+ * @return The server ID string, or `NULL` if none was available.
+ */
+__neo4j_pure
+const char *neo4j_server_id(const neo4j_connection_t *connection);
 
 
 /*
@@ -1670,16 +1580,15 @@ bool neo4j_credentials_expired(const neo4j_session_t *session);
  * @attention The statement and the params must remain valid until the returned
  * result stream is closed.
  *
- * @param [session] The session to evaluate the statement in.
+ * @param [connection] The connection.
  * @param [statement] The statement to be evaluated. This must be a `NULL`
  *         terminated string and may contain UTF-8 multi-byte characters.
  * @param [params] The parameters for the statement, which must be a value of
  *         type NEO4J_MAP or #neo4j_null.
- * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
- *         will be set).
+ * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
  */
 __neo4j_must_check
-neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
+neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
 /**
@@ -1689,16 +1598,15 @@ neo4j_result_stream_t *neo4j_run(neo4j_session_t *session,
  * provide any results. It can be used to check for evaluation errors using
  * neo4j_check_failure().
  *
- * @param [session] The session to evaluate the statement in.
+ * @param [connection] The connection.
  * @param [statement] The statement to be evaluated. This must be a `NULL`
  *         terminated string and may contain UTF-8 multi-byte characters.
  * @param [params] The parameters for the statement, which must be a value of
  *         type NEO4J_MAP or #neo4j_null.
- * @return A `neo4j_result_stream_t`, or `NULL` if an error occurs (errno
- *         will be set).
+ * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
  */
 __neo4j_must_check
-neo4j_result_stream_t *neo4j_send(neo4j_session_t *session,
+neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
 
@@ -1723,8 +1631,8 @@ int neo4j_check_failure(neo4j_result_stream_t *results);
  * Get the number of fields in a result stream.
  *
  * @param [results] The result stream.
- * @return The number of fields in the result, or -1 if an error occurs
- *         (errno will be set).
+ * @return The number of fields in the result, or 0 if no fields were available
+ *         or on error (errno will be set).
  */
 unsigned int neo4j_nfields(neo4j_result_stream_t *results);
 
@@ -1736,9 +1644,9 @@ unsigned int neo4j_nfields(neo4j_result_stream_t *results);
  *
  * @param [results] The result stream.
  * @param [index] The field index to get the name of.
- * @return The name of the field, or `NULL` if an error occurs
- *         (errno will be set). If returned, the name will be a `NULL`
- *         terminated string and may contain UTF-8 multi-byte characters.
+ * @return The name of the field, or `NULL` on error (errno will be set).
+ *         If returned, the name will be a `NULL` terminated string and may
+ *         contain UTF-8 multi-byte characters.
  */
 const char *neo4j_fieldname(neo4j_result_stream_t *results,
         unsigned int index);
@@ -1747,7 +1655,7 @@ const char *neo4j_fieldname(neo4j_result_stream_t *results,
  * Fetch the next record from the result stream.
  *
  * @param [results] The result stream.
- * @return The next result, or NULL if the stream is exahusted or an
+ * @return The next result, or `NULL` if the stream is exahusted or an
  *         error has occurred (errno will be set).
  */
 __neo4j_must_check
@@ -1766,7 +1674,7 @@ neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results);
  *
  * @param [results] The result stream. The pointer will be invalid after the
  *         function returns.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_close_results(neo4j_result_stream_t *results);
 
@@ -1891,8 +1799,7 @@ const struct neo4j_failure_details *neo4j_failure_details(
 /**
  * Return the statement type for the result stream.
  *
- * The returned value will either be -1, if an error occurs, or one of the
- * following values:
+ * The returned value will be one of the following:
  * - NEO4J_READ_ONLY_STATEMENT
  * - NEO4J_WRITE_ONLY_STATEMENT
  * - NEO4J_READ_WRITE_STATEMENT
@@ -1906,7 +1813,7 @@ const struct neo4j_failure_details *neo4j_failure_details(
  * method.
  *
  * @param [results] The result stream.
- * @return The statement type, or -1 if an error occurs (errno will be set).
+ * @return The statement type, or -1 on error (errno will be set).
  */
 int neo4j_statement_type(neo4j_result_stream_t *results);
 
@@ -2022,8 +1929,8 @@ struct neo4j_statement_execution_step
  * checking MUST evaluate the return value first.
  *
  * @param [results] The result stream.
- * @return The statement plan/profile, or `NULL` if a one was not available or
- *         if an error occurred (errno will be set).
+ * @return The statement plan/profile, or `NULL` if a plan/profile was not
+ *         available or on error (errno will be set).
  */
 __neo4j_must_check
 struct neo4j_statement_plan *neo4j_statement_plan(
@@ -2089,21 +1996,25 @@ void neo4j_release(neo4j_result_t *result);
 #define NEO4J_RENDER_DEFAULT 0
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
+#define NEO4J_RENDER_ASCII (1<<2)
+#define NEO4J_RENDER_ASCII_ART (1<<3)
 
 /**
  * Render a result stream as a table.
  *
  * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flags `NEO4J_RENDER_SHOW_NULL` and
- * `NEO4J_RENDER_QUOTE_STRINGS`.
+ * method respects the flags `NEO4J_RENDER_SHOW_NULL`,
+ * `NEO4J_RENDER_QUOTE_STRINGS` and `NEO4J_RENDER_ASCII`.
  *
  * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
  *
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
  * @param [width] The width of the table to render.
  * @param [flags] A bitmask of flags to control rendering.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
@@ -2117,10 +2028,12 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
  *
  * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
  * @param [flags] A bitmask of flags to control rendering.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
@@ -2129,19 +2042,115 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
 /**
  * Render a statement plan as a table.
  *
- * Flags can be specified, as a bitmask, to control rendering. There are
- * no flags that currently affect this function and a value of 0 or
- * `NEO4J_RENDER_DEFAULT` should be specified.
+ * Flags can be specified, as a bitmask, to control rendering. This rendering
+ * method respects the flag `NEO4J_RENDER_ASCII`.
+ *
+ * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
  *
  * @param [stream] The stream to render to.
  * @param [plan] The statement plan to render.
  * @param [width] The width of the table to render.
  * @param [flags] A bitmask of flags to control rendering.
- * @return 0 on success, or -1 if an error occurs (errno will be set).
+ * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         unsigned int width, uint_fast32_t flags);
+
+
+/*
+ * =====================================
+ * utility methods
+ * =====================================
+ */
+
+/**
+ * Obtain the parent directory of a specified path.
+ *
+ * Any trailing '/' characters are not counted as part of the directory name.
+ * If `path` is `NULL`, the empty string, or contains no '/' characters, the
+ * path "." is placed into the result buffer.
+ *
+ * @param [path] The path.
+ * @param [buffer] A buffer to place the parent directory path into, or `NULL`.
+ * @param [n] The length of the buffer.
+ * @return The length of the parent directory path, or -1 on error
+ *         (errno will be set).
+ */
+ssize_t neo4j_dirname(const char *path, char *buffer, size_t n);
+
+/**
+ * Obtain the basename of a specified path.
+ *
+ * @param [path] The path.
+ * @param [buffer] A buffer to place the base name into, or `NULL`.
+ * @param [n] The length of the buffer.
+ * @return The length of the base name, or -1 on error (errno will be set).
+ */
+ssize_t neo4j_basename(const char *path, char *buffer, size_t n);
+
+/**
+ * Create a directory and any required parent directories.
+ *
+ * Directories are created with default permissions as per the users umask.
+ *
+ * @param [path] The path of the directory to create.
+ * @return 0 on success, or -1 on error (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_mkdir_p(const char *path);
+
+/**
+ * Return the number of bytes in a UTF-8 character.
+ *
+ * @param [s] The sequence of bytes containing the character.
+ * @param [n] The maximum number of bytes to inspect.
+ * @return The length, in bytes, of the UTF-8 character, or -1 if a
+ *         decoding error occurs (errno will be set).
+ */
+int neo4j_u8clen(const char *s, size_t n);
+
+/**
+ * Return the column width of a UTF-8 character.
+ *
+ * @param [s] The sequence of bytes containing the character.
+ * @param [n] The maximum number of bytes to inspect.
+ * @return The width, in columns, of the UTF-8 character, or -1 if the
+ *         character is unprintable or cannot be decoded.
+ */
+int neo4j_u8cwidth(const char *s, size_t n);
+
+/**
+ * Return the Unicode codepoint of a UTF-8 character.
+ *
+ * @param [s] The sequence of bytes containing the character.
+ * @param [n] A ponter to a `size_t` containing the maximum number of bytes
+ *        to inspect. On successful return, this will be updated to contain
+ *        the number of bytes consumed by the character.
+ * @return The codepoint, or -1 if a decoding error occurs (errno will be set).
+ */
+int neo4j_u8codepoint(const char *s, size_t *n);
+
+/**
+ * Return the column width of a Unicode codepoint.
+ *
+ * @param [cp] The codepoint value.
+ * @return The width, in columns, of the Unicode codepoint, or -1 if the
+ *         codepoint is unprintable.
+ */
+int neo4j_u8cpwidth(int cp);
+
+
+/**
+ * Return the column width of a UTF-8 string.
+ *
+ * @param [s] The UTF-8 encoded string.
+ * @param [n] The maximum number of bytes to inspect.
+ * @return The width, in columns, of the UTF-8 string.
+ */
+int neo4j_u8cswidth(const char *s, size_t n);
 
 
 #pragma GCC visibility pop

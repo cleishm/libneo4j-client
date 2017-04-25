@@ -18,13 +18,49 @@
 #define NEO4J_CONNECTION_H
 
 #include "neo4j-client.h"
+#include "atomic.h"
 #include "client_config.h"
 #include "iostream.h"
+#include "job.h"
 #include "logging.h"
 #include "memory.h"
 #include "messages.h"
-#include "session.h"
 #include "uri.h"
+
+/**
+ * Callback for receiving responses to requests.
+ *
+ * @internal
+ *
+ * @param [cdata] The opaque callback data.
+ * @param [type] The type of the response message.
+ * @param [argv] The response argument vector.
+ * @param [argc] The number of arguments in the argument vector.
+ * @return 0 if the response was processed successfully and no more
+ *        responses are expected for the request, <0 if an error occurs
+ *        (errno will be set), >0 if the response was processed successfully
+ *        and there are more responses expected for the request.
+ */
+typedef int (*neo4j_response_recv_t)(void *cdata, neo4j_message_type_t type,
+            const neo4j_value_t *argv, uint16_t argc);
+
+
+#define NEO4J_REQUEST_ARGV_PREALLOC 4
+
+struct neo4j_request
+{
+    neo4j_message_type_t type;
+    neo4j_value_t _argv[NEO4J_REQUEST_ARGV_PREALLOC];
+    const neo4j_value_t *argv;
+    uint16_t argc;
+
+    neo4j_mpool_t _mpool;
+    neo4j_mpool_t *mpool;
+
+    neo4j_response_recv_t receive;
+    void *cdata;
+};
+
 
 struct neo4j_connection
 {
@@ -39,9 +75,21 @@ struct neo4j_connection
     bool insecure;
 
     uint8_t *snd_buffer;
-    struct neo4j_request *request_queue;
 
-    neo4j_session_t *session;
+    neo4j_atomic_bool processing;
+    char *server_id;
+    bool credentials_expired;
+    bool failed;
+    neo4j_atomic_bool reset_requested;
+
+    struct neo4j_request *request_queue;
+    unsigned int request_queue_size;
+    unsigned int request_queue_head;
+    unsigned int request_queue_depth;
+
+    unsigned int inflight_requests;
+
+    neo4j_job_t *jobs;
 };
 
 
@@ -83,29 +131,92 @@ int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
         neo4j_message_type_t *type, const neo4j_value_t **argv, uint16_t *argc);
 
 /**
- * Attach a session to a connection.
+ * Attach a job to a connection.
  *
  * @internal
  *
  * @param [connection] The connection to attach to.
- * @param [session] The session to attach.
+ * @param [job] The job to attach.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
-int neo4j_attach_session(neo4j_connection_t *connection,
-        neo4j_session_t *session);
+int neo4j_attach_job(neo4j_connection_t *connection, neo4j_job_t *job);
 
 /**
- * Detach a session from a connection.
+ * Detach a job from a connection.
  *
  * @internal
  *
  * @param [connection] The connection to detach from.
- * @param [session] The session to detach.
- * @param [reusable] `true` if the connection may be reused, `false otherwise.
+ * @param [job] The job to detach.
  * @return 0 on success, -1 on failure (errno will be set).
  */
-int neo4j_detach_session(neo4j_connection_t *connection,
-        neo4j_session_t *session, bool reusable);
+int neo4j_detach_job(neo4j_connection_t *connection, neo4j_job_t *job);
+
+/**
+ * Synchronize a session.
+ *
+ * @internal
+ *
+ * Sends and receives messages until the queue is empty or a condition
+ * is met.
+ *
+ * @param [connection] The connection to synchronize.
+ * @param [condition] The condition to be met, which is indicated by the
+ *         value referenced by the pointer being zero.
+ * @return 0 on success, -1 on failure (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_session_sync(neo4j_connection_t *connection,
+        const unsigned int *condition);
+
+/**
+ * Send a RUN message in a session.
+ *
+ * @internal
+ * 
+ * @param [connection] The connection to send the message in.
+ * @param [mpool] The memory pool to use when sending and receiving.
+ * @param [statement] The statement to send.
+ * @param [params] The parameters to send.
+ * @param [callback] The callback to be invoked for responses.
+ * @param [cdata] Opaque data to be provided to the callback.
+ * @return 0 on success, -1 on failure (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
+        const char *statement, neo4j_value_t params,
+        neo4j_response_recv_t callback, void *cdata);
+
+/**
+ * Send a PULL_ALL message in a session.
+ *
+ * @internal
+ *
+ * @param [connection] The connection to send the message in.
+ * @param [mpool] The memory pool to use when sending and receiving.
+ * @param [callback] The callback to be invoked for responses.
+ * @param [cdata] Opaque data to be provided to the callback.
+ * @return 0 on success, -1 on failure (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_session_pull_all(neo4j_connection_t *connection,
+        neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
+
+/**
+ * Send a DISCARD_ALL message in a session.
+ *
+ * @internal
+ *
+ * @param [connection] The connection to send the message in.
+ * @param [mpool] The memory pool to use when sending and receiving.
+ * @param [callback] The callback to be invoked for responses.
+ * @param [cdata] Opaque data to be provided to the callback.
+ * @return 0 on success, -1 on failure (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_session_discard_all(neo4j_connection_t *connection,
+        neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
+
 
 #endif/*NEO4J_CONNECTION_H*/
