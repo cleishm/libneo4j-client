@@ -119,7 +119,7 @@ int process(shell_state_t *state,
             (state->pipeline_max * sizeof(evaluation_continuation_t *)));
     if (queue == NULL)
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return -1;
     }
     queue->capacity = state->pipeline_max;
@@ -131,7 +131,7 @@ int process(shell_state_t *state,
     {
         if (err != -2)
         {
-            neo4j_perror(state->err, errno, "unexpected error");
+            neo4j_perror(state->err, errno, "Unexpected error");
         }
         goto cleanup;
     }
@@ -195,7 +195,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     assert(queue->depth <= queue->capacity);
     if ((queue->depth >= queue->capacity) && finalize(state, queue, 1))
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return -1;
     }
     assert(queue->depth < queue->capacity);
@@ -204,7 +204,7 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
             prepare_statement(state, s, n, range.start);
     if (continuation == NULL)
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return -1;
     }
 

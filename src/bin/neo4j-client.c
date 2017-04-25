@@ -151,14 +151,14 @@ int main(int argc, char *argv[])
     FILE *tty = fopen(_PATH_TTY, "r+");
     if (tty == NULL && errno != ENOENT)
     {
-        perror("can't open " _PATH_TTY);
+        perror("Can't open " _PATH_TTY);
         exit(EXIT_FAILURE);
     }
 
     char prog_name[PATH_MAX];
     if (neo4j_basename(argv[0], prog_name, sizeof(prog_name)) < 0)
     {
-        perror("unexpected error");
+        perror("Unexpected error");
         exit(EXIT_FAILURE);
     }
 
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 
     if (shell_state_init(&state, prog_name, stdin, stdout, stderr, tty))
     {
-        neo4j_perror(stderr, errno, "unexpected error");
+        neo4j_perror(stderr, errno, "Unexpected error");
         goto cleanup;
     }
 
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
     {
         neo4j_perror(state.err, (errno == ERANGE)? ENAMETOOLONG : errno,
-                "unexpected error");
+                "Unexpected error");
         goto cleanup;
     }
     state.histfile = histfile;
@@ -211,14 +211,14 @@ int main(int argc, char *argv[])
         case CA_FILE_OPT:
             if (neo4j_config_set_TLS_ca_file(state.config, optarg))
             {
-                neo4j_perror(state.err, errno, "unexpected error");
+                neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
             break;
         case CA_DIRECTORY_OPT:
             if (neo4j_config_set_TLS_ca_dir(state.config, optarg))
             {
-                neo4j_perror(state.err, errno, "unexpected error");
+                neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
             break;
@@ -242,14 +242,14 @@ int main(int argc, char *argv[])
         case 'u':
             if (neo4j_config_set_username(state.config, optarg))
             {
-                neo4j_perror(state.err, errno, "unexpected error");
+                neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
             break;
         case 'p':
             if (neo4j_config_set_password(state.config, optarg))
             {
-                neo4j_perror(state.err, errno, "unexpected error");
+                neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
             break;
@@ -265,14 +265,14 @@ int main(int argc, char *argv[])
         case KNOWN_HOSTS_OPT:
             if (neo4j_config_set_known_hosts_file(state.config, optarg))
             {
-                neo4j_perror(state.err, errno, "unexpected error");
+                neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
             break;
         case NO_KNOWN_HOSTS_OPT:
             if (neo4j_config_set_trust_known_hosts(state.config, false))
             {
-                neo4j_perror(state.err, errno, "unexpected error");
+                neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
             break;
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
     provider = neo4j_std_logger_provider(state.err, log_level, logger_flags);
     if (provider == NULL)
     {
-        neo4j_perror(state.err, errno, "unexpected error");
+        neo4j_perror(state.err, errno, "Unexpected error");
         goto cleanup;
     }
 
@@ -401,7 +401,7 @@ int main(int argc, char *argv[])
 
     if (signal(SIGINT, interrupt_handler) == SIG_ERR)
     {
-        perror("unexpected error");
+        perror("Unexpected error");
         goto cleanup;
     }
 
@@ -481,6 +481,6 @@ void interrupt_handler(int signal)
 {
     if (state.connection != NULL && neo4j_reset(state.connection))
     {
-        neo4j_perror(stderr, errno, "reset failed");
+        neo4j_perror(stderr, errno, "Reset failed");
     }
 }

@@ -131,7 +131,7 @@ int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
     state->nexports = nexports;
     if (err)
     {
-        print_error_errno(state, pos, errno, "unexpected error");
+        print_error_errno(state, pos, errno, "Unexpected error");
         return -1;
     }
     return 0;
@@ -156,7 +156,7 @@ int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
     state->nexports = nexports;
     if (err)
     {
-        print_error_errno(state, pos, errno, "unexpected error");
+        print_error_errno(state, pos, errno, "Unexpected error");
         return -1;
     }
     return 0;
@@ -287,7 +287,7 @@ int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
 
     if (state->connection == NULL)
     {
-        print_error(state, pos, "not connected");
+        print_error(state, pos, "Not connected");
         return -1;
     }
     neo4j_reset(state->connection);
@@ -313,7 +313,7 @@ int eval_rollback(shell_state_t *state, const cypher_astnode_t *command,
     state->nexports = nexports;
     if (err)
     {
-        print_error_errno(state, pos, errno, "unexpected error");
+        print_error_errno(state, pos, errno, "Unexpected error");
         return -1;
     }
     return 0;

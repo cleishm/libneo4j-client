@@ -68,7 +68,7 @@ int evaluate_statement(shell_state_t *state, const char *statement, size_t n,
             prepare_statement(state, statement, n, pos);
     if (continuation == NULL)
     {
-        print_error_errno(state, pos, errno, "unexpected error");
+        print_error_errno(state, pos, errno, "Unexpected error");
         return -1;
     }
     return complete_evaluation(continuation, state);
@@ -125,7 +125,7 @@ int abort_evaluation(evaluation_continuation_t *continuation,
     if (continuation->results != NULL &&
             neo4j_close_results(continuation->results))
     {
-        print_error_errno(state, continuation->pos, errno, "unexpected error");
+        print_error_errno(state, continuation->pos, errno, "Unexpected error");
         res = -1;
     }
     free(continuation);
@@ -136,14 +136,14 @@ int abort_evaluation(evaluation_continuation_t *continuation,
 int not_connected_error(evaluation_continuation_t *self, shell_state_t *state)
 {
     print_error(state, self->pos,
-            "not connected (try `:connect <URL>`, or `:help`)");
+            "Not connected (try `:connect <URL>`, or `:help`)");
     return -1;
 }
 
 
 int run_failure(evaluation_continuation_t *self, shell_state_t *state)
 {
-    print_error_errno(state, self->pos, self->err, "failed to run statement");
+    print_error_errno(state, self->pos, self->err, "Failed to run statement");
     return -1;
 }
 
@@ -155,13 +155,13 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     {
         if (errno == NEO4J_SESSION_RESET)
         {
-            fprintf(state->err, "interrupted"
+            fprintf(state->err, "Interrupted"
                     " (any open transaction has been rolled back)\n");
             goto cleanup;
         }
         else if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
         {
-            print_error_errno(state, self->pos, errno, "unexpected error");
+            print_error_errno(state, self->pos, errno, "Unexpected error");
             goto cleanup;
         }
 
@@ -212,7 +212,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     }
     else if (errno != NEO4J_NO_PLAN_AVAILABLE)
     {
-        print_error_errno(state, self->pos, errno, "unexpected error");
+        print_error_errno(state, self->pos, errno, "Unexpected error");
         goto cleanup;
     }
 
@@ -221,7 +221,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
 cleanup:
     if (neo4j_close_results(self->results) && result == 0)
     {
-        print_error_errno(state, self->pos, errno, "failed to close results");
+        print_error_errno(state, self->pos, errno, "Failed to close results");
         return -1;
     }
     return result;

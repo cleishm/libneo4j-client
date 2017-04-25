@@ -659,7 +659,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
 
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
-        neo4j_log_error(logger, "unexpected %s", description);
+        neo4j_log_error(logger, "Unexpected %s", description);
         set_failure(results, errno = EPROTO);
         return -1;
     }
@@ -752,7 +752,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
         if (results->failure == 0)
         {
             neo4j_log_error(logger,
-                    "unexpected IGNORED message received in %p"
+                    "Unexpected IGNORED message received in %p"
                     " (in response to %s, yet no failure occurred)",
                     (void *)connection, src_message_type);
             set_failure(results, errno = EPROTO);
@@ -770,7 +770,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
         neo4j_log_error(logger,
-                "unexpected %s message received in %p"
+                "Unexpected %s message received in %p"
                 " (in response to %s)", neo4j_message_type_str(type),
                 (void *)connection, src_message_type);
         set_failure(results, errno = EPROTO);
@@ -841,7 +841,7 @@ int append_result(run_result_stream_t *results,
     if (argc != 1)
     {
         neo4j_log_error(results->logger,
-                "invalid number of fields in RECORD message received in %p",
+                "Invalid number of fields in RECORD message received in %p",
                 (void *)connection);
         errno = EPROTO;
         return -1;
@@ -853,7 +853,7 @@ int append_result(run_result_stream_t *results,
     if (arg_type != NEO4J_LIST)
     {
         neo4j_log_error(results->logger,
-                "invalid field in RECORD message received in %p"
+                "Invalid field in RECORD message received in %p"
                 " (got %s, expected List)", (void *)connection,
                 neo4j_typestr(arg_type));
         errno = EPROTO;

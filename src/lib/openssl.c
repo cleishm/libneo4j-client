@@ -335,7 +335,7 @@ int verify(SSL *ssl, const char *hostname, int port,
     X509 *cert = SSL_get_peer_certificate(ssl);
     if (cert == NULL)
     {
-        neo4j_log_error(logger, "server did not present a TLS certificate");
+        neo4j_log_error(logger, "Server did not present a TLS certificate");
         errno = NEO4J_TLS_VERIFICATION_FAILED;
         return -1;
     }
@@ -384,7 +384,7 @@ int verify(SSL *ssl, const char *hostname, int port,
         if (result == 1)
         {
             neo4j_log_error(logger,
-                    "server fingerprint not in known hosts and "
+                    "Server fingerprint not in known hosts and "
                     "TLS certificate verification failed: %s",
                     verification_msg);
         }

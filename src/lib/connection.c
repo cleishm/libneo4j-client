@@ -562,7 +562,7 @@ int neo4j_connection_send(neo4j_connection_t *connection,
     {
         char ebuf[256];
         neo4j_log_error(connection->logger,
-                "error sending message on %p: %s\n", (void *)connection,
+                "Error sending message on %p: %s\n", (void *)connection,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
     }
     return res;
@@ -584,7 +584,7 @@ int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     {
         char ebuf[256];
         neo4j_log_error(connection->logger,
-                "error receiving message on %p: %s\n", (void *)connection,
+                "Error receiving message on %p: %s\n", (void *)connection,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
     }
     return res;
@@ -682,7 +682,7 @@ int session_reset(neo4j_connection_t *connection)
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
         neo4j_log_error(connection->logger,
-                "unexpected %s message received in %p"
+                "Unexpected %s message received in %p"
                 " (expected SUCCESS in response to RESET)",
                 neo4j_message_type_str(type), (void *)connection);
         err = -1;
@@ -934,7 +934,7 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
         if (failure && type != NEO4J_IGNORED_MESSAGE)
         {
             neo4j_log_error(connection->logger,
-                    "unexpected %s message received in %p"
+                    "Unexpected %s message received in %p"
                     " (expected IGNORED after failure occurred)",
                     neo4j_message_type_str(type), (void *)connection);
             errno = EPROTO;
@@ -1215,7 +1215,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
     if (type != NEO4J_FAILURE_MESSAGE)
     {
         neo4j_log_error(connection->logger,
-                "unexpected %s message received in %p"
+                "Unexpected %s message received in %p"
                 " (expected SUCCESS in response to INIT)",
                 neo4j_message_type_str(type), (void *)connection);
         errno = EPROTO;
@@ -1270,7 +1270,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         goto cleanup;
     }
 
-    neo4j_log_error(connection->logger, "session initialization failed: %s",
+    neo4j_log_error(connection->logger, "Session initialization failed: %s",
             details.message);
     errno = NEO4J_UNEXPECTED_ERROR;
 
@@ -1315,7 +1315,7 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     if (type != NEO4J_SUCCESS_MESSAGE)
     {
         neo4j_log_error(connection->logger,
-                "unexpected %s message received in %p"
+                "Unexpected %s message received in %p"
                 " (expected SUCCESS in response to ACK_FAILURE)",
                 neo4j_message_type_str(type), (void *)connection);
         errno = EPROTO;
