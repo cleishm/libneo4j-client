@@ -20,6 +20,7 @@ Group: System Environment/Libraries
 License: Apache-2.0
 URL: https://github.com/cleishm/libneo4j-client
 Source0: https://github.com/cleishm/libneo4j-client/releases/download/%{version}/%{name}-%{version}.tar.gz
+Patch: inline-static-build-error.patch
 BuildRequires: libcypher-parser-devel openssl-devel libedit-devel doxygen pkgconfig
 
 %description
@@ -30,6 +31,7 @@ libneo4j-client is a client library and command line shell for Neo4j.
 
 %prep
 %setup -q
+%patch
 
 %build
 %configure --disable-static

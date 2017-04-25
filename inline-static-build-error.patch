@@ -1,0 +1,20 @@
+--- src/lib/connection.c
++++ src/lib/connection.c
+@@ -43,7 +43,7 @@ static neo4j_iostream_t *std_tcp_connect(
+ static int negotiate_protocol_version(neo4j_iostream_t *iostream,
+         uint32_t *protocol_version);
+ 
+-static inline bool interrupted(neo4j_connection_t *connection);
++static bool interrupted(neo4j_connection_t *connection);
+ static int session_reset(neo4j_connection_t *connection);
+ 
+ static int send_requests(neo4j_connection_t *connection);
+@@ -626,7 +626,7 @@ int neo4j_reset(neo4j_connection_t *connection)
+ }
+ 
+ 
+-inline bool interrupted(neo4j_connection_t *connection)
++bool interrupted(neo4j_connection_t *connection)
+ {
+     return neo4j_atomic_bool_get(&(connection->reset_requested));
+ }
