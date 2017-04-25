@@ -50,10 +50,6 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Username or password is invalid";
     case NEO4J_CONNECTION_CLOSED:
         return "Connection closed";
-    case NEO4J_TOO_MANY_SESSIONS:
-        return "Too many sessions for connection";
-    case NEO4J_SESSION_ACTIVE:
-        return "Session still active";
     case NEO4J_SESSION_FAILED:
         return "Session has failed";
     case NEO4J_SESSION_ENDED:

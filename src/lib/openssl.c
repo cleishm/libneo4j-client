@@ -35,6 +35,10 @@
 
 static neo4j_mutex_t *thread_locks;
 
+#ifndef HAVE_ASN1_STRING_GET0_DATA
+#define ASN1_STRING_get0_data(x) ASN1_STRING_data(x)
+#endif
+
 #ifdef HAVE_CRYPTO_SET_LOCKING_CALLBACK
 static void locking_callback(int mode, int type, const char *file, int line);
 #endif
@@ -331,7 +335,7 @@ int verify(SSL *ssl, const char *hostname, int port,
     X509 *cert = SSL_get_peer_certificate(ssl);
     if (cert == NULL)
     {
-        neo4j_log_error(logger, "server did not present a TLS certificate");
+        neo4j_log_error(logger, "Server did not present a TLS certificate");
         errno = NEO4J_TLS_VERIFICATION_FAILED;
         return -1;
     }
@@ -380,7 +384,7 @@ int verify(SSL *ssl, const char *hostname, int port,
         if (result == 1)
         {
             neo4j_log_error(logger,
-                    "server fingerprint not in known hosts and "
+                    "Server fingerprint not in known hosts and "
                     "TLS certificate verification failed: %s",
                     verification_msg);
         }
@@ -526,7 +530,8 @@ int check_subject_alt_name(X509* cert, const char *hostname,
             continue;
         }
 
-        char *name_str = (char *)ASN1_STRING_data(name->d.dNSName);
+        const char *name_str =
+                (const char *)ASN1_STRING_get0_data(name->d.dNSName);
         // check that there isn't a null in the asn1 string
         if (strlen(name_str) != (size_t)ASN1_STRING_length(name->d.dNSName))
         {
@@ -566,7 +571,7 @@ int check_common_name(X509 *cert, const char *hostname, neo4j_logger_t *logger)
     {
         return -1;
     }
-    const char *cn_str = (const char *)ASN1_STRING_data(asn1);
+    const char *cn_str = (const char *)ASN1_STRING_get0_data(asn1);
     // check that there isn't a null in the asn1 string
     if (strlen(cn_str) != (size_t)ASN1_STRING_length(asn1))
     {

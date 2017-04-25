@@ -19,16 +19,23 @@
 
 #include "state.h"
 
-typedef int (*renderer_t)(shell_state_t *state, neo4j_result_stream_t *results);
-
 renderer_t find_renderer(const char *name);
 const char *renderer_name(renderer_t renderer);
 
-int render_results_csv(shell_state_t *state, neo4j_result_stream_t *results);
-int render_results_table(shell_state_t *state, neo4j_result_stream_t *results);
+int render_results_csv(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results);
 
-int render_update_counts(shell_state_t *state, neo4j_result_stream_t *results);
+int render_results_table(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results);
 
-int render_plan_table(shell_state_t *state, struct neo4j_statement_plan *plan);
+int render_update_counts(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results);
+
+int render_plan_table(shell_state_t *state,
+        struct cypher_input_position pos,
+        struct neo4j_statement_plan *plan);
 
 #endif/*NEO4J_RENDER_H*/

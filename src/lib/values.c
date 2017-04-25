@@ -36,7 +36,9 @@ static bool map_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 
 
-/* types */
+/////////////////////////////
+// types
+/////////////////////////////
 
 struct neo4j_type
 {
@@ -56,50 +58,60 @@ static const struct neo4j_type path_type = { .name = "Path" };
 static const struct neo4j_type identity_type = { .name = "Identity" };
 static const struct neo4j_type struct_type = { .name = "Struct" };
 
-static const struct neo4j_type *neo4j_types[] =
-    { &null_type,
-      &bool_type,
-      &int_type,
-      &float_type,
-      &string_type,
-      &list_type,
-      &map_type,
-      &node_type,
-      &relationship_type,
-      &path_type,
-      &identity_type,
-      &struct_type };
+struct neo4j_types
+{
+    const struct neo4j_type *null_type;
+    const struct neo4j_type *bool_type;
+    const struct neo4j_type *int_type;
+    const struct neo4j_type *float_type;
+    const struct neo4j_type *string_type;
+    const struct neo4j_type *list_type;
+    const struct neo4j_type *map_type;
+    const struct neo4j_type *node_type;
+    const struct neo4j_type *relationship_type;
+    const struct neo4j_type *path_type;
+    const struct neo4j_type *identity_type;
+    const struct neo4j_type *struct_type;
+};
+static const struct neo4j_types neo4j_types =
+{
+    .null_type = &null_type,
+    .bool_type = &bool_type,
+    .int_type = &int_type,
+    .float_type = &float_type,
+    .string_type = &string_type,
+    .list_type = &list_type,
+    .map_type = &map_type,
+    .node_type = &node_type,
+    .relationship_type = &relationship_type,
+    .path_type = &path_type,
+    .identity_type = &identity_type,
+    .struct_type = &struct_type
+};
 
-#define NULL_TYPE_OFF 0
-const uint8_t NEO4J_NULL = NULL_TYPE_OFF;
-#define BOOL_TYPE_OFF 1
-const uint8_t NEO4J_BOOL = BOOL_TYPE_OFF;
-#define INT_TYPE_OFF 2
-const uint8_t NEO4J_INT = INT_TYPE_OFF;
-#define FLOAT_TYPE_OFF 3
-const uint8_t NEO4J_FLOAT = FLOAT_TYPE_OFF;
-#define STRING_TYPE_OFF 4
-const uint8_t NEO4J_STRING = STRING_TYPE_OFF;
-#define LIST_TYPE_OFF 5
-const uint8_t NEO4J_LIST = LIST_TYPE_OFF;
-#define MAP_TYPE_OFF 6
-const uint8_t NEO4J_MAP = MAP_TYPE_OFF;
-#define NODE_TYPE_OFF 7
-const uint8_t NEO4J_NODE = NODE_TYPE_OFF;
-#define RELATIONSHIP_TYPE_OFF 8
-const uint8_t NEO4J_RELATIONSHIP = RELATIONSHIP_TYPE_OFF;
-#define PATH_TYPE_OFF 9
-const uint8_t NEO4J_PATH = PATH_TYPE_OFF;
-#define IDENTITY_TYPE_OFF 10
-const uint8_t NEO4J_IDENTITY = IDENTITY_TYPE_OFF;
-#define STRUCT_TYPE_OFF 11
-const uint8_t NEO4J_STRUCT = STRUCT_TYPE_OFF;
+#define TYPE_OFFSET(name) \
+        (offsetof(struct neo4j_types, name) / sizeof(struct neo4j_types *))
+#define TYPE_PTR(offset) (*((struct neo4j_type * const *)(const void *)( \
+        (const char *)&neo4j_types + offset * sizeof(struct neo4j_type *))))
+
+const uint8_t NEO4J_NULL = TYPE_OFFSET(null_type);
+const uint8_t NEO4J_BOOL = TYPE_OFFSET(bool_type);
+const uint8_t NEO4J_INT = TYPE_OFFSET(int_type);
+const uint8_t NEO4J_FLOAT = TYPE_OFFSET(float_type);
+const uint8_t NEO4J_STRING = TYPE_OFFSET(string_type);
+const uint8_t NEO4J_LIST = TYPE_OFFSET(list_type);
+const uint8_t NEO4J_MAP = TYPE_OFFSET(map_type);
+const uint8_t NEO4J_NODE = TYPE_OFFSET(node_type);
+const uint8_t NEO4J_RELATIONSHIP = TYPE_OFFSET(relationship_type);
+const uint8_t NEO4J_PATH = TYPE_OFFSET(path_type);
+const uint8_t NEO4J_IDENTITY = TYPE_OFFSET(identity_type);
+const uint8_t NEO4J_STRUCT = TYPE_OFFSET(struct_type);
 static const uint8_t _MAX_TYPE =
-    (sizeof(neo4j_types) / sizeof(struct neo4j_type *));
+    (sizeof(struct neo4j_types) / sizeof(struct neo4j_type *));
 
 static_assert(
-    (sizeof(neo4j_types) / sizeof(struct neo4j_type *)) <= UINT8_MAX,
-    "value vt table cannot hold more than 2^8 entries");
+    (sizeof(struct neo4j_types) / sizeof(struct neo4j_type *)) <= UINT8_MAX,
+    "type table cannot hold more than 2^8 entries");
 
 
 bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type)
@@ -112,11 +124,13 @@ bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type)
 const char *neo4j_typestr(const neo4j_type_t type)
 {
     assert(type < _MAX_TYPE);
-    return neo4j_types[type]->name;
+    return TYPE_PTR(type)->name;
 }
 
 
-/* vector tables */
+/////////////////////////////
+// vector tables
+/////////////////////////////
 
 struct neo4j_value_vt
 {
@@ -187,40 +201,65 @@ static struct neo4j_value_vt struct_vt =
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 
-static const struct neo4j_value_vt *neo4j_value_vts[] =
-    { &null_vt,
-      &bool_vt,
-      &int_vt,
-      &float_vt,
-      &string_vt,
-      &list_vt,
-      &map_vt,
-      &node_vt,
-      &relationship_vt,
-      &path_vt,
-      &identity_vt,
-      &struct_vt };
+struct neo4j_value_vts
+{
+    const struct neo4j_value_vt *null_vt;
+    const struct neo4j_value_vt *bool_vt;
+    const struct neo4j_value_vt *int_vt;
+    const struct neo4j_value_vt *float_vt;
+    const struct neo4j_value_vt *string_vt;
+    const struct neo4j_value_vt *list_vt;
+    const struct neo4j_value_vt *map_vt;
+    const struct neo4j_value_vt *node_vt;
+    const struct neo4j_value_vt *relationship_vt;
+    const struct neo4j_value_vt *path_vt;
+    const struct neo4j_value_vt *identity_vt;
+    const struct neo4j_value_vt *struct_vt;
+};
+static const struct neo4j_value_vts neo4j_value_vts =
+{
+    .null_vt = &null_vt,
+    .bool_vt = &bool_vt,
+    .int_vt = &int_vt,
+    .float_vt = &float_vt,
+    .string_vt = &string_vt,
+    .list_vt = &list_vt,
+    .map_vt = &map_vt,
+    .node_vt = &node_vt,
+    .relationship_vt = &relationship_vt,
+    .path_vt = &path_vt,
+    .identity_vt = &identity_vt,
+    .struct_vt = &struct_vt
+};
 
-#define NULL_VT_OFF 0
-#define BOOL_VT_OFF 1
-#define INT_VT_OFF 2
-#define FLOAT_VT_OFF 3
-#define STRING_VT_OFF 4
-#define LIST_VT_OFF 5
-#define MAP_VT_OFF 6
-#define NODE_VT_OFF 7
-#define RELATIONSHIP_VT_OFF 8
-#define PATH_VT_OFF 9
-#define IDENTITY_VT_OFF 10
-#define STRUCT_VT_OFF 11
-#define _MAX_VT_OFF (sizeof(neo4j_value_vts) / sizeof(struct neo4j_value_vt *))
+#define VT_OFFSET(name) \
+        (offsetof(struct neo4j_value_vts, name) / sizeof(struct neo4j_value_vts *))
+#define VT_PTR(offset) (*((struct neo4j_value_vt * const *)(const void *)( \
+        (const char *)&neo4j_value_vts + offset * sizeof(struct neo4j_value_vt *))))
+
+#define NULL_VT_OFF VT_OFFSET(null_vt)
+#define BOOL_VT_OFF VT_OFFSET(bool_vt)
+#define INT_VT_OFF VT_OFFSET(int_vt)
+#define FLOAT_VT_OFF VT_OFFSET(float_vt)
+#define STRING_VT_OFF VT_OFFSET(string_vt)
+#define LIST_VT_OFF VT_OFFSET(list_vt)
+#define MAP_VT_OFF VT_OFFSET(map_vt)
+#define NODE_VT_OFF VT_OFFSET(node_vt)
+#define RELATIONSHIP_VT_OFF VT_OFFSET(relationship_vt)
+#define PATH_VT_OFF VT_OFFSET(path_vt)
+#define IDENTITY_VT_OFF VT_OFFSET(identity_vt)
+#define STRUCT_VT_OFF VT_OFFSET(struct_vt)
+static const uint8_t _MAX_VT_OFF =
+    (sizeof(struct neo4j_value_vts) / sizeof(struct neo4j_value_vt *));
 
 static_assert(
-    (sizeof(neo4j_value_vts) / sizeof(struct neo4j_value_vt *)) <= UINT8_MAX,
+    (sizeof(struct neo4j_value_vts) / sizeof(struct neo4j_value_vt *)) <= UINT8_MAX,
     "value vt table cannot hold more than 2^8 entries");
 
 
-/* method dispatch */
+/////////////////////////////
+// method dispatch
+/////////////////////////////
 
 char *neo4j_tostring(neo4j_value_t value, char *strbuf, size_t n)
 {
@@ -233,7 +272,7 @@ size_t neo4j_ntostring(neo4j_value_t value, char *strbuf, size_t n)
 {
     REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
     REQUIRE(value._type < _MAX_TYPE, -1);
-    const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
+    const struct neo4j_value_vt *vt = VT_PTR(value._vt_off);
     return vt->str(&value, strbuf, n);
 }
 
@@ -242,7 +281,7 @@ ssize_t neo4j_fprint(neo4j_value_t value, FILE *stream)
 {
     REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
     REQUIRE(value._type < _MAX_TYPE, -1);
-    const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
+    const struct neo4j_value_vt *vt = VT_PTR(value._vt_off);
     return vt->fprint(&value, stream);
 }
 
@@ -251,7 +290,7 @@ int neo4j_serialize(neo4j_value_t value, neo4j_iostream_t *stream)
 {
     REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
     REQUIRE(value._type < _MAX_TYPE, -1);
-    const struct neo4j_value_vt *vt = neo4j_value_vts[value._vt_off];
+    const struct neo4j_value_vt *vt = VT_PTR(value._vt_off);
     return vt->serialize(&value, stream);
 }
 
@@ -262,17 +301,19 @@ bool neo4j_eq(neo4j_value_t value1, neo4j_value_t value2)
     REQUIRE(value1._type < _MAX_TYPE, false);
     errno = 0;
     REQUIRE(neo4j_type(value1) == neo4j_type(value2), false);
-    const struct neo4j_value_vt *vt = neo4j_value_vts[value1._vt_off];
+    const struct neo4j_value_vt *vt = VT_PTR(value1._vt_off);
     return vt->eq(&value1, &value2);
 }
 
 
-/* constructors and accessors */
+/////////////////////////////
+// constructors and accessors
+/////////////////////////////
 
 // null
 
 const neo4j_value_t neo4j_null =
-    { ._type = NULL_TYPE_OFF, ._vt_off = NULL_VT_OFF };
+    { ._type = TYPE_OFFSET(null_type), ._vt_off = NULL_VT_OFF };
 
 
 static bool null_eq(const neo4j_value_t *value, const neo4j_value_t *other)

@@ -50,10 +50,6 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
 void shell_state_destroy(shell_state_t *state)
 {
     assert(state != NULL);
-    if (state->session != NULL)
-    {
-        neo4j_end_session(state->session);
-    }
     if (state->connection != NULL)
     {
         neo4j_close(state->connection);
@@ -74,6 +70,90 @@ void shell_state_destroy(shell_state_t *state)
     free(state->exports_storage);
 
     memset(state, 0, sizeof(shell_state_t));
+}
+
+
+static int valert(shell_state_t *state, struct cypher_input_position pos,
+        const char *type, const char *fmt, va_list ap)
+{
+    int written = 0;
+    int r;
+
+    if (state->infile != NULL)
+    {
+        r = fprintf(state->err, "%s%s:%u:%u:%s %s%s:%s ",
+            state->error_colorize->pos[0], state->infile, pos.line,
+            pos.column, state->error_colorize->pos[1],
+            state->error_colorize->typ[0], type, state->error_colorize->typ[1]);
+        if (r < 0)
+        {
+            return -1;
+        }
+        written += r;
+    }
+
+    r = fprintf(state->err, "%s", state->error_colorize->msg[0]);
+    if (r < 0)
+    {
+        return -1;
+    }
+    written += r;
+
+    r = vfprintf(state->err, fmt, ap);
+    if (r < 0)
+    {
+        return -1;
+    }
+    written += r;
+    r = fprintf(state->err, "%s\n", state->error_colorize->msg[1]);
+    if (r < 0)
+    {
+        return -1;
+    }
+    written += r;
+    return written;
+}
+
+
+static int alert(shell_state_t *state, struct cypher_input_position pos,
+        const char *type, const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int r = valert(state, pos, type, fmt, ap);
+    va_end(ap);
+    return r;
+}
+
+
+int print_error(shell_state_t *state, struct cypher_input_position pos,
+        const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int r = valert(state, pos, "error", fmt, ap);
+    va_end(ap);
+    return r;
+}
+
+
+int print_error_errno(shell_state_t *state, struct cypher_input_position pos,
+        int err, const char *msg)
+{
+    char buf[256];
+    return alert(state, pos, "error", "%s: %s", msg,
+            neo4j_strerror(err, buf, sizeof(buf)));
+}
+
+
+int print_warning(shell_state_t *state, struct cypher_input_position pos,
+        const char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    int r = valert(state, pos, "warning", fmt, ap);
+    va_end(ap);
+    return r;
 }
 
 
@@ -207,10 +287,15 @@ void display_status(FILE* stream, shell_state_t *state)
         bool ipv6 = (strchr(hostname, ':') != NULL);
         unsigned int port = neo4j_connection_port(state->connection);
         bool secure = neo4j_connection_is_secure(state->connection);
-        fprintf(stream, "Connected to 'neo4j://%s%s%s%s%s:%u'%s\n",
+        const char *server_id = neo4j_server_id(state->connection);
+        fprintf(stream, "Connected to 'neo4j://%s%s%s%s%s:%u'%s%s%s%s\n",
                 (username != NULL)? username : "",
                 (username != NULL)? "@" : "",
                 ipv6? "[" : "", hostname, ipv6? "]" : "",
-                port, secure? "" : " (insecure)");
+                port,
+                secure? "" : " (insecure)",
+                (server_id != NULL)? " [" : "",
+                (server_id != NULL)? server_id : "",
+                (server_id != NULL)? "]" : "");
     }
 }

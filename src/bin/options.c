@@ -29,6 +29,10 @@ struct options
     const char *description;
 };
 
+static int set_ascii(shell_state_t *state, const char *value);
+static int unset_ascii(shell_state_t *state);
+static const char *get_ascii(shell_state_t *state, char *buf, size_t n);
+
 static int set_echo(shell_state_t *state, const char *value);
 static int unset_echo(shell_state_t *state);
 static const char *get_echo(shell_state_t *state, char *buf, size_t n);
@@ -52,7 +56,9 @@ static int unset_width(shell_state_t *state);
 static const char * get_width(shell_state_t *state, char *buf, size_t n);
 
 static struct options options[] =
-    { { "echo", set_echo, true, unset_echo, get_echo,
+    { { "ascii", set_ascii, true, unset_ascii, get_ascii,
+          "render only 7-bit ASCII characters in result tables" },
+      { "echo", set_echo, true, unset_echo, get_echo,
           "echo commands and statements before rendering results" },
       { "insecure", set_insecure, true, unset_insecure, get_insecure,
           "do not attempt to establish secure connections" },
@@ -132,6 +138,38 @@ int option_unset(shell_state_t *state, const char *name)
 
     fprintf(state->err, "Unknown option '%s'\n", name);
     return -1;
+}
+
+
+int set_ascii(shell_state_t *state, const char *value)
+{
+    if (value == NULL || strcmp(value, "on") == 0)
+    {
+        state->render_flags |= NEO4J_RENDER_ASCII;
+    }
+    else if (strcmp(value, "off") == 0)
+    {
+        state->render_flags &= ~NEO4J_RENDER_ASCII;
+    }
+    else
+    {
+        fprintf(state->err, "Must set ascii to 'on' or 'off'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_ascii(shell_state_t *state)
+{
+    state->render_flags &= ~NEO4J_RENDER_ASCII;
+    return 0;
+}
+
+
+const char *get_ascii(shell_state_t *state, char *buf, size_t n)
+{
+    return (state->render_flags & NEO4J_RENDER_ASCII)? "on" : "off";
 }
 
 

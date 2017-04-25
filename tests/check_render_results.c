@@ -96,7 +96,7 @@ START_TEST (render_empty_table)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 49, 0);
+    int result = neo4j_render_table(memstream, results, 49, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -124,7 +124,7 @@ START_TEST (render_simple_table)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 73, 0);
+    int result = neo4j_render_table(memstream, results, 73, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -155,8 +155,8 @@ START_TEST (render_simple_table_with_quoted_strings)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 73, 
-            NEO4J_RENDER_QUOTE_STRINGS);
+    int result = neo4j_render_table(memstream, results, 73,
+            NEO4J_RENDER_QUOTE_STRINGS | NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -187,7 +187,7 @@ START_TEST (render_narrow_table)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 53, 0);
+    int result = neo4j_render_table(memstream, results, 53, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -218,7 +218,7 @@ START_TEST (render_very_narrow_table)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 13, 0);
+    int result = neo4j_render_table(memstream, results, 13, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -249,20 +249,20 @@ START_TEST (render_undersized_table)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 8, 0);
+    int result = neo4j_render_table(memstream, results, 8, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
     const char *expect = "\n"
 //1       10        20        30        40        50        60        70
- "+--+--+=\n"
+ "+--+--+-\n"
  "| =| =|=\n"
- "+--+--+=\n"
+ "+--+--+-\n"
  "| =| =|=\n"
  "| =| =|=\n"
  "|  | =|=\n"
- "+--+--+=\n";
+ "+--+--+-\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -280,20 +280,20 @@ START_TEST (render_min_width_table)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 2, 0);
+    int result = neo4j_render_table(memstream, results, 2, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
 
     const char *expect = "\n"
 //1       10        20        30        40        50        60        70
- "+=\n"
+ "+-\n"
  "|=\n"
- "+=\n"
+ "+-\n"
  "|=\n"
  "|=\n"
  "|=\n"
- "+=\n";
+ "+-\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -302,7 +302,7 @@ END_TEST
 START_TEST (render_zero_col_table)
 {
     neo4j_result_stream_t *results = build_stream(NULL, 0, NULL, 0);
-    int result = neo4j_render_table(memstream, results, 2, 0);
+    int result = neo4j_render_table(memstream, results, 2, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -328,7 +328,7 @@ START_TEST (render_table_with_nulls)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 52, 0);
+    int result = neo4j_render_table(memstream, results, 52, NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -359,7 +359,7 @@ START_TEST (render_table_with_visible_nulls)
     ck_assert(fputc('\n', memstream) != EOF);
 
     int result = neo4j_render_table(memstream, results, 52,
-            NEO4J_RENDER_SHOW_NULLS | NEO4J_RENDER_QUOTE_STRINGS);
+            NEO4J_RENDER_SHOW_NULLS | NEO4J_RENDER_QUOTE_STRINGS | NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);
@@ -381,7 +381,7 @@ START_TEST (render_no_table_if_stream_has_error)
     neo4j_result_stream_t *results = build_stream(NULL, 0, NULL, 0);
     neo4j_crs_set_error(results, "Failed");
 
-    int result = neo4j_render_table(memstream, results, 2, 0);
+    int result = neo4j_render_table(memstream, results, 2, NEO4J_RENDER_ASCII);
     ck_assert(result != 0);
     fflush(memstream);
     neo4j_close_results(results);
