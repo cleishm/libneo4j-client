@@ -24,19 +24,9 @@
 #include <string.h>
 
 
-int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
-        int error, char *username, size_t usize, char *password, size_t psize)
+int basic_auth(void *userdata, const char *host, char *username, size_t usize,
+        char *password, size_t psize)
 {
-    shell_state_t *state = (shell_state_t *)userdata;
-    if (error != 0)
-    {
-        neo4j_perror(state->tty, error, "Authentication failed");
-    }
-    if (attempts > 3)
-    {
-        return NEO4J_AUTHENTICATION_FAIL;
-    }
-
     assert(usize > 1);
     if (username[0] == '\0' && readpassphrase("Username: ", username, usize,
             RPP_REQUIRE_TTY | RPP_ECHO_ON) == NULL)
@@ -44,11 +34,12 @@ int auth_reattempt(void *userdata, const char *host, unsigned int attempts,
         return -1;
     }
 
+    assert(psize > 1);
     if (readpassphrase("Password: ", password, psize, RPP_REQUIRE_TTY) == NULL)
     {
         return -1;
     }
-    return NEO4J_AUTHENTICATION_REATTEMPT;
+    return 0;
 }
 
 

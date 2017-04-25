@@ -86,7 +86,7 @@ typedef struct neo4j_value neo4j_value_t;
 typedef uint8_t neo4j_type_t;
 
 /**
- * Function type for callback when passwords are required.
+ * Function type for callback when a passwords is required.
  *
  * Should copy the password into the supplied buffer, and return the
  * actual length of the password.
@@ -96,8 +96,29 @@ typedef uint8_t neo4j_type_t;
  * @param [len] The length of the buffer.
  * @return The length of the password as copied into the buffer.
  */
-typedef size_t (*neo4j_password_callback_t)(void *userdata,
+typedef ssize_t (*neo4j_password_callback_t)(void *userdata,
         char *buf, size_t len);
+
+/**
+ * Function type for callback when username and/or password is required.
+ *
+ * Should update the `NULL` terminated strings in the `username` and/or
+ * `password` buffers.
+ *
+ * @param [userdata] The user data for the callback.
+ * @param [host] The host description (typically "<hostname>:<port>").
+ * @param [username] A buffer of size `usize`, possibly containing a `NULL`
+ *         terminated default username.
+ * @param [usize] The size of the username buffer.
+ * @param [password] A buffer of size `psize`, possibly containing a `NULL`
+ *         terminated default password.
+ * @param [psize] The size of the password buffer.
+ * @return 0 on success, -1 on error (errno should be set).
+ */
+typedef int (*neo4j_basic_auth_callback_t)(void *userdata,
+        const char *host, char *username, size_t usize,
+        char *password, size_t psize);
+
 
 
 /*
@@ -1118,67 +1139,19 @@ __neo4j_must_check
 int neo4j_config_set_password(neo4j_config_t *config, const char *password);
 
 /**
- * Attempt initial authentication with an empty password.
+ * Set the basic authentication callback.
  *
- * If an authentication re-attempt callback has been provided (see
- * neo4j_config_set_authentication_reattempt_callback()), and a password has
- * not been set in the config, or a connection URL does not contain a password,
- * then the default behaviour is to immediately call the authentication
- * re-attempt callback. If, however, this config property is set to true, then
- * authentication using an empty password will be attempted first.
+ * If a username and/or password is required for basic authentication and
+ * isn't available in the configuration or connection URI, then this callback
+ * will be invoked to obtain the username and/or password.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [value] Allow attempting to use an empty password for the first
- *         authentiation attempt.
- */
-void neo4j_config_set_attempt_empty_password(neo4j_config_t *config,
-        bool value);
-
-/**
- * Check if the configuration allows for auth attempts using an empty password.
- *
- * @param [config] The neo4j client configuration.
- * @return `true` if an attempt will be made, or `false` otherwise.
- */
-__neo4j_pure
-bool neo4j_config_will_attempt_empty_password(neo4j_config_t *config);
-
-#define NEO4J_AUTHENTICATION_REATTEMPT 0
-#define NEO4J_AUTHENTICATION_FAIL 1
-
-/**
- * Function type for callback when password authentication has failed.
- *
- * @param [userdata] The user data for the callback.
- * @param [host] The host description (typically "<hostname>:<port>").
- * @param [attempts] The number of previous attempts.
- * @param [error] The errno for the authentication failure.
- * @param [username] A buffer containing the null terminated username for
- *         which authentication was attempted.
- * @param [usize] The size of the username buffer.
- * @param [password] A buffer containing the null terminated password for
- *         which authentication was attempted.
- * @param [usize] The size of the password buffer.
- * @return `NEO4J_AUTHENTICATION_REATTEMPT` if the credentials have been
- *         updated and authentication should be re-attempted,
- *         `NEO4J_AUTHENTICATION_FAIL` if authentication should fail,
- *         and -1 on error (errno should be set).
- */
-typedef int (*neo4j_authentication_reattempt_callback_t)(void *userdata,
-        const char *host, unsigned int attempts, int error, char *username,
-        size_t usize, char *password, size_t psize);
-
-/**
- * Set the authentication re-attempt callback.
- *
- * @param [config] The neo4j client configuration to update.
- * @param [callback] The callback to be invoked whenever a authentication
- *         fails.
+ * @param [callback] The callback to be invoked.
  * @param [userdata] User data that will be supplied to the callback.
  * @return 0 on success, or -1 on error (errno will be set).
  */
-int neo4j_config_set_authentication_reattempt_callback(neo4j_config_t *config,
-        neo4j_authentication_reattempt_callback_t callback, void *userdata);
+int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
+        neo4j_basic_auth_callback_t callback, void *userdata);
 
 /**
  * Set the location of a TLS private key and certificate chain.
@@ -1456,6 +1429,7 @@ ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
 
 #define NEO4J_CONNECT_DEFAULT 0
 #define NEO4J_INSECURE (1<<0)
+#define NEO4J_NO_URI_CREDENTIALS (1<<1)
 
 /**
  * Establish a connection to a neo4j server.
@@ -1464,7 +1438,8 @@ ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
  * - NEO4J_INSECURE - do not attempt to establish a secure connection. If a
  *   secure connection is required, then connect will fail with errno set to
  *   `NEO4J_SERVER_REQUIRES_SECURE_CONNECTION`.
- *
+ * - NEO4J_NO_URI_CREDENTIALS - do not use credentials provided in the
+ *   server URI (use credentials from the configuration instead).
  *
  * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *

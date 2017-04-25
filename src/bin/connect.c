@@ -21,6 +21,12 @@
 #include <errno.h>
 
 
+#define NEO4J_MAX_AUTHENTICATION_ATTEMPTS 3
+
+
+static int attempt_db_connect(shell_state_t *state,
+        struct cypher_input_position pos, const char *connect_string,
+        const char *port_string, int attempt);
 static int check_url(shell_state_t *state, struct cypher_input_position pos,
         const char *url_string);
 static int update_password_and_reconnect(shell_state_t *state,
@@ -36,6 +42,19 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
     }
     assert(state->connection == NULL);
 
+    return attempt_db_connect(state, pos, connect_string, port_string, 0);
+}
+
+
+int attempt_db_connect(shell_state_t *state, struct cypher_input_position pos,
+        const char *connect_string, const char *port_string, int attempt)
+{
+    uint_fast32_t connect_flags = state->connect_flags;
+    if (attempt > 0)
+    {
+        connect_flags |= NEO4J_NO_URI_CREDENTIALS;
+    }
+
     neo4j_connection_t *connection;
 
     if (port_string != NULL)
@@ -48,7 +67,7 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
             return -1;
         }
         connection = neo4j_tcp_connect(connect_string, port, state->config,
-                state->connect_flags);
+                connect_flags);
     }
     else
     {
@@ -60,12 +79,12 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
         if (r == 0)
         {
             connection = neo4j_connect(connect_string, state->config,
-                    state->connect_flags);
+                    connect_flags);
         }
         else
         {
             connection = neo4j_tcp_connect(connect_string, 0, state->config,
-                    state->connect_flags);
+                    connect_flags);
         }
     }
 
@@ -80,6 +99,18 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
         case NEO4J_INVALID_URI:
             print_error(state, pos, "invalid URL '%s'", connect_string);
             break;
+        case NEO4J_INVALID_CREDENTIALS:
+            if (state->password_prompt)
+            {
+                neo4j_perror(state->tty, errno, "Authentication failed");
+                if (attempt < NEO4J_MAX_AUTHENTICATION_ATTEMPTS)
+                {
+                    return attempt_db_connect(state, pos, connect_string,
+                            port_string, ++attempt);
+                }
+                break;
+            }
+            // fall through
         default:
             print_error_errno(state, pos, errno, "connection failed");
             break;

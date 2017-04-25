@@ -30,9 +30,8 @@ struct neo4j_config
 
     char *username;
     char *password;
-    bool attempt_empty_password;
-    neo4j_authentication_reattempt_callback_t auth_reattempt_callback;
-    void *auth_reattempt_callback_userdata;
+    neo4j_basic_auth_callback_t basic_auth_callback;
+    void *basic_auth_callback_userdata;
 
     const char *client_id;
 
@@ -94,6 +93,20 @@ static inline neo4j_mpool_t neo4j_std_mpool(const neo4j_config_t *config)
 {
     return neo4j_mpool(config->allocator, config->mpool_block_size);
 }
+
+
+/**
+ * Ensure there are basic auth credentials.
+ *
+ * If a username and password is not configured in the client configuration,
+ * attempts to obtain them via the basic_auth callback handler and otherwise
+ * sets them to the empty string.
+ *
+ * @param [config] The client configuration.
+ * @param [host] The host description.
+ * @param 0 on success, -1 on error (errno will be set).
+ */
+int ensure_basic_auth_credentials(neo4j_config_t *config, const char *host);
 
 
 #endif/*NEO4J_CLIENT_CONFIG_H*/

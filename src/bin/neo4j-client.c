@@ -382,8 +382,8 @@ int main(int argc, char *argv[])
 
         if (state.password_prompt)
         {
-            neo4j_config_set_authentication_reattempt_callback(state.config,
-                    auth_reattempt, &state);
+            neo4j_config_set_basic_auth_callback(state.config,
+                    basic_auth, &state);
         }
     }
 

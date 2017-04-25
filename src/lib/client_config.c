@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 
-static size_t default_password_callback(void *userdata, char *buf, size_t n);
+static ssize_t default_password_callback(void *userdata, char *buf, size_t n);
 
 
 const char *libneo4j_client_id(void)
@@ -177,24 +177,12 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 }
 
 
-void neo4j_config_set_attempt_empty_password(neo4j_config_t *config, bool value)
-{
-    config->attempt_empty_password = value;
-}
-
-
-bool neo4j_config_will_attempt_empty_password(neo4j_config_t *config)
-{
-    return config->attempt_empty_password;
-}
-
-
-int neo4j_config_set_authentication_reattempt_callback(neo4j_config_t *config,
-        neo4j_authentication_reattempt_callback_t callback, void *userdata)
+int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
+        neo4j_basic_auth_callback_t callback, void *userdata)
 {
     REQUIRE(config != NULL, -1);
-    config->auth_reattempt_callback = callback;
-    config->auth_reattempt_callback_userdata = userdata;
+    config->basic_auth_callback = callback;
+    config->basic_auth_callback_userdata = userdata;
     return 0;
 }
 
@@ -284,7 +272,7 @@ int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
 }
 
 
-size_t default_password_callback(void *userdata, char *buf, size_t n)
+ssize_t default_password_callback(void *userdata, char *buf, size_t n)
 {
     const char *password = (const char *)userdata;
     size_t pwlen = strlen(password);
@@ -366,4 +354,50 @@ void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
         unsigned int n)
 {
     config->max_pipelined_requests = n;
+}
+
+
+int ensure_basic_auth_credentials(neo4j_config_t *config, const char *host)
+{
+    if (config->username != NULL && config->password != NULL)
+    {
+        return 0;
+    }
+
+    char username_buf[NEO4J_MAXUSERNAMELEN];
+    char password_buf[NEO4J_MAXPASSWORDLEN];
+    strncpy(username_buf, (config->username != NULL)? config->username : "",
+            sizeof(username_buf));
+    strncpy(password_buf, (config->password != NULL)? config->password : "",
+            sizeof(password_buf));
+
+    int err = -1;
+
+    if (config->basic_auth_callback != NULL && config->basic_auth_callback(
+            config->basic_auth_callback_userdata, host,
+            username_buf, sizeof(username_buf),
+            password_buf, sizeof(password_buf)))
+    {
+        goto cleanup;
+    }
+
+    if (neo4j_config_set_username(config, username_buf))
+    {
+        goto cleanup;
+    }
+
+    if (neo4j_config_set_password(config, password_buf))
+    {
+        goto cleanup;
+    }
+
+    err = 0;
+
+    int errsv;
+cleanup:
+    errsv = errno;
+    memset(username_buf, 0, sizeof(username_buf));
+    memset(password_buf, 0, sizeof(password_buf));
+    errno = errsv;
+    return err;
 }

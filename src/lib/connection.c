@@ -54,7 +54,7 @@ static int drain_queued_requests(neo4j_connection_t *connection);
 static struct neo4j_request *new_request(neo4j_connection_t *connection);
 static void pop_request(neo4j_connection_t* connection);
 
-static int initialize(neo4j_connection_t *connection, unsigned int attempts);
+static int initialize(neo4j_connection_t *connection);
 static int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc);
 static int ack_failure(neo4j_connection_t *connection  );
@@ -98,12 +98,14 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
         goto failure;
     }
 
-    if (uri->userinfo != NULL)
+    if (uri->userinfo != NULL && !(flags & NEO4J_NO_URI_CREDENTIALS))
     {
         if (add_userinfo_to_config(uri->userinfo, config))
         {
             goto failure;
         }
+        // clear any password in the URI
+        memset(uri->userinfo, 0, strlen(uri->userinfo));
     }
 
     unsigned int port = (uri->port > 0)? uri->port : NEO4J_DEFAULT_TCP_PORT;
@@ -114,7 +116,7 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
     }
     config = NULL;
 
-    if (initialize(connection, 0))
+    if (initialize(connection))
     {
         goto failure;
     }
@@ -199,7 +201,7 @@ neo4j_connection_t *neo4j_tcp_connect(const char *hostname, unsigned int port,
     }
     config = NULL;
 
-    if (initialize(connection, 0))
+    if (initialize(connection))
     {
         goto failure;
     }
@@ -1097,68 +1099,10 @@ struct init_cdata
 };
 
 
-int initialize(neo4j_connection_t *connection, unsigned int attempts)
+int initialize(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
     neo4j_config_t *config = connection->config;
-    const char *client_id = config->client_id;
-
-    struct init_cdata cdata = { .connection = connection, .error = 0 };
-
-    const char *username = (config->username != NULL)? config->username : "";
-    const char *password = (config->password != NULL)? config->password : "";
-
-    if (attempts > 0 || config->auth_reattempt_callback == NULL ||
-            config->password != NULL || config->attempt_empty_password)
-    {
-        struct neo4j_request *req = new_request(connection);
-        if (req == NULL)
-        {
-            return -1;
-        }
-
-        req->type = NEO4J_INIT_MESSAGE;
-        req->_argv[0] = neo4j_string(client_id);
-        neo4j_map_entry_t auth_token[3] =
-            { neo4j_map_entry("scheme", neo4j_string("basic")),
-              neo4j_map_entry("principal", neo4j_string(username)),
-              neo4j_map_entry("credentials", neo4j_string(password)) };
-        req->_argv[1] = neo4j_map(auth_token, 3);
-        req->argv = req->_argv;
-        req->argc = 2;
-        req->receive = initialize_callback;
-        req->cdata = &cdata;
-
-        neo4j_log_trace(connection->logger,
-                "enqu INIT{\"%s\", {scheme: basic, principal: \"%s\", "
-                "credentials: ****}} (%p) in %p",
-                client_id, username, (void *)req, (void *)connection);
-
-        if (neo4j_session_sync(connection, NULL))
-        {
-            if (cdata.error != 0)
-            {
-                errno = cdata.error;
-            }
-            return -1;
-        }
-
-        if (cdata.error == 0)
-        {
-            return 0;
-        }
-
-        assert(cdata.error == NEO4J_INVALID_CREDENTIALS ||
-                cdata.error == NEO4J_AUTH_RATE_LIMIT);
-
-        if (config->auth_reattempt_callback == NULL)
-        {
-            errno = cdata.error;
-            return -1;
-        }
-
-        ++attempts;
-    }
 
     char host[NEO4J_MAXHOSTLEN];
     if (describe_host(host, sizeof(host), connection->hostname,
@@ -1167,43 +1111,65 @@ int initialize(neo4j_connection_t *connection, unsigned int attempts)
         return -1;
     }
 
-    char username_buf[NEO4J_MAXUSERNAMELEN];
-    strncpy(username_buf, username, sizeof(username_buf));
-    char password_buf[NEO4J_MAXPASSWORDLEN];
-    strncpy(password_buf, password, sizeof(password_buf));
-
-    int r = config->auth_reattempt_callback(
-            config->auth_reattempt_callback_userdata, host, attempts,
-            cdata.error, username_buf, sizeof(username_buf),
-            password_buf, sizeof(password_buf));
-    if (r < 0)
+    if (ensure_basic_auth_credentials(config, host))
     {
         return -1;
     }
-    else if (r > 0)
+
+    int err = -1;
+
+    struct neo4j_request *req = new_request(connection);
+    if (req == NULL)
     {
-        errno = cdata.error;
-        if (cdata.error == 0)
+        goto cleanup;
+    }
+
+    struct init_cdata cdata = { .connection = connection, .error = 0 };
+
+    req->type = NEO4J_INIT_MESSAGE;
+    req->_argv[0] = neo4j_string(config->client_id);
+    neo4j_map_entry_t auth_token[3] =
+        { neo4j_map_entry("scheme", neo4j_string("basic")),
+          neo4j_map_entry("principal", neo4j_string(config->username)),
+          neo4j_map_entry("credentials", neo4j_string(config->password)) };
+    req->_argv[1] = neo4j_map(auth_token, 3);
+    req->argv = req->_argv;
+    req->argc = 2;
+    req->receive = initialize_callback;
+    req->cdata = &cdata;
+
+    neo4j_log_trace(connection->logger,
+            "enqu INIT{\"%s\", {scheme: basic, principal: \"%s\", "
+            "credentials: ****}} (%p) in %p",
+            config->client_id, config->username,
+            (void *)req, (void *)connection);
+
+    if (neo4j_session_sync(connection, NULL))
+    {
+        if (cdata.error != 0)
         {
-            neo4j_log_error(connection->logger,
-                    "authentication callback returned NEO4J_AUTHENTICATION_FAIL"
-                    " before first authentication attempt (in %p)",
-                    (void *)connection);
-            errno = NEO4J_UNEXPECTED_ERROR;
+            errno = cdata.error;
         }
-        return -1;
+        goto cleanup;
     }
 
-    if (neo4j_config_set_username(config, username_buf))
+    if (cdata.error != 0)
     {
-        return -1;
-    }
-    if (neo4j_config_set_password(config, password_buf))
-    {
-        return -1;
+        assert(cdata.error == NEO4J_INVALID_CREDENTIALS ||
+                cdata.error == NEO4J_AUTH_RATE_LIMIT);
+        errno = cdata.error;
+        goto cleanup;
     }
 
-    return initialize(connection, attempts);
+    err = 0;
+
+    int errsv;
+cleanup:
+    errsv = errno;
+    // clear password out of connection config
+    ignore_unused_result(neo4j_config_set_password(connection->config, NULL));
+    errno = errsv;
+    return err;
 }
 
 
