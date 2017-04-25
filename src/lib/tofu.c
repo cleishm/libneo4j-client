@@ -298,7 +298,6 @@ int update_stored_fingerprint(const char * restrict file,
     }
     out_stream = NULL;
 
-
     if (rename(outfile, file))
     {
         neo4j_log_error(logger, "rename failed: %s",

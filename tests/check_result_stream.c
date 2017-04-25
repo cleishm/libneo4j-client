@@ -19,7 +19,6 @@
 #include "../src/lib/connection.h"
 #include "../src/lib/deserialization.h"
 #include "../src/lib/messages.h"
-#include "../src/lib/session.h"
 #include "../src/lib/serialization.h"
 #include "../src/lib/util.h"
 #include "memiostream.h"
@@ -52,7 +51,6 @@ static struct neo4j_connection_factory stub_factory;
 static neo4j_config_t *config;
 neo4j_mpool_t mpool;
 neo4j_connection_t *connection;
-neo4j_session_t *session;
 
 
 static void setup(void)
@@ -73,13 +71,11 @@ static void setup(void)
     uint32_t version = htonl(1);
     rb_append(in_rb, &version, sizeof(version));
 
-    connection = neo4j_connect("neo4j://localhost:7687", config, 0);
-    ck_assert_ptr_ne(connection, NULL);
-
     neo4j_value_t empty_map = neo4j_map(NULL, 0);
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
-    session = neo4j_new_session(connection);
-    ck_assert_ptr_ne(session, NULL);
+
+    connection = neo4j_connect("neo4j://localhost:7687", config, 0);
+    ck_assert_ptr_ne(connection, NULL);
 
     rb_clear(out_rb);
 }
@@ -87,10 +83,6 @@ static void setup(void)
 
 static void teardown(void)
 {
-    if (session != NULL)
-    {
-        neo4j_end_session(session);
-    }
     neo4j_close(connection);
     neo4j_mpool_drain(&mpool);
     neo4j_ios_close(server_ios);
@@ -251,7 +243,7 @@ void queue_failure(neo4j_iostream_t *ios)
 
 START_TEST (test_run_returns_results_and_completes)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -296,8 +288,7 @@ END_TEST
 
 START_TEST (test_run_can_close_immediately_after_fetch)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1",
-            neo4j_map(NULL, 0));
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_map(NULL, 0));
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -313,7 +304,7 @@ END_TEST
 
 START_TEST (test_run_returns_fieldnames)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -340,7 +331,7 @@ END_TEST
 
 START_TEST (test_run_returns_profile)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -371,7 +362,7 @@ END_TEST
 
 START_TEST (test_run_returns_plan)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -427,7 +418,7 @@ START_TEST (test_run_returns_failure_when_statement_fails)
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
-    neo4j_result_stream_t *results = neo4j_run(session, "badquery", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "badquery", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
 
     int result = neo4j_check_failure(results);
@@ -447,7 +438,7 @@ END_TEST
 
 START_TEST (test_run_returns_failure_during_streaming)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -477,9 +468,9 @@ START_TEST (test_run_returns_failure_during_streaming)
 END_TEST
 
 
-START_TEST (test_run_skips_results_after_session_close)
+START_TEST (test_run_skips_results_after_connection_close)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
 
     queue_run_success(server_ios); // RUN
@@ -491,8 +482,8 @@ START_TEST (test_run_skips_results_after_session_close)
     ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
     ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
 
-    neo4j_end_session(session);
-    session = NULL;
+    neo4j_close(connection);
+    connection = NULL;
 
     ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
     ck_assert_int_eq(errno, NEO4J_SESSION_ENDED);
@@ -504,9 +495,9 @@ START_TEST (test_run_skips_results_after_session_close)
 END_TEST
 
 
-START_TEST (test_run_skips_results_after_session_reset)
+START_TEST (test_run_skips_results_after_connection_reset)
 {
-    neo4j_result_stream_t *results = neo4j_run(session, "RETURN 1", neo4j_null);
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(results, NULL);
 
     queue_run_success(server_ios); // RUN
@@ -528,7 +519,7 @@ START_TEST (test_run_skips_results_after_session_reset)
 
     ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
 
-    neo4j_reset_session(session);
+    neo4j_reset(connection);
 
     ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
     ck_assert_int_eq(errno, NEO4J_SESSION_RESET);
@@ -540,13 +531,13 @@ START_TEST (test_run_skips_results_after_session_reset)
 END_TEST
 
 
-START_TEST (test_run_returns_same_failure_after_session_close)
+START_TEST (test_run_returns_same_failure_after_connection_close)
 {
     queue_failure(server_ios); // RUN
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // PULL_ALL
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
-    neo4j_result_stream_t *results = neo4j_run(session, "bad query",
+    neo4j_result_stream_t *results = neo4j_run(connection, "bad query",
             neo4j_map(NULL, 0));
     ck_assert_ptr_ne(results, NULL);
 
@@ -555,8 +546,8 @@ START_TEST (test_run_returns_same_failure_after_session_close)
     ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
     ck_assert_int_eq(errno, NEO4J_STATEMENT_EVALUATION_FAILED);
 
-    neo4j_end_session(session);
-    session = NULL;
+    neo4j_close(connection);
+    connection = NULL;
 
     result = neo4j_check_failure(results);
     ck_assert_int_eq(result, NEO4J_STATEMENT_EVALUATION_FAILED);
@@ -572,8 +563,7 @@ END_TEST
 
 START_TEST (test_send_completes)
 {
-    neo4j_result_stream_t *results = neo4j_send(session, "RETURN 1",
-            neo4j_map(NULL, 0));
+    neo4j_result_stream_t *results = neo4j_send(connection, "RETURN 1", neo4j_map(NULL, 0));
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -615,8 +605,7 @@ END_TEST
 
 START_TEST (test_send_returns_fieldnames)
 {
-    neo4j_result_stream_t *results = neo4j_send(session, "RETURN 1",
-            neo4j_map(NULL, 0));
+    neo4j_result_stream_t *results = neo4j_send(connection, "RETURN 1", neo4j_map(NULL, 0));
     ck_assert_ptr_ne(results, NULL);
     ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
 
@@ -647,8 +636,7 @@ START_TEST (test_send_returns_failure_when_statement_fails)
     queue_message(server_ios, NEO4J_IGNORED_MESSAGE, NULL, 0); // DISCARD_ALL
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // ACK_FAILURE
 
-    neo4j_result_stream_t *results = neo4j_send(session, "bad query",
-            neo4j_map(NULL, 0));
+    neo4j_result_stream_t *results = neo4j_send(connection, "bad query", neo4j_map(NULL, 0));
     ck_assert_ptr_ne(results, NULL);
 
     int result = neo4j_check_failure(results);
@@ -677,9 +665,9 @@ TCase* result_stream_tcase(void)
     tcase_add_test(tc, test_run_returns_plan);
     tcase_add_test(tc, test_run_returns_failure_when_statement_fails);
     tcase_add_test(tc, test_run_returns_failure_during_streaming);
-    tcase_add_test(tc, test_run_skips_results_after_session_close);
-    tcase_add_test(tc, test_run_skips_results_after_session_reset);
-    tcase_add_test(tc, test_run_returns_same_failure_after_session_close);
+    tcase_add_test(tc, test_run_skips_results_after_connection_close);
+    tcase_add_test(tc, test_run_skips_results_after_connection_reset);
+    tcase_add_test(tc, test_run_returns_same_failure_after_connection_close);
     tcase_add_test(tc, test_send_completes);
     tcase_add_test(tc, test_send_returns_fieldnames);
     tcase_add_test(tc, test_send_returns_failure_when_statement_fails);

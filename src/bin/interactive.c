@@ -52,7 +52,7 @@ int interact(shell_state_t *state)
     }
 
     fprintf(state->out,
-            "neo4j-client " PACKAGE_VERSION ".\n"
+            "neo4j-client " PACKAGE_VERSION "\n"
             "Enter `:help` for usage hints.\n");
     display_status(state->out, state);
 
@@ -95,19 +95,19 @@ int interact(shell_state_t *state)
             const char *entry = temp_copy(state, input, n);
             if (entry == NULL)
             {
-                neo4j_perror(state->err, errno, "unexpected error");
+                neo4j_perror(state->err, errno, "Unexpected error");
                 goto cleanup;
             }
             HistEvent ev;
             if (history(el_history, &ev, H_ENTER, entry) < 0)
             {
-                neo4j_perror(state->err, errno, "unexpected error");
+                neo4j_perror(state->err, errno, "Unexpected error");
                 goto cleanup;
             }
             if (state->histfile != NULL &&
                     history(el_history, &ev, H_SAVE, state->histfile) < 0)
             {
-                neo4j_perror(state->err, errno, "unexpected error");
+                neo4j_perror(state->err, errno, "Unexpected error");
                 goto cleanup;
             }
         }
@@ -117,7 +117,7 @@ int interact(shell_state_t *state)
             char *buffer = temp_copy(state, end, (input + length) - end);
             if (buffer == NULL)
             {
-                neo4j_perror(state->err, errno, "unexpected error");
+                neo4j_perror(state->err, errno, "Unexpected error");
                 goto cleanup;
             }
             el_push(el, buffer);
@@ -152,7 +152,7 @@ int editline_setup(shell_state_t *state, EditLine **el, History **el_history)
     *el = el_init(state->prog_name, state->in, state->out, state->err);
     if (*el == NULL)
     {
-        neo4j_perror(state->err, errno, "failed to initialize editline");
+        neo4j_perror(state->err, errno, "Failed to initialize editline");
         return -1;
     }
     el_set(*el, EL_CLIENTDATA, state);
@@ -162,7 +162,7 @@ int editline_setup(shell_state_t *state, EditLine **el, History **el_history)
     *el_history = history_init();
     if (*el_history == NULL)
     {
-        neo4j_perror(state->err, errno, "failed to initialize history");
+        neo4j_perror(state->err, errno, "Failed to initialize history");
         return -1;
     }
     HistEvent ev;
@@ -205,12 +205,12 @@ int setup_history(shell_state_t *state, History *el_history)
     char dir[PATH_MAX];
     if (neo4j_dirname(state->histfile, dir, sizeof(dir)) < 0)
     {
-        fprintf(state->err, "invalid history file\n");
+        fprintf(state->err, "Invalid history file\n");
         return -1;
     }
     if (neo4j_mkdir_p(dir))
     {
-        neo4j_perror(state->err, errno, "failed to create history file");
+        neo4j_perror(state->err, errno, "Failed to create history file");
         return -1;
     }
 
@@ -219,13 +219,13 @@ int setup_history(shell_state_t *state, History *el_history)
     {
         if (errno != ENOENT)
         {
-            neo4j_perror(state->err, errno, "failed to load history");
+            neo4j_perror(state->err, errno, "Failed to load history");
             return -1;
         }
 
         if (history(el_history, &ev, H_SAVE, state->histfile) < 0)
         {
-            neo4j_perror(state->err, errno, "failed to create history file");
+            neo4j_perror(state->err, errno, "Failed to create history file");
             return -1;
         }
     }
@@ -236,7 +236,7 @@ int setup_history(shell_state_t *state, History *el_history)
 char *prompt(EditLine *el)
 {
     shell_state_t *state;
-    if (el_get(el, EL_CLIENTDATA, &state) == 0 && state->session != NULL)
+    if (el_get(el, EL_CLIENTDATA, &state) == 0 && state->connection != NULL)
     {
         return "neo4j> ";
     }
@@ -263,7 +263,7 @@ unsigned char check_line(EditLine *el, int ch)
     shell_state_t *state;
     if (el_get(el, EL_CLIENTDATA, &state))
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return CC_FATAL;
     }
     const LineInfo *li = el_line(el);
@@ -284,7 +284,7 @@ unsigned char check_line(EditLine *el, int ch)
     char *line = temp_copy(state, li->buffer, length);
     if (line == NULL)
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return CC_FATAL;
     }
 
@@ -297,7 +297,7 @@ unsigned char check_line(EditLine *el, int ch)
     if (cypher_quick_uparse(line, length + 1, check_processable, &process,
                 CYPHER_PARSE_SINGLE))
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return CC_FATAL;
     }
 
@@ -334,7 +334,7 @@ int process_input(shell_state_t *state, const char *input, size_t length,
             { .state = state, .end_offset = 0, .result = 0 };
     if (cypher_quick_uparse(input, length, process_segment, &cbdata, 0))
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        neo4j_perror(state->err, errno, "Unexpected error");
         return -1;
     }
 
@@ -369,18 +369,11 @@ int process_segment(void *data,
     int r = 0;
     if (cypher_quick_parse_segment_is_command(segment))
     {
-        r = evaluate_command(cbdata->state, s, n);
+        r = evaluate_command(cbdata->state, s, n, range.start);
     }
     else
     {
-        evaluation_continuation_t *continuation =
-                evaluate_statement(cbdata->state, s, n, range.start);
-        if (continuation == NULL)
-        {
-            neo4j_perror(cbdata->state->err, errno, "unexpected error");
-            return -1;
-        }
-        r = complete_evaluation(continuation, cbdata->state);
+        r = evaluate_statement(cbdata->state, s, n, range.start);
     }
 
     struct cypher_input_position next =

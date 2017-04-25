@@ -14,7 +14,7 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[1.2.1])
+AC_INIT([libneo4j-client],[2.0.0])
 AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -55,6 +55,7 @@ AC_TYPE_SSIZE_T
 AC_FUNC_STRERROR_R
 MACRO_STATIC_ASSERT
 LT_LIB_M
+AM_LANGINFO_CODESET
 
 AC_CHECK_TYPE([socklen_t],[],
   [AC_DEFINE([socklen_t],[int],[Substitute for socklen_t.])],
@@ -154,7 +155,7 @@ AS_IF([test "X$has_openssl" = "Xyes"],
    REQUIRES="$REQUIRES, openssl >= 0.9.7"
    save_LIBS="$LIBS"
    LIBS="$OPENSSL_LIBS $LIBS"
-   AC_CHECK_FUNCS([CRYPTO_set_locking_callback BIO_meth_new],[],[])
+   AC_CHECK_FUNCS([CRYPTO_set_locking_callback BIO_meth_new ASN1_STRING_get0_data],[],[])
    LIBS="$save_LIBS"
   ])
 AM_CONDITIONAL([HAVE_OPENSSL], [test "X$has_openssl" = "Xyes"])

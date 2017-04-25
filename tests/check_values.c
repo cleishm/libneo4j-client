@@ -54,7 +54,7 @@ START_TEST (null_value)
     ck_assert_str_eq(buf, "n");
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 4);
 
-    ck_assert(neo4j_fprint(value, memstream) == 4);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 4);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "null");
 }
@@ -86,7 +86,7 @@ START_TEST (bool_value)
 
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 5);
 
-    ck_assert(neo4j_fprint(value, memstream) == 5);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 5);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "false");
 }
@@ -119,7 +119,7 @@ START_TEST (int_value)
     ck_assert_str_eq(buf, "-");
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 3);
 
-    ck_assert(neo4j_fprint(value, memstream) == 3);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 3);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "-53");
 }
@@ -156,7 +156,7 @@ START_TEST (float_value)
     ck_assert_str_eq(buf, "-89");
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 10);
 
-    ck_assert(neo4j_fprint(value, memstream) == 10);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 10);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "-89.834230");
 }
@@ -237,7 +237,7 @@ START_TEST (string_value)
     ck_assert_str_eq(buf, "\"black\\\\w");
 
     value = neo4j_string("the \"rum diary\"");
-    ck_assert(neo4j_fprint(value, memstream) == 19);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 19);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "\"the \\\"rum diary\\\"\"");
 }
@@ -306,7 +306,7 @@ START_TEST (list_value)
     ck_assert_str_eq(str, "[]");
 
     value = neo4j_list(list_values, 2);
-    ck_assert(neo4j_fprint(value, memstream) == 17);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 17);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "[1,\"the \\\"rum\\\"\"]");
 }
@@ -375,7 +375,7 @@ START_TEST (map_value)
     ck_assert_str_eq(buf, "{}");
 
     value = neo4j_map(map_entries, 2);
-    ck_assert(neo4j_fprint(value, memstream) == 33);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 33);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "{bernie:\"sanders\",`b. sanders`:2}");
 }
@@ -465,7 +465,7 @@ START_TEST (node_value)
     ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 48);
     ck_assert_str_eq(buf, "(:Person:`Democrat Senator`{bernie:1,sanders:2})");
 
-    ck_assert(neo4j_fprint(value, memstream) == 48);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 48);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer,
             "(:Person:`Democrat Senator`{bernie:1,sanders:2})");
@@ -511,15 +511,15 @@ START_TEST (relationship_value)
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
-    ck_assert_str_eq(str, "[:Candidate{year:2016}]");
+    ck_assert_str_eq(str, "-[:Candidate{year:2016}]-");
 
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
-    ck_assert_str_eq(buf, "[:Candidate{year:2016}]");
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 25);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 25);
+    ck_assert_str_eq(buf, "-[:Candidate{year:2016}]-");
 
-    ck_assert(neo4j_fprint(value, memstream) == 23);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 25);
     fflush(memstream);
-    ck_assert_str_eq(memstream_buffer, "[:Candidate{year:2016}]");
+    ck_assert_str_eq(memstream_buffer, "-[:Candidate{year:2016}]-");
 }
 END_TEST
 
@@ -542,11 +542,11 @@ START_TEST (unbound_relationship_value)
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
-    ck_assert_str_eq(str, "[:Candidate{year:2016}]");
+    ck_assert_str_eq(str, "-[:Candidate{year:2016}]-");
 
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
-    ck_assert_str_eq(buf, "[:Candidate{year:2016}]");
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 25);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 25);
+    ck_assert_str_eq(buf, "-[:Candidate{year:2016}]-");
 }
 END_TEST
 
@@ -599,19 +599,19 @@ START_TEST (path_value)
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     ck_assert_str_eq(str,
-            "(:State{})<-[:Senator{}]-(:Person{})-[:Candidate{}]->(:Campaign{})"
+            "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
 
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 66);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 66);
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 56);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 56);
     ck_assert_str_eq(buf,
-            "(:State{})<-[:Senator{}]-(:Person{})-[:Candidate{}]->(:Campaign{})"
+            "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
 
-    ck_assert(neo4j_fprint(value, memstream) == 66);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 56);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer,
-            "(:State{})<-[:Senator{}]-(:Person{})-[:Candidate{}]->(:Campaign{})"
+            "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
 }
 END_TEST
@@ -977,7 +977,7 @@ START_TEST (struct_value)
     ck_assert_int_eq(neo4j_ntostring(value, buf, 23), 24);
     ck_assert_str_eq(buf, "struct<0x78>(1,\"bernie");
 
-    ck_assert(neo4j_fprint(value, memstream) == 24);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 24);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "struct<0x78>(1,\"bernie\")");
 }
@@ -1018,7 +1018,7 @@ START_TEST (identity_value)
     ck_assert(str == buf);
     ck_assert_str_eq(buf, "42");
 
-    ck_assert(neo4j_fprint(value, memstream) == 2);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 2);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "42");
 }

@@ -31,7 +31,8 @@ static void echo(shell_state_t *state, const char *s, size_t n,
         const char *postfix);
 
 
-int evaluate_command(shell_state_t *state, const char *command, size_t n)
+int evaluate_command(shell_state_t *state, const char *command, size_t n,
+        struct cypher_input_position pos)
 {
     echo(state, command, n, "");
 
@@ -44,7 +45,7 @@ int evaluate_command(shell_state_t *state, const char *command, size_t n)
 
     assert(cypher_parse_result_ndirectives(result) == 1);
     const cypher_astnode_t *directive = cypher_parse_result_get_directive(result, 0);
-    int r = run_command(state, directive);
+    int r = run_command(state, directive, pos);
     cypher_parse_result_free(result);
     return r;
 }
@@ -60,7 +61,21 @@ struct evaluation_continuation
 };
 
 
-evaluation_continuation_t *evaluate_statement(shell_state_t *state,
+int evaluate_statement(shell_state_t *state, const char *statement, size_t n,
+        struct cypher_input_position pos)
+{
+    evaluation_continuation_t *continuation =
+            prepare_statement(state, statement, n, pos);
+    if (continuation == NULL)
+    {
+        print_error_errno(state, pos, errno, "Unexpected error");
+        return -1;
+    }
+    return complete_evaluation(continuation, state);
+}
+
+
+evaluation_continuation_t *prepare_statement(shell_state_t *state,
         const char *statement, size_t n, struct cypher_input_position pos)
 {
     evaluation_continuation_t *continuation = calloc(1,
@@ -73,13 +88,13 @@ evaluation_continuation_t *evaluate_statement(shell_state_t *state,
     memcpy(continuation->statement, statement, n);
     continuation->pos = pos;
 
-    if (state->session == NULL)
+    if (state->connection == NULL)
     {
         continuation->complete = not_connected_error;
         return continuation;
     }
 
-    continuation->results = neo4j_run(state->session,
+    continuation->results = neo4j_run(state->connection,
             continuation->statement, shell_state_get_exports(state));
     if (continuation->results == NULL)
     {
@@ -110,7 +125,7 @@ int abort_evaluation(evaluation_continuation_t *continuation,
     if (continuation->results != NULL &&
             neo4j_close_results(continuation->results))
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        print_error_errno(state, continuation->pos, errno, "Unexpected error");
         res = -1;
     }
     free(continuation);
@@ -120,14 +135,15 @@ int abort_evaluation(evaluation_continuation_t *continuation,
 
 int not_connected_error(evaluation_continuation_t *self, shell_state_t *state)
 {
-    fprintf(state->err, "Not connected (try `:connect <URL>`, or `:help`)\n");
+    print_error(state, self->pos,
+            "Not connected (try `:connect <URL>`, or `:help`)");
     return -1;
 }
 
 
 int run_failure(evaluation_continuation_t *self, shell_state_t *state)
 {
-    neo4j_perror(state->err, self->err, "failed to run statement");
+    print_error_errno(state, self->pos, self->err, "Failed to run statement");
     return -1;
 }
 
@@ -135,17 +151,17 @@ int run_failure(evaluation_continuation_t *self, shell_state_t *state)
 int render_result(evaluation_continuation_t *self, shell_state_t *state)
 {
     int result = -1;
-    if (state->render(state, self->results))
+    if (state->render(state, self->pos, self->results))
     {
         if (errno == NEO4J_SESSION_RESET)
         {
-            fprintf(state->err, "interrupted"
+            fprintf(state->err, "Interrupted"
                     " (any open transaction has been rolled back)\n");
             goto cleanup;
         }
         else if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
         {
-            neo4j_perror(state->err, errno, "unexpected error");
+            print_error_errno(state, self->pos, errno, "Unexpected error");
             goto cleanup;
         }
 
@@ -159,12 +175,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
                 pos.column + details->column - 1 : details->column;
         pos.line += (details->line - 1);
 
-        fprintf(state->err, "%s%s:%u:%u:%s %serror:%s %s%s%s\n",
-                state->error_colorize->pos[0], state->infile, pos.line,
-                pos.column, state->error_colorize->pos[1],
-                state->error_colorize->def[0], state->error_colorize->def[1],
-                state->error_colorize->msg[0], details->description,
-                state->error_colorize->msg[1]);
+        print_error(state, pos, details->description);
         if (details->context != NULL)
         {
             unsigned int offset = is_indented?
@@ -182,7 +193,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
         fprintf(state->out, "<Output redirected to '%s'>\n", state->outfile);
     }
 
-    if (render_update_counts(state, self->results))
+    if (render_update_counts(state, self->pos, self->results))
     {
         goto cleanup;
     }
@@ -190,7 +201,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     struct neo4j_statement_plan *plan = neo4j_statement_plan(self->results);
     if (plan != NULL)
     {
-        int err = render_plan_table(state, plan);
+        int err = render_plan_table(state, self->pos, plan);
         int errsv = errno;
         neo4j_statement_plan_release(plan);
         errno = errsv;
@@ -201,7 +212,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     }
     else if (errno != NEO4J_NO_PLAN_AVAILABLE)
     {
-        neo4j_perror(state->err, errno, "unexpected error");
+        print_error_errno(state, self->pos, errno, "Unexpected error");
         goto cleanup;
     }
 
@@ -210,7 +221,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
 cleanup:
     if (neo4j_close_results(self->results) && result == 0)
     {
-        neo4j_perror(state->err, errno, "failed to close results");
+        print_error_errno(state, self->pos, errno, "Failed to close results");
         return -1;
     }
     return result;
