@@ -39,6 +39,8 @@
 
 
 #define NEO4J_HISTORY_FILE "client-history"
+#define NEO4J_USERNAME_ENV "NEO4J_USERNAME"
+#define NEO4J_PASSWORD_ENV "NEO4J_PASSWORD"
 
 
 const char *shortopts = "e:hi:o:p:Pu:v";
@@ -191,6 +193,20 @@ int main(int argc, char *argv[])
     if (isatty(fileno(stderr)))
     {
         state.error_colorize = ansi_error_colorization;
+    }
+
+    const char *s;
+    if ((s = getenv(NEO4J_USERNAME_ENV)) != NULL &&
+            neo4j_config_set_username(state.config, s))
+    {
+        neo4j_perror(state.err, errno, "Unexpected error");
+        goto cleanup;
+    }
+    if ((s = getenv(NEO4J_PASSWORD_ENV)) != NULL &&
+            neo4j_config_set_password(state.config, s))
+    {
+        neo4j_perror(state.err, errno, "Unexpected error");
+        goto cleanup;
     }
 
     int c;
