@@ -225,15 +225,8 @@ enabling you to obtain the required flags using
         <span class="pl-k">return</span> EXIT_FAILURE;
     }
 
-    <span class="pl-c1">neo4j_session_t</span> *session = <span class="pl-c1">neo4j_new_session</span>(connection);
-    <span class="pl-k">if</span> (session == <span class="pl-c1">NULL</span>)
-    {
-        <span class="pl-c1">neo4j_perror</span>(stderr, errno, <span class="pl-s"><span class="pl-pds">"</span>Failed to start session<span class="pl-pds">"</span></span>);
-        <span class="pl-k">return</span> EXIT_FAILURE;
-    }
-
     <span class="pl-c1">neo4j_result_stream_t</span> *results =
-            <span class="pl-c1">neo4j_run</span>(session, <span class="pl-s"><span class="pl-pds">"</span>RETURN 'hello world'<span class="pl-pds">"</span></span>, <span class="pl-c1">neo4j_null</span>);
+            <span class="pl-c1">neo4j_run</span>(connection, <span class="pl-s"><span class="pl-pds">"</span>RETURN 'hello world'<span class="pl-pds">"</span></span>, <span class="pl-c1">neo4j_null</span>);
     <span class="pl-k">if</span> (results == <span class="pl-c1">NULL</span>)
     {
         <span class="pl-c1">neo4j_perror</span>(stderr, errno, <span class="pl-s"><span class="pl-pds">"</span>Failed to run statement<span class="pl-pds">"</span></span>);
@@ -252,7 +245,6 @@ enabling you to obtain the required flags using
     <span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, <span class="pl-c1">neo4j_tostring</span>(value, buf, <span class="pl-k">sizeof</span>(buf)));
 
     <span class="pl-c1">neo4j_close_results</span>(results);
-    <span class="pl-c1">neo4j_end_session</span>(session);
     <span class="pl-c1">neo4j_close</span>(connection);
     <span class="pl-c1">neo4j_client_cleanup</span>();
     <span class="pl-k">return</span> EXIT_SUCCESS;
