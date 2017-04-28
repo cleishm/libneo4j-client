@@ -364,8 +364,8 @@ int ensure_basic_auth_credentials(neo4j_config_t *config, const char *host)
         return 0;
     }
 
-    char username_buf[NEO4J_MAXUSERNAMELEN];
-    char password_buf[NEO4J_MAXPASSWORDLEN];
+    char username_buf[NEO4J_MAXUSERNAMELEN + 1];
+    char password_buf[NEO4J_MAXPASSWORDLEN + 1];
     strncpy(username_buf, (config->username != NULL)? config->username : "",
             sizeof(username_buf));
     strncpy(password_buf, (config->password != NULL)? config->password : "",

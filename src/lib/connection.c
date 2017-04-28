@@ -33,7 +33,8 @@
 #include <unistd.h>
 
 
-static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config);
+static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
+        uint_fast32_t flags);
 static neo4j_connection_t *establish_connection(const char *hostname,
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags);
 static neo4j_iostream_t *std_tcp_connect(
@@ -98,9 +99,10 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
         goto failure;
     }
 
-    if (uri->userinfo != NULL && !(flags & NEO4J_NO_URI_CREDENTIALS))
+    if (uri->userinfo != NULL)
     {
-        if (add_userinfo_to_config(uri->userinfo, config))
+        if (!(flags & NEO4J_NO_URI_CREDENTIALS) &&
+                add_userinfo_to_config(uri->userinfo, config, flags))
         {
             goto failure;
         }
@@ -144,7 +146,8 @@ failure:
 }
 
 
-int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config)
+int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
+        uint_fast32_t flags)
 {
     size_t username_len = strcspn(userinfo, ":");
     if (*(userinfo + username_len) == '\0')
@@ -167,7 +170,8 @@ int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config)
             return -1;
         }
         free(username);
-        if (neo4j_config_set_password(config, userinfo + username_len + 1))
+        if (!(flags & NEO4J_NO_URI_PASSWORD) &&
+                neo4j_config_set_password(config, userinfo + username_len + 1))
         {
             return -1;
         }

@@ -1100,7 +1100,7 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
 __neo4j_pure
 const char *neo4j_config_get_client_id(neo4j_config_t *config);
 
-#define NEO4J_MAXUSERNAMELEN 1024
+#define NEO4J_MAXUSERNAMELEN 1023
 
 /**
  * Set the username in the neo4j client configuration.
@@ -1125,7 +1125,7 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username);
 __neo4j_pure
 const char *neo4j_config_get_username(neo4j_config_t *config);
 
-#define NEO4J_MAXPASSWORDLEN 1024
+#define NEO4J_MAXPASSWORDLEN 1023
 
 /**
  * Set the password in the neo4j client configuration.
@@ -1430,6 +1430,7 @@ ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
 #define NEO4J_CONNECT_DEFAULT 0
 #define NEO4J_INSECURE (1<<0)
 #define NEO4J_NO_URI_CREDENTIALS (1<<1)
+#define NEO4J_NO_URI_PASSWORD (1<<2)
 
 /**
  * Establish a connection to a neo4j server.
@@ -1440,6 +1441,8 @@ ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
  *   `NEO4J_SERVER_REQUIRES_SECURE_CONNECTION`.
  * - NEO4J_NO_URI_CREDENTIALS - do not use credentials provided in the
  *   server URI (use credentials from the configuration instead).
+ * - NEO4J_NO_URI_PASSWORD - do not use any password provided in the
+ *   server URI (obtain password from the configuration instead).
  *
  * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
