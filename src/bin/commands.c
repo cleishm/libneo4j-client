@@ -62,6 +62,8 @@ static int eval_source(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_status(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
+static int eval_schema(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command,
@@ -85,6 +87,7 @@ static struct shell_command shell_commands[] =
       { "unset", eval_unset },
       { "source", eval_source },
       { "status", eval_status },
+      { "schema", eval_schema },
       { "unexport", eval_unexport },
       { "width", eval_width },
       { NULL, NULL } };
@@ -351,6 +354,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 ":unset option ...      Unset shell options\n"
 ":source file           Evaluate statements from the specified input file\n"
 ":status                Show the client connection status\n"
+":schema                Show database schema indexes and constraints\n"
 ":help                  Show usage information\n"
 ":format (table|csv)    Set the output format\n"
 ":width (<n>|auto)      Set the number of columns in the table output\n"
@@ -489,6 +493,19 @@ int eval_status(shell_state_t *state, const cypher_astnode_t *command,
     }
     display_status(state->out, state);
     return 0;
+}
+
+
+int eval_schema(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        print_error(state, pos, ":schema does not take any arguments");
+        return -1;
+    }
+
+    return display_schema(state, pos);
 }
 
 
