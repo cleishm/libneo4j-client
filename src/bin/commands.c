@@ -132,12 +132,7 @@ int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
     int err = evaluate_statement(state, "begin", 5, pos);
     state->echo = echo;
     state->nexports = nexports;
-    if (err)
-    {
-        print_error_errno(state, pos, errno, "Unexpected error");
-        return -1;
-    }
-    return 0;
+    return err;
 }
 
 
@@ -157,12 +152,7 @@ int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
     int err = evaluate_statement(state, "commit", 6, pos);
     state->echo = echo;
     state->nexports = nexports;
-    if (err)
-    {
-        print_error_errno(state, pos, errno, "Unexpected error");
-        return -1;
-    }
-    return 0;
+    return err;
 }
 
 
@@ -314,12 +304,7 @@ int eval_rollback(shell_state_t *state, const cypher_astnode_t *command,
     int err = evaluate_statement(state, "rollback", 8, pos);
     state->echo = echo;
     state->nexports = nexports;
-    if (err)
-    {
-        print_error_errno(state, pos, errno, "Unexpected error");
-        return -1;
-    }
-    return 0;
+    return err;
 }
 
 
