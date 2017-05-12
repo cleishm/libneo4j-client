@@ -271,18 +271,36 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
 int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
         unsigned int width, uint_fast32_t flags)
 {
-    unsigned int offset = 0;
-    do
+    if (render_border_line(stream, VERTICAL_LINE, flags))
     {
-        if (render_border_line(stream, VERTICAL_LINE, flags) ||
-                fputc(' ', stream) == EOF)
+        return -1;
+    }
+
+    unsigned int offset = 0;
+    for (;;)
+    {
+        offset += 2;
+        if (fputc(' ', stream) == EOF)
         {
             return -1;
         }
-        offset += 2;
+        if (offset >= op_depth*2)
+        {
+            if (fputs((flags & NEO4J_RENDER_ASCII)?
+                        "*" : u8"\u25B8", stream) == EOF)
+            {
+                return -1;
+            }
+            break;
+        }
+        if (fputs((flags & NEO4J_RENDER_ASCII)?
+                    "|" : u8"\u2502", stream) == EOF)
+        {
+            return -1;
+        }
     } while (offset < op_depth*2);
 
-    if (fprintf(stream, "*%-*s ", width - offset - 1, operator_type) < 0)
+    if (fprintf(stream, "%-*s ", width - offset - 1, operator_type) < 0)
     {
         return -1;
     }
