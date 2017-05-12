@@ -58,7 +58,7 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
         bool undersize, uint_fast32_t flags);
 
 typedef ssize_t (*render_row_callback_t)(
-        void *cdata, unsigned int n, const char **s, unsigned int width);
+        void *cdata, unsigned int n, const char **s, bool *duplicate);
 int render_row(FILE *stream, unsigned int ncolumns,
         const unsigned int *widths, bool undersize, uint_fast32_t flags,
         render_row_callback_t callback, void *cdata);

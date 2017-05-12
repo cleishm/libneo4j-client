@@ -59,6 +59,10 @@ static int set_rowlines(shell_state_t *state, const char *value);
 static int unset_rowlines(shell_state_t *state);
 static const char *get_rowlines(shell_state_t *state, char *buf, size_t n);
 
+static int set_wrap(shell_state_t *state, const char *value);
+static int unset_wrap(shell_state_t *state);
+static const char *get_wrap(shell_state_t *state, char *buf, size_t n);
+
 static struct options options[] =
     { { "ascii", set_ascii, true, unset_ascii, get_ascii,
           "render only 7-bit ASCII characters in result tables" },
@@ -77,6 +81,8 @@ static struct options options[] =
           "the width to render tables (`auto` for terminal width)" },
       { "rowlines", set_rowlines, true, unset_rowlines, get_rowlines,
           "render a line between each output row in result tables" },
+      { "wrap", set_wrap, true, unset_wrap, get_wrap,
+          "wrap field values in result tables" },
       { NULL, false, NULL } };
 
 
@@ -388,4 +394,36 @@ int unset_rowlines(shell_state_t *state)
 const char *get_rowlines(shell_state_t *state, char *buf, size_t n)
 {
     return (state->render_flags & NEO4J_RENDER_ROW_LINES)? "yes" : "no";
+}
+
+
+int set_wrap(shell_state_t *state, const char *value)
+{
+    if (value == NULL || strcmp(value, "yes") == 0)
+    {
+        state->render_flags |= NEO4J_RENDER_WRAP_VALUES;
+    }
+    else if (strcmp(value, "no") == 0)
+    {
+        state->render_flags &= ~NEO4J_RENDER_WRAP_VALUES   ;
+    }
+    else
+    {
+        fprintf(state->err, "Must set wrap to 'yes' or 'no'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_wrap(shell_state_t *state)
+{
+    state->render_flags &= ~NEO4J_RENDER_WRAP_VALUES   ;
+    return 0;
+}
+
+
+const char *get_wrap(shell_state_t *state, char *buf, size_t n)
+{
+    return (state->render_flags & NEO4J_RENDER_WRAP_VALUES )? "yes" : "no";
 }

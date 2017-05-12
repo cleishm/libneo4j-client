@@ -315,6 +315,41 @@ START_TEST (render_zero_col_table)
 END_TEST
 
 
+START_TEST (render_table_with_wrapped_values)
+{
+    const char *fieldnames[4] =
+        { "firstname", "lastname", "role", "title" };
+    const char *table[3][4] =
+        { { "Keanu", "Reeves", "Neo", "The Matrix" },
+          { "Hugo", "Weaving", "V", "V for Vendetta" },
+          { "Halle", "Berry", "Luisa Rey", "Cloud Atlas" } };
+    neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
+    int result = neo4j_render_table(memstream, results, 61,
+            NEO4J_RENDER_QUOTE_STRINGS | NEO4J_RENDER_ASCII |
+            NEO4J_RENDER_WRAP_VALUES);
+    ck_assert(result == 0);
+    fflush(memstream);
+    neo4j_close_results(results);
+
+    const char *expect = gstrsub('\'', '"', "\n"
+//1       10        20        30        40        50        60        70
+ "+--------------+--------------+--------------+--------------+\n"
+ "| firstname    | lastname     | role         | title        |\n"
+ "+--------------+--------------+--------------+--------------+\n"
+ "| 'Keanu'      | 'Reeves'     | 'Neo'        | 'The Matrix' |\n"
+ "| 'Hugo'       | 'Weaving'    | 'V'          | 'V for Vende=|\n"
+ "|              |              |              |=tta'         |\n"
+ "| 'Halle'      | 'Berry'      | 'Luisa Rey'  | 'Cloud Atlas=|\n"
+ "|              |              |              |='            |\n"
+ "+--------------+--------------+--------------+--------------+\n");
+    ck_assert_str_eq(memstream_buffer, expect);
+}
+END_TEST
+
+
 START_TEST (render_table_with_nulls)
 {
     const char *fieldnames[3] =
@@ -485,6 +520,7 @@ TCase* render_results_tcase(void)
     tcase_add_test(tc, render_undersized_table);
     tcase_add_test(tc, render_min_width_table);
     tcase_add_test(tc, render_zero_col_table);
+    tcase_add_test(tc, render_table_with_wrapped_values);
     tcase_add_test(tc, render_table_with_nulls);
     tcase_add_test(tc, render_table_with_visible_nulls);
     tcase_add_test(tc, render_no_table_if_stream_has_error);

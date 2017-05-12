@@ -197,6 +197,27 @@ static inline size_t maxzu(size_t a, size_t b)
 
 
 /**
+ * Duplicate a region of memory.
+ *
+ * @internal
+ *
+ * @param [src] The memory area to copy from.
+ * @param [n] The length of memory to duplicate (in bytes).
+ * @return A pointer to the duplicated memory, or -1 on error
+ *         (errno will be set).
+ */
+static inline void *memdup(const void *src, size_t n)
+{
+    void *dst = malloc(n);
+    if (dst == NULL)
+    {
+        return NULL;
+    }
+    return memcpy(dst, src, n);
+}
+
+
+/**
  * Duplicate a string, if it's not null.
  *
  * @internal

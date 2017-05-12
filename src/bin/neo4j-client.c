@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
     if (state.interactive)
     {
         state.render = render_results_table;
-        state.render_flags = NEO4J_RENDER_SHOW_NULLS;
+        state.render_flags |= NEO4J_RENDER_SHOW_NULLS;
         state.infile = "<interactive>";
         state.source_depth = 1;
         if (interact(&state))

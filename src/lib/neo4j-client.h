@@ -2002,6 +2002,7 @@ void neo4j_release(neo4j_result_t *result);
 #define NEO4J_RENDER_ASCII (1<<2)
 #define NEO4J_RENDER_ASCII_ART (1<<3)
 #define NEO4J_RENDER_ROW_LINES (1<<4)
+#define NEO4J_RENDER_WRAP_VALUES (1<<5)
 
 /**
  * Render a result stream as a table.

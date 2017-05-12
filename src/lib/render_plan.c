@@ -22,7 +22,7 @@
 #include <math.h>
 
 static ssize_t obtain_header(void *data, unsigned int n, const char **s,
-        unsigned int width);
+        bool *duplicate);
 
 static int render_steps(FILE *stream,
         struct neo4j_statement_execution_step *step, unsigned int depth,
@@ -126,9 +126,10 @@ failure:
 
 
 ssize_t obtain_header(void *data, unsigned int n, const char **s,
-        unsigned int width)
+        bool *duplicate)
 {
     *s = HEADERS[n];
+    *duplicate = false;
     return strlen(HEADERS[n]);
 }
 

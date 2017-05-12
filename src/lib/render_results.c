@@ -37,12 +37,12 @@ struct obtain_result_field_cb_data
 };
 
 static ssize_t obtain_fieldname(void *data, unsigned int n, const char **s,
-        unsigned int width);
+        bool *duplicate);
 ssize_t obtain_result_field(void *data, unsigned int n, const char **s,
-        unsigned int width);
+        bool *duplicate);
 
 static ssize_t render_field_value(neo4j_value_t value, const char **s, char **buf,
-        size_t *bufcap, unsigned int width, uint_fast32_t flags);
+        size_t *bufcap, uint_fast32_t flags);
 static size_t value_tostring(neo4j_value_t *value, char *buf, size_t n,
         uint_fast32_t flags);
 static int write_csv_quoted_string(FILE *stream, const char *s, size_t n);
@@ -179,47 +179,46 @@ failure:
 
 
 ssize_t obtain_fieldname(void *data, unsigned int n, const char **s,
-        unsigned int width)
+        bool *duplicate)
 {
     struct obtain_fieldname_cb_data *cdata =
             (struct obtain_fieldname_cb_data *)data;
     *s = neo4j_fieldname(cdata->results, n);
+    *duplicate = false;
     return (*s != NULL)? strlen(*s) : 0;
 }
 
 
 ssize_t obtain_result_field(void *data, unsigned int n, const char **s,
-        unsigned int width)
+        bool *duplicate)
 {
     struct obtain_result_field_cb_data *cdata =
             (struct obtain_result_field_cb_data *)data;
     neo4j_value_t value = neo4j_result_field(cdata->result, n);
+
+    if (neo4j_type(value) == NEO4J_STRING &&
+            !(cdata->flags & NEO4J_RENDER_QUOTE_STRINGS))
+    {
+        *s = neo4j_ustring_value(value);
+        *duplicate = false;
+        return neo4j_string_length(value);
+    }
+
+    *duplicate = true;
     return render_field_value(value, s, cdata->buffer, cdata->bufcap,
-            width, cdata->flags);
+            cdata->flags);
 }
 
 
 ssize_t render_field_value(neo4j_value_t value, const char **s,
-        char **buf, size_t *bufcap, unsigned int width, uint_fast32_t flags)
+        char **buf, size_t *bufcap, uint_fast32_t flags)
 {
-    if (neo4j_type(value) == NEO4J_STRING &&
-            !(flags & NEO4J_RENDER_QUOTE_STRINGS))
-    {
-        *s = neo4j_ustring_value(value);
-        return neo4j_string_length(value);
-    }
-
     assert(*bufcap > 0);
     size_t length;
     do
     {
         length = value_tostring(&value, *buf, *bufcap, flags);
         if (length < *bufcap)
-        {
-            break;
-        }
-        int w = neo4j_u8cswidth(*buf, *bufcap);
-        if (w > 0 && (unsigned int)w > width)
         {
             break;
         }

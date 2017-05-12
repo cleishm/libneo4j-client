@@ -229,6 +229,23 @@ int render_row(FILE *stream, unsigned int ncolumns,
         const unsigned int *widths, bool undersize, uint_fast32_t flags,
         render_row_callback_t callback, void *cdata)
 {
+    struct fields
+    {
+        const char *s;
+        size_t n;
+        char *dup;
+    };
+
+    struct fields *fields = NULL;
+    if ((flags & NEO4J_RENDER_WRAP_VALUES) &&
+            (fields = calloc(ncolumns, sizeof(struct fields))) == NULL)
+    {
+        return -1;
+    }
+    bool wrap = false;
+
+    int err = -1;
+
     const struct border_glifs *glifs = glifs_for_encoding(flags);
     for (unsigned int i = 0; i < ncolumns; ++i)
     {
@@ -239,43 +256,148 @@ int render_row(FILE *stream, unsigned int ncolumns,
         if (fputs(glifs->vertical_line, stream) == EOF ||
                 fputc(' ', stream) == EOF)
         {
-            return -1;
+            goto cleanup;
         }
 
         assert(widths[i] >= 2);
         unsigned int value_width = widths[i] - 2;
         ssize_t n = 0;
         const char *s = NULL;
-        if (callback != NULL && (n = callback(cdata, i, &s, value_width)) < 0)
+        bool duplicate = false;
+        if (callback != NULL && (n = callback(cdata, i, &s, &duplicate)) < 0)
         {
-            return -1;
+            goto cleanup;
         }
         assert(n == 0 || s != NULL);
 
         ssize_t consumed = render_field(stream, s, n, value_width, flags);
         if (consumed < 0)
         {
-            return -1;
+            goto cleanup;
         }
 
-        if (fputs((consumed < n)? glifs->overflow : " ", stream) == EOF)
+        if (consumed >= n)
         {
-            return -1;
+            if (fputc(' ', stream) == EOF)
+            {
+                goto cleanup;
+            }
+        }
+        else
+        {
+            if (fputs(glifs->overflow, stream) == EOF)
+            {
+                goto cleanup;
+            }
+
+            if (flags & NEO4J_RENDER_WRAP_VALUES)
+            {
+                s += consumed;
+                n -= consumed;
+                if (duplicate)
+                {
+                    if ((fields[i].dup = memdup(s, n)) == NULL)
+                    {
+                        goto cleanup;
+                    }
+                    s = fields[i].dup;
+                }
+                fields[i].s = s;
+                fields[i].n = n;
+                wrap = true;
+            }
         }
     }
+
     if (fputs(glifs->vertical_line, stream) == EOF)
     {
-        return -1;
+        goto cleanup;
     }
     if (undersize && fputs(glifs->overflow, stream) == EOF)
     {
-        return -1;
+        goto cleanup;
     }
     if (fputc('\n', stream) == EOF)
     {
-        return -1;
+        goto cleanup;
     }
-    return 0;
+
+    while (wrap)
+    {
+        wrap = false;
+
+        for (unsigned int i = 0; i < ncolumns; ++i)
+        {
+            if (widths[i] == 0)
+            {
+                continue;
+            }
+            assert(widths[i] >= 2);
+            unsigned int value_width = widths[i] - 2;
+            size_t n = fields[i].n;
+            const char *s = fields[i].s;
+
+            if (fputs(glifs->vertical_line, stream) == EOF ||
+                    fputs((n > 0)? glifs->overflow : " ", stream) == EOF)
+            {
+                goto cleanup;
+            }
+
+            ssize_t consumed = render_field(stream, s, n, value_width, flags);
+            if (consumed < 0)
+            {
+                goto cleanup;
+            }
+
+            if ((size_t)consumed >= n)
+            {
+                if (fputc(' ', stream) == EOF)
+                {
+                    goto cleanup;
+                }
+            }
+            else
+            {
+                if (fputs(glifs->overflow, stream) == EOF)
+                {
+                    goto cleanup;
+                }
+
+                fields[i].s = s + consumed;
+                fields[i].n = n - consumed;
+                wrap = true;
+            }
+        }
+
+        if (fputs(glifs->vertical_line, stream) == EOF)
+        {
+            goto cleanup;
+        }
+        if (undersize && fputs(glifs->overflow, stream) == EOF)
+        {
+            goto cleanup;
+        }
+        if (fputc('\n', stream) == EOF)
+        {
+            goto cleanup;
+        }
+    }
+
+    err = 0;
+
+    int errsv;
+cleanup:
+    errsv = errno;
+    if (fields != NULL)
+    {
+        for (unsigned int i = ncolumns; (i--) > 0;)
+        {
+            free(fields[i].dup);
+        }
+        free(fields);
+    }
+    errno = errsv;
+    return err;
 }
 
 
