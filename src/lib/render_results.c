@@ -121,7 +121,7 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_hrule(stream, nfields, widths, HLINE_MIDDLE, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_HEAD, undersize, flags))
     {
         goto failure;
     }

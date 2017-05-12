@@ -25,8 +25,10 @@
 struct border_glifs
 {
     const char *horizontal_line;
+    const char *head_line;
     const char *vertical_line;
     const char *top_corners[3];
+    const char *head_corners[3];
     const char *middle_corners[3];
     const char *bottom_corners[3];
     const char *overflow;
@@ -35,8 +37,10 @@ struct border_glifs
 
 static const struct border_glifs ascii_border_glifs =
     { .horizontal_line = "-",
+      .head_line = "-",
       .vertical_line = "|",
       .top_corners = { "+", "+", "+" },
+      .head_corners = { "+", "+", "+" },
       .middle_corners = { "+", "+", "+" },
       .bottom_corners = { "+", "+", "+" },
       .overflow = "=" };
@@ -44,8 +48,10 @@ static const struct border_glifs ascii_border_glifs =
 #if HAVE_LANGINFO_CODESET
 static const struct border_glifs u8_border_glifs =
     { .horizontal_line = u8"\u2500",
+      .head_line = u8"\u2550",
       .vertical_line = u8"\u2502",
       .top_corners = { u8"\u250C", u8"\u252C", u8"\u2510" },
+      .head_corners = { u8"\u255E", u8"\u256A", u8"\u2561" },
       .middle_corners = { u8"\u251C", u8"\u253C", u8"\u2524" },
       .bottom_corners = { u8"\u2514", u8"\u2534", u8"\u2518" },
       .overflow = u8"\u2026" };
@@ -98,6 +104,9 @@ int render_border_line(FILE *stream, border_line_t line_type,
     case HORIZONTAL_LINE:
         glif = glifs->horizontal_line;
         break;
+    case HEAD_LINE:
+        glif = glifs->head_line;
+        break;
     case VERTICAL_LINE:
         glif = glifs->vertical_line;
         break;
@@ -109,6 +118,15 @@ int render_border_line(FILE *stream, border_line_t line_type,
         break;
     case TOP_RIGHT_CORNER:
         glif = glifs->top_corners[2];
+        break;
+    case HEAD_LEFT_CORNER:
+        glif = glifs->head_corners[0];
+        break;
+    case HEAD_MIDDLE_CORNER:
+        glif = glifs->head_corners[1];
+        break;
+    case HEAD_RIGHT_CORNER:
+        glif = glifs->head_corners[2];
         break;
     case MIDDLE_LEFT_CORNER:
         glif = glifs->middle_corners[0];
@@ -145,17 +163,25 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
 {
     const struct border_glifs *glifs = glifs_for_encoding(flags);
     const char * const *corners;
+    const char *line;
     switch (position)
     {
     case HLINE_TOP:
         corners = glifs->top_corners;
+        line = glifs->horizontal_line;
+        break;
+    case HLINE_HEAD:
+        corners = glifs->head_corners;
+        line = glifs->head_line;
         break;
     case HLINE_BOTTOM:
         corners = glifs->bottom_corners;
+        line = glifs->horizontal_line;
         break;
     default:
         assert(position == HLINE_MIDDLE);
         corners = glifs->middle_corners;
+        line = glifs->horizontal_line;
         break;
     }
     for (unsigned int i = 0, corner = 0; i < ncolumns; ++i)
@@ -171,7 +197,7 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
         corner = 1;
         for (unsigned int w = widths[i]; w > 0; --w)
         {
-            if (fputs(glifs->horizontal_line, stream) == EOF)
+            if (fputs(line, stream) == EOF)
             {
                 return -1;
             }
@@ -181,7 +207,7 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
     {
         return -1;
     }
-    if (undersize && fputs(glifs->horizontal_line, stream) == EOF)
+    if (undersize && fputs(line, stream) == EOF)
     {
         return -1;
     }

@@ -26,6 +26,7 @@ uint_fast32_t normalize_render_flags(uint_fast32_t flags);
 typedef enum
 {
     HLINE_TOP,
+    HLINE_HEAD,
     HLINE_MIDDLE,
     HLINE_BOTTOM
 } hline_position_t;
@@ -33,10 +34,14 @@ typedef enum
 typedef enum
 {
     HORIZONTAL_LINE,
+    HEAD_LINE,
     VERTICAL_LINE,
     TOP_LEFT_CORNER,
     TOP_MIDDLE_CORNER,
     TOP_RIGHT_CORNER,
+    HEAD_LEFT_CORNER,
+    HEAD_MIDDLE_CORNER,
+    HEAD_RIGHT_CORNER,
     MIDDLE_LEFT_CORNER,
     MIDDLE_MIDDLE_CORNER,
     MIDDLE_RIGHT_CORNER,
