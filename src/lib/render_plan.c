@@ -468,20 +468,22 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         return 0;
     }
 
-    size_t width = 0;
-    while (width < op_depth*2)
-    {
-        if (render_border_line(stream, VERTICAL_LINE, flags) ||
-                fputc(' ', stream) == EOF)
-        {
-            return -1;
-        }
-        width += 2;
-    }
     if (render_border_line(stream, VERTICAL_LINE, flags))
     {
         return -1;
     }
+
+    size_t width = 0;
+    do
+    {
+        width += 2;
+        if (fputs((flags & NEO4J_RENDER_ASCII)?
+                    " |" : u8" \u2502", stream) == EOF)
+        {
+            return -1;
+        }
+    } while (width < op_depth*2);
+
     if (branch && fputc('/', stream) == EOF)
     {
         return -1;
