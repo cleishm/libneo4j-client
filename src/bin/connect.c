@@ -45,11 +45,9 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
     }
     assert(state->connection == NULL);
 
-    struct auth_state auth_state;
+    struct auth_state auth_state = { .attempt = 0, .state = state };
     if (state->password_prompt)
     {
-        auth_state.state = state;
-        auth_state.attempt = 0;
         neo4j_config_set_basic_auth_callback(state->config,
                 basic_auth_callback, &auth_state);
     }
