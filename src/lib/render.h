@@ -57,10 +57,10 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
         unsigned int *widths, hline_position_t position,
         bool undersize, uint_fast32_t flags);
 
-typedef int (*render_row_callback_t)(
-        void *cdata, FILE *stream, unsigned int n, unsigned int width);
+typedef ssize_t (*render_row_callback_t)(
+        void *cdata, unsigned int n, const char **s, unsigned int width);
 int render_row(FILE *stream, unsigned int ncolumns,
-        unsigned int *widths, bool undersize, uint_fast32_t flags,
+        const unsigned int *widths, bool undersize, uint_fast32_t flags,
         render_row_callback_t callback, void *cdata);
 
 #endif/*NEO4J_RENDER_H*/

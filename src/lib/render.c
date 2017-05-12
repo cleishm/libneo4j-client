@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "render.h"
+#include "util.h"
 #include <assert.h>
 #if HAVE_LANGINFO_CODESET
 #include <langinfo.h>
@@ -56,6 +57,11 @@ static const struct border_glifs u8_border_glifs =
       .bottom_corners = { u8"\u2514", u8"\u2534", u8"\u2518" },
       .overflow = u8"\u2026" };
 #endif
+
+
+static ssize_t render_field(FILE *stream, const char *s, size_t n,
+        unsigned int width, uint_fast32_t flags);
+static int write_unprintable(FILE *stream, int codepoint, int width);
 
 
 uint_fast32_t normalize_render_flags(uint_fast32_t flags)
@@ -220,7 +226,7 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
 
 
 int render_row(FILE *stream, unsigned int ncolumns,
-        unsigned int *widths, bool undersize, uint_fast32_t flags,
+        const unsigned int *widths, bool undersize, uint_fast32_t flags,
         render_row_callback_t callback, void *cdata)
 {
     const struct border_glifs *glifs = glifs_for_encoding(flags);
@@ -235,21 +241,24 @@ int render_row(FILE *stream, unsigned int ncolumns,
         {
             return -1;
         }
+
         assert(widths[i] >= 2);
-        int w = (callback != NULL)?
-                callback(cdata, stream, i, widths[i] - 2) : 0;
-        if (w < 0)
+        unsigned int value_width = widths[i] - 2;
+        ssize_t n = 0;
+        const char *s = NULL;
+        if (callback != NULL && (n = callback(cdata, i, &s, value_width)) < 0)
         {
             return -1;
         }
-        for (; (unsigned int)w < widths[i] - 2; ++w)
+        assert(n == 0 || s != NULL);
+
+        ssize_t consumed = render_field(stream, s, n, value_width, flags);
+        if (consumed < 0)
         {
-            if (fputc(' ', stream) == EOF)
-            {
-                return -1;
-            }
+            return -1;
         }
-        if (fputs(((unsigned int)w > widths[i] - 2)? glifs->overflow : " ", stream) == EOF)
+
+        if (fputs((consumed < n)? glifs->overflow : " ", stream) == EOF)
         {
             return -1;
         }
@@ -267,4 +276,113 @@ int render_row(FILE *stream, unsigned int ncolumns,
         return -1;
     }
     return 0;
+}
+
+
+ssize_t render_field(FILE *stream, const char *s, size_t n, unsigned int width,
+        uint_fast32_t flags)
+{
+    unsigned int used = 0;
+    const char *e = s + n;
+
+    while (used < width && s < e)
+    {
+        size_t bytes = SIZE_MAX;
+        int cp = neo4j_u8codepoint(s, &bytes);
+        if (cp < 0)
+        {
+            return -1;
+        }
+        assert(bytes > 0);
+        int cpwidth;
+        if ((bytes > 1 && (flags & NEO4J_RENDER_ASCII)) ||
+                (cpwidth = neo4j_u8cpwidth(cp)) < 0)
+        {
+            cpwidth = write_unprintable(stream, cp, width);
+            if (cpwidth < 0)
+            {
+                return -1;
+            }
+        }
+        else
+        {
+            if ((used + cpwidth) > width)
+            {
+                break;
+            }
+            if (fwrite(s, sizeof(char), bytes, stream) < bytes)
+            {
+                return -1;
+            }
+        }
+        s += bytes;
+        used += cpwidth;
+    }
+
+    for (; used < width; ++used)
+    {
+        if (fputc(' ', stream) == EOF)
+        {
+            return -1;
+        }
+    }
+    return n - (e - s);
+}
+
+
+int write_unprintable(FILE *stream, int codepoint, int width)
+{
+    assert(codepoint >= 0);
+    char buf[10];
+    char *replacement;
+    unsigned int n = 2;
+    switch (codepoint)
+    {
+    case '\a':
+        replacement = "\\a";
+        break;
+    case '\b':
+        replacement = "\\b";
+        break;
+    case '\f':
+        replacement = "\\f";
+        break;
+    case '\n':
+        replacement = "\\n";
+        break;
+    case '\r':
+        replacement = "\\r";
+        break;
+    case '\t':
+        replacement = "\\t";
+        break;
+    case '\v':
+        replacement = "\\v";
+        break;
+    default:
+        replacement = buf;
+        if (codepoint <= 0xFFFF)
+        {
+            if (snprintf(buf, sizeof(buf), "\\u%04X", codepoint) < 0)
+            {
+                return -1;
+            }
+            n = 6;
+        }
+        else
+        {
+            if (snprintf(buf, sizeof(buf), "\\U%08X", codepoint) < 0)
+            {
+                return -1;
+            }
+            n = 10;
+        }
+        break;
+    }
+    unsigned int towrite = min(n, width);
+    if (fwrite(replacement, sizeof(char), towrite, stream) < towrite)
+    {
+        return -1;
+    }
+    return n;
 }

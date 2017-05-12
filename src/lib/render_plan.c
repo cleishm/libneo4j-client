@@ -21,7 +21,7 @@
 #include <assert.h>
 #include <math.h>
 
-static int render_header(void *data, FILE *stream, unsigned int n,
+static ssize_t obtain_header(void *data, unsigned int n, const char **s,
         unsigned int width);
 
 static int render_steps(FILE *stream,
@@ -89,7 +89,7 @@ int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         goto failure;
     }
 
-    if (render_row(stream, 6, widths, undersize, flags, render_header, NULL))
+    if (render_row(stream, 6, widths, undersize, flags, obtain_header, NULL))
     {
         goto failure;
     }
@@ -125,12 +125,10 @@ failure:
 }
 
 
-int render_header(void *data, FILE *stream, unsigned int n, unsigned int width)
+ssize_t obtain_header(void *data, unsigned int n, const char **s,
+        unsigned int width)
 {
-    if (fputs(HEADERS[n], stream) < 0)
-    {
-        return -1;
-    }
+    *s = HEADERS[n];
     return strlen(HEADERS[n]);
 }
 
