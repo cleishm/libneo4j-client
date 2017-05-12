@@ -128,8 +128,16 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
 
     // render body
     neo4j_result_t *result;
-    while ((result = neo4j_fetch_next(results)) != NULL)
+    for (bool first = true; (result = neo4j_fetch_next(results)) != NULL;
+            first = false)
     {
+        if (!first && (flags & NEO4J_RENDER_ROW_LINES) &&
+                render_hrule(stream, nfields, widths, HLINE_MIDDLE,
+                    undersize, flags))
+        {
+            goto failure;
+        }
+
         struct render_result_field_data data =
             { .result = result, .flags = flags,
               .buffer = &buffer, .bufcap = &bufcap };

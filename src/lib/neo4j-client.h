@@ -2001,15 +2001,19 @@ void neo4j_release(neo4j_result_t *result);
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
 #define NEO4J_RENDER_ASCII (1<<2)
 #define NEO4J_RENDER_ASCII_ART (1<<3)
+#define NEO4J_RENDER_ROW_LINES (1<<4)
 
 /**
  * Render a result stream as a table.
  *
- * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flags `NEO4J_RENDER_SHOW_NULL`,
- * `NEO4J_RENDER_QUOTE_STRINGS` and `NEO4J_RENDER_ASCII`.
+ * A bitmask of flags may be supplied, which may include:
+ * - NEO4J_RENDER_SHOW_NULL - output 'null' when rendering NULL values, rather
+ * than an empty cell.
+ * - NEO4J_RENDER_QUOTE_STRING - wrap strings in quotes.
+ * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
+ * - NEO4J_RENDER_ROW_LINES - render a line between each output row.
  *
- * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
