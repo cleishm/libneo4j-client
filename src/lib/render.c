@@ -29,6 +29,7 @@ struct border_glifs
     const char *top_corners[3];
     const char *middle_corners[3];
     const char *bottom_corners[3];
+    const char *overflow;
 };
 
 
@@ -37,7 +38,8 @@ static const struct border_glifs ascii_border_glifs =
       .vertical_line = "|",
       .top_corners = { "+", "+", "+" },
       .middle_corners = { "+", "+", "+" },
-      .bottom_corners = { "+", "+", "+" } };
+      .bottom_corners = { "+", "+", "+" },
+      .overflow = "=" };
 
 #if HAVE_LANGINFO_CODESET
 static const struct border_glifs u8_border_glifs =
@@ -45,7 +47,8 @@ static const struct border_glifs u8_border_glifs =
       .vertical_line = u8"\u2502",
       .top_corners = { u8"\u250C", u8"\u252C", u8"\u2510" },
       .middle_corners = { u8"\u251C", u8"\u253C", u8"\u2524" },
-      .bottom_corners = { u8"\u2514", u8"\u2534", u8"\u2518" } };
+      .bottom_corners = { u8"\u2514", u8"\u2534", u8"\u2518" },
+      .overflow = u8"\u2026" };
 #endif
 
 
@@ -220,7 +223,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
                 return -1;
             }
         }
-        if (fputc(((unsigned int)w > widths[i] - 2)? '=' : ' ', stream) == EOF)
+        if (fputs(((unsigned int)w > widths[i] - 2)? glifs->overflow : " ", stream) == EOF)
         {
             return -1;
         }
@@ -229,7 +232,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
     {
         return -1;
     }
-    if (undersize && fputc('=', stream) == EOF)
+    if (undersize && fputs(glifs->overflow, stream) == EOF)
     {
         return -1;
     }
