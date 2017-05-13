@@ -194,6 +194,7 @@ int main(int argc, char *argv[])
     if (isatty(fileno(stderr)))
     {
         state.error_colorize = ansi_error_colorization;
+        state.render_flags |= NEO4J_RENDER_ANSI_COLOR;
     }
 
     const char *s;
@@ -245,9 +246,11 @@ int main(int argc, char *argv[])
             break;
         case COLORIZE_OPT:
             state.error_colorize = ansi_error_colorization;
+            state.render_flags |= NEO4J_RENDER_ANSI_COLOR;
             break;
         case NO_COLORIZE_OPT:
             state.error_colorize = no_error_colorization;
+            state.render_flags &= ~NEO4J_RENDER_ANSI_COLOR;
             break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;

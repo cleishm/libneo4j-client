@@ -53,6 +53,16 @@ static int write_value(FILE *stream, const neo4j_value_t *value,
 int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags)
 {
+    return neo4j_render_ctable(stream, results, width, flags,
+            (flags & NEO4J_RENDER_ANSI_COLOR)? neo4j_ctable_ansi_colorization :
+            neo4j_ctable_no_colorization);
+}
+
+
+int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
+        unsigned int width, uint_fast32_t flags,
+        const struct neo4j_ctable_colorization *colors)
+{
     REQUIRE(stream != NULL, -1);
     REQUIRE(results != NULL, -1);
     REQUIRE(width > 1 && width < NEO4J_RENDER_MAX_WIDTH, -1);
@@ -106,20 +116,22 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_hrule(stream, nfields, widths, HLINE_TOP, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_TOP, undersize, flags,
+                colors))
     {
         goto failure;
     }
 
     struct obtain_fieldname_cb_data data =
             { .results = results, .flags = flags };
-    if (render_row(stream, nfields, widths, undersize, flags,
-            obtain_fieldname, &data))
+    if (render_row(stream, nfields, widths, undersize, flags, colors,
+            colors->header, obtain_fieldname, &data))
     {
         goto failure;
     }
 
-    if (render_hrule(stream, nfields, widths, HLINE_HEAD, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_HEAD, undersize, flags,
+                colors))
     {
         goto failure;
     }
@@ -130,8 +142,8 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
             first = false)
     {
         if (!first && (flags & NEO4J_RENDER_ROW_LINES) &&
-                render_hrule(stream, nfields, widths, HLINE_MIDDLE,
-                    undersize, flags))
+                render_hrule(stream, nfields, widths, HLINE_MIDDLE, undersize,
+                    flags, colors))
         {
             goto failure;
         }
@@ -139,8 +151,8 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         struct obtain_result_field_cb_data data =
             { .result = result, .flags = flags,
               .buffer = &buffer, .bufcap = &bufcap };
-        if (render_row(stream, nfields, widths, undersize, flags,
-                obtain_result_field, &data))
+        if (render_row(stream, nfields, widths, undersize, flags, colors,
+                colors->cells, obtain_result_field, &data))
         {
             goto failure;
         }
@@ -153,7 +165,8 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         goto failure;
     }
 
-    if (render_hrule(stream, nfields, widths, HLINE_BOTTOM, undersize, flags))
+    if (render_hrule(stream, nfields, widths, HLINE_BOTTOM, undersize, flags,
+                colors))
     {
         goto failure;
     }

@@ -51,16 +51,22 @@ typedef enum
 } border_line_t;
 
 int render_border_line(FILE *stream, border_line_t line_type,
-        uint_fast32_t flags);
+        uint_fast32_t flags, const struct neo4j_ctable_colorization *colors);
 
 int render_hrule(FILE *stream, unsigned int ncolumns,
         unsigned int *widths, hline_position_t position,
-        bool undersize, uint_fast32_t flags);
+        bool undersize, uint_fast32_t flags,
+        const struct neo4j_ctable_colorization *colors);
+
+int render_overflow(FILE *stream, uint_fast32_t flags,
+        const char * const color[2]);
 
 typedef ssize_t (*render_row_callback_t)(
         void *cdata, unsigned int n, const char **s, bool *duplicate);
 int render_row(FILE *stream, unsigned int ncolumns,
         const unsigned int *widths, bool undersize, uint_fast32_t flags,
+        const struct neo4j_ctable_colorization *colors,
+        const char * const field_color[2],
         render_row_callback_t callback, void *cdata);
 
 #endif/*NEO4J_RENDER_H*/

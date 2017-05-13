@@ -59,8 +59,28 @@ static const struct border_glifs u8_border_glifs =
 #endif
 
 
+#define ANSI_COLOR_RESET "\x1b[0m"
+#define ANSI_COLOR_GREY "\x1b[38;5;238m"
+#define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
+
+static struct neo4j_ctable_colorization _neo4j_ctable_no_colorization =
+    { .border = { "", "" },
+      .header = { "", "" },
+      .cells = { "", "" } };
+
+static struct neo4j_ctable_colorization _neo4j_ctable_ansi_colorization =
+    { .border = { ANSI_COLOR_GREY, ANSI_COLOR_RESET },
+      .header = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .cells = { "", "" } };
+
+const struct neo4j_ctable_colorization *neo4j_ctable_no_colorization =
+        &_neo4j_ctable_no_colorization;
+const struct neo4j_ctable_colorization *neo4j_ctable_ansi_colorization =
+        &_neo4j_ctable_ansi_colorization;
+
+
 static ssize_t render_field(FILE *stream, const char *s, size_t n,
-        unsigned int width, uint_fast32_t flags);
+        unsigned int width, uint_fast32_t flags, const char * const color[2]);
 static int write_unprintable(FILE *stream, int codepoint, int width);
 
 
@@ -101,8 +121,11 @@ static const struct border_glifs *glifs_for_encoding(uint_fast32_t flags)
 
 
 int render_border_line(FILE *stream, border_line_t line_type,
-        uint_fast32_t flags)
+        uint_fast32_t flags, const struct neo4j_ctable_colorization *colors)
 {
+    assert(stream != NULL);
+    assert(colors != NULL);
+
     const struct border_glifs *glifs = glifs_for_encoding(flags);
     const char *glif;
     switch (line_type)
@@ -155,7 +178,15 @@ int render_border_line(FILE *stream, border_line_t line_type,
         break;
     }
 
+    if (fputs(colors->border[0], stream) == EOF)
+    {
+        return -1;
+    }
     if (fputs(glif, stream) == EOF)
+    {
+        return -1;
+    }
+    if (fputs(colors->border[1], stream) == EOF)
     {
         return -1;
     }
@@ -165,8 +196,13 @@ int render_border_line(FILE *stream, border_line_t line_type,
 
 int render_hrule(FILE *stream, unsigned int ncolumns,
         unsigned int *widths, hline_position_t position,
-        bool undersize, uint_fast32_t flags)
+        bool undersize, uint_fast32_t flags,
+        const struct neo4j_ctable_colorization *colors)
 {
+    assert(stream != NULL);
+    assert(ncolumns == 0 || widths != NULL);
+    assert(colors != NULL);
+
     const struct border_glifs *glifs = glifs_for_encoding(flags);
     const char * const *corners;
     const char *line;
@@ -189,6 +225,10 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
         corners = glifs->middle_corners;
         line = glifs->horizontal_line;
         break;
+    }
+    if (fputs(colors->border[0], stream) == EOF)
+    {
+        return -1;
     }
     for (unsigned int i = 0, corner = 0; i < ncolumns; ++i)
     {
@@ -217,7 +257,34 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
     {
         return -1;
     }
+    if (fputs(colors->border[1], stream) == EOF)
+    {
+        return -1;
+    }
     if (fputc('\n', stream) == EOF)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+int render_overflow(FILE *stream, uint_fast32_t flags,
+        const char * const color[2])
+{
+    assert(stream != NULL);
+    assert(color != NULL);
+
+    const struct border_glifs *glifs = glifs_for_encoding(flags);
+    if (fputs(color[0], stream) == EOF)
+    {
+        return -1;
+    }
+    if (fputs(glifs->overflow, stream) == EOF)
+    {
+        return -1;
+    }
+    if (fputs(color[1], stream) == EOF)
     {
         return -1;
     }
@@ -227,8 +294,14 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
 
 int render_row(FILE *stream, unsigned int ncolumns,
         const unsigned int *widths, bool undersize, uint_fast32_t flags,
+        const struct neo4j_ctable_colorization *colors,
+        const char * const field_color[2],
         render_row_callback_t callback, void *cdata)
 {
+    assert(stream != NULL);
+    assert(ncolumns == 0 || widths != NULL);
+    assert(colors != NULL);
+
     struct fields
     {
         const char *s;
@@ -246,14 +319,13 @@ int render_row(FILE *stream, unsigned int ncolumns,
 
     int err = -1;
 
-    const struct border_glifs *glifs = glifs_for_encoding(flags);
     for (unsigned int i = 0; i < ncolumns; ++i)
     {
         if (widths[i] == 0)
         {
             continue;
         }
-        if (fputs(glifs->vertical_line, stream) == EOF ||
+        if (render_border_line(stream, VERTICAL_LINE, flags, colors) ||
                 fputc(' ', stream) == EOF)
         {
             goto cleanup;
@@ -270,7 +342,8 @@ int render_row(FILE *stream, unsigned int ncolumns,
         }
         assert(n == 0 || s != NULL);
 
-        ssize_t consumed = render_field(stream, s, n, value_width, flags);
+        ssize_t consumed = render_field(stream, s, n, value_width, flags,
+                field_color);
         if (consumed < 0)
         {
             goto cleanup;
@@ -285,7 +358,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
         }
         else
         {
-            if (fputs(glifs->overflow, stream) == EOF)
+            if (render_overflow(stream, flags, colors->border))
             {
                 goto cleanup;
             }
@@ -309,11 +382,11 @@ int render_row(FILE *stream, unsigned int ncolumns,
         }
     }
 
-    if (fputs(glifs->vertical_line, stream) == EOF)
+    if (render_border_line(stream, VERTICAL_LINE, flags, colors))
     {
         goto cleanup;
     }
-    if (undersize && fputs(glifs->overflow, stream) == EOF)
+    if (undersize && render_overflow(stream, flags, colors->border))
     {
         goto cleanup;
     }
@@ -337,13 +410,24 @@ int render_row(FILE *stream, unsigned int ncolumns,
             size_t n = fields[i].n;
             const char *s = fields[i].s;
 
-            if (fputs(glifs->vertical_line, stream) == EOF ||
-                    fputs((n > 0)? glifs->overflow : " ", stream) == EOF)
+            if (render_border_line(stream, VERTICAL_LINE, flags, colors))
+            {
+                goto cleanup;
+            }
+            if (n > 0)
+            {
+                if (render_overflow(stream, flags, colors->border))
+                {
+                    goto cleanup;
+                }
+            }
+            else if (fputc(' ', stream) == EOF)
             {
                 goto cleanup;
             }
 
-            ssize_t consumed = render_field(stream, s, n, value_width, flags);
+            ssize_t consumed = render_field(stream, s, n, value_width,
+                    flags, colors->cells);
             if (consumed < 0)
             {
                 goto cleanup;
@@ -358,7 +442,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
             }
             else
             {
-                if (fputs(glifs->overflow, stream) == EOF)
+                if (render_overflow(stream, flags, colors->border))
                 {
                     goto cleanup;
                 }
@@ -369,11 +453,11 @@ int render_row(FILE *stream, unsigned int ncolumns,
             }
         }
 
-        if (fputs(glifs->vertical_line, stream) == EOF)
+        if (render_border_line(stream, VERTICAL_LINE, flags, colors))
         {
             goto cleanup;
         }
-        if (undersize && fputs(glifs->overflow, stream) == EOF)
+        if (undersize && render_overflow(stream, flags, colors->border))
         {
             goto cleanup;
         }
@@ -402,10 +486,15 @@ cleanup:
 
 
 ssize_t render_field(FILE *stream, const char *s, size_t n, unsigned int width,
-        uint_fast32_t flags)
+        uint_fast32_t flags, const char * const color[2])
 {
     unsigned int used = 0;
     const char *e = s + n;
+
+    if (color != NULL && fputs(color[0], stream) == EOF)
+    {
+        return -1;
+    }
 
     while (used < width && s < e)
     {
@@ -439,6 +528,11 @@ ssize_t render_field(FILE *stream, const char *s, size_t n, unsigned int width,
         }
         s += bytes;
         used += cpwidth;
+    }
+
+    if (color != NULL && fputs(color[1], stream) == EOF)
+    {
+        return -1;
     }
 
     for (; used < width; ++used)

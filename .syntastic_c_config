@@ -1,1 +1,2 @@
 -std=gnu11
+-Isrc/lib

@@ -50,7 +50,6 @@ struct shell_state
     neo4j_connection_t *connection;
     char *temp_buffer;
     size_t temp_buffer_capacity;
-    const struct interactive_colorization *interactive_colorize;
     const struct error_colorization *error_colorize;
     renderer_t render;
     int width;

@@ -21,23 +21,51 @@
 #include <assert.h>
 #include <math.h>
 
+
+#define ANSI_COLOR_RESET "\x1b[0m"
+#define ANSI_COLOR_GREY "\x1b[38;5;238m"
+#define ANSI_COLOR_BLUE "\x1b[38;5;75m"
+#define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
+
+static struct neo4j_plan_ctable_colorization _neo4j_plan_ctable_no_colorization =
+    { .border = { "", "" },
+      .header = { "", "" },
+      .cells = { "", "" },
+      .graph = { "", "" } };
+
+static struct neo4j_plan_ctable_colorization _neo4j_plan_ctable_ansi_colorization =
+    { .border = { ANSI_COLOR_GREY, ANSI_COLOR_RESET },
+      .header = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .cells = { "", "" },
+      .graph = { ANSI_COLOR_BLUE, ANSI_COLOR_RESET } };
+
+const struct neo4j_plan_ctable_colorization *neo4j_plan_ctable_no_colorization =
+        &_neo4j_plan_ctable_no_colorization;
+const struct neo4j_plan_ctable_colorization *neo4j_plan_ctable_ansi_colorization =
+        &_neo4j_plan_ctable_ansi_colorization;
+
+
 static ssize_t obtain_header(void *data, unsigned int n, const char **s,
         bool *duplicate);
 
 static int render_steps(FILE *stream,
         struct neo4j_statement_execution_step *step, unsigned int depth,
         bool last, char **ids_buffer, size_t *ids_bufcap, char **args_buffer,
-        size_t *args_bufcap, unsigned int widths[6], uint_fast32_t flags);
+        size_t *args_bufcap, unsigned int widths[6], uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *colors);
 static int render_op(FILE *stream, const char *operator_type,
-        unsigned int op_depth, unsigned int width, uint_fast32_t flags);
+        unsigned int op_depth, unsigned int width, uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *colors);
 static ssize_t build_str_list(const char * const *list, unsigned int n,
         char **buffer, size_t *bufcap);
 static ssize_t build_args_value(neo4j_value_t args, char **buffer,
         size_t *bufcap);
 static int render_wrap(FILE *stream, unsigned int op_depth,
-        unsigned int widths[4], uint_fast32_t flags);
+        unsigned int widths[4], uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *colors);
 static int render_tr(FILE *stream, unsigned int op_depth, bool branch,
-        unsigned int widths[6], uint_fast32_t flags);
+        unsigned int widths[6], uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *colors);
 static void calculate_widths(unsigned int widths[6],
         struct neo4j_statement_plan *plan, unsigned int render_width);
 static unsigned int operators_width(
@@ -57,8 +85,25 @@ static unsigned int MIN_IDS_WIDTH = 11; // strlen(HEADERS[4]);
 static unsigned int MIN_OTH_WIDTH = 5; // strlen(HEADERS[5]);
 
 
+static const struct neo4j_ctable_colorization *ctable_colors(
+    const struct neo4j_plan_ctable_colorization *plan_colors)
+{
+    return (const struct neo4j_ctable_colorization *)plan_colors;
+}
+
+
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         unsigned int width, uint_fast32_t flags)
+{
+    return neo4j_render_plan_ctable(stream, plan, width, flags,
+            (flags & NEO4J_RENDER_ANSI_COLOR)? neo4j_plan_ctable_ansi_colorization :
+            neo4j_plan_ctable_no_colorization);
+}
+
+
+int neo4j_render_plan_ctable(FILE *stream, struct neo4j_statement_plan *plan,
+        unsigned int width, uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *colors)
 {
     REQUIRE(stream != NULL, -1);
     REQUIRE(plan != NULL, -1);
@@ -84,28 +129,32 @@ int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
     calculate_widths(widths, plan, width);
     bool undersize = (widths[5] == 0);
 
-    if (render_hrule(stream, 6, widths, HLINE_TOP, undersize, flags))
+    if (render_hrule(stream, 6, widths, HLINE_TOP, undersize, flags,
+            ctable_colors(colors)))
     {
         goto failure;
     }
 
-    if (render_row(stream, 6, widths, undersize, flags, obtain_header, NULL))
+    if (render_row(stream, 6, widths, undersize, flags, ctable_colors(colors),
+                colors->header, obtain_header, NULL))
     {
         goto failure;
     }
 
-    if (render_hrule(stream, 6, widths, HLINE_MIDDLE, undersize, flags))
+    if (render_hrule(stream, 6, widths, HLINE_HEAD, undersize, flags,
+                ctable_colors(colors)))
     {
         goto failure;
     }
 
     if (render_steps(stream, plan->output_step, 0, true, &ids_buffer,
-                &ids_bufcap, &args_buffer, &args_bufcap, widths, flags))
+                &ids_bufcap, &args_buffer, &args_bufcap, widths, flags, colors))
     {
         goto failure;
     }
 
-    if (render_hrule(stream, 6, widths, HLINE_BOTTOM, undersize, flags))
+    if (render_hrule(stream, 6, widths, HLINE_BOTTOM, undersize, flags,
+                ctable_colors(colors)))
     {
         goto failure;
     }
@@ -137,8 +186,10 @@ ssize_t obtain_header(void *data, unsigned int n, const char **s,
 int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
         unsigned int depth, bool last, char **ids_buffer, size_t *ids_bufcap,
         char **args_buffer, size_t *args_bufcap, unsigned int widths[6],
-        uint_fast32_t flags)
+        uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *plan_colors)
 {
+    const struct neo4j_ctable_colorization *colors = ctable_colors(plan_colors);
     struct neo4j_statement_execution_step **sources = step->sources;
     for (unsigned int i = 0; i < step->nsources; ++i)
     {
@@ -150,24 +201,24 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
             d = depth + 1;
         }
         if (render_steps(stream, sources[i], d, false, ids_buffer, ids_bufcap,
-                    args_buffer, args_bufcap, widths, flags))
+                    args_buffer, args_bufcap, widths, flags, plan_colors))
         {
             return -1;
         }
-        if (render_tr(stream, depth+1, branch, widths, flags))
+        if (render_tr(stream, depth+1, branch, widths, flags, plan_colors))
         {
             return -1;
         }
     }
 
     if (widths[0] > 0 && render_op(stream, step->operator_type,
-                depth+1, widths[0], flags))
+                depth+1, widths[0], flags, plan_colors))
     {
         return -1;
     }
 
     if (widths[1] > 0 && (
-            render_border_line(stream, VERTICAL_LINE, flags) ||
+            render_border_line(stream, VERTICAL_LINE, flags, colors) ||
             fprintf(stream, " %*lld ", widths[1] - 2,
                  llround(step->estimated_rows)) < 0))
     {
@@ -175,14 +226,14 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
     }
 
     if (widths[2] > 0 && (
-            render_border_line(stream, VERTICAL_LINE, flags) ||
+            render_border_line(stream, VERTICAL_LINE, flags, colors) ||
             fprintf(stream, " %*lld ", widths[2] - 2, step->rows) < 0))
     {
         return -1;
     }
 
     if (widths[3] > 0 && (
-            render_border_line(stream, VERTICAL_LINE, flags) ||
+            render_border_line(stream, VERTICAL_LINE, flags, colors) ||
             fprintf(stream, " %*lld ", widths[3] - 2, step->db_hits) < 0))
     {
         return -1;
@@ -216,7 +267,7 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
     {
         if (widths[4] > 0)
         {
-            if (render_border_line(stream, VERTICAL_LINE, flags) ||
+            if (render_border_line(stream, VERTICAL_LINE, flags, colors) ||
                     fprintf(stream, " %-*.*s ", ids_width, ids_width, ids) < 0)
             {
                 return -1;
@@ -230,10 +281,10 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
 
         if (widths[5] > 0)
         {
-            if (render_border_line(stream, VERTICAL_LINE, flags) ||
+            if (render_border_line(stream, VERTICAL_LINE, flags, colors) ||
                     fprintf(stream, " %-*.*s ", args_width,
                         args_width, args) < 0 ||
-                    render_border_line(stream, VERTICAL_LINE, flags))
+                    render_border_line(stream, VERTICAL_LINE, flags, colors))
             {
                 return -1;
             }
@@ -243,8 +294,8 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
                 args = args_end;
             }
         }
-        else if (render_border_line(stream, VERTICAL_LINE, flags) ||
-                fputc('=', stream) == EOF)
+        else if (render_border_line(stream, VERTICAL_LINE, flags, colors) ||
+                render_overflow(stream, flags, colors->border))
         {
             return -1;
         }
@@ -258,7 +309,7 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
         {
             break;
         }
-        if (render_wrap(stream, last? 0 : depth+1, widths, flags))
+        if (render_wrap(stream, last? 0 : depth+1, widths, flags, plan_colors))
         {
             return -1;
         }
@@ -269,9 +320,15 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
 
 
 int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
-        unsigned int width, uint_fast32_t flags)
+        unsigned int width, uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *colors)
 {
-    if (render_border_line(stream, VERTICAL_LINE, flags))
+    if (render_border_line(stream, VERTICAL_LINE, flags, ctable_colors(colors)))
+    {
+        return -1;
+    }
+
+    if (fputs(colors->graph[0], stream) == EOF)
     {
         return -1;
     }
@@ -299,6 +356,11 @@ int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
             return -1;
         }
     } while (offset < op_depth*2);
+
+    if (fputs(colors->graph[1], stream) == EOF)
+    {
+        return -1;
+    }
 
     if (fprintf(stream, "%-*s ", width - offset - 1, operator_type) < 0)
     {
@@ -425,19 +487,32 @@ ssize_t build_args_value(neo4j_value_t args, char **buffer, size_t *bufcap)
 
 
 int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
-        uint_fast32_t flags)
+        uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *plan_colors)
 {
+    const struct neo4j_ctable_colorization *colors =
+            (const struct neo4j_ctable_colorization *)plan_colors;
+    if (render_border_line(stream, VERTICAL_LINE, flags, colors))
+    {
+        return -1;
+    }
+
+    if (fputs(plan_colors->graph[0], stream) == EOF)
+    {
+        return -1;
+    }
     size_t width = 0;
     while (width < op_depth*2)
     {
-        if (render_border_line(stream, VERTICAL_LINE, flags) ||
-                fputc(' ', stream) == EOF)
+        width += 2;
+        if (fputs((flags & NEO4J_RENDER_ASCII)?
+                " |" : u8" \u2502", stream) == EOF)
         {
             return -1;
         }
-        width += 2;
     }
-    if (render_border_line(stream, VERTICAL_LINE, flags))
+
+    if (fputs(plan_colors->graph[1], stream) == EOF)
     {
         return -1;
     }
@@ -457,7 +532,7 @@ int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
         {
             continue;
         }
-        if (render_border_line(stream, VERTICAL_LINE, flags))
+        if (render_border_line(stream, VERTICAL_LINE, flags, colors))
         {
             return -1;
         }
@@ -475,18 +550,28 @@ int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
 
 
 int render_tr(FILE *stream, unsigned int op_depth, bool branch,
-        unsigned int widths[6], uint_fast32_t flags)
+        unsigned int widths[6], uint_fast32_t flags,
+        const struct neo4j_plan_ctable_colorization *plan_colors)
 {
+    const struct neo4j_ctable_colorization *colors =
+            (const struct neo4j_ctable_colorization *)plan_colors;
+
     if (widths[0] == 0)
     {
-        if (render_row(stream, 0, NULL, true, flags, NULL, NULL))
+        if (render_row(stream, 0, NULL, true, flags, colors,
+                    NULL, NULL, NULL))
         {
             return -1;
         }
         return 0;
     }
 
-    if (render_border_line(stream, VERTICAL_LINE, flags))
+    if (render_border_line(stream, VERTICAL_LINE, flags, colors))
+    {
+        return -1;
+    }
+
+    if (fputs(plan_colors->graph[0], stream) == EOF)
     {
         return -1;
     }
@@ -507,6 +592,11 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         return -1;
     }
 
+    if (fputs(plan_colors->graph[1], stream) == EOF)
+    {
+        return -1;
+    }
+
     width = widths[0] - width - (branch? 1 : 0);
     for (unsigned int w = width; w > 0; --w)
     {
@@ -516,7 +606,8 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         }
     }
 
-    if (render_hrule(stream, 5, widths+1, HLINE_MIDDLE, (widths[5]==0), flags))
+    if (render_hrule(stream, 5, widths+1, HLINE_MIDDLE, (widths[5]==0),
+                flags, colors))
     {
         return -1;
     }
