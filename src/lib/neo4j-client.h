@@ -2015,6 +2015,7 @@ void neo4j_release(neo4j_result_t *result);
  * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
  * - NEO4J_RENDER_ROW_LINES - render a line between each output row.
  * - NEO4J_RENDER_WRAP_VALUES - wrap oversized values over multiple lines.
+ * - NEO4J_RENDER_ANSI_COLOR - use ANSI escape codes for colorization.
  *
  * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
@@ -2038,9 +2039,9 @@ struct neo4j_ctable_colorization
     const char * const cells[2];
 };
 
-/** Colorization rules for uncolorized table output. */
+/** Table colorization rules for uncolorized table output. */
 extern const struct neo4j_ctable_colorization *neo4j_ctable_no_colorization;
-/** Colorization rules for ANSI terminal output. */
+/** Table colorization rules for ANSI terminal output. */
 extern const struct neo4j_ctable_colorization *neo4j_ctable_ansi_colorization;
 
 
@@ -2074,10 +2075,11 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
 /**
  * Render a result stream as comma separated value.
  *
- * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flag `NEO4J_RENDER_SHOW_NULL`.
+ * A bitmask of flags may be supplied, which may include:
+ * - NEO4J_RENDER_SHOW_NULL - output 'null' when rendering NULL values, rather
+ * than an empty cell.
  *
- * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
@@ -2095,6 +2097,7 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
  *
  * A bitmask of flags may be supplied, which may include:
  * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
+ * - NEO4J_RENDER_ANSI_COLOR - use ANSI escape codes for colorization.
  *
  * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
@@ -2119,10 +2122,10 @@ struct neo4j_plan_ctable_colorization
     const char * const graph[2];
 };
 
-/** Colorization rules for uncolorized plan table output. */
+/** Plan table colorization rules for uncolorized plan table output. */
 extern const struct neo4j_plan_ctable_colorization *
         neo4j_plan_ctable_no_colorization;
-/** Colorization rules for ANSI terminal output. */
+/** Plan table colorization rules for ANSI terminal output. */
 extern const struct neo4j_plan_ctable_colorization *
         neo4j_plan_ctable_ansi_colorization;
 
