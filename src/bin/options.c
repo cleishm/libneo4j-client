@@ -107,14 +107,15 @@ void options_display(shell_state_t *state, FILE *stream)
 int option_set(shell_state_t *state, const char *name,
         const char *value)
 {
+    if (value != NULL && *value == '\0')
+    {
+        value = NULL;
+    }
+
     for (unsigned int i = 0; options[i].name != NULL; ++i)
     {
         if (strcmp(options[i].name, name) == 0)
         {
-            if (value != NULL && *value == '\0')
-            {
-                value = NULL;
-            }
             if (value == NULL && !options[i].allow_null)
             {
                 fprintf(state->err, "Option '%s' requires a value\n",
@@ -122,6 +123,17 @@ int option_set(shell_state_t *state, const char *name,
                 return -1;
             }
             return options[i].set(state, value);
+        }
+    }
+
+    if (value == NULL && strncmp(name, "no", 2) == 0)
+    {
+        for (unsigned int i = 0; options[i].name != NULL; ++i)
+        {
+            if (options[i].allow_null && strcmp(options[i].name, name + 2) == 0)
+            {
+                return options[i].unset(state);
+            }
         }
     }
 
