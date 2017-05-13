@@ -439,6 +439,8 @@ int render_row(FILE *stream, unsigned int ncolumns,
                 {
                     goto cleanup;
                 }
+                fields[i].s = NULL;
+                fields[i].n = 0;
             }
             else
             {

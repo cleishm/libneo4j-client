@@ -321,7 +321,7 @@ START_TEST (render_table_with_wrapped_values)
         { "firstname", "lastname", "role", "title" };
     const char *table[3][4] =
         { { "Keanu", "Reeves", "Neo", "The Matrix" },
-          { "Hugo", "Weaving", "V", "V for Vendetta" },
+          { "Hugo With Some Middle Name", "Weaving", "V", "V for Vendetta" },
           { "Halle", "Berry", "Luisa Rey", "Cloud Atlas" } };
     neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
 
@@ -340,8 +340,9 @@ START_TEST (render_table_with_wrapped_values)
  "| firstname    | lastname     | role         | title        |\n"
  "+--------------+--------------+--------------+--------------+\n"
  "| 'Keanu'      | 'Reeves'     | 'Neo'        | 'The Matrix' |\n"
- "| 'Hugo'       | 'Weaving'    | 'V'          | 'V for Vende=|\n"
- "|              |              |              |=tta'         |\n"
+ "| 'Hugo With S=| 'Weaving'    | 'V'          | 'V for Vende=|\n"
+ "|=ome Middle N=|              |              |=tta'         |\n"
+ "|=ame'         |              |              |              |\n"
  "| 'Halle'      | 'Berry'      | 'Luisa Rey'  | 'Cloud Atlas=|\n"
  "|              |              |              |='            |\n"
  "+--------------+--------------+--------------+--------------+\n");
