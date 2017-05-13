@@ -42,6 +42,10 @@ static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command
         struct cypher_input_position pos);
 static int eval_export(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
+static int eval_params(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_param(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 static int eval_help(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_format(shell_state_t *state, const cypher_astnode_t *command,
@@ -75,7 +79,8 @@ static struct shell_command shell_commands[] =
       { "connect", eval_connect },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
-      { "param", eval_export },
+      { "param", eval_param },
+      { "params", eval_params },
       { "export", eval_export },
       { "help", eval_help },
       { "format", eval_format },
@@ -227,6 +232,11 @@ int eval_export(shell_state_t *state, const cypher_astnode_t *command,
             return -1;
         }
         const char *eq = strchr(export, '=');
+        if (eq == NULL)
+        {
+            free(export);
+            continue;
+        }
         size_t elen = eq - export;
         for (; elen > 0 && isspace(export[elen-1]); --elen)
             ;
@@ -234,6 +244,7 @@ int eval_export(shell_state_t *state, const cypher_astnode_t *command,
         neo4j_value_t value = neo4j_string(eq + 1);
         if (shell_state_add_export(state, name, value, export))
         {
+            free(export);
             return -1;
         }
     }
@@ -264,6 +275,62 @@ int eval_unexport(shell_state_t *state, const cypher_astnode_t *command,
             ;
         neo4j_value_t name = neo4j_ustring(argvalue, len);
         shell_state_unexport(state, name);
+    }
+    return 0;
+}
+
+
+int eval_params(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        print_error(state, pos, ":params does not take any arguments");
+        return -1;
+    }
+
+    return eval_export(state, command, pos);
+}
+
+
+int eval_param(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 2)
+    {
+        print_error(state, pos, ":param requires a parameter name and value");
+        return -1;
+    }
+
+    const cypher_astnode_t *name = cypher_ast_command_get_argument(command, 0);
+    const cypher_astnode_t *value = cypher_ast_command_get_argument(command, 1);
+    assert(name != NULL && value != NULL);
+    assert(cypher_astnode_instanceof(name, CYPHER_AST_STRING));
+    assert(cypher_astnode_instanceof(value, CYPHER_AST_STRING));
+
+    const char *namestr = cypher_ast_string_get_value(name);
+    for (; isspace(*namestr); ++namestr)
+        ;
+    size_t namelen = strlen(namestr);
+    const char *valuestr = cypher_ast_string_get_value(value);
+    for (; isspace(*valuestr); ++valuestr)
+        ;
+    size_t valuelen = strlen(valuestr);
+
+    char *storage = malloc(namelen + valuelen);
+    if (storage == NULL)
+    {
+        return -1;
+    }
+    memcpy(storage, namestr, namelen);
+    memcpy(storage + namelen, valuestr, valuelen);
+
+    if (shell_state_add_export(state,
+            neo4j_ustring(storage, namelen),
+            neo4j_ustring(storage + namelen, valuelen), storage))
+    {
+        free(storage);
+        return -1;
     }
     return 0;
 }
