@@ -38,4 +38,6 @@ int abort_evaluation(evaluation_continuation_t *continuation,
 
 int display_schema(shell_state_t* state, struct cypher_input_position pos);
 
+int dump_db(shell_state_t* state, struct cypher_input_position pos);
+
 #endif/*NEO4J_EVALUATE_H*/

@@ -72,6 +72,8 @@ static int eval_unexport(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_width(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
+static int eval_dump(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 
 static struct shell_command shell_commands[] =
     { { "begin", eval_begin },
@@ -95,6 +97,7 @@ static struct shell_command shell_commands[] =
       { "schema", eval_schema },
       { "unexport", eval_unexport },
       { "width", eval_width },
+      { "dump", eval_dump },
       { NULL, NULL } };
 
 
@@ -587,4 +590,17 @@ int eval_quit(shell_state_t *state, const cypher_astnode_t *command,
     }
 
     return 1;
+}
+
+
+int eval_dump(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) != 0)
+    {
+        print_error(state, pos, ":dump does not take any arguments");
+        return -1;
+    }
+
+    return dump_db(state, pos);
 }

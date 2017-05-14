@@ -266,7 +266,8 @@ int display_schema(shell_state_t* state, struct cypher_input_position pos)
 {
     if (state->connection == NULL)
     {
-        print_error(state, pos, "Not connected\n");
+        print_error(state, pos,
+                "Not connected (try `:connect <URL>`, or `:help`)");
         return -1;
     }
 
@@ -277,14 +278,14 @@ int display_schema(shell_state_t* state, struct cypher_input_position pos)
             "CALL db.indexes()", neo4j_null);
     if (indexes_result == NULL)
     {
-        print_error_errno(state, pos, errno, "db.indexes() failed");
+        print_error_errno(state, pos, errno, "Unexpected error");
         goto failure;
     }
     constraints_result = neo4j_run(state->connection,
             "CALL db.constraints()", neo4j_null);
     if (constraints_result == NULL)
     {
-        print_error_errno(state, pos, errno, "db.constraints() failed");
+        print_error_errno(state, pos, errno, "Unexpected error");
         goto failure;
     }
 
@@ -352,6 +353,69 @@ failure:
     errsv = errno;
     neo4j_close_results(indexes_result);
     neo4j_close_results(constraints_result);
+    errno = errsv;
+    return -1;
+}
+
+
+int dump_db(shell_state_t* state, struct cypher_input_position pos)
+{
+    if (state->connection == NULL)
+    {
+        print_error(state, pos,
+                "Not connected (try `:connect <URL>`, or `:help`)");
+        return -1;
+    }
+
+    neo4j_result_stream_t *stream = neo4j_run(state->connection,
+            "CALL apoc.dump.all()", neo4j_null);
+    if (stream == NULL)
+    {
+        print_error_errno(state, pos, errno, "Unexpected error");
+        goto failure;
+    }
+
+    neo4j_result_t *result;
+    while ((result = neo4j_fetch_next(stream)) != NULL)
+    {
+        neo4j_value_t statement = neo4j_result_field(result, 0);
+        if (!neo4j_instanceof(statement, NEO4J_STRING))
+        {
+            print_error(state, pos, "Invalid result from apoc.dump.all()\n");
+            goto failure;
+        }
+        fprintf(state->output, "%.*s\n", neo4j_string_length(statement),
+                neo4j_ustring_value(statement));
+    }
+
+    int err;
+    if ((err = neo4j_check_failure(stream)) != 0)
+    {
+        switch (err)
+        {
+        case NEO4J_STATEMENT_EVALUATION_FAILED:
+            print_error(state, pos, "Could not invoke apoc.dump.all() "
+                    "(dump requires that you install the APOC plugin to Neo4j, "
+                    "see https://git.io/neo4j-apoc)");
+            break;
+        default:
+            print_error_errno(state, pos, err, "apoc.dump.all() failed");
+        }
+        goto failure;
+    }
+
+    if (neo4j_close_results(stream))
+    {
+        print_error_errno(state, pos, errno, "Unexpected error");
+        goto failure;
+    }
+
+    return 0;
+
+    int errsv;
+failure:
+    errsv = errno;
+    neo4j_close_results(stream);
     errno = errsv;
     return -1;
 }
