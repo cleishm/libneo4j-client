@@ -59,6 +59,10 @@ static int set_rowlines(shell_state_t *state, const char *value);
 static int unset_rowlines(shell_state_t *state);
 static const char *get_rowlines(shell_state_t *state, char *buf, size_t n);
 
+static int set_timing(shell_state_t *state, const char *value);
+static int unset_timing(shell_state_t *state);
+static const char *get_timing(shell_state_t *state, char *buf, size_t n);
+
 static int set_wrap(shell_state_t *state, const char *value);
 static int unset_wrap(shell_state_t *state);
 static const char *get_wrap(shell_state_t *state, char *buf, size_t n);
@@ -68,19 +72,21 @@ static struct options options[] =
           "render only 7-bit ASCII characters in result tables" },
       { "echo", set_echo, true, unset_echo, get_echo,
           "echo commands and statements before rendering results" },
-      { "insecure", set_insecure, true, unset_insecure, get_insecure,
-          "do not attempt to establish secure connections" },
       { "format", set_format, false, NULL, get_format,
           "set the output format (`table` or `csv`)." },
+      { "insecure", set_insecure, true, unset_insecure, get_insecure,
+          "do not attempt to establish secure connections" },
       { "output", set_output, false, NULL, NULL, NULL },
       { "outfile", set_outfile, false, unset_outfile, get_outfile,
           "redirect output to a file" },
       { "username", set_username, false, unset_username, get_username,
           "the default username for connections" },
-      { "width", set_width, false, unset_width, get_width,
-          "the width to render tables (`auto` for terminal width)" },
       { "rowlines", set_rowlines, true, unset_rowlines, get_rowlines,
           "render a line between each output row in result tables" },
+      { "timing", set_timing, true, unset_timing, get_timing,
+          "display timing information after each query" },
+      { "width", set_width, false, unset_width, get_width,
+          "the width to render tables (`auto` for terminal width)" },
       { "wrap", set_wrap, true, unset_wrap, get_wrap,
           "wrap field values in result tables" },
       { NULL, false, NULL } };
@@ -405,7 +411,39 @@ int unset_rowlines(shell_state_t *state)
 
 const char *get_rowlines(shell_state_t *state, char *buf, size_t n)
 {
-    return (state->render_flags & NEO4J_RENDER_ROW_LINES)? "yes" : "no";
+    return (state->show_timing)? "yes" : "no";
+}
+
+
+int set_timing(shell_state_t *state, const char *value)
+{
+    if (value == NULL || strcmp(value, "yes") == 0)
+    {
+        state->show_timing = true;
+    }
+    else if (strcmp(value, "no") == 0)
+    {
+        state->show_timing = false;
+    }
+    else
+    {
+        fprintf(state->err, "Must set timing to 'yes' or 'no'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_timing(shell_state_t *state)
+{
+    state->show_timing = false;
+    return 0;
+}
+
+
+const char *get_timing(shell_state_t *state, char *buf, size_t n)
+{
+    return (state->show_timing)? "yes" : "no";
 }
 
 

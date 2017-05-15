@@ -185,3 +185,25 @@ int render_plan_table(shell_state_t *state,
     }
     return neo4j_render_plan_table(state->output, plan, width, state->render_flags);
 }
+
+
+int render_timing(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results,
+        unsigned long long client_time)
+{
+    assert(results != NULL);
+    unsigned long long count = neo4j_result_count(results);
+    unsigned long long available = neo4j_results_available_after(results);
+    unsigned long long consumed = neo4j_results_consumed_after(results);
+
+    if (available > 0 && fprintf(state->output,
+            "\n%lld rows returned in %lldms "
+            "(first row after %lldms, rendered after %lldms)\n",
+            count, available + consumed, available, client_time) < 0)
+    {
+        return -1;
+    }
+
+    return 0;
+}

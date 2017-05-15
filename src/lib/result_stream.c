@@ -763,12 +763,15 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         return -1;
     }
 
-    if (neo4j_meta_result_available_after(&(results->available_after),
-            *metadata, description, logger) < 0)
+    long long available_after =
+            neo4j_meta_result_available_after(*metadata, description, logger);
+    if (available_after < 0)
     {
         set_failure(results, errno);
         return -1;
     }
+    results->available_after = available_after;
+
     return 0;
 }
 
@@ -880,12 +883,14 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
         neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
 
-    if (neo4j_meta_result_consumed_after(&(results->consumed_after),
-            *metadata, description, logger) < 0)
+    long long consumed_after =
+            neo4j_meta_result_consumed_after(*metadata, description, logger);
+    if (consumed_after < 0)
     {
         set_failure(results, errno);
         return -1;
     }
+    results->consumed_after = consumed_after;
 
     results->statement_type =
         neo4j_meta_statement_type(*metadata, description, logger);

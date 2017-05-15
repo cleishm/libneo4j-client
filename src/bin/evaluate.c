@@ -21,6 +21,7 @@
 #include "render.h"
 #include <assert.h>
 #include <errno.h>
+#include <sys/time.h>
 
 
 static int not_connected_error(evaluation_continuation_t *self,
@@ -55,6 +56,7 @@ struct evaluation_continuation
 {
     int (*complete)(evaluation_continuation_t *self, shell_state_t *state);
     struct cypher_input_position pos;
+    struct timeval start_time;
     neo4j_result_stream_t *results;
     int err;
     char statement[];
@@ -82,6 +84,12 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
             sizeof(evaluation_continuation_t) + n + 1);
     if (continuation == NULL)
     {
+        return NULL;
+    }
+
+    if (state->show_timing && gettimeofday(&(continuation->start_time), NULL))
+    {
+        free(continuation);
         return NULL;
     }
 
@@ -214,6 +222,23 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     {
         print_error_errno(state, self->pos, errno, "Unexpected error");
         goto cleanup;
+    }
+
+    if (state->show_timing)
+    {
+        struct timeval end_time;
+        if (gettimeofday(&end_time, NULL))
+        {
+            print_error_errno(state, self->pos, errno, "Unexpected error");
+            goto cleanup;
+        }
+        unsigned long long total =
+            (end_time.tv_sec - self->start_time.tv_sec) * 1000 +
+            (end_time.tv_usec - self->start_time.tv_usec) / 1000;
+        if (render_timing(state, self->pos, self->results, total))
+        {
+            goto cleanup;
+        }
     }
 
     result = 0;

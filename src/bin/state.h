@@ -54,6 +54,7 @@ struct shell_state
     renderer_t render;
     int width;
     uint_fast16_t render_flags;
+    bool show_timing;
 
     neo4j_map_entry_t *exports;
     void **exports_storage;

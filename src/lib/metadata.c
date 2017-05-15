@@ -260,79 +260,37 @@ int neo4j_meta_statement_type(neo4j_value_t map, const char *description,
 }
 
 
-int neo4j_meta_result_available_after(unsigned long long *time,
-        neo4j_value_t map, const char *description, neo4j_logger_t *logger)
+long long neo4j_meta_result_available_after(neo4j_value_t map,
+            const char *description, neo4j_logger_t *logger)
 {
-    assert(time != NULL);
     assert(neo4j_type(map) == NEO4J_MAP);
     assert(description != NULL);
 
-    neo4j_value_t val;
-    if (map_get_typed(&val, map, NULL, "result_available_after",
-            NEO4J_INT, true, description, logger))
+    long long val;
+    if (extract_int(&val, map, NULL, "result_available_after",
+                description, logger))
     {
         return -1;
     }
-    if (neo4j_is_null(val))
-    {
-        *time = 0;
-        return 1;
-    }
 
-    int64_t timeval = neo4j_int_value(val);
-    if (timeval < 0 || timeval > UINT_MAX)
-    {
-        neo4j_log_error(logger,
-                "Invalid field in %s: 'result_available_after' out of range",
-                description);
-        errno = EPROTO;
-        return -1;
-    }
-    if ((uint64_t)timeval > ULLONG_MAX)
-    {
-        timeval = ULLONG_MAX;
-    }
-
-    *time = timeval;
-    return 0;
+    return val;
 }
 
 
-int neo4j_meta_result_consumed_after(unsigned long long *time,
-        neo4j_value_t map, const char *description, neo4j_logger_t *logger)
+long long neo4j_meta_result_consumed_after(neo4j_value_t map,
+        const char *description, neo4j_logger_t *logger)
 {
-    assert(time != NULL);
     assert(neo4j_type(map) == NEO4J_MAP);
     assert(description != NULL);
 
-    neo4j_value_t val;
-    if (map_get_typed(&val, map, NULL, "result_consumed_after",
-            NEO4J_INT, true, description, logger))
+    long long val;
+    if (extract_int(&val, map, NULL, "result_consumed_after",
+                description, logger))
     {
         return -1;
     }
-    if (neo4j_is_null(val))
-    {
-        *time = 0;
-        return 1;
-    }
 
-    int64_t timeval = neo4j_int_value(val);
-    if (timeval < 0)
-    {
-        neo4j_log_error(logger,
-                "Invalid field in %s: 'result_consumed_after' out of range",
-                description);
-        errno = EPROTO;
-        return -1;
-    }
-    if ((uint64_t)timeval > ULLONG_MAX)
-    {
-        timeval = ULLONG_MAX;
-    }
-
-    *time = timeval;
-    return 0;
+    return val;
 }
 
 
