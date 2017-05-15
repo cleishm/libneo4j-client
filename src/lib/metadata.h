@@ -104,9 +104,8 @@ int neo4j_meta_fieldnames(const char * const **names, unsigned int *nnames,
 /**
  * Extract statement type from a metadata map.
  *
- * Checks for a "type" entry, of type String. If found, the matching
- * statement type is returned. If it is not found, or if the value is not
- * a known statement type.
+ * Checks for a "type" entry, of type String. If found, and is of
+ * a known type, the matching statement type is returned.
  *
  * @internal
  *

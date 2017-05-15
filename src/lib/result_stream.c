@@ -480,8 +480,9 @@ int run_rs_statement_type(neo4j_result_stream_t *self)
 {
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
-    if (results == NULL || results->failure != 0 ||
-            await(results, &(results->streaming)))
+    REQUIRE(results != NULL, -1);
+
+    if (results->failure != 0 || await(results, &(results->streaming)))
     {
         assert(results->failure != 0);
         errno = results->failure;
@@ -496,8 +497,9 @@ struct neo4j_statement_plan *run_rs_statement_plan(neo4j_result_stream_t *self)
 {
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
-    if (results == NULL || results->failure != 0 ||
-            await(results, &(results->streaming)))
+    REQUIRE(results != NULL, NULL);
+
+    if (results->failure != 0 || await(results, &(results->streaming)))
     {
         assert(results->failure != 0);
         errno = results->failure;
@@ -517,9 +519,13 @@ struct neo4j_update_counts run_rs_update_counts(neo4j_result_stream_t *self)
 {
     run_result_stream_t *results = container_of(self,
             run_result_stream_t, _result_stream);
+    if (results == NULL)
+    {
+        errno = EINVAL;
+        goto failure;
+    }
 
-    if (results == NULL || results->failure != 0 ||
-            await(results, &(results->streaming)))
+    if (results->failure != 0 || await(results, &(results->streaming)))
     {
         assert(results->failure != 0);
         errno = results->failure;
