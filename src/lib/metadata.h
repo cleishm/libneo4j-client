@@ -102,6 +102,42 @@ int neo4j_meta_fieldnames(const char * const **names, unsigned int *nnames,
         neo4j_logger_t *logger);
 
 /**
+ * Extract a timing value from a metadata map.
+ *
+ * Checks for a "result_available_after" entry, of type Integer.
+ *
+ * @internal
+ *
+ * @param [time] A pointer to an unsigned int, where the value will be written.
+ * @param [map] The metadata map.
+ * @param [description] A description of the message from which the metadata
+ *         came, for use when logging errors.
+ * @param [logger] A logger to emit error messages to.
+ * @return 0 if a value was found, +1 if it was not, or -1 if an error occurs
+ *         (errno will be set).
+ */
+int neo4j_meta_result_available_after(unsigned long long *time,
+        neo4j_value_t map, const char *description, neo4j_logger_t *logger);
+
+/**
+ * Extract a timing value from a metadata map.
+ *
+ * Checks for a "result_consumed_after" entry, of type Integer.
+ *
+ * @internal
+ *
+ * @param [time] A pointer to an unsigned int, where the value will be written.
+ * @param [map] The metadata map.
+ * @param [description] A description of the message from which the metadata
+ *         came, for use when logging errors.
+ * @param [logger] A logger to emit error messages to.
+ * @return 0 if a value was found, +1 if it was not, or -1 if an error occurs
+ *         (errno will be set).
+ */
+int neo4j_meta_result_consumed_after(unsigned long long *time,
+        neo4j_value_t map, const char *description, neo4j_logger_t *logger);
+
+/**
  * Extract statement type from a metadata map.
  *
  * Checks for a "type" entry, of type String. If found, and is of

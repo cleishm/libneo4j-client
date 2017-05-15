@@ -76,6 +76,27 @@ neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results)
 }
 
 
+unsigned long long neo4j_result_count(neo4j_result_stream_t *results)
+{
+    REQUIRE(results != NULL, -1);
+    return results->count(results);
+}
+
+
+unsigned long long neo4j_results_available_after(neo4j_result_stream_t *results)
+{
+    REQUIRE(results != NULL, -1);
+    return results->available_after(results);
+}
+
+
+unsigned long long neo4j_results_consumed_after(neo4j_result_stream_t *results)
+{
+    REQUIRE(results != NULL, -1);
+    return results->consumed_after(results);
+}
+
+
 int neo4j_statement_type(neo4j_result_stream_t *results)
 {
     REQUIRE(results != NULL, -1);
@@ -163,6 +184,8 @@ struct run_result_stream
     int statement_type;
     struct neo4j_statement_plan *statement_plan;
     struct neo4j_update_counts update_counts;
+    unsigned long long available_after;
+    unsigned long long consumed_after;
     int failure;
     struct neo4j_failure_details failure_details;
     unsigned int nfields;
@@ -170,6 +193,7 @@ struct run_result_stream
     result_record_t *records;
     result_record_t *records_tail;
     result_record_t *last_fetched;
+    unsigned long long nrecords;
     unsigned int awaiting_records;
 };
 
@@ -184,6 +208,9 @@ static unsigned int run_rs_nfields(neo4j_result_stream_t *results);
 static const char *run_rs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
 static neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self);
+static unsigned long long run_rs_count(neo4j_result_stream_t *self);
+static unsigned long long run_rs_available_after(neo4j_result_stream_t *self);
+static unsigned long long run_rs_consumed_after(neo4j_result_stream_t *self);
 static int run_rs_statement_type(neo4j_result_stream_t *self);
 static struct neo4j_statement_plan *run_rs_statement_plan(
         neo4j_result_stream_t *self);
@@ -331,6 +358,9 @@ run_result_stream_t *run_rs_open(neo4j_connection_t *connection)
     result_stream->nfields = run_rs_nfields;
     result_stream->fieldname = run_rs_fieldname;
     result_stream->fetch_next = run_rs_fetch_next;
+    result_stream->count = run_rs_count;
+    result_stream->available_after = run_rs_available_after;
+    result_stream->consumed_after = run_rs_consumed_after;
     result_stream->statement_type = run_rs_statement_type;
     result_stream->statement_plan = run_rs_statement_plan;
     result_stream->update_counts = run_rs_update_counts;
@@ -473,6 +503,49 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
 
     results->last_fetched = record;
     return &(record->_result);
+}
+
+
+unsigned long long run_rs_count(neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
+    REQUIRE(results != NULL, 0);
+    return results->nrecords;
+}
+
+
+unsigned long long run_rs_available_after(neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
+    REQUIRE(results != NULL, 0);
+
+    if (results->failure != 0 || await(results, &(results->starting)))
+    {
+        assert(results->failure != 0);
+        errno = results->failure;
+        return 0;
+    }
+
+    return results->available_after;
+}
+
+
+unsigned long long run_rs_consumed_after(neo4j_result_stream_t *self)
+{
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
+    REQUIRE(results != NULL, 0);
+
+    if (results->failure != 0 || await(results, &(results->streaming)))
+    {
+        assert(results->failure != 0);
+        errno = results->failure;
+        return 0;
+    }
+
+    return results->consumed_after;
 }
 
 
@@ -689,6 +762,13 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         set_failure(results, errno);
         return -1;
     }
+
+    if (neo4j_meta_result_available_after(&(results->available_after),
+            *metadata, description, logger) < 0)
+    {
+        set_failure(results, errno);
+        return -1;
+    }
     return 0;
 }
 
@@ -800,6 +880,13 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
         neo4j_metadata_log(logger, NEO4J_LOG_TRACE, description, *metadata);
     }
 
+    if (neo4j_meta_result_consumed_after(&(results->consumed_after),
+            *metadata, description, logger) < 0)
+    {
+        set_failure(results, errno);
+        return -1;
+    }
+
     results->statement_type =
         neo4j_meta_statement_type(*metadata, description, logger);
     if (results->statement_type < 0)
@@ -865,6 +952,8 @@ int append_result(run_result_stream_t *results,
         errno = EPROTO;
         return -1;
     }
+
+    (results->nrecords)++;
 
     if (!results->streaming)
     {

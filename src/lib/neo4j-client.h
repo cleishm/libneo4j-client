@@ -1792,6 +1792,40 @@ struct neo4j_failure_details
 const struct neo4j_failure_details *neo4j_failure_details(
         neo4j_result_stream_t *results);
 
+/*
+ * Return the number of records received in a result stream.
+ *
+ * This value will continue to increase until all results have been fetched.
+ *
+ * @param [results] The result stream.
+ * @return The number of results.
+ */
+unsigned long long neo4j_result_count(
+        neo4j_result_stream_t *results);
+
+/*
+ * Return the reported time until the first record was available.
+ *
+ * @param [results] The result stream.
+ * @return The time, in milliseconds, or 0 if it was not available.
+ */
+unsigned long long neo4j_results_available_after(
+        neo4j_result_stream_t *results);
+
+/*
+ * Return the reported time until all records were consumed.
+ *
+ * @attention As the consumption time is only available at the end of the result
+ * stream, invoking this function will will result in any unfetched results
+ * being pulled from the server and held in memory. It is usually better to
+ * exhaust the stream using neo4j_fetch_next() before invoking this
+ * method.
+ *
+ * @param [results] The result stream.
+ * @return The time, in milliseconds, or 0 if it was not available.
+ */
+unsigned long long neo4j_results_consumed_after(neo4j_result_stream_t *results);
+
 
 #define NEO4J_READ_ONLY_STATEMENT 0
 #define NEO4J_WRITE_ONLY_STATEMENT 1

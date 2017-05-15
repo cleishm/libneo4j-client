@@ -99,6 +99,32 @@ struct neo4j_result_stream
     neo4j_result_t *(*fetch_next)(neo4j_result_stream_t *self);
 
     /**
+     * Return the number of records received.
+     *
+     * This value will continue to increase until all results have been fetched.
+     *
+     * @param [self] This result stream.
+     * @return The number of result records.
+     */
+    unsigned long long (*count)(neo4j_result_stream_t *results);
+
+    /**
+     * Return the reported time until the first record was available.
+     *
+     * @param [self] This result stream.
+     * @return The time, in milliseconds.
+     */
+    unsigned long long (*available_after)(neo4j_result_stream_t *self);
+
+    /**
+     * Return the reported time until all records were consumed.
+     *
+     * @param [self] This result stream.
+     * @return The time, in milliseconds.
+     */
+    unsigned long long (*consumed_after)(neo4j_result_stream_t *self);
+
+    /**
      * Return the update counts for the result stream.
      *
      * @attention As the update counts are only available at the end of the
