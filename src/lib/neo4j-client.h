@@ -1938,9 +1938,13 @@ struct neo4j_statement_execution_step
     /** The estimated number of rows to be handled by this step. */
     double estimated_rows;
     /** The number of rows handled by this step (for profiled plans only). */
-    long long rows;
-    /** The number of db_hits requied (for profiled plans only). */
-    long long db_hits;
+    unsigned long long rows;
+    /** The number of db_hits (for profiled plans only). */
+    unsigned long long db_hits;
+    /** The number of page cache hits (for profiled plans only). */
+    unsigned long long page_cache_hits;
+    /** The number of page cache misses (for profiled plans only). */
+    unsigned long long page_cache_misses;
     /** An array containing the sources for this step. */
     struct neo4j_statement_execution_step **sources;
     /** The number of sources. */

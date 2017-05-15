@@ -36,6 +36,8 @@ static char *extract_string(neo4j_value_t map, const char *path,
         neo4j_logger_t *logger);
 static int extract_int(long long *i, neo4j_value_t map, const char *path,
         const char *key, const char *description, neo4j_logger_t *logger);
+static long long extract_uint(neo4j_value_t map, const char *path,
+        const char *key, const char *description, neo4j_logger_t *logger);
 static int extract_double(double *d, neo4j_value_t map, const char *path,
         const char *key, const char *description, neo4j_logger_t *logger);
 static int extract_string_list(const char * const **strings,
@@ -265,15 +267,8 @@ long long neo4j_meta_result_available_after(neo4j_value_t map,
 {
     assert(neo4j_type(map) == NEO4J_MAP);
     assert(description != NULL);
-
-    long long val;
-    if (extract_int(&val, map, NULL, "result_available_after",
-                description, logger))
-    {
-        return -1;
-    }
-
-    return val;
+    return extract_uint(map, NULL, "result_available_after",
+                description, logger);
 }
 
 
@@ -282,15 +277,8 @@ long long neo4j_meta_result_consumed_after(neo4j_value_t map,
 {
     assert(neo4j_type(map) == NEO4J_MAP);
     assert(description != NULL);
-
-    long long val;
-    if (extract_int(&val, map, NULL, "result_consumed_after",
-                description, logger))
-    {
-        return -1;
-    }
-
-    return val;
+    return extract_uint(map, NULL, "result_consumed_after",
+                description, logger);
 }
 
 
@@ -546,16 +534,35 @@ struct neo4j_statement_execution_step *meta_execution_steps(
         goto failure;
     }
 
-    if (extract_int(&(step->rows), map, path, "rows", description, logger))
+    long long rows;
+    if ((rows = extract_uint(map, path, "rows", description, logger)) < 0)
     {
         goto failure;
     }
+    step->rows = (unsigned long long)rows;
 
-    if (extract_int(&(step->db_hits), map, path, "dbHits", description,
-                logger))
+    long long db_hits;
+    if ((db_hits = extract_uint(map, path, "dbHits", description, logger)) < 0)
     {
         goto failure;
     }
+    step->db_hits = (unsigned long long)db_hits;
+
+    long long page_cache_hits;
+    if ((page_cache_hits = extract_uint(map, path, "pageCacheHits",
+                description, logger)) < 0)
+    {
+        goto failure;
+    }
+    step->page_cache_hits = (unsigned long long)page_cache_hits;
+
+    long long page_cache_misses;
+    if ((page_cache_misses = extract_uint(map, path, "pageCacheMisses",
+                description, logger)) < 0)
+    {
+        goto failure;
+    }
+    step->page_cache_misses = (unsigned long long)page_cache_misses;
 
     neo4j_value_t children;
     if (map_get_typed(&children, map, path, "children", NEO4J_LIST,
@@ -675,6 +682,18 @@ int extract_int(long long *i, neo4j_value_t map, const char *path,
     }
     *i = neo4j_int_value(val);
     return 0;
+}
+
+
+long long extract_uint(neo4j_value_t map, const char *path,
+        const char *key, const char *description, neo4j_logger_t *logger)
+{
+    long long val;
+    if (extract_int(&val, map, path, key, description, logger))
+    {
+        return -1;
+    }
+    return (val > 0)? val : 0;
 }
 
 

@@ -420,6 +420,8 @@ ssize_t build_args_value(neo4j_value_t args, char **buffer, size_t *bufcap)
             neo4j_string("runtime-impl"),
             neo4j_string("EstimatedRows"),
             neo4j_string("DbHits"),
+            neo4j_string("PageCacheHits"),
+            neo4j_string("PageCacheMisses"),
             neo4j_string("Rows"),
             neo4j_string("Time")
         };
