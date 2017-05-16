@@ -2041,7 +2041,8 @@ void neo4j_release(neo4j_result_t *result);
 #define NEO4J_RENDER_ASCII_ART (1<<3)
 #define NEO4J_RENDER_ROW_LINES (1<<4)
 #define NEO4J_RENDER_WRAP_VALUES (1<<5)
-#define NEO4J_RENDER_ANSI_COLOR (1<<6)
+#define NEO4J_RENDER_NO_WRAP_MARKERS (1<<6)
+#define NEO4J_RENDER_ANSI_COLOR (1<<7)
 
 /**
  * Render a result stream as a table.
@@ -2053,6 +2054,8 @@ void neo4j_release(neo4j_result_t *result);
  * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
  * - NEO4J_RENDER_ROW_LINES - render a line between each output row.
  * - NEO4J_RENDER_WRAP_VALUES - wrap oversized values over multiple lines.
+ * - NEO4J_RENDER_NO_WRAP_MARKERS - don't indicate wrapping of values (should
+ * be used with NEO4J_RENDER_ROWLINES).
  * - NEO4J_RENDER_ANSI_COLOR - use ANSI escape codes for colorization.
  *
  * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
@@ -2093,6 +2096,8 @@ extern const struct neo4j_ctable_colorization *neo4j_ctable_ansi_colorization;
  * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
  * - NEO4J_RENDER_ROW_LINES - render a line between each output row.
  * - NEO4J_RENDER_WRAP_VALUES - wrap oversized values over multiple lines.
+ * - NEO4J_RENDER_NO_WRAP_MARKERS - don't indicate wrapping of values (should
+ * be used with NEO4J_RENDER_ROWLINES).
  *
  * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *

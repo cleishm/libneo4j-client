@@ -32,6 +32,7 @@ struct border_glifs
     const char *head_corners[3];
     const char *middle_corners[3];
     const char *bottom_corners[3];
+    const char *wrap;
     const char *overflow;
 };
 
@@ -44,6 +45,7 @@ static const struct border_glifs ascii_border_glifs =
       .head_corners = { "+", "+", "+" },
       .middle_corners = { "+", "+", "+" },
       .bottom_corners = { "+", "+", "+" },
+      .wrap = "=",
       .overflow = "=" };
 
 #if HAVE_LANGINFO_CODESET
@@ -55,6 +57,7 @@ static const struct border_glifs u8_border_glifs =
       .head_corners = { u8"\u255E", u8"\u256A", u8"\u2561" },
       .middle_corners = { u8"\u251C", u8"\u253C", u8"\u2524" },
       .bottom_corners = { u8"\u2514", u8"\u2534", u8"\u2518" },
+      .wrap = u8"\u2026",
       .overflow = u8"\u2026" };
 #endif
 
@@ -269,6 +272,39 @@ int render_hrule(FILE *stream, unsigned int ncolumns,
 }
 
 
+int render_wrap_marker(FILE *stream, uint_fast32_t flags,
+        const char * const color[2])
+{
+    assert(stream != NULL);
+    assert(color != NULL);
+
+    const struct border_glifs *glifs = glifs_for_encoding(flags);
+    if (fputs(color[0], stream) == EOF)
+    {
+        return -1;
+    }
+    if (flags & NEO4J_RENDER_NO_WRAP_MARKERS)
+    {
+        if (fputc(' ', stream) == EOF)
+        {
+            return -1;
+        }
+    }
+    else
+    {
+        if (fputs(glifs->wrap, stream) == EOF)
+        {
+            return -1;
+        }
+    }
+    if (fputs(color[1], stream) == EOF)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
 int render_overflow(FILE *stream, uint_fast32_t flags,
         const char * const color[2])
 {
@@ -358,7 +394,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
         }
         else
         {
-            if (render_overflow(stream, flags, colors->border))
+            if (render_wrap_marker(stream, flags, colors->border))
             {
                 goto cleanup;
             }
@@ -416,7 +452,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
             }
             if (n > 0)
             {
-                if (render_overflow(stream, flags, colors->border))
+                if (render_wrap_marker(stream, flags, colors->border))
                 {
                     goto cleanup;
                 }
@@ -444,7 +480,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
             }
             else
             {
-                if (render_overflow(stream, flags, colors->border))
+                if (render_wrap_marker(stream, flags, colors->border))
                 {
                     goto cleanup;
                 }
