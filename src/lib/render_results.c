@@ -84,17 +84,18 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
 
     // calculate size of columns, and set undersize if there's less columns
     // than fields
+    unsigned int min_width = (flags & NEO4J_RENDER_WRAP_VALUES)? 4 : 2;
     unsigned int column_width = (nfields == 0 || width <= (nfields+1))? 0 :
         (width - nfields - 1) / nfields;
     bool undersize = false;
-    while (column_width < 2 && nfields > 0)
+    while (column_width < min_width && nfields > 0)
     {
         undersize = true;
         nfields--;
         column_width = (nfields == 0 || width <= (nfields+1))? 0 :
             (width - nfields - 1) / nfields;
     }
-    assert(column_width >= 2 || nfields == 0);
+    assert(column_width >= min_width || nfields == 0);
 
     // create array of column widths
     unsigned int *widths = NULL;

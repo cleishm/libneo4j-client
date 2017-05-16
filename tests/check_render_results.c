@@ -351,6 +351,46 @@ START_TEST (render_table_with_wrapped_values)
 END_TEST
 
 
+START_TEST (render_undersized_table_with_wrapped_values)
+{
+    const char *fieldnames[4] =
+        { "first", "last", "role", "title" };
+    const char *table[3][4] =
+        { { "Keanu", "Reeves", "Neo", "The Matrix" },
+          { "Hugo", "Weaving", "V", "V for Vendetta" },
+          { "", "Berry", "Luisa Rey", "Cloud Atlas" } };
+    neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
+    int result = neo4j_render_table(memstream, results, 6,
+            NEO4J_RENDER_ASCII | NEO4J_RENDER_WRAP_VALUES |
+            NEO4J_RENDER_ROW_LINES);
+    ck_assert(result == 0);
+    fflush(memstream);
+    neo4j_close_results(results);
+
+    const char *expect = "\n"
+//1       10        20        30        40        50        60        70
+ "+----+-\n"
+ "| fi=|=\n"
+ "|=rs=|=\n"
+ "|=t  |=\n"
+ "+----+-\n"
+ "| Ke=|=\n"
+ "|=an=|=\n"
+ "|=u  |=\n"
+ "+----+-\n"
+ "| Hu=|=\n"
+ "|=go |=\n"
+ "+----+-\n"
+ "|    |=\n"
+ "+----+-\n";
+    ck_assert_str_eq(memstream_buffer, expect);
+}
+END_TEST
+
+
 START_TEST (render_table_with_nulls)
 {
     const char *fieldnames[3] =
@@ -522,6 +562,7 @@ TCase* render_results_tcase(void)
     tcase_add_test(tc, render_min_width_table);
     tcase_add_test(tc, render_zero_col_table);
     tcase_add_test(tc, render_table_with_wrapped_values);
+    tcase_add_test(tc, render_undersized_table_with_wrapped_values);
     tcase_add_test(tc, render_table_with_nulls);
     tcase_add_test(tc, render_table_with_visible_nulls);
     tcase_add_test(tc, render_no_table_if_stream_has_error);
