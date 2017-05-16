@@ -33,6 +33,10 @@ static int set_ascii(shell_state_t *state, const char *value);
 static int unset_ascii(shell_state_t *state);
 static const char *get_ascii(shell_state_t *state, char *buf, size_t n);
 
+static int set_colorize(shell_state_t *state, const char *value);
+static int unset_colorize(shell_state_t *state);
+static const char *get_colorize(shell_state_t *state, char *buf, size_t n);
+
 static int set_echo(shell_state_t *state, const char *value);
 static int unset_echo(shell_state_t *state);
 static const char *get_echo(shell_state_t *state, char *buf, size_t n);
@@ -70,6 +74,8 @@ static const char *get_wrap(shell_state_t *state, char *buf, size_t n);
 static struct options options[] =
     { { "ascii", set_ascii, true, unset_ascii, get_ascii,
           "render only 7-bit ASCII characters in result tables" },
+      { "colorize", set_colorize, true, unset_colorize, get_colorize,
+          "render ANSI colorized output" },
       { "echo", set_echo, true, unset_echo, get_echo,
           "echo commands and statements before rendering results" },
       { "format", set_format, false, NULL, get_format,
@@ -200,6 +206,40 @@ int unset_ascii(shell_state_t *state)
 const char *get_ascii(shell_state_t *state, char *buf, size_t n)
 {
     return (state->render_flags & NEO4J_RENDER_ASCII)? "on" : "off";
+}
+
+
+int set_colorize(shell_state_t *state, const char *value)
+{
+    if (value == NULL || strcmp(value, "on") == 0)
+    {
+        state->error_colorize = ansi_error_colorization;
+        state->render_flags |= NEO4J_RENDER_ANSI_COLOR;
+    }
+    else if (strcmp(value, "off") == 0)
+    {
+        state->error_colorize = no_error_colorization;
+        state->render_flags &= ~NEO4J_RENDER_ANSI_COLOR;
+    }
+    else
+    {
+        fprintf(state->err, "Must set color to 'on' or 'off'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_colorize(shell_state_t *state)
+{
+    state->render_flags &= ~NEO4J_RENDER_ANSI_COLOR;
+    return 0;
+}
+
+
+const char *get_colorize(shell_state_t *state, char *buf, size_t n)
+{
+    return (state->render_flags & NEO4J_RENDER_ANSI_COLOR)? "on" : "off";
 }
 
 
