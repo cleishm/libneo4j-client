@@ -85,6 +85,8 @@ const struct neo4j_ctable_colorization *neo4j_ctable_ansi_colorization =
 static ssize_t render_field(FILE *stream, const char *s, size_t n,
         unsigned int width, uint_fast32_t flags, const char * const color[2]);
 static int write_unprintable(FILE *stream, int codepoint, int width);
+static int indirect_uint_cmp(const void *p1, const void *p2);
+static unsigned int sum_uints(unsigned int n, unsigned int v[]);
 
 
 uint_fast32_t normalize_render_flags(uint_fast32_t flags)
@@ -639,4 +641,127 @@ int write_unprintable(FILE *stream, int codepoint, int width)
         return -1;
     }
     return n;
+}
+
+
+int fit_column_widths(unsigned int n, unsigned int widths[],
+        unsigned int min, unsigned int target_total)
+{
+    REQUIRE(n > 0, -1);
+    REQUIRE(widths != NULL, -1);
+    REQUIRE(min > 0, -1);
+
+    unsigned int max_cols = target_total / min;
+    for (unsigned int i = n; i-- > max_cols; )
+    {
+        --n;
+        widths[i] = 0;
+    }
+
+    if (n == 0)
+    {
+        return 0;
+    }
+
+    unsigned int **ordered = calloc(n, sizeof(unsigned int *));
+    if (ordered == NULL)
+    {
+        return -1;
+    }
+
+    for (unsigned int i = n; i-- > 0; )
+    {
+        ordered[i] = &(widths[i]);
+    }
+    qsort(ordered, n, sizeof(unsigned int *), indirect_uint_cmp);
+
+    unsigned int total;
+    do
+    {
+        total = sum_uints(n, widths);
+        if (total <= target_total)
+        {
+            break;
+        }
+
+        unsigned int target = total - target_total;
+        while (target > 0)
+        {
+            unsigned int depth = 0;
+            qsort(ordered, n, sizeof(unsigned int *), indirect_uint_cmp);
+
+            unsigned int cw = *(ordered[0]);
+            unsigned int cn;
+            do
+            {
+                ++depth;
+                cn = (n > depth)? *(ordered[depth]) : 0;
+                assert(cw >= cn);
+            } while (cw <= cn);
+
+            unsigned int creduce = cw - cn;
+            unsigned int reduce = creduce * depth;
+            if ((reduce / depth != creduce) || // check for overflow
+                    reduce > target)
+            {
+                reduce = target;
+            }
+            creduce = reduce / depth;
+            if (creduce == 0)
+            {
+                creduce = 1;
+            }
+            for (unsigned int i = depth; i-- > 0 && target > 0; )
+            {
+                *(ordered[i]) -= creduce;
+                target -= creduce;
+            }
+        }
+    } while (total == UINT_MAX);
+
+    while (total < target_total)
+    {
+        unsigned int cadd = (target_total - total) / n;
+        if (cadd == 0)
+        {
+            cadd = 1;
+        }
+        for (unsigned int i = 0; i < n && total < target_total; ++i)
+        {
+            widths[i] += cadd;
+            total += cadd;
+        }
+    }
+
+    free(ordered);
+    return 0;
+}
+
+
+int indirect_uint_cmp(const void *p1, const void *p2)
+{
+    unsigned int v1 = **((const unsigned int * const *)p1);
+    unsigned int v2 = **((const unsigned int * const *)p2);
+    // if values are equal, compare pointers to achieve a stable sort
+    if (v1 == v2)
+    {
+        return (p1 < p2)? -1 : (p1 == p2)? 0 : 1;
+    }
+    // sort largest first
+    return (v1 > v2)? -1 : 1;
+}
+
+
+unsigned int sum_uints(unsigned int n, unsigned int v[])
+{
+    unsigned int sum = 0;
+    for (unsigned int i = n; (i--) > 0; )
+    {
+        if ((UINT_MAX - sum) < v[i])
+        {
+            return UINT_MAX;
+        }
+        sum += v[i];
+    }
+    return sum;
 }

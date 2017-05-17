@@ -69,4 +69,7 @@ int render_row(FILE *stream, unsigned int ncolumns,
         const char * const field_color[2],
         render_row_callback_t callback, void *cdata);
 
+int fit_column_widths(unsigned int n, unsigned int widths[],
+        unsigned int min, unsigned int max_total);
+
 #endif/*NEO4J_RENDER_H*/

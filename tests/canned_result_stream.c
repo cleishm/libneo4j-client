@@ -56,6 +56,8 @@ static unsigned int crs_nfields(neo4j_result_stream_t *self);
 static const char *crs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
 static neo4j_result_t *crs_fetch_next(neo4j_result_stream_t *self);
+static neo4j_result_t *crs_peek(neo4j_result_stream_t *self,
+        unsigned int depth);
 static int crs_close(neo4j_result_stream_t *self);
 static neo4j_value_t cr_canned_field(const neo4j_result_t *self,
         unsigned int index);
@@ -97,6 +99,7 @@ neo4j_result_stream_t *neo4j_canned_result_stream(
     rs->nfields = crs_nfields;
     rs->fieldname = crs_fieldname;
     rs->fetch_next = crs_fetch_next;
+    rs->peek = crs_peek;
     rs->close = crs_close;
     return rs;
 }
@@ -173,6 +176,18 @@ neo4j_result_t *crs_fetch_next(neo4j_result_stream_t *self)
         return NULL;
     }
     return (neo4j_result_t *)&(crs->results[(crs->next_result)++]);
+}
+
+
+neo4j_result_t *crs_peek(neo4j_result_stream_t *self, unsigned int depth)
+{
+    canned_result_stream_t *crs = container_of(self,
+            canned_result_stream_t, _result_stream);
+    if (depth >= crs->nresults)
+    {
+        return NULL;
+    }
+    return (neo4j_result_t *)&(crs->results[depth]);
 }
 
 

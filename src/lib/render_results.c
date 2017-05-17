@@ -22,6 +22,12 @@
 #include <assert.h>
 
 
+#define NEO4J_RENDER_AUTO_COLWIDTH_INSPECT 100
+
+
+static int peek_widths(neo4j_result_stream_t *results, unsigned int flags,
+        unsigned int nfields, unsigned int widths[]);
+
 struct obtain_fieldname_cb_data
 {
     neo4j_result_stream_t *results;
@@ -41,8 +47,8 @@ static ssize_t obtain_fieldname(void *data, unsigned int n, const char **s,
 ssize_t obtain_result_field(void *data, unsigned int n, const char **s,
         bool *duplicate);
 
-static ssize_t render_field_value(neo4j_value_t value, const char **s, char **buf,
-        size_t *bufcap, uint_fast32_t flags);
+static ssize_t render_field_value(neo4j_value_t value, const char **s,
+        char **buf, size_t *bufcap, uint_fast32_t flags);
 static size_t value_tostring(neo4j_value_t *value, char *buf, size_t n,
         uint_fast32_t flags);
 static int write_csv_quoted_string(FILE *stream, const char *s, size_t n);
@@ -82,21 +88,6 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
 
     flags = normalize_render_flags(flags);
 
-    // calculate size of columns, and set undersize if there's less columns
-    // than fields
-    unsigned int min_width = (flags & NEO4J_RENDER_WRAP_VALUES)? 4 : 2;
-    unsigned int column_width = (nfields == 0 || width <= (nfields+1))? 0 :
-        (width - nfields - 1) / nfields;
-    bool undersize = false;
-    while (column_width < min_width && nfields > 0)
-    {
-        undersize = true;
-        nfields--;
-        column_width = (nfields == 0 || width <= (nfields+1))? 0 :
-            (width - nfields - 1) / nfields;
-    }
-    assert(column_width >= min_width || nfields == 0);
-
     // create array of column widths
     unsigned int *widths = NULL;
     if (nfields > 0 &&
@@ -104,19 +95,35 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
     {
         return -1;
     }
+
+    size_t bufcap = 0;
+    char *buffer = NULL;
+
+    unsigned int min_col_width = (flags & NEO4J_RENDER_WRAP_VALUES)? 5 : 3;
+
     for (unsigned int i = 0; i < nfields; ++i)
     {
-        widths[i] = column_width;
+        widths[i] = min_col_width;
     }
-
-    // allocate a buffer for staging values before output
-    char *buffer = NULL;
-    size_t bufcap = column_width;
-    if (column_width > 0 && (buffer = malloc(bufcap)) == NULL)
+    if (peek_widths(results, flags, nfields, widths))
     {
         goto failure;
     }
+    if (fit_column_widths(nfields, widths, min_col_width,
+            width - ((nfields > ((width - 1) / min_col_width))? 2 : 1)))
+    {
+        goto failure;
+    }
+    for (unsigned int i = 0; i < nfields; ++i)
+    {
+        if (widths[i] > 0)
+        {
+            --(widths[i]);
+        }
+    }
+    bool undersize = (widths[nfields - 1] == 0);
 
+    // render head
     if (render_hrule(stream, nfields, widths, HLINE_TOP, undersize, flags,
                 colors))
     {
@@ -192,6 +199,64 @@ failure:
 }
 
 
+int peek_widths(neo4j_result_stream_t *results, unsigned int flags,
+        unsigned int nfields, unsigned int widths[])
+{
+    for (unsigned int i = 0; i < nfields; ++i)
+    {
+        const char *s = neo4j_fieldname(results, i);
+        size_t l = (s == NULL)? 0 : strlen(s);
+        if (l > UINT_MAX-3)
+        {
+            l = UINT_MAX-3;
+        }
+        l += 3;
+        if (widths[i] < l)
+        {
+            widths[i] = l;
+        }
+    }
+
+    for (unsigned int depth = 0; depth < NEO4J_RENDER_AUTO_COLWIDTH_INSPECT;
+            ++depth)
+    {
+        neo4j_result_t *result = neo4j_peek(results, depth);
+        if (result == NULL)
+        {
+            break;
+        }
+        for (unsigned int i = 0; i < nfields; ++i)
+        {
+            neo4j_value_t value = neo4j_result_field(result, i);
+            size_t l = 0;
+
+            if (neo4j_type(value) == NEO4J_STRING &&
+                    !(flags & NEO4J_RENDER_QUOTE_STRINGS))
+            {
+                const char *s = neo4j_ustring_value(value);
+                l = (s == NULL)? 0 : strlen(s);
+            }
+            else
+            {
+                l = value_tostring(&value, NULL, 0, flags);
+            }
+            if (l > UINT_MAX-3)
+            {
+                l = UINT_MAX-3;
+            }
+            l += 3;
+
+            if (widths[i] < l)
+            {
+                widths[i] = l;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 ssize_t obtain_fieldname(void *data, unsigned int n, const char **s,
         bool *duplicate)
 {
@@ -227,7 +292,6 @@ ssize_t obtain_result_field(void *data, unsigned int n, const char **s,
 ssize_t render_field_value(neo4j_value_t value, const char **s,
         char **buf, size_t *bufcap, uint_fast32_t flags)
 {
-    assert(*bufcap > 0);
     size_t length;
     do
     {
@@ -237,12 +301,13 @@ ssize_t render_field_value(neo4j_value_t value, const char **s,
             break;
         }
 
-        char *newbuf = realloc(*buf, length + 1);
+        size_t newcap = length + 80;
+        char *newbuf = realloc(*buf, newcap);
         if (newbuf == NULL)
         {
             return -1;
         }
-        *bufcap = length + 1;
+        *bufcap = newcap;
         *buf = newbuf;
     } while (true);
 
@@ -254,10 +319,13 @@ ssize_t render_field_value(neo4j_value_t value, const char **s,
 size_t value_tostring(neo4j_value_t *value, char *buf, size_t n,
         uint_fast32_t flags)
 {
-    assert(n > 0);
     if (!(flags & NEO4J_RENDER_SHOW_NULLS) && neo4j_is_null(*value))
     {
-        buf[0] = '\0';
+        if (n > 0)
+        {
+            assert(buf != NULL);
+            buf[0] = '\0';
+        }
         return 0;
     }
     return neo4j_ntostring(*value, buf, n);
