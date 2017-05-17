@@ -1657,6 +1657,10 @@ const char *neo4j_fieldname(neo4j_result_stream_t *results,
 /**
  * Fetch the next record from the result stream.
  *
+ * @attention The pointer to the result will only remain valid until the
+ * next call to neo4j_fetch_next() or until the result stream is closed. To
+ * hold the result longer, use neo4j_retain() and neo4j_release().
+ *
  * @param [results] The result stream.
  * @return The next result, or `NULL` if the stream is exahusted or an
  *         error has occurred (errno will be set).
@@ -1665,15 +1669,32 @@ __neo4j_must_check
 neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results);
 
 /**
+ * Peek at a record in the result stream.
+ *
+ * @attention The pointer to the result will only remain valid until it is
+ * retreived via neo4j_fetch_next() or until the result stream is closed. To
+ * hold the result longer, use neo4j_retain() and neo4j_release().
+ *
+ * @attention All results up to the specified depth will be retrieved and
+ * held in memory. Avoid using this method with large depths.
+ *
+ * @param [results] The result stream.
+ * @param [depth] The depth to peek into the remaining records in the stream.
+ * @return The result at the specified depth, or `NULL` if the stream is
+ *         exahusted or an error has occurred (errno will be set).
+ */
+neo4j_result_t *neo4j_peek(neo4j_result_stream_t *results, unsigned int depth);
+
+/**
  * Close a result stream.
  *
  * Closes the result stream and releases all memory held by it, including
  * results and values obtained from it.
  *
- * NOTE: After this function is invoked, all `neo4j_result_t` objects fetched
- * from this stream, and any values obtained from them, will be invalid and
- * _must not be accessed_. Doing so will result in undetermined and unstable
- * behaviour. This is true even if this function returns an error.
+ * @attention After this function is invoked, all `neo4j_result_t` objects
+ * fetched from this stream, and any values obtained from them, will be invalid
+ * and _must not be accessed_. Doing so will result in undetermined and
+ * unstable behaviour. This is true even if this function returns an error.
  *
  * @param [results] The result stream. The pointer will be invalid after the
  *         function returns.
@@ -2010,7 +2031,7 @@ neo4j_value_t neo4j_result_field(const neo4j_result_t *result,
  * This retains the result and all values contained within it, preventing
  * them from being deallocated on the next call to neo4j_fetch_next()
  * or when the result stream is closed via neo4j_close_results(). Once
- * retained, the result _must_ later be explicitly released via
+ * retained, the result _must_ be explicitly released via
  * neo4j_release().
  *
  * @param [result] A result.

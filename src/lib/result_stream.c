@@ -76,6 +76,13 @@ neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results)
 }
 
 
+neo4j_result_t *neo4j_peek(neo4j_result_stream_t *results, unsigned int depth)
+{
+    REQUIRE(results != NULL, NULL);
+    return results->peek(results, depth);
+}
+
+
 unsigned long long neo4j_result_count(neo4j_result_stream_t *results)
 {
     REQUIRE(results != NULL, -1);
@@ -164,6 +171,7 @@ struct result_record
     unsigned int refcount;
     neo4j_mpool_t mpool;
     neo4j_value_t list;
+    // TODO: add skip list for faster peeking
     result_record_t *next;
 };
 
@@ -192,6 +200,7 @@ struct run_result_stream
     const char *const *fields;
     result_record_t *records;
     result_record_t *records_tail;
+    unsigned long long records_depth;
     result_record_t *last_fetched;
     unsigned long long nrecords;
     unsigned int awaiting_records;
@@ -208,6 +217,8 @@ static unsigned int run_rs_nfields(neo4j_result_stream_t *results);
 static const char *run_rs_fieldname(neo4j_result_stream_t *self,
         unsigned int index);
 static neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self);
+static neo4j_result_t *run_rs_peek(neo4j_result_stream_t *self,
+        unsigned int depth);
 static unsigned long long run_rs_count(neo4j_result_stream_t *self);
 static unsigned long long run_rs_available_after(neo4j_result_stream_t *self);
 static unsigned long long run_rs_consumed_after(neo4j_result_stream_t *self);
@@ -358,6 +369,7 @@ run_result_stream_t *run_rs_open(neo4j_connection_t *connection)
     result_stream->nfields = run_rs_nfields;
     result_stream->fieldname = run_rs_fieldname;
     result_stream->fetch_next = run_rs_fetch_next;
+    result_stream->peek = run_rs_peek;
     result_stream->count = run_rs_count;
     result_stream->available_after = run_rs_available_after;
     result_stream->consumed_after = run_rs_consumed_after;
@@ -495,13 +507,56 @@ neo4j_result_t *run_rs_fetch_next(neo4j_result_stream_t *self)
 
     result_record_t *record = results->records;
     results->records = record->next;
+    --(results->records_depth);
     if (results->records == NULL)
     {
+        assert(results->records_depth == 0);
         results->records_tail = NULL;
     }
     record->next = NULL;
 
     results->last_fetched = record;
+    return &(record->_result);
+}
+
+
+neo4j_result_t *run_rs_peek(neo4j_result_stream_t *self, unsigned int depth)
+{
+    run_result_stream_t *results = container_of(self,
+            run_result_stream_t, _result_stream);
+    REQUIRE(results != NULL, NULL);
+
+    if (results->records_depth <= depth)
+    {
+        if (!results->streaming)
+        {
+            errno = results->failure;
+            return NULL;
+        }
+
+        assert(results->failure == 0);
+        results->awaiting_records = depth - results->records_depth + 1;
+        if (await(results, &(results->awaiting_records)))
+        {
+            errno = results->failure;
+            return NULL;
+        }
+
+        if (results->records_depth <= depth)
+        {
+            assert(!results->streaming);
+            errno = results->failure;
+            return NULL;
+        }
+    }
+
+    result_record_t *record = results->records;
+    assert(record != NULL);
+    for (unsigned int i = depth; i > 0; --i)
+    {
+        record = record->next;
+        assert(record != NULL);
+    }
     return &(record->_result);
 }
 
@@ -994,6 +1049,7 @@ int append_result(run_result_stream_t *results,
     if (results->records == NULL)
     {
         assert(results->records_tail == NULL);
+        assert(results->records_depth == 0);
         results->records = record;
         results->records_tail = record;
     }
@@ -1002,6 +1058,7 @@ int append_result(run_result_stream_t *results,
         results->records_tail->next = record;
         results->records_tail = record;
     }
+    ++(results->records_depth);
 
     if (results->awaiting_records > 0)
     {

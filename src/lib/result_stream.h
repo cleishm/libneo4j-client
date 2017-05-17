@@ -99,6 +99,16 @@ struct neo4j_result_stream
     neo4j_result_t *(*fetch_next)(neo4j_result_stream_t *self);
 
     /**
+     * Peek at a record in the result stream.
+     *
+     * @param [self] This result stream.
+     * @param [depth] The depth to peek into the remaining records.
+     * @return The result at the specified depth, or `NULL` if the stream is
+     *         exahusted or an error has occurred (errno will be set).
+     */
+    neo4j_result_t *(*peek)(neo4j_result_stream_t *self, unsigned int depth);
+
+    /**
      * Return the number of records received.
      *
      * This value will continue to increase until all results have been fetched.
