@@ -196,6 +196,11 @@ static inline size_t maxzu(size_t a, size_t b)
 #endif
 
 
+#ifndef HAVE_MEMSET_S
+#define memset_s(s, smax, c, n) memset(s, c, n)
+#endif
+
+
 /**
  * Duplicate a region of memory.
  *

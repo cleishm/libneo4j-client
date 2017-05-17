@@ -128,6 +128,8 @@ AC_CHECK_HEADERS([readpassphrase.h bsd/readpassphrase.h])
 AC_SEARCH_LIBS([readpassphrase],[bsd])
 AC_CHECK_FUNCS([readpassphrase],[],[])
 
+AC_CHECK_FUNCS([memset_s],[],[])
+
 
 dnl Threading
 AX_THREAD_LOCAL()

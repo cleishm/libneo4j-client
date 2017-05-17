@@ -171,7 +171,8 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password)
     REQUIRE(config != NULL, -1);
     if (config->password != NULL)
     {
-        memset(config->password, 0, strlen(config->password));
+        size_t plen = strlen(config->password);
+        memset_s(config->password, plen, 0, plen);
     }
     return replace_strptr_dup(&(config->password), password);
 }
@@ -396,8 +397,8 @@ int ensure_basic_auth_credentials(neo4j_config_t *config, const char *host)
     int errsv;
 cleanup:
     errsv = errno;
-    memset(username_buf, 0, sizeof(username_buf));
-    memset(password_buf, 0, sizeof(password_buf));
+    memset_s(username_buf, sizeof(username_buf), 0, sizeof(username_buf));
+    memset_s(password_buf, sizeof(password_buf), 0, sizeof(password_buf));
     errno = errsv;
     return err;
 }

@@ -107,7 +107,8 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
             goto failure;
         }
         // clear any password in the URI
-        memset(uri->userinfo, 0, strlen(uri->userinfo));
+        size_t userinfolen = strlen(uri->userinfo);
+        memset_s(uri->userinfo, userinfolen, 0, userinfolen);
     }
 
     unsigned int port = (uri->port > 0)? uri->port : NEO4J_DEFAULT_TCP_PORT;
