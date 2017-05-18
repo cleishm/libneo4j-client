@@ -546,7 +546,7 @@ ssize_t render_field(FILE *stream, const char *s, size_t n, unsigned int width,
         }
         assert(bytes > 0);
         int cpwidth;
-        if ((bytes > 1 && (flags & NEO4J_RENDER_ASCII)) ||
+        if (((flags & NEO4J_RENDER_ASCII) && (bytes > 1 || cp & 0x80)) ||
                 (cpwidth = neo4j_u8cpwidth(cp)) < 0)
         {
             cpwidth = write_unprintable(stream, cp, width);
