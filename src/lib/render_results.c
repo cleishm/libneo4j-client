@@ -149,7 +149,7 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
     for (bool first = true; (result = neo4j_fetch_next(results)) != NULL;
             first = false)
     {
-        if (!first && (flags & NEO4J_RENDER_ROW_LINES) &&
+        if (!first && (flags & NEO4J_RENDER_ROWLINES) &&
                 render_hrule(stream, nfields, widths, HLINE_MIDDLE, undersize,
                     flags, colors))
         {

@@ -365,7 +365,7 @@ START_TEST (render_undersized_table_with_wrapped_values)
 
     int result = neo4j_render_table(memstream, results, 7,
             NEO4J_RENDER_ASCII | NEO4J_RENDER_WRAP_VALUES |
-            NEO4J_RENDER_ROW_LINES);
+            NEO4J_RENDER_ROWLINES);
     ck_assert(result == 0);
     fflush(memstream);
     neo4j_close_results(results);

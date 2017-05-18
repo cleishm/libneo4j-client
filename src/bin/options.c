@@ -427,11 +427,11 @@ int set_rowlines(shell_state_t *state, const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
-        state->render_flags |= NEO4J_RENDER_ROW_LINES;
+        state->render_flags |= NEO4J_RENDER_ROWLINES;
     }
     else if (strcmp(value, "no") == 0)
     {
-        state->render_flags &= ~NEO4J_RENDER_ROW_LINES;
+        state->render_flags &= ~NEO4J_RENDER_ROWLINES;
     }
     else
     {
@@ -444,7 +444,7 @@ int set_rowlines(shell_state_t *state, const char *value)
 
 int unset_rowlines(shell_state_t *state)
 {
-    state->render_flags &= ~NEO4J_RENDER_ROW_LINES;
+    state->render_flags &= ~NEO4J_RENDER_ROWLINES;
     return 0;
 }
 
