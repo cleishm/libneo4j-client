@@ -25,6 +25,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#define NEO4J_DEFAULT_MPOOL_BLOCK_SIZE 128
+#define NEO4J_DEFAULT_RCVBUF_SIZE 4096
+#define NEO4J_DEFAULT_SNDBUF_SIZE 4096
+#define NEO4J_DEFAULT_SESSION_REQUEST_QUEUE_SIZE 256
+#define NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS 10
+
 
 static ssize_t default_password_callback(void *userdata, char *buf, size_t n);
 
@@ -50,13 +56,13 @@ neo4j_config_t *neo4j_new_config()
     }
     config->connection_factory = &neo4j_std_connection_factory;
     config->allocator = &neo4j_std_memory_allocator;
-    config->mpool_block_size = 128;
+    config->mpool_block_size = NEO4J_DEFAULT_MPOOL_BLOCK_SIZE;
     config->client_id = libneo4j_client_id();
-    config->io_rcvbuf_size = 4096;
-    config->io_sndbuf_size = 4096;
+    config->io_rcvbuf_size = NEO4J_DEFAULT_RCVBUF_SIZE;
+    config->io_sndbuf_size = NEO4J_DEFAULT_SNDBUF_SIZE;
     config->snd_min_chunk_size = 1024;
     config->snd_max_chunk_size = UINT16_MAX;
-    config->session_request_queue_size = 256;
+    config->session_request_queue_size = NEO4J_DEFAULT_SESSION_REQUEST_QUEUE_SIZE;
     config->max_pipelined_requests = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS;
     config->trust_known = true;
     return config;
@@ -139,7 +145,7 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
 }
 
 
-const char *neo4j_config_get_client_id(neo4j_config_t *config)
+const char *neo4j_config_get_client_id(const neo4j_config_t *config)
 {
     return config->client_id;
 }
@@ -152,7 +158,7 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username)
 }
 
 
-const char *neo4j_config_get_username(neo4j_config_t *config)
+const char *neo4j_config_get_username(const neo4j_config_t *config)
 {
     return config->username;
 }
@@ -199,6 +205,16 @@ int neo4j_config_set_TLS_private_key(neo4j_config_t *config, const char *path)
 #endif
 }
 
+const char *neo4j_config_get_TLS_private_key(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, NULL);
+#ifdef HAVE_TLS
+    return config->tls_private_key_file;
+#else
+    return NULL;
+#endif
+}
+
 
 int neo4j_config_set_TLS_private_key_password_callback(neo4j_config_t *config,
         neo4j_password_callback_t callback, void *userdata)
@@ -236,6 +252,17 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path)
 }
 
 
+const char *neo4j_config_get_TLS_ca_file(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, NULL);
+#ifdef HAVE_TLS
+    return config->tls_ca_file;
+#else
+    return NULL;
+#endif
+}
+
+
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path)
 {
     REQUIRE(config != NULL, -1);
@@ -248,11 +275,29 @@ int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path)
 }
 
 
+const char *neo4j_config_get_TLS_ca_dir(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, NULL);
+#ifdef HAVE_TLS
+    return config->tls_ca_dir;
+#else
+    return NULL;
+#endif
+}
+
+
 int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable)
 {
     REQUIRE(config != NULL, -1);
     config->trust_known = enable;
     return 0;
+}
+
+
+bool neo4j_config_get_trust_known_hosts(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, -1);
+    return config->trust_known;
 }
 
 
@@ -262,6 +307,14 @@ int neo4j_config_set_known_hosts_file(neo4j_config_t *config,
     REQUIRE(config != NULL, -1);
     return replace_strptr_dup(&(config->known_hosts_file), path);
 }
+
+
+const char *neo4j_config_get_known_hosts_file(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, NULL);
+    return config->known_hosts_file;
+}
+
 
 int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
         neo4j_unverified_host_callback_t callback, void *userdata)
@@ -324,6 +377,12 @@ int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size)
 }
 
 
+unsigned int neo4j_config_get_so_sndbuf_size(const neo4j_config_t *config)
+{
+    return config->so_sndbuf_size;
+}
+
+
 int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size)
 {
     REQUIRE(config != NULL, -1);
@@ -334,6 +393,12 @@ int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size)
     }
     config->so_rcvbuf_size = size;
     return 0;
+}
+
+
+unsigned int neo4j_config_get_so_rcvbuf_size(const neo4j_config_t *config)
+{
+    return config->so_rcvbuf_size;
 }
 
 
@@ -351,10 +416,24 @@ void neo4j_config_set_memory_allocator(neo4j_config_t *config,
 }
 
 
+struct neo4j_memory_allocator *neo4j_config_get_memory_allocator(
+        const neo4j_config_t *config)
+{
+    return config->allocator;
+}
+
+
 void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
         unsigned int n)
 {
     config->max_pipelined_requests = n;
+}
+
+
+unsigned int neo4j_config_get_max_pipelined_requests(
+        const neo4j_config_t *config)
+{
+    return config->max_pipelined_requests;
 }
 
 

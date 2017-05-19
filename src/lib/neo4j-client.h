@@ -1098,7 +1098,7 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
  * @return A pointer to the client ID, or `NULL` if one is not set.
  */
 __neo4j_pure
-const char *neo4j_config_get_client_id(neo4j_config_t *config);
+const char *neo4j_config_get_client_id(const neo4j_config_t *config);
 
 #define NEO4J_MAXUSERNAMELEN 1023
 
@@ -1123,7 +1123,7 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username);
  * @return A pointer to the username, or `NULL` if one is not set.
  */
 __neo4j_pure
-const char *neo4j_config_get_username(neo4j_config_t *config);
+const char *neo4j_config_get_username(const neo4j_config_t *config);
 
 #define NEO4J_MAXPASSWORDLEN 1023
 
@@ -1166,6 +1166,14 @@ int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
 __neo4j_must_check
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
         const char *path);
+
+/**
+ * Obtain the path to the TLS private key and certificate chain.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_TLS_private_key(const neo4j_config_t *config);
 
 /**
  * Set the password callback for the TLS private key file.
@@ -1212,6 +1220,14 @@ __neo4j_must_check
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
 
 /**
+ * Obtain the path to the TLS certificate authority file.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_TLS_ca_file(const neo4j_config_t *config);
+
+/**
  * Set the location of a directory of TLS certificate authorities (and CRLs).
  *
  * The specified directory should contain the certificates of the trusted CAs
@@ -1225,6 +1241,14 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
+
+/**
+ * Obtain the path to the TLS certificate authority directory.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_TLS_ca_dir(const neo4j_config_t *config);
 
 /**
  * Enable or disable trusting of known hosts.
@@ -1246,6 +1270,14 @@ __neo4j_must_check
 int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
 
 /**
+ * Check if trusting of known hosts is enabled.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if enabled and `false` otherwise.
+ */
+bool neo4j_config_get_trust_known_hosts(const neo4j_config_t *config);
+
+/**
  * Set the location of the known hosts file for TLS certificates.
  *
  * The file, which will be created and maintained by neo4j client,
@@ -1259,6 +1291,15 @@ int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
  */
 __neo4j_must_check
 int neo4j_config_set_known_hosts_file(neo4j_config_t *config, const char *path);
+
+/**
+ * Obtain the path to the known hosts file.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_known_hosts_file(const neo4j_config_t *config);
+
 
 typedef enum
 {
@@ -1311,6 +1352,14 @@ int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
 int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
 
 /**
+ * Get the size for the I/O output buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The sndbuf size.
+ */
+size_t neo4j_config_get_sndbuf_size(const neo4j_config_t *config);
+
+/**
  * Set the I/O input buffer size.
  *
  * @param [config] The neo4j client configuration to update.
@@ -1318,6 +1367,14 @@ int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
  * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size);
+
+/**
+ * Get the size for the I/O input buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The rcvbuf size.
+ */
+size_t neo4j_config_get_rcvbuf_size(const neo4j_config_t *config);
 
 /**
  * Set a logger provider in the neo4j client configuration.
@@ -1340,6 +1397,14 @@ void neo4j_config_set_logger_provider(neo4j_config_t *config,
 int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
 
 /**
+ * Get the size for the socket send buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The so_sndbuf size.
+ */
+unsigned int neo4j_config_get_so_sndbuf_size(const neo4j_config_t *config);
+
+/**
  * Set the socket receive buffer size.
  *
  * This is only applicable to the standard connection factory.
@@ -1351,7 +1416,15 @@ int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
 int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size);
 
 /**
- * Set a connection factory in the neo4j client configuration.
+ * Get the size for the socket receive buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The so_rcvbuf size.
+ */
+unsigned int neo4j_config_get_so_rcvbuf_size(const neo4j_config_t *config);
+
+/**
+ * Set a connection factory.
  *
  * @param [config] The neo4j client configuration to update.
  * @param [factory] The connection factory.
@@ -1372,7 +1445,7 @@ extern struct neo4j_connection_factory neo4j_std_connection_factory;
 extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
 
 /**
- * Set a memory allocator in the neo4j client configuration.
+ * Set a memory allocator.
  *
  * @param [config] The neo4j client configuration to update.
  * @param [allocator] The memory allocator.
@@ -1380,7 +1453,14 @@ extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
 void neo4j_config_set_memory_allocator(neo4j_config_t *config,
         struct neo4j_memory_allocator *allocator);
 
-#define NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS 10
+/**
+ * Get the memory allocator.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The memory allocator.
+ */
+struct neo4j_memory_allocator *neo4j_config_get_memory_allocator(
+        const neo4j_config_t *config);
 
 /**
  * Set the maximum number of requests that can be pipelined to the
@@ -1396,6 +1476,15 @@ void neo4j_config_set_memory_allocator(neo4j_config_t *config,
  */
 void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
         unsigned int n);
+
+/**
+ * Get the maximum number of requests that can be pipelined to the server.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The number of requests that can be pipelined.
+ */
+unsigned int neo4j_config_get_max_pipelined_requests(
+        const neo4j_config_t *config);
 
 /**
  * Return a path within the neo4j dot directory.
