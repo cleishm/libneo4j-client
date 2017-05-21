@@ -103,10 +103,10 @@ START_TEST (render_empty_table)
 
     const char *expect = "\n"
 //1       10        20        30        40        50        60        70
- "+-----------+-----------+-----------+-----------+\n"
- "| firstname | lastname  | role      | title     |\n"
- "+-----------+-----------+-----------+-----------+\n"
- "+-----------+-----------+-----------+-----------+\n";
+ "+--------------+-------------+--------+---------+\n"
+ "| firstname    | lastname    | role   | title   |\n"
+ "+--------------+-------------+--------+---------+\n"
+ "+--------------+-------------+--------+---------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -131,13 +131,13 @@ START_TEST (render_simple_table)
 
     const char *expect = "\n"
 //1       10        20        30        40        50        60        70
- "+-----------------+-----------------+-----------------+-----------------+\n"
- "| firstname       | lastname        | role            | title           |\n"
- "+-----------------+-----------------+-----------------+-----------------+\n"
- "| Keanu           | Reeves          | Neo             | The Matrix      |\n"
- "| Hugo            | Weaving         | V               | V for Vendetta  |\n"
- "| Halle           | Berry           | Luisa Rey       | Cloud Atlas     |\n"
- "+-----------------+-----------------+-----------------+-----------------+\n";
+ "+----------------+---------------+----------------+---------------------+\n"
+ "| firstname      | lastname      | role           | title               |\n"
+ "+----------------+---------------+----------------+---------------------+\n"
+ "| Keanu          | Reeves        | Neo            | The Matrix          |\n"
+ "| Hugo           | Weaving       | V              | V for Vendetta      |\n"
+ "| Halle          | Berry         | Luisa Rey      | Cloud Atlas         |\n"
+ "+----------------+---------------+----------------+---------------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -155,7 +155,7 @@ START_TEST (render_simple_table_with_quoted_strings)
 
     ck_assert(fputc('\n', memstream) != EOF);
 
-    int result = neo4j_render_table(memstream, results, 73,
+    int result = neo4j_render_table(memstream, results, 56,
             NEO4J_RENDER_QUOTE_STRINGS | NEO4J_RENDER_ASCII);
     ck_assert(result == 0);
     fflush(memstream);
@@ -163,13 +163,13 @@ START_TEST (render_simple_table_with_quoted_strings)
 
     const char *expect = gstrsub('\'', '"', "\n"
 //1       10        20        30        40        50        60        70
- "+-----------------+-----------------+-----------------+-----------------+\n"
- "| firstname       | lastname        | role            | title           |\n"
- "+-----------------+-----------------+-----------------+-----------------+\n"
- "| 'Keanu'         | 'Reeves'        | 'Neo'           | 'The Matrix'    |\n"
- "| 'Hugo'          | 'Weaving'       | 'V'             | 'V for Vendetta=|\n"
- "| 'Halle'         | 'Berry'         | 'Luisa Rey'     | 'Cloud Atlas'   |\n"
- "+-----------------+-----------------+-----------------+-----------------+\n");
+ "+-----------+-----------+-------------+----------------+\n"
+ "| firstname | lastname  | role        | title          |\n"
+ "+-----------+-----------+-------------+----------------+\n"
+ "| 'Keanu'   | 'Reeves'  | 'Neo'       | 'The Matrix'   |\n"
+ "| 'Hugo'    | 'Weaving' | 'V'         | 'V for Vendett=|\n"
+ "| 'Halle'   | 'Berry'   | 'Luisa Rey' | 'Cloud Atlas'  |\n"
+ "+-----------+-----------+-------------+----------------+\n");
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -194,13 +194,13 @@ START_TEST (render_narrow_table)
 
     const char *expect = "\n"
 //1       10        20        30        40        50        60        70
- "+------------+------------+------------+------------+\n"
- "| the first =| lastname   | role       | title      |\n"
- "+------------+------------+------------+------------+\n"
- "| Keanu      | Reeves     | Neo        | The Matrix |\n"
- "| Hugo       | Weaving    | V          | V for Vend=|\n"
- "| Halle      | Berry      | Luisa Rey  | Cloud Atla=|\n"
- "+------------+------------+------------+------------+\n";
+ "+--------------+----------+-----------+-------------+\n"
+ "| the first na=| lastname | role      | title       |\n"
+ "+--------------+----------+-----------+-------------+\n"
+ "| Keanu        | Reeves   | Neo       | The Matrix  |\n"
+ "| Hugo         | Weaving  | V         | V for Vende=|\n"
+ "| Halle        | Berry    | Luisa Rey | Cloud Atlas |\n"
+ "+--------------+----------+-----------+-------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -315,6 +315,82 @@ START_TEST (render_zero_col_table)
 END_TEST
 
 
+START_TEST (render_table_with_wrapped_values)
+{
+    const char *fieldnames[4] =
+        { "firstname", "lastname", "role", "title" };
+    const char *table[3][4] =
+        { { "Keanu", "Reeves", "Neo", "The Matrix" },
+          { "Hugo With A Long Middle Name", "Weaving", "V", "V for Vendetta" },
+          { "Halle", "Berry", "Luisa Rey", "The Cloud Atlas" } };
+    neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
+    int result = neo4j_render_table(memstream, results, 61,
+            NEO4J_RENDER_QUOTE_STRINGS | NEO4J_RENDER_ASCII |
+            NEO4J_RENDER_WRAP_VALUES);
+    ck_assert(result == 0);
+    fflush(memstream);
+    neo4j_close_results(results);
+
+    const char *expect = gstrsub('\'', '"', "\n"
+//1       10        20        30        40        50        60        70
+ "+----------------+-----------+-------------+----------------+\n"
+ "| firstname      | lastname  | role        | title          |\n"
+ "+----------------+-----------+-------------+----------------+\n"
+ "| 'Keanu'        | 'Reeves'  | 'Neo'       | 'The Matrix'   |\n"
+ "| 'Hugo With A L=| 'Weaving' | 'V'         | 'V for Vendett=|\n"
+ "|=ong Middle Nam=|           |             |=a'             |\n"
+ "|=e'             |           |             |                |\n"
+ "| 'Halle'        | 'Berry'   | 'Luisa Rey' | 'The Cloud Atl=|\n"
+ "|                |           |             |=as'            |\n"
+ "+----------------+-----------+-------------+----------------+\n");
+    ck_assert_str_eq(memstream_buffer, expect);
+}
+END_TEST
+
+
+START_TEST (render_undersized_table_with_wrapped_values)
+{
+    const char *fieldnames[4] =
+        { "first", "last", "role", "title" };
+    const char *table[3][4] =
+        { { "Keanu", "Reeves", "Neo", "The Matrix" },
+          { "Hugo", "Weaving", "V", "V for Vendetta" },
+          { "", "Berry", "Luisa Rey", "Cloud Atlas" } };
+    neo4j_result_stream_t *results = build_stream(fieldnames, 4, table, 3);
+
+    ck_assert(fputc('\n', memstream) != EOF);
+
+    int result = neo4j_render_table(memstream, results, 7,
+            NEO4J_RENDER_ASCII | NEO4J_RENDER_WRAP_VALUES |
+            NEO4J_RENDER_ROWLINES);
+    ck_assert(result == 0);
+    fflush(memstream);
+    neo4j_close_results(results);
+
+    const char *expect = "\n"
+//1       10        20        30        40        50        60        70
+ "+----+-\n"
+ "| fi=|=\n"
+ "|=rs=|=\n"
+ "|=t  |=\n"
+ "+----+-\n"
+ "| Ke=|=\n"
+ "|=an=|=\n"
+ "|=u  |=\n"
+ "+----+-\n"
+ "| Hu=|=\n"
+ "|=go |=\n"
+ "+----+-\n"
+ "|    |=\n"
+ "+----+-\n";
+    ck_assert_str_eq(memstream_buffer, expect);
+}
+END_TEST
+
+
 START_TEST (render_table_with_nulls)
 {
     const char *fieldnames[3] =
@@ -335,11 +411,11 @@ START_TEST (render_table_with_nulls)
 
     const char *expect = "\n"
 //1       10        20        30        40        50        60        70
- "+----------------+----------------+----------------+\n"
- "| firstname      | lastname       | born           |\n"
- "+----------------+----------------+----------------+\n"
- "| Keanu          |                | 1964           |\n"
- "+----------------+----------------+----------------+\n";
+ "+------------------+-----------------+-------------+\n"
+ "| firstname        | lastname        | born        |\n"
+ "+------------------+-----------------+-------------+\n"
+ "| Keanu            |                 | 1964        |\n"
+ "+------------------+-----------------+-------------+\n";
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -366,11 +442,11 @@ START_TEST (render_table_with_visible_nulls)
 
     const char *expect = gstrsub('\'', '"', "\n"
 //1       10        20        30        40        50        60        70
- "+----------------+----------------+----------------+\n"
- "| firstname      | lastname       | born           |\n"
- "+----------------+----------------+----------------+\n"
- "| 'Keanu'        | null           | 1964           |\n"
- "+----------------+----------------+----------------+\n");
+ "+------------------+-----------------+-------------+\n"
+ "| firstname        | lastname        | born        |\n"
+ "+------------------+-----------------+-------------+\n"
+ "| 'Keanu'          | null            | 1964        |\n"
+ "+------------------+-----------------+-------------+\n");
     ck_assert_str_eq(memstream_buffer, expect);
 }
 END_TEST
@@ -485,6 +561,8 @@ TCase* render_results_tcase(void)
     tcase_add_test(tc, render_undersized_table);
     tcase_add_test(tc, render_min_width_table);
     tcase_add_test(tc, render_zero_col_table);
+    tcase_add_test(tc, render_table_with_wrapped_values);
+    tcase_add_test(tc, render_undersized_table_with_wrapped_values);
     tcase_add_test(tc, render_table_with_nulls);
     tcase_add_test(tc, render_table_with_visible_nulls);
     tcase_add_test(tc, render_no_table_if_stream_has_error);

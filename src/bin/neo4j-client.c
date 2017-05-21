@@ -39,6 +39,8 @@
 
 
 #define NEO4J_HISTORY_FILE "client-history"
+#define NEO4J_USERNAME_ENV "NEO4J_USERNAME"
+#define NEO4J_PASSWORD_ENV "NEO4J_PASSWORD"
 
 
 const char *shortopts = "e:hi:o:p:Pu:v";
@@ -85,8 +87,8 @@ static struct option longopts[] =
 static void usage(FILE *s, const char *prog_name)
 {
     fprintf(s,
-"usage: %s [OPTIONS] URL\n"
-"       %s [OPTIONS] host [port]\n"
+"usage: %1$s [OPTIONS] [URL]\n"
+"       %1$s [OPTIONS] [host [port]]\n"
 "options:\n"
 " --help, -h          Output this usage information.\n"
 " --history=file      Use the specified file for saving history.\n"
@@ -101,7 +103,8 @@ static void usage(FILE *s, const char *prog_name)
 " --username=name, -u name\n"
 "                     Connect using the specified username.\n"
 " --password=pass, -p pass\n"
-"                     Connect using the specified password.\n"
+"                     Connect using the specified password. This is only\n"
+"                     valid when a URL or host is also specified.\n"
 " -P                  Prompt for a password, even in non-interactive mode.\n"
 " --known-hosts=file  Set the path to the known-hosts file.\n"
 " --no-known-hosts    Do not do host checking via known-hosts (use only TLS\n"
@@ -125,7 +128,7 @@ static void usage(FILE *s, const char *prog_name)
 "If the shell is run connected to a TTY, then an interactive command prompt\n"
 "is shown. Use `:exit` to quit. If the shell is not connected to a TTY, then\n"
 "directives are read from stdin.\n",
-        prog_name, prog_name);
+        prog_name);
 }
 
 static shell_state_t state;
@@ -191,6 +194,28 @@ int main(int argc, char *argv[])
     if (isatty(fileno(stderr)))
     {
         state.error_colorize = ansi_error_colorization;
+        neo4j_config_set_results_table_colors(state.config,
+                neo4j_results_table_ansi_colors);
+        neo4j_config_set_plan_table_colors(state.config,
+                neo4j_plan_table_ansi_colors);
+    }
+
+    const char *s;
+    if ((s = getenv(NEO4J_USERNAME_ENV)) != NULL &&
+            neo4j_config_set_username(state.config, s))
+    {
+        neo4j_perror(state.err, errno, "Unexpected error");
+        goto cleanup;
+    }
+    bool password_set = false;
+    if ((s = getenv(NEO4J_PASSWORD_ENV)) != NULL)
+    {
+        if (neo4j_config_set_password(state.config, s))
+        {
+            neo4j_perror(state.err, errno, "Unexpected error");
+            goto cleanup;
+        }
+        password_set = true;
     }
 
     int c;
@@ -224,9 +249,17 @@ int main(int argc, char *argv[])
             break;
         case COLORIZE_OPT:
             state.error_colorize = ansi_error_colorization;
+            neo4j_config_set_results_table_colors(state.config,
+                    neo4j_results_table_ansi_colors);
+            neo4j_config_set_plan_table_colors(state.config,
+                    neo4j_plan_table_ansi_colors);
             break;
         case NO_COLORIZE_OPT:
             state.error_colorize = no_error_colorization;
+            neo4j_config_set_results_table_colors(state.config,
+                    neo4j_results_table_no_colors);
+            neo4j_config_set_plan_table_colors(state.config,
+                    neo4j_plan_table_no_colors);
             break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;
@@ -252,6 +285,7 @@ int main(int argc, char *argv[])
                 neo4j_perror(state.err, errno, "Unexpected error");
                 goto cleanup;
             }
+            password_set = true;
             break;
         case 'P':
             if (tty == NULL)
@@ -356,6 +390,13 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
+    if (argc == 0 && password_set)
+    {
+        fprintf(stderr, "--password/-p can only be used when a URL or "
+                "host to connect to is also supplied.\n");
+        goto cleanup;
+    }
+
     uint8_t logger_flags = 0;
     if (log_level < NEO4J_LOG_DEBUG)
     {
@@ -370,20 +411,14 @@ int main(int argc, char *argv[])
 
     neo4j_config_set_logger_provider(state.config, provider);
 
-    if (state.interactive)
-    {
-        state.password_prompt = true;
-    }
-
     if (tty != NULL)
     {
         neo4j_config_set_unverified_host_callback(state.config,
                 host_verification, &state);
 
-        if (state.password_prompt)
+        if (state.interactive)
         {
-            neo4j_config_set_basic_auth_callback(state.config,
-                    basic_auth, &state);
+            state.password_prompt = true;
         }
     }
 
@@ -394,10 +429,7 @@ int main(int argc, char *argv[])
     }
 
     // remove any password from the config
-    if (neo4j_config_set_password(state.config, NULL))
-    {
-        // can't fail
-    }
+    ignore_unused_result(neo4j_config_set_password(state.config, NULL));
 
     if (signal(SIGINT, interrupt_handler) == SIG_ERR)
     {
@@ -408,7 +440,8 @@ int main(int argc, char *argv[])
     if (state.interactive)
     {
         state.render = render_results_table;
-        state.render_flags = NEO4J_RENDER_SHOW_NULLS;
+        neo4j_config_set_render_nulls(state.config, true);
+        state.show_timing = true;
         state.infile = "<interactive>";
         state.source_depth = 1;
         if (interact(&state))

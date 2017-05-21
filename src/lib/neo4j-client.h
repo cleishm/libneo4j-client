@@ -1098,9 +1098,9 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
  * @return A pointer to the client ID, or `NULL` if one is not set.
  */
 __neo4j_pure
-const char *neo4j_config_get_client_id(neo4j_config_t *config);
+const char *neo4j_config_get_client_id(const neo4j_config_t *config);
 
-#define NEO4J_MAXUSERNAMELEN 1024
+#define NEO4J_MAXUSERNAMELEN 1023
 
 /**
  * Set the username in the neo4j client configuration.
@@ -1123,9 +1123,9 @@ int neo4j_config_set_username(neo4j_config_t *config, const char *username);
  * @return A pointer to the username, or `NULL` if one is not set.
  */
 __neo4j_pure
-const char *neo4j_config_get_username(neo4j_config_t *config);
+const char *neo4j_config_get_username(const neo4j_config_t *config);
 
-#define NEO4J_MAXPASSWORDLEN 1024
+#define NEO4J_MAXPASSWORDLEN 1023
 
 /**
  * Set the password in the neo4j client configuration.
@@ -1166,6 +1166,14 @@ int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
 __neo4j_must_check
 int neo4j_config_set_TLS_private_key(neo4j_config_t *config,
         const char *path);
+
+/**
+ * Obtain the path to the TLS private key and certificate chain.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_TLS_private_key(const neo4j_config_t *config);
 
 /**
  * Set the password callback for the TLS private key file.
@@ -1212,6 +1220,14 @@ __neo4j_must_check
 int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
 
 /**
+ * Obtain the path to the TLS certificate authority file.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_TLS_ca_file(const neo4j_config_t *config);
+
+/**
  * Set the location of a directory of TLS certificate authorities (and CRLs).
  *
  * The specified directory should contain the certificates of the trusted CAs
@@ -1225,6 +1241,14 @@ int neo4j_config_set_TLS_ca_file(neo4j_config_t *config, const char *path);
  */
 __neo4j_must_check
 int neo4j_config_set_TLS_ca_dir(neo4j_config_t *config, const char *path);
+
+/**
+ * Obtain the path to the TLS certificate authority directory.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_TLS_ca_dir(const neo4j_config_t *config);
 
 /**
  * Enable or disable trusting of known hosts.
@@ -1246,6 +1270,14 @@ __neo4j_must_check
 int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
 
 /**
+ * Check if trusting of known hosts is enabled.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if enabled and `false` otherwise.
+ */
+bool neo4j_config_get_trust_known_hosts(const neo4j_config_t *config);
+
+/**
  * Set the location of the known hosts file for TLS certificates.
  *
  * The file, which will be created and maintained by neo4j client,
@@ -1259,6 +1291,15 @@ int neo4j_config_set_trust_known_hosts(neo4j_config_t *config, bool enable);
  */
 __neo4j_must_check
 int neo4j_config_set_known_hosts_file(neo4j_config_t *config, const char *path);
+
+/**
+ * Obtain the path to the known hosts file.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The path set in the config, or `NULL` if none.
+ */
+const char *neo4j_config_get_known_hosts_file(const neo4j_config_t *config);
+
 
 typedef enum
 {
@@ -1311,6 +1352,14 @@ int neo4j_config_set_unverified_host_callback(neo4j_config_t *config,
 int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
 
 /**
+ * Get the size for the I/O output buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The sndbuf size.
+ */
+size_t neo4j_config_get_sndbuf_size(const neo4j_config_t *config);
+
+/**
  * Set the I/O input buffer size.
  *
  * @param [config] The neo4j client configuration to update.
@@ -1318,6 +1367,14 @@ int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size);
  * @return 0 on success, or -1 on error (errno will be set).
  */
 int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size);
+
+/**
+ * Get the size for the I/O input buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The rcvbuf size.
+ */
+size_t neo4j_config_get_rcvbuf_size(const neo4j_config_t *config);
 
 /**
  * Set a logger provider in the neo4j client configuration.
@@ -1340,6 +1397,14 @@ void neo4j_config_set_logger_provider(neo4j_config_t *config,
 int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
 
 /**
+ * Get the size for the socket send buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The so_sndbuf size.
+ */
+unsigned int neo4j_config_get_so_sndbuf_size(const neo4j_config_t *config);
+
+/**
  * Set the socket receive buffer size.
  *
  * This is only applicable to the standard connection factory.
@@ -1351,7 +1416,15 @@ int neo4j_config_set_so_sndbuf_size(neo4j_config_t *config, unsigned int size);
 int neo4j_config_set_so_rcvbuf_size(neo4j_config_t *config, unsigned int size);
 
 /**
- * Set a connection factory in the neo4j client configuration.
+ * Get the size for the socket receive buffer.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The so_rcvbuf size.
+ */
+unsigned int neo4j_config_get_so_rcvbuf_size(const neo4j_config_t *config);
+
+/**
+ * Set a connection factory.
  *
  * @param [config] The neo4j client configuration to update.
  * @param [factory] The connection factory.
@@ -1372,7 +1445,7 @@ extern struct neo4j_connection_factory neo4j_std_connection_factory;
 extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
 
 /**
- * Set a memory allocator in the neo4j client configuration.
+ * Set a memory allocator.
  *
  * @param [config] The neo4j client configuration to update.
  * @param [allocator] The memory allocator.
@@ -1380,7 +1453,14 @@ extern struct neo4j_memory_allocator neo4j_std_memory_allocator;
 void neo4j_config_set_memory_allocator(neo4j_config_t *config,
         struct neo4j_memory_allocator *allocator);
 
-#define NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS 10
+/**
+ * Get the memory allocator.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The memory allocator.
+ */
+struct neo4j_memory_allocator *neo4j_config_get_memory_allocator(
+        const neo4j_config_t *config);
 
 /**
  * Set the maximum number of requests that can be pipelined to the
@@ -1396,6 +1476,15 @@ void neo4j_config_set_memory_allocator(neo4j_config_t *config,
  */
 void neo4j_config_set_max_pipelined_requests(neo4j_config_t *config,
         unsigned int n);
+
+/**
+ * Get the maximum number of requests that can be pipelined to the server.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The number of requests that can be pipelined.
+ */
+unsigned int neo4j_config_get_max_pipelined_requests(
+        const neo4j_config_t *config);
 
 /**
  * Return a path within the neo4j dot directory.
@@ -1430,6 +1519,7 @@ ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
 #define NEO4J_CONNECT_DEFAULT 0
 #define NEO4J_INSECURE (1<<0)
 #define NEO4J_NO_URI_CREDENTIALS (1<<1)
+#define NEO4J_NO_URI_PASSWORD (1<<2)
 
 /**
  * Establish a connection to a neo4j server.
@@ -1440,6 +1530,8 @@ ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
  *   `NEO4J_SERVER_REQUIRES_SECURE_CONNECTION`.
  * - NEO4J_NO_URI_CREDENTIALS - do not use credentials provided in the
  *   server URI (use credentials from the configuration instead).
+ * - NEO4J_NO_URI_PASSWORD - do not use any password provided in the
+ *   server URI (obtain password from the configuration instead).
  *
  * If no flags are required, pass 0 or `NEO4J_CONNECT_DEFAULT`.
  *
@@ -1654,6 +1746,10 @@ const char *neo4j_fieldname(neo4j_result_stream_t *results,
 /**
  * Fetch the next record from the result stream.
  *
+ * @attention The pointer to the result will only remain valid until the
+ * next call to neo4j_fetch_next() or until the result stream is closed. To
+ * hold the result longer, use neo4j_retain() and neo4j_release().
+ *
  * @param [results] The result stream.
  * @return The next result, or `NULL` if the stream is exahusted or an
  *         error has occurred (errno will be set).
@@ -1662,15 +1758,32 @@ __neo4j_must_check
 neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results);
 
 /**
+ * Peek at a record in the result stream.
+ *
+ * @attention The pointer to the result will only remain valid until it is
+ * retreived via neo4j_fetch_next() or until the result stream is closed. To
+ * hold the result longer, use neo4j_retain() and neo4j_release().
+ *
+ * @attention All results up to the specified depth will be retrieved and
+ * held in memory. Avoid using this method with large depths.
+ *
+ * @param [results] The result stream.
+ * @param [depth] The depth to peek into the remaining records in the stream.
+ * @return The result at the specified depth, or `NULL` if the stream is
+ *         exahusted or an error has occurred (errno will be set).
+ */
+neo4j_result_t *neo4j_peek(neo4j_result_stream_t *results, unsigned int depth);
+
+/**
  * Close a result stream.
  *
  * Closes the result stream and releases all memory held by it, including
  * results and values obtained from it.
  *
- * NOTE: After this function is invoked, all `neo4j_result_t` objects fetched
- * from this stream, and any values obtained from them, will be invalid and
- * _must not be accessed_. Doing so will result in undetermined and unstable
- * behaviour. This is true even if this function returns an error.
+ * @attention After this function is invoked, all `neo4j_result_t` objects
+ * fetched from this stream, and any values obtained from them, will be invalid
+ * and _must not be accessed_. Doing so will result in undetermined and
+ * unstable behaviour. This is true even if this function returns an error.
  *
  * @param [results] The result stream. The pointer will be invalid after the
  *         function returns.
@@ -1789,6 +1902,40 @@ struct neo4j_failure_details
 const struct neo4j_failure_details *neo4j_failure_details(
         neo4j_result_stream_t *results);
 
+/*
+ * Return the number of records received in a result stream.
+ *
+ * This value will continue to increase until all results have been fetched.
+ *
+ * @param [results] The result stream.
+ * @return The number of results.
+ */
+unsigned long long neo4j_result_count(
+        neo4j_result_stream_t *results);
+
+/*
+ * Return the reported time until the first record was available.
+ *
+ * @param [results] The result stream.
+ * @return The time, in milliseconds, or 0 if it was not available.
+ */
+unsigned long long neo4j_results_available_after(
+        neo4j_result_stream_t *results);
+
+/*
+ * Return the reported time until all records were consumed.
+ *
+ * @attention As the consumption time is only available at the end of the result
+ * stream, invoking this function will will result in any unfetched results
+ * being pulled from the server and held in memory. It is usually better to
+ * exhaust the stream using neo4j_fetch_next() before invoking this
+ * method.
+ *
+ * @param [results] The result stream.
+ * @return The time, in milliseconds, or 0 if it was not available.
+ */
+unsigned long long neo4j_results_consumed_after(neo4j_result_stream_t *results);
+
 
 #define NEO4J_READ_ONLY_STATEMENT 0
 #define NEO4J_WRITE_ONLY_STATEMENT 1
@@ -1901,9 +2048,13 @@ struct neo4j_statement_execution_step
     /** The estimated number of rows to be handled by this step. */
     double estimated_rows;
     /** The number of rows handled by this step (for profiled plans only). */
-    long long rows;
-    /** The number of db_hits requied (for profiled plans only). */
-    long long db_hits;
+    unsigned long long rows;
+    /** The number of db_hits (for profiled plans only). */
+    unsigned long long db_hits;
+    /** The number of page cache hits (for profiled plans only). */
+    unsigned long long page_cache_hits;
+    /** The number of page cache misses (for profiled plans only). */
+    unsigned long long page_cache_misses;
     /** An array containing the sources for this step. */
     struct neo4j_statement_execution_step **sources;
     /** The number of sources. */
@@ -1969,7 +2120,7 @@ neo4j_value_t neo4j_result_field(const neo4j_result_t *result,
  * This retains the result and all values contained within it, preventing
  * them from being deallocated on the next call to neo4j_fetch_next()
  * or when the result stream is closed via neo4j_close_results(). Once
- * retained, the result _must_ later be explicitly released via
+ * retained, the result _must_ be explicitly released via
  * neo4j_release().
  *
  * @param [result] A result.
@@ -1991,22 +2142,278 @@ void neo4j_release(neo4j_result_t *result);
  * =====================================
  */
 
-#define NEO4J_RENDER_MAX_WIDTH 4095
-
 #define NEO4J_RENDER_DEFAULT 0
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
 #define NEO4J_RENDER_ASCII (1<<2)
 #define NEO4J_RENDER_ASCII_ART (1<<3)
+#define NEO4J_RENDER_ROWLINES (1<<4)
+#define NEO4J_RENDER_WRAP_VALUES (1<<5)
+#define NEO4J_RENDER_NO_WRAP_MARKERS (1<<6)
+#define NEO4J_RENDER_ANSI_COLOR (1<<7)
+
+/**
+ * Enable or disable rendering NEO4J_NULL values.
+ *
+ * If set to `true`, then NEO4J_NULL values will be rendered using the
+ * string 'null'. Otherwise, they will be blank.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rendering of NEO4J_NULL values, and
+ *         `false` to disable this behaviour.
+ */
+void neo4j_config_set_render_nulls(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if rendering of NEO4J_NULL values is enabled.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if rendering of NEO4J_NULL values is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_nulls(const neo4j_config_t *config);
+
+/**
+ * Enable or disable quoting of NEO4J_STRING values.
+ *
+ * If set to `true`, then NEO4J_STRING values will be rendered with
+ * surrounding quotes.
+ *
+ * @note This only applies when rendering to a table. In CSV output, strings
+ * are always quoted.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rendering of NEO4J_STRING values with
+ *         quotes, and `false` to disable this behaviour.
+ */
+void neo4j_config_set_render_quoted_strings(neo4j_config_t *config,
+        bool enable);
+
+/**
+ * Check if quoting of NEO4J_STRING values is enabled.
+ *
+ * @note This only applies when rendering to a table. In CSV output, strings
+ * are always quoted.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if quoting of NEO4J_STRING values is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_quoted_strings(const neo4j_config_t *config);
+
+/**
+ * Enable or disable rendering in ASCII-only.
+ *
+ * If set to `true`, then render output will only use ASCII characters and
+ * any non-ASCII characters in values will be escaped. Otherwise, UTF-8
+ * characters will be used, including unicode border drawing characters.
+ *
+ * @note This does not effect CSV output.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rendering in only ASCII characters,
+ *         and `false` to disable this behaviour.
+ */
+void neo4j_config_set_render_ascii(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if ASCII-only rendering is enabled.
+ *
+ * @note This does not effect CSV output.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if ASCII-only rendering is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_ascii(const neo4j_config_t *config);
+
+/**
+ * Enable or disable rendering of rowlines in result tables.
+ *
+ * If set to `true`, then render output will separate each table row
+ * with a rowline.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rowline rendering, and `false` to disable
+ *         this behaviour.
+ */
+void neo4j_config_set_render_rowlines(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if rendering of rowlines is enabled.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if rowline rendering is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_rowlines(const neo4j_config_t *config);
+
+/**
+ * Enable or disable wrapping of values in result tables.
+ *
+ * If set to `true`, then values will be wrapped when rendering tables.
+ * Otherwise, they will be truncated.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable value wrapping, and `false` to disable this
+ *         behaviour.
+ */
+void neo4j_config_set_render_wrapped_values(neo4j_config_t *config,
+        bool enable);
+
+/**
+ * Check if wrapping of values in result tables is enabled.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if wrapping of values is enabled, and `false` otherwise.
+ */
+bool neo4j_config_get_render_wrapped_values(const neo4j_config_t *config);
+
+/**
+ * Enable or disable the rendering of wrap markers when wrapping or truncating.
+ *
+ * If set to `true`, then values that are wrapped or truncated will be
+ * rendered with a wrap marker. The default value for this is `true`.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to display wrap markers, and `false` to disable this
+ *         behaviour.
+ */
+void neo4j_config_set_render_wrap_markers(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if wrap markers will be rendered when wrapping or truncating.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if wrap markers are enabled, and `false` otherwise.
+ */
+bool neo4j_config_get_render_wrap_markers(const neo4j_config_t *config);
+
+/**
+ * Set the number of results to inspect when determining column widths.
+ *
+ * If set to 0, no inspection will occur.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [rows] The number of results to inspect.
+ */
+void neo4j_config_set_render_inspect_rows(neo4j_config_t *config,
+        unsigned int rows);
+
+/**
+ * Set the number of results to inspect when determining column widths.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The number of results that will be inspected to determine column
+ *         widths.
+ */
+unsigned int neo4j_config_get_render_inspect_rows(
+        const neo4j_config_t *config);
+
+
+struct neo4j_results_table_colors
+{
+    const char * const border[2];
+    const char * const header[2];
+    const char * const cells[2];
+};
+
+/** Results table colorization rules for uncolorized table output. */
+extern const struct neo4j_results_table_colors *
+        neo4j_results_table_no_colors;
+/** Results table colorization rules for ANSI terminal output. */
+extern const struct neo4j_results_table_colors *
+        neo4j_results_table_ansi_colors;
+
+/**
+ * Set the colorization rules for rendering of results tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [colors] Colorization rules for result tables. The pointer must
+ *         remain valid until the config (and any duplicates) have been
+ *         released.
+ */
+void neo4j_config_set_results_table_colors(neo4j_config_t *config,
+        const struct neo4j_results_table_colors *colors);
+
+/**
+ * Get the colorization rules for rendering of results tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @return The colorization rules for result table rendering.
+ */
+const struct neo4j_results_table_colors *neo4j_config_get_results_table_colors(
+        const neo4j_config_t *config);
+
+
+struct neo4j_plan_table_colors
+{
+    const char * const border[2];
+    const char * const header[2];
+    const char * const cells[2];
+    const char * const graph[2];
+};
+
+/** Plan table colorization rules for uncolorized plan table output. */
+extern const struct neo4j_plan_table_colors *neo4j_plan_table_no_colors;
+/** Plan table colorization rules for ANSI terminal output. */
+extern const struct neo4j_plan_table_colors *neo4j_plan_table_ansi_colors;
+
+/**
+ * Set the colorization rules for rendering of plan tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [colors] Colorization rules for plan tables.  The pointer must
+ *         remain valid until the config (and any duplicates) have been
+ *         released.
+ */
+void neo4j_config_set_plan_table_colors(neo4j_config_t *config,
+        const struct neo4j_plan_table_colors *colors);
+
+/**
+ * Get the colorization rules for rendering of plan tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @return The colorization rules for plan table rendering.
+ */
+const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
+        const neo4j_config_t *config);
+
+
+
+#define NEO4J_RENDER_MAX_WIDTH 4095
 
 /**
  * Render a result stream as a table.
  *
- * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flags `NEO4J_RENDER_SHOW_NULL`,
- * `NEO4J_RENDER_QUOTE_STRINGS` and `NEO4J_RENDER_ASCII`.
+ * A bitmask of flags may be supplied, which may include:
+ * - NEO4J_RENDER_SHOW_NULLS - output 'null' when rendering NULL values, rather
+ * than an empty cell.
+ * - NEO4J_RENDER_QUOTE_STRINGS - wrap strings in quotes.
+ * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
+ * - NEO4J_RENDER_ROWLINES - render a line between each output row.
+ * - NEO4J_RENDER_WRAP_VALUES - wrap oversized values over multiple lines.
+ * - NEO4J_RENDER_NO_WRAP_MARKERS - don't indicate wrapping of values (should
+ * be used with NEO4J_RENDER_ROWLINES).
+ * - NEO4J_RENDER_ANSI_COLOR - use ANSI escape codes for colorization.
  *
- * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
@@ -2021,12 +2428,28 @@ int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags);
 
 /**
+ * Render a result stream as a table.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
+ * @param [config] A neo4j client configuration.
+ * @param [stream] The stream to render to.
+ * @param [results] The results stream to render.
+ * @param [width] The width of the table to render.
+ * @return 0 on success, or -1 on error (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_render_results_table(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results, unsigned int width);
+
+/**
  * Render a result stream as comma separated value.
  *
- * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flag `NEO4J_RENDER_SHOW_NULL`.
+ * A bitmask of flags may be supplied, which may include:
+ * - NEO4J_RENDER_SHOW_NULL - output 'null' when rendering NULL values, rather
+ * than an empty cell.
  *
- * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
@@ -2040,12 +2463,27 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
         uint_fast32_t flags);
 
 /**
+ * Render a result stream as comma separated value.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
+ * @param [config] A neo4j client configuration.
+ * @param [stream] The stream to render to.
+ * @param [results] The results stream to render.
+ * @return 0 on success, or -1 on error (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_render_ccsv(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results);
+
+/**
  * Render a statement plan as a table.
  *
- * Flags can be specified, as a bitmask, to control rendering. This rendering
- * method respects the flag `NEO4J_RENDER_ASCII`.
+ * A bitmask of flags may be supplied, which may include:
+ * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
+ * - NEO4J_RENDER_ANSI_COLOR - use ANSI escape codes for colorization.
  *
- * If no flags are specified, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
@@ -2058,6 +2496,21 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
 __neo4j_must_check
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         unsigned int width, uint_fast32_t flags);
+
+/**
+ * Render a statement plan as a table.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
+ * @param [config] A neo4j client configuration.
+ * @param [stream] The stream to render to.
+ * @param [plan] The statement plan to render.
+ * @param [width] The width of the table to render.
+ * @return 0 on success, or -1 on error (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_render_plan_ctable(const neo4j_config_t *config, FILE *stream,
+        struct neo4j_statement_plan *plan, unsigned int width);
 
 
 /*

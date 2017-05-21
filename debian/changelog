@@ -1,3 +1,20 @@
+libneo4j-client (2.1.0-1) unstable; urgency=medium
+
+  * New upstream release 2.1.0
+    - Table output is much prettier, with cleaner boarders and _color_!
+    - Values in table output are now wrapped (in neo4j-client, this can
+      be disabled by unsetting the wrap option, e.g. `:set nowrap`).
+    - Column widths in table output are now calculated based on
+      inspecting the first 100 rows of the result (this can be adjusted
+      or disabled using the inspect option, e.g. `:set inspect=0`).
+    - Render the timing information returned by the server.
+    - Update the profile/plan output, based on data returned from newer
+      Neo4j versions.
+    - Fixed an issue that would prevent prompting for updated passwords
+      when reattempting auth.
+
+ -- Chris Leishman <chris@leishman.org>  Sun, 21 May 2017 20:13:39 +0000
+
 libneo4j-client (2.0.0-1) unstable; urgency=medium
 
   * New upstream release 2.0.0

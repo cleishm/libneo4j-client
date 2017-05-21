@@ -24,14 +24,38 @@
 #include <string.h>
 
 
-int basic_auth(void *userdata, const char *host, char *username, size_t usize,
-        char *password, size_t psize)
+int basic_auth(struct auth_state *auth_state, const char *host,
+        char *username, size_t usize, char *password, size_t psize)
 {
-    assert(usize > 1);
-    if (username[0] == '\0' && readpassphrase("Username: ", username, usize,
-            RPP_REQUIRE_TTY | RPP_ECHO_ON) == NULL)
+    if (auth_state->attempt > 1 || username[0] == '\0')
     {
-        return -1;
+        assert(usize > 1);
+
+        char default_username[NEO4J_MAXUSERNAMELEN + 1];
+        assert(strlen(username) <= NEO4J_MAXUSERNAMELEN);
+        strncpy(default_username, username, sizeof(default_username));
+
+        char uprompt[NEO4J_MAXUSERNAMELEN + 14];
+        if (username[0] != '\0')
+        {
+            snprintf(uprompt, sizeof(uprompt),
+                    "Username [%s]: ", default_username);
+        }
+        else
+        {
+            strncpy(uprompt, "Username: ", sizeof(uprompt));
+        }
+
+        if (readpassphrase(uprompt, username, usize,
+                RPP_REQUIRE_TTY | RPP_ECHO_ON) == NULL)
+        {
+            return -1;
+        }
+
+        if (username[0] == '\0')
+        {
+            strncpy(username, default_username, usize);
+        }
     }
 
     assert(psize > 1);
