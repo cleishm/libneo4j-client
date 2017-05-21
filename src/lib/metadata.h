@@ -102,11 +102,42 @@ int neo4j_meta_fieldnames(const char * const **names, unsigned int *nnames,
         neo4j_logger_t *logger);
 
 /**
+ * Extract a timing value from a metadata map.
+ *
+ * Checks for a "result_available_after" entry, of type Integer.
+ *
+ * @internal
+ *
+ * @param [map] The metadata map.
+ * @param [description] A description of the message from which the metadata
+ *         came, for use when logging errors.
+ * @param [logger] A logger to emit error messages to.
+ * @return The value, or -1 if an error occurs (errno will be set).
+ */
+long long neo4j_meta_result_available_after(neo4j_value_t map,
+        const char *description, neo4j_logger_t *logger);
+
+/**
+ * Extract a timing value from a metadata map.
+ *
+ * Checks for a "result_consumed_after" entry, of type Integer.
+ *
+ * @internal
+ *
+ * @param [map] The metadata map.
+ * @param [description] A description of the message from which the metadata
+ *         came, for use when logging errors.
+ * @param [logger] A logger to emit error messages to.
+ * @return The value, or -1 if an error occurs (errno will be set).
+ */
+long long neo4j_meta_result_consumed_after(neo4j_value_t map,
+        const char *description, neo4j_logger_t *logger);
+
+/**
  * Extract statement type from a metadata map.
  *
- * Checks for a "type" entry, of type String. If found, the matching
- * statement type is returned. If it is not found, or if the value is not
- * a known statement type.
+ * Checks for a "type" entry, of type String. If found, and is of
+ * a known type, the matching statement type is returned.
  *
  * @internal
  *

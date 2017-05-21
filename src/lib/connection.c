@@ -33,7 +33,8 @@
 #include <unistd.h>
 
 
-static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config);
+static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
+        uint_fast32_t flags);
 static neo4j_connection_t *establish_connection(const char *hostname,
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags);
 static neo4j_iostream_t *std_tcp_connect(
@@ -43,7 +44,7 @@ static neo4j_iostream_t *std_tcp_connect(
 static int negotiate_protocol_version(neo4j_iostream_t *iostream,
         uint32_t *protocol_version);
 
-static inline bool interrupted(neo4j_connection_t *connection);
+static bool interrupted(neo4j_connection_t *connection);
 static int session_reset(neo4j_connection_t *connection);
 
 static int send_requests(neo4j_connection_t *connection);
@@ -98,14 +99,16 @@ neo4j_connection_t *neo4j_connect(const char *uri_string,
         goto failure;
     }
 
-    if (uri->userinfo != NULL && !(flags & NEO4J_NO_URI_CREDENTIALS))
+    if (uri->userinfo != NULL)
     {
-        if (add_userinfo_to_config(uri->userinfo, config))
+        if (!(flags & NEO4J_NO_URI_CREDENTIALS) &&
+                add_userinfo_to_config(uri->userinfo, config, flags))
         {
             goto failure;
         }
         // clear any password in the URI
-        memset(uri->userinfo, 0, strlen(uri->userinfo));
+        size_t userinfolen = strlen(uri->userinfo);
+        memset_s(uri->userinfo, userinfolen, 0, userinfolen);
     }
 
     unsigned int port = (uri->port > 0)? uri->port : NEO4J_DEFAULT_TCP_PORT;
@@ -144,7 +147,8 @@ failure:
 }
 
 
-int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config)
+int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
+        uint_fast32_t flags)
 {
     size_t username_len = strcspn(userinfo, ":");
     if (*(userinfo + username_len) == '\0')
@@ -167,7 +171,8 @@ int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config)
             return -1;
         }
         free(username);
-        if (neo4j_config_set_password(config, userinfo + username_len + 1))
+        if (!(flags & NEO4J_NO_URI_PASSWORD) &&
+                neo4j_config_set_password(config, userinfo + username_len + 1))
         {
             return -1;
         }
@@ -626,7 +631,7 @@ int neo4j_reset(neo4j_connection_t *connection)
 }
 
 
-inline bool interrupted(neo4j_connection_t *connection)
+bool interrupted(neo4j_connection_t *connection)
 {
     return neo4j_atomic_bool_get(&(connection->reset_requested));
 }

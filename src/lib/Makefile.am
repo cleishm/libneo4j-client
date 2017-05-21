@@ -76,4 +76,4 @@ libneo4j_client_la_LIBADD = $(PTHREAD_LIBS) $(OPENSSL_LIBS) $(LIBM)
 #    increment age.
 # 4. If any interfaces have been removed or changed since the last public
 #    release, then set age to 0.
-libneo4j_client_la_LDFLAGS = -version-info 11:0:0
+libneo4j_client_la_LDFLAGS = -version-info 12:0:1
