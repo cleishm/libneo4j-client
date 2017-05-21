@@ -14,7 +14,7 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[2.0.0])
+AC_INIT([libneo4j-client],[2.1.0])
 AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
@@ -127,6 +127,8 @@ AC_CHECK_FUNCS([open_memstream],[],[])
 AC_CHECK_HEADERS([readpassphrase.h bsd/readpassphrase.h])
 AC_SEARCH_LIBS([readpassphrase],[bsd])
 AC_CHECK_FUNCS([readpassphrase],[],[])
+
+AC_CHECK_FUNCS([memset_s],[],[])
 
 
 dnl Threading

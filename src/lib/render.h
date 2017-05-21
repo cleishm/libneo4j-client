@@ -26,6 +26,7 @@ uint_fast32_t normalize_render_flags(uint_fast32_t flags);
 typedef enum
 {
     HLINE_TOP,
+    HLINE_HEAD,
     HLINE_MIDDLE,
     HLINE_BOTTOM
 } hline_position_t;
@@ -33,10 +34,14 @@ typedef enum
 typedef enum
 {
     HORIZONTAL_LINE,
+    HEAD_LINE,
     VERTICAL_LINE,
     TOP_LEFT_CORNER,
     TOP_MIDDLE_CORNER,
     TOP_RIGHT_CORNER,
+    HEAD_LEFT_CORNER,
+    HEAD_MIDDLE_CORNER,
+    HEAD_RIGHT_CORNER,
     MIDDLE_LEFT_CORNER,
     MIDDLE_MIDDLE_CORNER,
     MIDDLE_RIGHT_CORNER,
@@ -46,16 +51,26 @@ typedef enum
 } border_line_t;
 
 int render_border_line(FILE *stream, border_line_t line_type,
-        uint_fast32_t flags);
+        uint_fast32_t flags,
+        const struct neo4j_results_table_colors *colors);
 
 int render_hrule(FILE *stream, unsigned int ncolumns,
         unsigned int *widths, hline_position_t position,
-        bool undersize, uint_fast32_t flags);
+        bool undersize, uint_fast32_t flags,
+        const struct neo4j_results_table_colors *colors);
 
-typedef int (*render_row_callback_t)(
-        void *cdata, FILE *stream, unsigned int n, unsigned int width);
+int render_overflow(FILE *stream, uint_fast32_t flags,
+        const char * const color[2]);
+
+typedef ssize_t (*render_row_callback_t)(
+        void *cdata, unsigned int n, const char **s, bool *duplicate);
 int render_row(FILE *stream, unsigned int ncolumns,
-        unsigned int *widths, bool undersize, uint_fast32_t flags,
+        const unsigned int *widths, bool undersize, uint_fast32_t flags,
+        const struct neo4j_results_table_colors *colors,
+        const char * const field_color[2],
         render_row_callback_t callback, void *cdata);
+
+int fit_column_widths(unsigned int n, unsigned int widths[],
+        unsigned int min, unsigned int max_total);
 
 #endif/*NEO4J_RENDER_H*/

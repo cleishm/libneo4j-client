@@ -71,7 +71,7 @@ int render_results_csv(shell_state_t *state,
         struct cypher_input_position pos,
         neo4j_result_stream_t *results)
 {
-    return neo4j_render_csv(state->output, results, state->render_flags);
+    return neo4j_render_ccsv(state->config, state->output, results);
 }
 
 
@@ -88,7 +88,8 @@ int render_results_table(shell_state_t *state,
     {
         width = 2;
     }
-    return neo4j_render_table(state->output, results, width, state->render_flags);
+    return neo4j_render_results_table(state->config, state->output, results,
+            width);
 }
 
 
@@ -183,5 +184,27 @@ int render_plan_table(shell_state_t *state,
     {
         return -1;
     }
-    return neo4j_render_plan_table(state->output, plan, width, state->render_flags);
+    return neo4j_render_plan_ctable(state->config, state->output, plan, width);
+}
+
+
+int render_timing(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results,
+        unsigned long long client_time)
+{
+    assert(results != NULL);
+    unsigned long long count = neo4j_result_count(results);
+    unsigned long long available = neo4j_results_available_after(results);
+    unsigned long long consumed = neo4j_results_consumed_after(results);
+
+    if (available > 0 && fprintf(state->output,
+            "\n%lld rows returned in %lldms "
+            "(first row after %lldms, rendered after %lldms)\n",
+            count, available + consumed, available, client_time) < 0)
+    {
+        return -1;
+    }
+
+    return 0;
 }

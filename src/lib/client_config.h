@@ -61,6 +61,11 @@ struct neo4j_config
 
     neo4j_unverified_host_callback_t unverified_host_callback;
     void *unverified_host_callback_userdata;
+
+    uint_fast32_t render_flags;
+    unsigned int render_inspect_rows;
+    const struct neo4j_results_table_colors *results_table_colors;
+    const struct neo4j_plan_table_colors *plan_table_colors;
 };
 
 

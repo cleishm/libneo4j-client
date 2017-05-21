@@ -654,6 +654,86 @@ START_TEST (test_send_returns_failure_when_statement_fails)
 END_TEST
 
 
+START_TEST (test_peek_retrieves_records_in_order)
+{
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
+    ck_assert_ptr_ne(results, NULL);
+    ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
+
+    queue_run_success(server_ios); // RUN
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_stream_end_success_with_counts(server_ios); // PULL_ALL
+
+    ck_assert_int_eq(neo4j_check_failure(results), 0);
+
+    neo4j_result_t *first = neo4j_retain(neo4j_peek(results, 0));
+    ck_assert_ptr_ne(first, NULL);
+    neo4j_result_t *third = neo4j_retain(neo4j_peek(results, 2));
+    ck_assert_ptr_ne(third, NULL);
+
+    ck_assert_ptr_eq(neo4j_fetch_next(results), first);
+    ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
+
+    neo4j_result_t *fourth = neo4j_retain(neo4j_peek(results, 1));
+    ck_assert_ptr_ne(fourth, NULL);
+
+    ck_assert_ptr_eq(neo4j_fetch_next(results), third);
+
+    ck_assert_ptr_eq(neo4j_peek(results, 0), fourth);
+
+    ck_assert_ptr_eq(neo4j_fetch_next(results), fourth);
+    ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
+
+    ck_assert_int_eq(errno, 0);
+
+    ck_assert_int_eq(neo4j_check_failure(results), 0);
+
+    neo4j_release(first);
+    neo4j_release(third);
+    neo4j_release(fourth);
+    ck_assert_int_eq(neo4j_close_results(results), 0);
+
+    ck_assert(rb_is_empty(in_rb));
+}
+END_TEST
+
+
+START_TEST (test_peek_beyond_depth)
+{
+    neo4j_result_stream_t *results = neo4j_run(connection, "RETURN 1", neo4j_null);
+    ck_assert_ptr_ne(results, NULL);
+    ck_assert(rb_is_empty(out_rb)); // message is queued but not sent
+
+    queue_run_success(server_ios); // RUN
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_stream_end_success_with_counts(server_ios); // PULL_ALL
+
+    ck_assert_int_eq(neo4j_check_failure(results), 0);
+
+    neo4j_result_t *first = neo4j_peek(results, 0);
+    ck_assert_ptr_ne(first, NULL);
+    neo4j_retain(first);
+    ck_assert_ptr_eq(neo4j_peek(results, 2), NULL);
+
+    ck_assert_ptr_eq(neo4j_fetch_next(results), first);
+    ck_assert_ptr_ne(neo4j_fetch_next(results), NULL);
+    ck_assert_ptr_eq(neo4j_fetch_next(results), NULL);
+    ck_assert_int_eq(errno, 0);
+
+    ck_assert_int_eq(neo4j_check_failure(results), 0);
+
+    neo4j_release(first);
+    ck_assert_int_eq(neo4j_close_results(results), 0);
+
+    ck_assert(rb_is_empty(in_rb));
+}
+END_TEST
+
+
 TCase* result_stream_tcase(void)
 {
     TCase *tc = tcase_create("result stream");
@@ -671,5 +751,7 @@ TCase* result_stream_tcase(void)
     tcase_add_test(tc, test_send_completes);
     tcase_add_test(tc, test_send_returns_fieldnames);
     tcase_add_test(tc, test_send_returns_failure_when_statement_fails);
+    tcase_add_test(tc, test_peek_retrieves_records_in_order);
+    tcase_add_test(tc, test_peek_beyond_depth);
     return tc;
 }
