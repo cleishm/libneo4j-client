@@ -113,14 +113,14 @@ CONFIG_CLEAN_VPATH_FILES =
 am__check_libneo4j_client_SOURCES_DIST = check_buffering_iostream.c \
 	check_chunking_iostream.c check_config.c check_connection.c \
 	check_deserialization.c check_dotdir.c check_error_handling.c \
-	check_logging.c check_memory.c check_render_plan.c \
-	check_render_results.c check_result_stream.c \
-	check_ring_buffer.c check_serialization.c check_tofu.c \
-	check_u8.c check_uri.c check_util.c check_values.c \
-	check_openssl.c check_libneo4j-client.c \
-	check_libneo4j-client_suite.c canned_result_stream.c \
-	canned_result_stream.h memiostream.c memiostream.h memstream.c \
-	memstream.h util.c util.h
+	check_logging.c check_memory.c check_fit_column_widths.c \
+	check_render_plan.c check_render_results.c \
+	check_result_stream.c check_ring_buffer.c \
+	check_serialization.c check_tofu.c check_u8.c check_uri.c \
+	check_util.c check_values.c check_openssl.c \
+	check_libneo4j-client.c check_libneo4j-client_suite.c \
+	canned_result_stream.c canned_result_stream.h memiostream.c \
+	memiostream.h memstream.c memstream.h util.c util.h
 @HAVE_OPENSSL_TRUE@@WITH_TLS_TRUE@am__objects_1 = check_libneo4j_client-check_openssl.$(OBJEXT)
 am__objects_2 =  \
 	check_libneo4j_client-check_buffering_iostream.$(OBJEXT) \
@@ -132,6 +132,7 @@ am__objects_2 =  \
 	check_libneo4j_client-check_error_handling.$(OBJEXT) \
 	check_libneo4j_client-check_logging.$(OBJEXT) \
 	check_libneo4j_client-check_memory.$(OBJEXT) \
+	check_libneo4j_client-check_fit_column_widths.$(OBJEXT) \
 	check_libneo4j_client-check_render_plan.$(OBJEXT) \
 	check_libneo4j_client-check_render_results.$(OBJEXT) \
 	check_libneo4j_client-check_result_stream.$(OBJEXT) \
@@ -600,11 +601,11 @@ check_libneo4j_client_SOURCES = \
 check_libneo4j_client_CHECKS = check_buffering_iostream.c \
 	check_chunking_iostream.c check_config.c check_connection.c \
 	check_deserialization.c check_dotdir.c check_error_handling.c \
-	check_logging.c check_memory.c check_render_plan.c \
-	check_render_results.c check_result_stream.c \
-	check_ring_buffer.c check_serialization.c check_tofu.c \
-	check_u8.c check_uri.c check_util.c check_values.c \
-	$(am__append_1)
+	check_logging.c check_memory.c check_fit_column_widths.c \
+	check_render_plan.c check_render_results.c \
+	check_result_stream.c check_ring_buffer.c \
+	check_serialization.c check_tofu.c check_u8.c check_uri.c \
+	check_util.c check_values.c $(am__append_1)
 check_libneo4j_client_CFLAGS = @CHECK_CFLAGS@
 check_libneo4j_client_LDFLAGS = -static
 check_libneo4j_client_LDADD = \
@@ -672,6 +673,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_deserialization.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_dotdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_error_handling.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_libneo4j-client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_libneo4j-client_suite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_libneo4j_client-check_logging.Po@am__quote@
@@ -837,6 +839,20 @@ check_libneo4j_client-check_memory.obj: check_memory.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check_memory.c' object='check_libneo4j_client-check_memory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_libneo4j_client_CFLAGS) $(CFLAGS) -c -o check_libneo4j_client-check_memory.obj `if test -f 'check_memory.c'; then $(CYGPATH_W) 'check_memory.c'; else $(CYGPATH_W) '$(srcdir)/check_memory.c'; fi`
+
+check_libneo4j_client-check_fit_column_widths.o: check_fit_column_widths.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_libneo4j_client_CFLAGS) $(CFLAGS) -MT check_libneo4j_client-check_fit_column_widths.o -MD -MP -MF $(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Tpo -c -o check_libneo4j_client-check_fit_column_widths.o `test -f 'check_fit_column_widths.c' || echo '$(srcdir)/'`check_fit_column_widths.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Tpo $(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check_fit_column_widths.c' object='check_libneo4j_client-check_fit_column_widths.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_libneo4j_client_CFLAGS) $(CFLAGS) -c -o check_libneo4j_client-check_fit_column_widths.o `test -f 'check_fit_column_widths.c' || echo '$(srcdir)/'`check_fit_column_widths.c
+
+check_libneo4j_client-check_fit_column_widths.obj: check_fit_column_widths.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_libneo4j_client_CFLAGS) $(CFLAGS) -MT check_libneo4j_client-check_fit_column_widths.obj -MD -MP -MF $(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Tpo -c -o check_libneo4j_client-check_fit_column_widths.obj `if test -f 'check_fit_column_widths.c'; then $(CYGPATH_W) 'check_fit_column_widths.c'; else $(CYGPATH_W) '$(srcdir)/check_fit_column_widths.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Tpo $(DEPDIR)/check_libneo4j_client-check_fit_column_widths.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='check_fit_column_widths.c' object='check_libneo4j_client-check_fit_column_widths.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_libneo4j_client_CFLAGS) $(CFLAGS) -c -o check_libneo4j_client-check_fit_column_widths.obj `if test -f 'check_fit_column_widths.c'; then $(CYGPATH_W) 'check_fit_column_widths.c'; else $(CYGPATH_W) '$(srcdir)/check_fit_column_widths.c'; fi`
 
 check_libneo4j_client-check_render_plan.o: check_render_plan.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(check_libneo4j_client_CFLAGS) $(CFLAGS) -MT check_libneo4j_client-check_render_plan.o -MD -MP -MF $(DEPDIR)/check_libneo4j_client-check_render_plan.Tpo -c -o check_libneo4j_client-check_render_plan.o `test -f 'check_render_plan.c' || echo '$(srcdir)/'`check_render_plan.c

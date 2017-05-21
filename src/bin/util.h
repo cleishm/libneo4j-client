@@ -43,4 +43,13 @@
 
 char *strncpy_alloc(char **dest, size_t *cap, const char *s, size_t n);
 
+/**
+ * Ignore the result from a function call (suppressing -Wunused-result).
+ *
+ * (See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66425#c18)
+ *
+ * @internal
+ */
+#define ignore_unused_result(func) if (func) { }
+
 #endif/*NEO4J_UTIL_H*/

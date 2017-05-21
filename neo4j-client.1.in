@@ -185,6 +185,9 @@ Show the client connection status, which indicates if the client is
 disconnected or connected to a server. If the latter, the connection URI is
 output.
 .TP
+.I :schema
+Show database schema indexes and constraints.
+.TP
 .I ":format (table|csv)"
 Set the output format to either table or CSV.
 

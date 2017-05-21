@@ -20,8 +20,16 @@
 #include <neo4j-client.h>
 #include "state.h"
 
-int basic_auth(void *userdata, const char *host, char *username, size_t usize,
-        char *password, size_t psize);
+
+struct auth_state
+{
+    shell_state_t *state;
+    unsigned int attempt;
+};
+
+
+int basic_auth(struct auth_state *auth_state, const char *host,
+        char *username, size_t usize, char *password, size_t psize);
 
 int change_password(shell_state_t *state, neo4j_connection_t *connection,
         char *password, size_t pwlen);

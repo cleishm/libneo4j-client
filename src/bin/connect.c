@@ -24,12 +24,15 @@
 #define NEO4J_MAX_AUTHENTICATION_ATTEMPTS 3
 
 
-static int attempt_db_connect(shell_state_t *state,
+static int attempt_db_connect(struct auth_state *auth_state,
         struct cypher_input_position pos, const char *connect_string,
-        const char *port_string, int attempt);
+        const char *port_string);
+static int basic_auth_callback(void *userdata, const char *host,
+        char *username, size_t usize, char *password, size_t psize);
 static int check_url(shell_state_t *state, struct cypher_input_position pos,
         const char *url_string);
-static int update_password_and_reconnect(shell_state_t *state,
+static neo4j_connection_t *update_password_and_reconnect(shell_state_t *state,
+        neo4j_connection_t *connection,
         struct cypher_input_position pos);
 
 
@@ -42,18 +45,36 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
     }
     assert(state->connection == NULL);
 
-    return attempt_db_connect(state, pos, connect_string, port_string, 0);
+    struct auth_state auth_state = { .attempt = 0, .state = state };
+    if (state->password_prompt)
+    {
+        neo4j_config_set_basic_auth_callback(state->config,
+                basic_auth_callback, &auth_state);
+    }
+
+    int result = attempt_db_connect(&auth_state, pos,
+            connect_string, port_string);
+    if (state->password_prompt)
+    {
+        ignore_unused_result(neo4j_config_set_basic_auth_callback(
+                state->config, NULL, NULL));
+    }
+    return result;
 }
 
 
-int attempt_db_connect(shell_state_t *state, struct cypher_input_position pos,
-        const char *connect_string, const char *port_string, int attempt)
+int attempt_db_connect(struct auth_state *auth_state,
+        struct cypher_input_position pos, const char *connect_string,
+        const char *port_string)
 {
+    shell_state_t *state = auth_state->state;
     uint_fast32_t connect_flags = state->connect_flags;
-    if (attempt > 0)
+    if (auth_state->attempt > 0)
     {
-        connect_flags |= NEO4J_NO_URI_CREDENTIALS;
+        connect_flags |= NEO4J_NO_URI_PASSWORD;
+        ignore_unused_result(neo4j_config_set_password(state->config, NULL));
     }
+    ++(auth_state->attempt);
 
     neo4j_connection_t *connection;
 
@@ -102,11 +123,12 @@ int attempt_db_connect(shell_state_t *state, struct cypher_input_position pos,
         case NEO4J_INVALID_CREDENTIALS:
             if (state->password_prompt)
             {
+                assert(state->tty != NULL);
                 neo4j_perror(state->tty, errno, "Authentication failed");
-                if (attempt < NEO4J_MAX_AUTHENTICATION_ATTEMPTS)
+                if (auth_state->attempt <= NEO4J_MAX_AUTHENTICATION_ATTEMPTS)
                 {
-                    return attempt_db_connect(state, pos, connect_string,
-                            port_string, ++attempt);
+                    return attempt_db_connect(auth_state, pos, connect_string,
+                            port_string);
                 }
                 break;
             }
@@ -118,16 +140,36 @@ int attempt_db_connect(shell_state_t *state, struct cypher_input_position pos,
         return -1;
     }
 
-    state->connection = connection;
-
-    if (state->password_prompt && neo4j_credentials_expired(connection) &&
-            update_password_and_reconnect(state, pos))
+    if (state->password_prompt && neo4j_credentials_expired(connection))
     {
-        assert(state->connection == NULL);
-        return -1;
+        connection = update_password_and_reconnect(state, connection, pos);
+        if (connection == NULL)
+        {
+            return -1;
+        }
     }
 
+    if ((neo4j_config_get_username(state->config) == NULL))
+    {
+        const char *username = neo4j_connection_username(connection);
+        if (neo4j_config_set_username(state->config, username))
+        {
+            print_error_errno(state, pos, errno, "Unexpected error");
+            neo4j_close(connection);
+            return -1;
+        }
+    }
+
+    state->connection = connection;
     return 0;
+}
+
+
+int basic_auth_callback(void *userdata, const char *host,
+        char *username, size_t usize, char *password, size_t psize)
+{
+    return basic_auth((struct auth_state *)userdata, host,
+            username, usize, password, psize);
 }
 
 
@@ -157,12 +199,10 @@ int check_url(shell_state_t *state, struct cypher_input_position pos,
 }
 
 
-int update_password_and_reconnect(shell_state_t *state,
+neo4j_connection_t *update_password_and_reconnect(shell_state_t *state,
+        neo4j_connection_t *connection,
         struct cypher_input_position pos)
 {
-    neo4j_connection_t *connection = state->connection;
-    state->connection = NULL;
-
     neo4j_config_t *config = NULL;
 
     char *hostname = strdup(neo4j_connection_hostname(connection));
@@ -176,15 +216,9 @@ int update_password_and_reconnect(shell_state_t *state,
     const char *username = neo4j_connection_username(connection);
     if (username == NULL)
     {
-        print_error(state, pos, "Connection failed: "
+        print_error(state, pos, "Unexpected error: "
                 "credentials have expired, yet no username was provided.");
         goto failure_cleanup;
-    }
-
-    config = neo4j_config_dup(state->config);
-    if (config == NULL)
-    {
-        goto failure;
     }
 
     assert(state->tty != NULL);
@@ -196,12 +230,10 @@ int update_password_and_reconnect(shell_state_t *state,
         goto failure_cleanup;
     }
 
-    if (neo4j_config_set_username(config, username))
-    {
-        goto failure;
-    }
-
-    if (neo4j_config_set_password(config, password))
+    // prepare new config
+    config = neo4j_config_dup(state->config);
+    if (config == NULL || neo4j_config_set_username(config, username) ||
+            neo4j_config_set_password(config, password))
     {
         goto failure;
     }
@@ -215,13 +247,12 @@ int update_password_and_reconnect(shell_state_t *state,
         goto failure;
     }
 
-    state->connection = connection;
     free(hostname);
     neo4j_config_free(config);
-    return 0;
+    return connection;
 
 failure:
-    print_error_errno(state, pos, errno, "Connection failed");
+    print_error_errno(state, pos, errno, "Unexpected error");
 failure_cleanup:
     if (connection != NULL)
     {
@@ -229,7 +260,7 @@ failure_cleanup:
     }
     free(hostname);
     neo4j_config_free(config);
-    return -1;
+    return NULL;
 }
 
 

@@ -38,4 +38,9 @@ int render_plan_table(shell_state_t *state,
         struct cypher_input_position pos,
         struct neo4j_statement_plan *plan);
 
+int render_timing(shell_state_t *state,
+        struct cypher_input_position pos,
+        neo4j_result_stream_t *results,
+        unsigned long long client_time);
+
 #endif/*NEO4J_RENDER_H*/

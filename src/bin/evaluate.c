@@ -21,6 +21,7 @@
 #include "render.h"
 #include <assert.h>
 #include <errno.h>
+#include <sys/time.h>
 
 
 static int not_connected_error(evaluation_continuation_t *self,
@@ -55,6 +56,7 @@ struct evaluation_continuation
 {
     int (*complete)(evaluation_continuation_t *self, shell_state_t *state);
     struct cypher_input_position pos;
+    struct timeval start_time;
     neo4j_result_stream_t *results;
     int err;
     char statement[];
@@ -82,6 +84,12 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
             sizeof(evaluation_continuation_t) + n + 1);
     if (continuation == NULL)
     {
+        return NULL;
+    }
+
+    if (state->show_timing && gettimeofday(&(continuation->start_time), NULL))
+    {
+        free(continuation);
         return NULL;
     }
 
@@ -216,6 +224,23 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
         goto cleanup;
     }
 
+    if (state->show_timing)
+    {
+        struct timeval end_time;
+        if (gettimeofday(&end_time, NULL))
+        {
+            print_error_errno(state, self->pos, errno, "Unexpected error");
+            goto cleanup;
+        }
+        unsigned long long total =
+            (end_time.tv_sec - self->start_time.tv_sec) * 1000 +
+            (end_time.tv_usec - self->start_time.tv_usec) / 1000;
+        if (render_timing(state, self->pos, self->results, total))
+        {
+            goto cleanup;
+        }
+    }
+
     result = 0;
 
 cleanup:
@@ -259,4 +284,99 @@ void echo(shell_state_t *state, const char *s, size_t n, const char *postfix)
 
     fputs(postfix, state->output);
     fputc('\n', state->output);
+}
+
+
+int display_schema(shell_state_t* state, struct cypher_input_position pos)
+{
+    if (state->connection == NULL)
+    {
+        print_error(state, pos, "Not connected\n");
+        return -1;
+    }
+
+    neo4j_result_stream_t *indexes_result = NULL;
+    neo4j_result_stream_t *constraints_result = NULL;
+
+    indexes_result = neo4j_run(state->connection,
+            "CALL db.indexes()", neo4j_null);
+    if (indexes_result == NULL)
+    {
+        print_error_errno(state, pos, errno, "db.indexes() failed");
+        goto failure;
+    }
+    constraints_result = neo4j_run(state->connection,
+            "CALL db.constraints()", neo4j_null);
+    if (constraints_result == NULL)
+    {
+        print_error_errno(state, pos, errno, "db.constraints() failed");
+        goto failure;
+    }
+
+    fprintf(state->output, "Indexes\n");
+    neo4j_result_t *result;
+    while ((result = neo4j_fetch_next(indexes_result)) != NULL)
+    {
+        neo4j_value_t index_desc = neo4j_result_field(result, 0);
+        neo4j_value_t index_state = neo4j_result_field(result, 1);
+        if (!neo4j_instanceof(index_desc, NEO4J_STRING) ||
+            !neo4j_instanceof(index_state, NEO4J_STRING))
+        {
+            print_error(state, pos, "Invalid result from db.indexes()\n");
+            goto failure;
+        }
+        fprintf(state->output, "   %.*s %.*s\n",
+                neo4j_string_length(index_desc),
+                neo4j_ustring_value(index_desc),
+                neo4j_string_length(index_state),
+                neo4j_ustring_value(index_state));
+    }
+
+    int err;
+    if ((err = neo4j_check_failure(indexes_result)) != 0)
+    {
+        print_error_errno(state, pos, err, "db.indexes() failed");
+        goto failure;
+    }
+
+    if (neo4j_close_results(indexes_result))
+    {
+        print_error_errno(state, pos, errno, "Unexpected error");
+        goto failure;
+    }
+
+    fprintf(state->output, "\nConstraints\n");
+    while ((result = neo4j_fetch_next(constraints_result)) != NULL)
+    {
+        neo4j_value_t desc = neo4j_result_field(result, 0);
+        if (!neo4j_instanceof(desc, NEO4J_STRING))
+        {
+            print_error(state, pos, "Invalid result from db.constraints()\n");
+            goto failure;
+        }
+        fprintf(state->output, "   %.*s\n", neo4j_string_length(desc),
+                neo4j_ustring_value(desc));
+    }
+
+    if ((err = neo4j_check_failure(constraints_result)) != 0)
+    {
+        print_error_errno(state, pos, err, "db.constraints() failed");
+        goto failure;
+    }
+
+    if (neo4j_close_results(constraints_result))
+    {
+        print_error_errno(state, pos, errno, "Unexpected error");
+        goto failure;
+    }
+
+    return 0;
+
+    int errsv;
+failure:
+    errsv = errno;
+    neo4j_close_results(indexes_result);
+    neo4j_close_results(constraints_result);
+    errno = errsv;
+    return -1;
 }

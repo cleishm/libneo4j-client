@@ -23,7 +23,25 @@ libneo4j-client.so.11 libneo4j-client11 #MINVER#
  neo4j_close_results@Base 1.2.0
  neo4j_config_dup@Base 1.2.0
  neo4j_config_free@Base 1.2.0
+ neo4j_config_get_TLS_ca_dir@Base 2.1.0
+ neo4j_config_get_TLS_ca_file@Base 2.1.0
+ neo4j_config_get_TLS_private_key@Base 2.1.0
  neo4j_config_get_client_id@Base 1.2.0
+ neo4j_config_get_known_hosts_file@Base 2.1.0
+ neo4j_config_get_max_pipelined_requests@Base 2.1.0
+ neo4j_config_get_memory_allocator@Base 2.1.0
+ neo4j_config_get_plan_table_colorization@Base 2.1.0
+ neo4j_config_get_render_ascii@Base 2.1.0
+ neo4j_config_get_render_inspect_rows@Base 2.1.0
+ neo4j_config_get_render_nulls@Base 2.1.0
+ neo4j_config_get_render_quoted_strings@Base 2.1.0
+ neo4j_config_get_render_rowlines@Base 2.1.0
+ neo4j_config_get_render_wrap_markers@Base 2.1.0
+ neo4j_config_get_render_wrapped_values@Base 2.1.0
+ neo4j_config_get_results_table_colors@Base 2.1.0
+ neo4j_config_get_so_rcvbuf_size@Base 2.1.0
+ neo4j_config_get_so_sndbuf_size@Base 2.1.0
+ neo4j_config_get_trust_known_hosts@Base 2.1.0
  neo4j_config_get_username@Base 1.2.0
  neo4j_config_set_TLS_ca_dir@Base 1.2.0
  neo4j_config_set_TLS_ca_file@Base 1.2.0
@@ -38,7 +56,16 @@ libneo4j-client.so.11 libneo4j-client11 #MINVER#
  neo4j_config_set_max_pipelined_requests@Base 1.2.0
  neo4j_config_set_memory_allocator@Base 1.2.0
  neo4j_config_set_password@Base 1.2.0
+ neo4j_config_set_plan_table_colors@Base 2.1.0
  neo4j_config_set_rcvbuf_size@Base 1.2.0
+ neo4j_config_set_render_ascii@Base 2.1.0
+ neo4j_config_set_render_inspect_rows@Base 2.1.0
+ neo4j_config_set_render_nulls@Base 2.1.0
+ neo4j_config_set_render_quoted_strings@Base 2.1.0
+ neo4j_config_set_render_rowlines@Base 2.1.0
+ neo4j_config_set_render_wrap_markers@Base 2.1.0
+ neo4j_config_set_render_wrapped_values@Base 2.1.0
+ neo4j_config_set_results_table_colors@Base 2.1.0
  neo4j_config_set_sndbuf_size@Base 1.2.0
  neo4j_config_set_so_rcvbuf_size@Base 1.2.0
  neo4j_config_set_so_sndbuf_size@Base 1.2.0
@@ -85,18 +112,29 @@ libneo4j-client.so.11 libneo4j-client11 #MINVER#
  neo4j_path_get_node@Base 1.2.0
  neo4j_path_get_relationship@Base 1.2.0
  neo4j_path_length@Base 1.2.0
+ neo4j_peek@Base 2.1.0
  neo4j_perror@Base 1.2.0
+ neo4j_plan_table_ansi_colors@Base 2.1.0
+ neo4j_plan_table_no_colors@Base 2.1.0
  neo4j_relationship_end_node_identity@Base 1.2.0
  neo4j_relationship_identity@Base 1.2.0
  neo4j_relationship_properties@Base 1.2.0
  neo4j_relationship_start_node_identity@Base 1.2.0
  neo4j_relationship_type@Base 1.2.0
  neo4j_release@Base 1.2.0
+ neo4j_render_ccsv@Base 2.1.0
  neo4j_render_csv@Base 1.2.0
+ neo4j_render_plan_ctable@Base 2.1.0
  neo4j_render_plan_table@Base 1.2.0
+ neo4j_render_results_table@Base 2.1.0
  neo4j_render_table@Base 1.2.0
  neo4j_reset@Base 2.0.0
+ neo4j_result_count@Base 2.1.0
  neo4j_result_field@Base 1.2.0
+ neo4j_results_available_after@Base 2.1.0
+ neo4j_results_consumed_after@Base 2.1.0
+ neo4j_results_table_ansi_colors@Base 2.1.0
+ neo4j_results_table_no_colors@Base 2.1.0
  neo4j_retain@Base 1.2.0
  neo4j_run@Base 1.2.0
  neo4j_send@Base 1.2.0

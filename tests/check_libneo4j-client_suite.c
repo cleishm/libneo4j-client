@@ -9,6 +9,7 @@ TCase* dotdir_tcase(void);
 TCase* error_handling_tcase(void);
 TCase* logging_tcase(void);
 TCase* memory_tcase(void);
+TCase* fit_column_widths_tcase(void);
 TCase* render_plan_tcase(void);
 TCase* render_results_tcase(void);
 TCase* result_stream_tcase(void);
@@ -33,6 +34,7 @@ Suite *libneo4j_client_suite(void)
     suite_add_tcase(s, error_handling_tcase());
     suite_add_tcase(s, logging_tcase());
     suite_add_tcase(s, memory_tcase());
+    suite_add_tcase(s, fit_column_widths_tcase());
     suite_add_tcase(s, render_plan_tcase());
     suite_add_tcase(s, render_results_tcase());
     suite_add_tcase(s, result_stream_tcase());
