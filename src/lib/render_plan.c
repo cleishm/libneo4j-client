@@ -16,33 +16,11 @@
  */
 #include "../../config.h"
 #include "neo4j-client.h"
+#include "client_config.h"
 #include "render.h"
 #include "util.h"
 #include <assert.h>
 #include <math.h>
-
-
-#define ANSI_COLOR_RESET "\x1b[0m"
-#define ANSI_COLOR_GREY "\x1b[38;5;238m"
-#define ANSI_COLOR_BLUE "\x1b[38;5;75m"
-#define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
-
-static struct neo4j_plan_ctable_colorization _neo4j_plan_ctable_no_colorization =
-    { .border = { "", "" },
-      .header = { "", "" },
-      .cells = { "", "" },
-      .graph = { "", "" } };
-
-static struct neo4j_plan_ctable_colorization _neo4j_plan_ctable_ansi_colorization =
-    { .border = { ANSI_COLOR_GREY, ANSI_COLOR_RESET },
-      .header = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
-      .cells = { "", "" },
-      .graph = { ANSI_COLOR_BLUE, ANSI_COLOR_RESET } };
-
-const struct neo4j_plan_ctable_colorization *neo4j_plan_ctable_no_colorization =
-        &_neo4j_plan_ctable_no_colorization;
-const struct neo4j_plan_ctable_colorization *neo4j_plan_ctable_ansi_colorization =
-        &_neo4j_plan_ctable_ansi_colorization;
 
 
 static ssize_t obtain_header(void *data, unsigned int n, const char **s,
@@ -52,20 +30,20 @@ static int render_steps(FILE *stream,
         struct neo4j_statement_execution_step *step, unsigned int depth,
         bool last, char **ids_buffer, size_t *ids_bufcap, char **args_buffer,
         size_t *args_bufcap, unsigned int widths[6], uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors);
+        const struct neo4j_plan_table_colors *colors);
 static int render_op(FILE *stream, const char *operator_type,
         unsigned int op_depth, unsigned int width, uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors);
+        const struct neo4j_plan_table_colors *colors);
 static ssize_t build_str_list(const char * const *list, unsigned int n,
         char **buffer, size_t *bufcap);
 static ssize_t build_args_value(neo4j_value_t args, char **buffer,
         size_t *bufcap);
 static int render_wrap(FILE *stream, unsigned int op_depth,
         unsigned int widths[4], uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors);
+        const struct neo4j_plan_table_colors *colors);
 static int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         unsigned int widths[6], uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors);
+        const struct neo4j_plan_table_colors *colors);
 static void calculate_widths(unsigned int widths[6],
         struct neo4j_statement_plan *plan, unsigned int render_width);
 static unsigned int operators_width(
@@ -85,31 +63,36 @@ static unsigned int MIN_IDS_WIDTH = 11; // strlen(HEADERS[4]);
 static unsigned int MIN_OTH_WIDTH = 5; // strlen(HEADERS[5]);
 
 
-static const struct neo4j_ctable_colorization *ctable_colors(
-    const struct neo4j_plan_ctable_colorization *plan_colors)
+static const struct neo4j_results_table_colors *ctable_colors(
+    const struct neo4j_plan_table_colors *plan_colors)
 {
-    return (const struct neo4j_ctable_colorization *)plan_colors;
+    return (const struct neo4j_results_table_colors *)plan_colors;
 }
 
 
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         unsigned int width, uint_fast32_t flags)
 {
-    return neo4j_render_plan_ctable(stream, plan, width, flags,
-            (flags & NEO4J_RENDER_ANSI_COLOR)? neo4j_plan_ctable_ansi_colorization :
-            neo4j_plan_ctable_no_colorization);
+    neo4j_config_t *config = neo4j_new_config();
+    config->render_flags |= flags;
+    neo4j_config_set_plan_table_colors(config,
+            (flags & NEO4J_RENDER_ANSI_COLOR)? neo4j_plan_table_ansi_colors :
+            neo4j_plan_table_no_colors);
+    int err = neo4j_render_plan_ctable(config, stream, plan, width);
+    neo4j_config_free(config);
+    return err;
 }
 
 
-int neo4j_render_plan_ctable(FILE *stream, struct neo4j_statement_plan *plan,
-        unsigned int width, uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors)
+int neo4j_render_plan_ctable(const neo4j_config_t *config, FILE *stream,
+        struct neo4j_statement_plan *plan, unsigned int width)
 {
     REQUIRE(stream != NULL, -1);
     REQUIRE(plan != NULL, -1);
     REQUIRE(width > 1 && width < NEO4J_RENDER_MAX_WIDTH, -1);
 
-    flags = normalize_render_flags(flags);
+    uint_fast32_t flags = normalize_render_flags(config->render_flags);
+    const struct neo4j_plan_table_colors *colors = config->plan_table_colors;
 
     size_t ids_bufcap = NEO4J_FIELD_BUFFER_INITIAL_CAPACITY;
     char *ids_buffer = malloc(ids_bufcap);
@@ -187,9 +170,9 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
         unsigned int depth, bool last, char **ids_buffer, size_t *ids_bufcap,
         char **args_buffer, size_t *args_bufcap, unsigned int widths[6],
         uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *plan_colors)
+        const struct neo4j_plan_table_colors *plan_colors)
 {
-    const struct neo4j_ctable_colorization *colors = ctable_colors(plan_colors);
+    const struct neo4j_results_table_colors *colors = ctable_colors(plan_colors);
     struct neo4j_statement_execution_step **sources = step->sources;
     for (unsigned int i = 0; i < step->nsources; ++i)
     {
@@ -321,7 +304,7 @@ int render_steps(FILE *stream, struct neo4j_statement_execution_step *step,
 
 int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
         unsigned int width, uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors)
+        const struct neo4j_plan_table_colors *colors)
 {
     if (render_border_line(stream, VERTICAL_LINE, flags, ctable_colors(colors)))
     {
@@ -490,10 +473,9 @@ ssize_t build_args_value(neo4j_value_t args, char **buffer, size_t *bufcap)
 
 int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
         uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *plan_colors)
+        const struct neo4j_plan_table_colors *plan_colors)
 {
-    const struct neo4j_ctable_colorization *colors =
-            (const struct neo4j_ctable_colorization *)plan_colors;
+    const struct neo4j_results_table_colors *colors = ctable_colors(plan_colors);
     if (render_border_line(stream, VERTICAL_LINE, flags, colors))
     {
         return -1;
@@ -553,10 +535,9 @@ int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
 
 int render_tr(FILE *stream, unsigned int op_depth, bool branch,
         unsigned int widths[6], uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *plan_colors)
+        const struct neo4j_plan_table_colors *plan_colors)
 {
-    const struct neo4j_ctable_colorization *colors =
-            (const struct neo4j_ctable_colorization *)plan_colors;
+    const struct neo4j_results_table_colors *colors = ctable_colors(plan_colors);
 
     if (widths[0] == 0)
     {

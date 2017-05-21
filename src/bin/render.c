@@ -71,7 +71,7 @@ int render_results_csv(shell_state_t *state,
         struct cypher_input_position pos,
         neo4j_result_stream_t *results)
 {
-    return neo4j_render_csv(state->output, results, state->render_flags);
+    return neo4j_render_ccsv(state->config, state->output, results);
 }
 
 
@@ -88,7 +88,8 @@ int render_results_table(shell_state_t *state,
     {
         width = 2;
     }
-    return neo4j_render_table(state->output, results, width, state->render_flags);
+    return neo4j_render_results_table(state->config, state->output, results,
+            width);
 }
 
 
@@ -183,7 +184,7 @@ int render_plan_table(shell_state_t *state,
     {
         return -1;
     }
-    return neo4j_render_plan_table(state->output, plan, width, state->render_flags);
+    return neo4j_render_plan_ctable(state->config, state->output, plan, width);
 }
 
 

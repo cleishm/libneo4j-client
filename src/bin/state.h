@@ -53,7 +53,6 @@ struct shell_state
     const struct error_colorization *error_colorize;
     renderer_t render;
     int width;
-    uint_fast16_t render_flags;
     bool show_timing;
 
     neo4j_map_entry_t *exports;

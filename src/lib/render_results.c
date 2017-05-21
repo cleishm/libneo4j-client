@@ -25,8 +25,9 @@
 #define NEO4J_RENDER_AUTO_COLWIDTH_INSPECT 100
 
 
-static int peek_widths(neo4j_result_stream_t *results, unsigned int flags,
-        unsigned int nfields, unsigned int widths[]);
+static int peek_widths(const neo4j_config_t *config,
+        neo4j_result_stream_t *results, unsigned int nfields,
+        unsigned int widths[]);
 
 struct obtain_fieldname_cb_data
 {
@@ -59,16 +60,21 @@ static int write_value(FILE *stream, const neo4j_value_t *value,
 int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags)
 {
-    return neo4j_render_ctable(stream, results, width, flags,
-            (flags & NEO4J_RENDER_ANSI_COLOR)? neo4j_ctable_ansi_colorization :
-            neo4j_ctable_no_colorization);
+    neo4j_config_t *config = neo4j_new_config();
+    config->render_flags |= flags;
+    neo4j_config_set_results_table_colors(config,
+            (flags & NEO4J_RENDER_ANSI_COLOR)? neo4j_results_table_ansi_colors :
+            neo4j_results_table_no_colors);
+    int err = neo4j_render_results_table(config, stream, results, width);
+    neo4j_config_free(config);
+    return err;
 }
 
 
-int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
-        unsigned int width, uint_fast32_t flags,
-        const struct neo4j_ctable_colorization *colors)
+int neo4j_render_results_table(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results, unsigned int width)
 {
+    REQUIRE(config != NULL, -1);
     REQUIRE(stream != NULL, -1);
     REQUIRE(results != NULL, -1);
     REQUIRE(width > 1 && width < NEO4J_RENDER_MAX_WIDTH, -1);
@@ -86,7 +92,9 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
         return 0;
     }
 
-    flags = normalize_render_flags(flags);
+    uint_fast32_t flags = normalize_render_flags(config->render_flags);
+    const struct neo4j_results_table_colors *colors =
+            config->results_table_colors;
 
     // create array of column widths
     unsigned int *widths = NULL;
@@ -105,7 +113,7 @@ int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
     {
         widths[i] = min_col_width;
     }
-    if (peek_widths(results, flags, nfields, widths))
+    if (peek_widths(config, results, nfields, widths))
     {
         goto failure;
     }
@@ -199,9 +207,14 @@ failure:
 }
 
 
-int peek_widths(neo4j_result_stream_t *results, unsigned int flags,
+int peek_widths(const neo4j_config_t *config, neo4j_result_stream_t *results,
         unsigned int nfields, unsigned int widths[])
 {
+    if (config->render_inspect_rows == 0)
+    {
+        return 0;
+    }
+
     for (unsigned int i = 0; i < nfields; ++i)
     {
         const char *s = neo4j_fieldname(results, i);
@@ -217,7 +230,7 @@ int peek_widths(neo4j_result_stream_t *results, unsigned int flags,
         }
     }
 
-    for (unsigned int depth = 0; depth < NEO4J_RENDER_AUTO_COLWIDTH_INSPECT;
+    for (unsigned int depth = 0; depth < config->render_inspect_rows - 1;
             ++depth)
     {
         neo4j_result_t *result = neo4j_peek(results, depth);
@@ -231,14 +244,14 @@ int peek_widths(neo4j_result_stream_t *results, unsigned int flags,
             size_t l = 0;
 
             if (neo4j_type(value) == NEO4J_STRING &&
-                    !(flags & NEO4J_RENDER_QUOTE_STRINGS))
+                    !(config->render_flags & NEO4J_RENDER_QUOTE_STRINGS))
             {
                 const char *s = neo4j_ustring_value(value);
                 l = (s == NULL)? 0 : strlen(s);
             }
             else
             {
-                l = value_tostring(&value, NULL, 0, flags);
+                l = value_tostring(&value, NULL, 0, config->render_flags);
             }
             if (l > UINT_MAX-3)
             {
@@ -335,6 +348,23 @@ size_t value_tostring(neo4j_value_t *value, char *buf, size_t n,
 int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
         uint_fast32_t flags)
 {
+    neo4j_config_t *config = neo4j_new_config();
+    config->render_flags |= flags;
+    int err = neo4j_render_ccsv(config, stream, results);
+    neo4j_config_free(config);
+    return err;
+}
+
+
+int neo4j_render_ccsv(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results)
+{
+    REQUIRE(config != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+    REQUIRE(results != NULL, -1);
+
+    uint_fast32_t flags = normalize_render_flags(config->render_flags);
+
     size_t bufcap = NEO4J_FIELD_BUFFER_INITIAL_CAPACITY;
     char *buffer = malloc(bufcap);
     if (buffer == NULL)

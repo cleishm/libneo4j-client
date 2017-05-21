@@ -2142,8 +2142,6 @@ void neo4j_release(neo4j_result_t *result);
  * =====================================
  */
 
-#define NEO4J_RENDER_MAX_WIDTH 4095
-
 #define NEO4J_RENDER_DEFAULT 0
 #define NEO4J_RENDER_SHOW_NULLS (1<<0)
 #define NEO4J_RENDER_QUOTE_STRINGS (1<<1)
@@ -2155,12 +2153,259 @@ void neo4j_release(neo4j_result_t *result);
 #define NEO4J_RENDER_ANSI_COLOR (1<<7)
 
 /**
+ * Enable or disable rendering NEO4J_NULL values.
+ *
+ * If set to `true`, then NEO4J_NULL values will be rendered using the
+ * string 'null'. Otherwise, they will be blank.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rendering of NEO4J_NULL values, and
+ *         `false` to disable this behaviour.
+ */
+void neo4j_config_set_render_nulls(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if rendering of NEO4J_NULL values is enabled.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if rendering of NEO4J_NULL values is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_nulls(const neo4j_config_t *config);
+
+/**
+ * Enable or disable quoting of NEO4J_STRING values.
+ *
+ * If set to `true`, then NEO4J_STRING values will be rendered with
+ * surrounding quotes.
+ *
+ * @note This only applies when rendering to a table. In CSV output, strings
+ * are always quoted.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rendering of NEO4J_STRING values with
+ *         quotes, and `false` to disable this behaviour.
+ */
+void neo4j_config_set_render_quoted_strings(neo4j_config_t *config,
+        bool enable);
+
+/**
+ * Check if quoting of NEO4J_STRING values is enabled.
+ *
+ * @note This only applies when rendering to a table. In CSV output, strings
+ * are always quoted.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if quoting of NEO4J_STRING values is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_quoted_strings(const neo4j_config_t *config);
+
+/**
+ * Enable or disable rendering in ASCII-only.
+ *
+ * If set to `true`, then render output will only use ASCII characters and
+ * any non-ASCII characters in values will be escaped. Otherwise, UTF-8
+ * characters will be used, including unicode border drawing characters.
+ *
+ * @note This does not effect CSV output.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rendering in only ASCII characters,
+ *         and `false` to disable this behaviour.
+ */
+void neo4j_config_set_render_ascii(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if ASCII-only rendering is enabled.
+ *
+ * @note This does not effect CSV output.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if ASCII-only rendering is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_ascii(const neo4j_config_t *config);
+
+/**
+ * Enable or disable rendering of rowlines in result tables.
+ *
+ * If set to `true`, then render output will separate each table row
+ * with a rowline.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable rowline rendering, and `false` to disable
+ *         this behaviour.
+ */
+void neo4j_config_set_render_rowlines(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if rendering of rowlines is enabled.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if rowline rendering is enabled, and `false`
+ *         otherwise.
+ */
+bool neo4j_config_get_render_rowlines(const neo4j_config_t *config);
+
+/**
+ * Enable or disable wrapping of values in result tables.
+ *
+ * If set to `true`, then values will be wrapped when rendering tables.
+ * Otherwise, they will be truncated.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to enable value wrapping, and `false` to disable this
+ *         behaviour.
+ */
+void neo4j_config_set_render_wrapped_values(neo4j_config_t *config,
+        bool enable);
+
+/**
+ * Check if wrapping of values in result tables is enabled.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if wrapping of values is enabled, and `false` otherwise.
+ */
+bool neo4j_config_get_render_wrapped_values(const neo4j_config_t *config);
+
+/**
+ * Enable or disable the rendering of wrap markers when wrapping or truncating.
+ *
+ * If set to `true`, then values that are wrapped or truncated will be
+ * rendered with a wrap marker. The default value for this is `true`.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [enable] `true` to display wrap markers, and `false` to disable this
+ *         behaviour.
+ */
+void neo4j_config_set_render_wrap_markers(neo4j_config_t *config, bool enable);
+
+/**
+ * Check if wrap markers will be rendered when wrapping or truncating.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return `true` if wrap markers are enabled, and `false` otherwise.
+ */
+bool neo4j_config_get_render_wrap_markers(const neo4j_config_t *config);
+
+/**
+ * Set the number of results to inspect when determining column widths.
+ *
+ * If set to 0, no inspection will occur.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [rows] The number of results to inspect.
+ */
+void neo4j_config_set_render_inspect_rows(neo4j_config_t *config,
+        unsigned int rows);
+
+/**
+ * Set the number of results to inspect when determining column widths.
+ *
+ * @note This only applies when rendering results to a table.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The number of results that will be inspected to determine column
+ *         widths.
+ */
+unsigned int neo4j_config_get_render_inspect_rows(
+        const neo4j_config_t *config);
+
+
+struct neo4j_results_table_colors
+{
+    const char * const border[2];
+    const char * const header[2];
+    const char * const cells[2];
+};
+
+/** Results table colorization rules for uncolorized table output. */
+extern const struct neo4j_results_table_colors *
+        neo4j_results_table_no_colors;
+/** Results table colorization rules for ANSI terminal output. */
+extern const struct neo4j_results_table_colors *
+        neo4j_results_table_ansi_colors;
+
+/**
+ * Set the colorization rules for rendering of results tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [colors] Colorization rules for result tables. The pointer must
+ *         remain valid until the config (and any duplicates) have been
+ *         released.
+ */
+void neo4j_config_set_results_table_colors(neo4j_config_t *config,
+        const struct neo4j_results_table_colors *colors);
+
+/**
+ * Get the colorization rules for rendering of results tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @return The colorization rules for result table rendering.
+ */
+const struct neo4j_results_table_colors *neo4j_config_get_results_table_colors(
+        const neo4j_config_t *config);
+
+
+struct neo4j_plan_table_colors
+{
+    const char * const border[2];
+    const char * const header[2];
+    const char * const cells[2];
+    const char * const graph[2];
+};
+
+/** Plan table colorization rules for uncolorized plan table output. */
+extern const struct neo4j_plan_table_colors *neo4j_plan_table_no_colors;
+/** Plan table colorization rules for ANSI terminal output. */
+extern const struct neo4j_plan_table_colors *neo4j_plan_table_ansi_colors;
+
+/**
+ * Set the colorization rules for rendering of plan tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [colors] Colorization rules for plan tables.  The pointer must
+ *         remain valid until the config (and any duplicates) have been
+ *         released.
+ */
+void neo4j_config_set_plan_table_colors(neo4j_config_t *config,
+        const struct neo4j_plan_table_colors *colors);
+
+/**
+ * Get the colorization rules for rendering of plan tables.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @return The colorization rules for plan table rendering.
+ */
+const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
+        const neo4j_config_t *config);
+
+
+
+#define NEO4J_RENDER_MAX_WIDTH 4095
+
+/**
  * Render a result stream as a table.
  *
  * A bitmask of flags may be supplied, which may include:
- * - NEO4J_RENDER_SHOW_NULL - output 'null' when rendering NULL values, rather
+ * - NEO4J_RENDER_SHOW_NULLS - output 'null' when rendering NULL values, rather
  * than an empty cell.
- * - NEO4J_RENDER_QUOTE_STRING - wrap strings in quotes.
+ * - NEO4J_RENDER_QUOTE_STRINGS - wrap strings in quotes.
  * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
  * - NEO4J_RENDER_ROWLINES - render a line between each output row.
  * - NEO4J_RENDER_WRAP_VALUES - wrap oversized values over multiple lines.
@@ -2182,48 +2427,20 @@ __neo4j_must_check
 int neo4j_render_table(FILE *stream, neo4j_result_stream_t *results,
         unsigned int width, uint_fast32_t flags);
 
-
-struct neo4j_ctable_colorization
-{
-    const char * const border[2];
-    const char * const header[2];
-    const char * const cells[2];
-};
-
-/** Table colorization rules for uncolorized table output. */
-extern const struct neo4j_ctable_colorization *neo4j_ctable_no_colorization;
-/** Table colorization rules for ANSI terminal output. */
-extern const struct neo4j_ctable_colorization *neo4j_ctable_ansi_colorization;
-
-
 /**
- * Render a result stream as a colorized table.
- *
- * A bitmask of flags may be supplied, which may include:
- * - NEO4J_RENDER_SHOW_NULL - output 'null' when rendering NULL values, rather
- * than an empty cell.
- * - NEO4J_RENDER_QUOTE_STRING - wrap strings in quotes.
- * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
- * - NEO4J_RENDER_ROWLINES - render a line between each output row.
- * - NEO4J_RENDER_WRAP_VALUES - wrap oversized values over multiple lines.
- * - NEO4J_RENDER_NO_WRAP_MARKERS - don't indicate wrapping of values (should
- * be used with NEO4J_RENDER_ROWLINES).
- *
- * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * Render a result stream as a table.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
+ * @param [config] A neo4j client configuration.
  * @param [stream] The stream to render to.
  * @param [results] The results stream to render.
  * @param [width] The width of the table to render.
- * @param [flags] A bitmask of flags to control rendering.
- * @param [colors] A colorization table.
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
-int neo4j_render_ctable(FILE *stream, neo4j_result_stream_t *results,
-        unsigned int width, uint_fast32_t flags,
-        const struct neo4j_ctable_colorization *colors);
+int neo4j_render_results_table(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results, unsigned int width);
 
 /**
  * Render a result stream as comma separated value.
@@ -2246,6 +2463,20 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
         uint_fast32_t flags);
 
 /**
+ * Render a result stream as comma separated value.
+ *
+ * @attention The output will be written to the stream using UTF-8 encoding.
+ *
+ * @param [config] A neo4j client configuration.
+ * @param [stream] The stream to render to.
+ * @param [results] The results stream to render.
+ * @return 0 on success, or -1 on error (errno will be set).
+ */
+__neo4j_must_check
+int neo4j_render_ccsv(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results);
+
+/**
  * Render a statement plan as a table.
  *
  * A bitmask of flags may be supplied, which may include:
@@ -2266,43 +2497,20 @@ __neo4j_must_check
 int neo4j_render_plan_table(FILE *stream, struct neo4j_statement_plan *plan,
         unsigned int width, uint_fast32_t flags);
 
-
-struct neo4j_plan_ctable_colorization
-{
-    const char * const border[2];
-    const char * const header[2];
-    const char * const cells[2];
-    const char * const graph[2];
-};
-
-/** Plan table colorization rules for uncolorized plan table output. */
-extern const struct neo4j_plan_ctable_colorization *
-        neo4j_plan_ctable_no_colorization;
-/** Plan table colorization rules for ANSI terminal output. */
-extern const struct neo4j_plan_ctable_colorization *
-        neo4j_plan_ctable_ansi_colorization;
-
 /**
- * Render a statement plan as a colorized table.
- *
- * A bitmask of flags may be supplied, which may include:
- * - NEO4J_RENDER_ASCII - use only ASCII characters when rendering.
- *
- * If no flags are required, pass 0 or `NEO4J_RENDER_DEFAULT`.
+ * Render a statement plan as a table.
  *
  * @attention The output will be written to the stream using UTF-8 encoding.
  *
+ * @param [config] A neo4j client configuration.
  * @param [stream] The stream to render to.
  * @param [plan] The statement plan to render.
  * @param [width] The width of the table to render.
- * @param [flags] A bitmask of flags to control rendering.
- * @param [colors] A colorization table.
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
-int neo4j_render_plan_ctable(FILE *stream, struct neo4j_statement_plan *plan,
-        unsigned int width, uint_fast32_t flags,
-        const struct neo4j_plan_ctable_colorization *colors);
+int neo4j_render_plan_ctable(const neo4j_config_t *config, FILE *stream,
+        struct neo4j_statement_plan *plan, unsigned int width);
 
 
 /*

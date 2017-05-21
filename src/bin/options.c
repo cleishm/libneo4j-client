@@ -17,6 +17,8 @@
 #include "../../config.h"
 #include "options.h"
 #include "render.h"
+#include <assert.h>
+#include <limits.h>
 
 
 struct options
@@ -45,6 +47,10 @@ static int set_insecure(shell_state_t *state, const char *value);
 static int unset_insecure(shell_state_t *state);
 static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
 
+static int set_inspect(shell_state_t *state, const char *value);
+static int unset_inspect(shell_state_t *state);
+static const char *get_inspect(shell_state_t *state, char *buf, size_t n);
+
 static int set_output(shell_state_t *state, const char *value);
 static const char *get_format(shell_state_t *state, char *buf, size_t n);
 
@@ -57,7 +63,7 @@ static int unset_username(shell_state_t *state);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
 
 static int unset_width(shell_state_t *state);
-static const char * get_width(shell_state_t *state, char *buf, size_t n);
+static const char *get_width(shell_state_t *state, char *buf, size_t n);
 
 static int set_rowlines(shell_state_t *state, const char *value);
 static int unset_rowlines(shell_state_t *state);
@@ -82,6 +88,8 @@ static struct options options[] =
           "set the output format (`table` or `csv`)." },
       { "insecure", set_insecure, true, unset_insecure, get_insecure,
           "do not attempt to establish secure connections" },
+      { "inspect", set_inspect, false, unset_inspect, get_inspect,
+          "the number of rows to inspect when calculating column widths" },
       { "output", set_output, false, NULL, NULL, NULL },
       { "outfile", set_outfile, false, unset_outfile, get_outfile,
           "redirect output to a file" },
@@ -107,6 +115,7 @@ void options_display(shell_state_t *state, FILE *stream)
         {
             const char *name = options[i].name;
             const char *val = options[i].get(state, buf, sizeof(buf));
+            assert(val != NULL);
             unsigned int end_offset = strlen(name) + strlen(val) + 3;
             fprintf(stream, " %s=%s %*s// %s\n", name, val,
                     (end_offset < 20)? 20 - end_offset : 0, "",
@@ -181,11 +190,11 @@ int set_ascii(shell_state_t *state, const char *value)
 {
     if (value == NULL || strcmp(value, "on") == 0)
     {
-        state->render_flags |= NEO4J_RENDER_ASCII;
+        neo4j_config_set_render_ascii(state->config, true);
     }
     else if (strcmp(value, "off") == 0)
     {
-        state->render_flags &= ~NEO4J_RENDER_ASCII;
+        neo4j_config_set_render_ascii(state->config, false);
     }
     else
     {
@@ -198,14 +207,14 @@ int set_ascii(shell_state_t *state, const char *value)
 
 int unset_ascii(shell_state_t *state)
 {
-    state->render_flags &= ~NEO4J_RENDER_ASCII;
+    neo4j_config_set_render_ascii(state->config, false);
     return 0;
 }
 
 
 const char *get_ascii(shell_state_t *state, char *buf, size_t n)
 {
-    return (state->render_flags & NEO4J_RENDER_ASCII)? "on" : "off";
+    return neo4j_config_get_render_ascii(state->config)? "on" : "off";
 }
 
 
@@ -214,12 +223,18 @@ int set_colorize(shell_state_t *state, const char *value)
     if (value == NULL || strcmp(value, "on") == 0)
     {
         state->error_colorize = ansi_error_colorization;
-        state->render_flags |= NEO4J_RENDER_ANSI_COLOR;
+        neo4j_config_set_results_table_colors(state->config,
+                neo4j_results_table_ansi_colors);
+        neo4j_config_set_plan_table_colors(state->config,
+                neo4j_plan_table_ansi_colors);
     }
     else if (strcmp(value, "off") == 0)
     {
         state->error_colorize = no_error_colorization;
-        state->render_flags &= ~NEO4J_RENDER_ANSI_COLOR;
+        neo4j_config_set_results_table_colors(state->config,
+                neo4j_results_table_no_colors);
+        neo4j_config_set_plan_table_colors(state->config,
+                neo4j_plan_table_no_colors);
     }
     else
     {
@@ -232,14 +247,18 @@ int set_colorize(shell_state_t *state, const char *value)
 
 int unset_colorize(shell_state_t *state)
 {
-    state->render_flags &= ~NEO4J_RENDER_ANSI_COLOR;
+    neo4j_config_set_results_table_colors(state->config,
+            neo4j_results_table_no_colors);
+    neo4j_config_set_plan_table_colors(state->config,
+            neo4j_plan_table_no_colors);
     return 0;
 }
 
 
 const char *get_colorize(shell_state_t *state, char *buf, size_t n)
 {
-    return (state->render_flags & NEO4J_RENDER_ANSI_COLOR)? "on" : "off";
+    return (neo4j_config_get_results_table_colors(state->config) ==
+            neo4j_results_table_ansi_colors)? "on" : "off";
 }
 
 
@@ -304,6 +323,42 @@ int unset_insecure(shell_state_t *state)
 const char *get_insecure(shell_state_t *state, char *buf, size_t n)
 {
     return (state->connect_flags & NEO4J_INSECURE)? "yes" : "no";
+}
+
+
+int set_inspect(shell_state_t *state, const char *value)
+{
+    char *endptr;
+    unsigned long rows = strtoul(value, &endptr, 10);
+    if (*value == '\0' || *endptr != '\0')
+    {
+        fprintf(state->err, "Invalid value '%s' for inspect\n", value);
+        return -1;
+    }
+    if (rows > UINT_MAX)
+    {
+        fprintf(state->err, "Value for :inspect (%ld) out of range [0,%d]\n",
+                rows, UINT_MAX);
+        return -1;
+    }
+
+    neo4j_config_set_render_inspect_rows(state->config, rows);
+    return 0;
+}
+
+
+int unset_inspect(shell_state_t *state)
+{
+    neo4j_config_set_render_inspect_rows(state->config, 0);
+    return 0;
+}
+
+
+const char *get_inspect(shell_state_t *state, char *buf, size_t n)
+{
+    unsigned int rows = neo4j_config_get_render_inspect_rows(state->config);
+    snprintf(buf, n, "%u", rows);
+    return buf;
 }
 
 
@@ -427,11 +482,11 @@ int set_rowlines(shell_state_t *state, const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
-        state->render_flags |= NEO4J_RENDER_ROWLINES;
+        neo4j_config_set_render_rowlines(state->config, true);
     }
     else if (strcmp(value, "no") == 0)
     {
-        state->render_flags &= ~NEO4J_RENDER_ROWLINES;
+        neo4j_config_set_render_rowlines(state->config, false);
     }
     else
     {
@@ -444,14 +499,14 @@ int set_rowlines(shell_state_t *state, const char *value)
 
 int unset_rowlines(shell_state_t *state)
 {
-    state->render_flags &= ~NEO4J_RENDER_ROWLINES;
+    neo4j_config_set_render_rowlines(state->config, false);
     return 0;
 }
 
 
 const char *get_rowlines(shell_state_t *state, char *buf, size_t n)
 {
-    return (state->show_timing)? "yes" : "no";
+    return neo4j_config_get_render_rowlines(state->config)? "yes" : "no";
 }
 
 
@@ -491,11 +546,11 @@ int set_wrap(shell_state_t *state, const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
-        state->render_flags |= NEO4J_RENDER_WRAP_VALUES;
+        neo4j_config_set_render_wrapped_values(state->config, true);
     }
     else if (strcmp(value, "no") == 0)
     {
-        state->render_flags &= ~NEO4J_RENDER_WRAP_VALUES   ;
+        neo4j_config_set_render_wrapped_values(state->config, false);
     }
     else
     {
@@ -508,12 +563,12 @@ int set_wrap(shell_state_t *state, const char *value)
 
 int unset_wrap(shell_state_t *state)
 {
-    state->render_flags &= ~NEO4J_RENDER_WRAP_VALUES   ;
+    neo4j_config_set_render_wrapped_values(state->config, false);
     return 0;
 }
 
 
 const char *get_wrap(shell_state_t *state, char *buf, size_t n)
 {
-    return (state->render_flags & NEO4J_RENDER_WRAP_VALUES )? "yes" : "no";
+    return neo4j_config_get_render_wrapped_values(state->config)? "yes" : "no";
 }

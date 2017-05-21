@@ -36,15 +36,15 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->tty = tty;
     state->output = out;
     state->config = neo4j_new_config();
-    state->pipeline_max =
-            neo4j_config_get_max_pipelined_requests(state->config) / 2;
     if (state->config == NULL)
     {
         return -1;
     }
+    state->pipeline_max =
+            neo4j_config_get_max_pipelined_requests(state->config) / 2;
     state->source_max_depth = NEO4J_DEFAULT_MAX_SOURCE_DEPTH;
     state->error_colorize = no_error_colorization;
-    state->render_flags |= NEO4J_RENDER_WRAP_VALUES;
+    neo4j_config_set_render_wrapped_values(state->config, true);
     return 0;
 }
 

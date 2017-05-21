@@ -194,7 +194,10 @@ int main(int argc, char *argv[])
     if (isatty(fileno(stderr)))
     {
         state.error_colorize = ansi_error_colorization;
-        state.render_flags |= NEO4J_RENDER_ANSI_COLOR;
+        neo4j_config_set_results_table_colors(state.config,
+                neo4j_results_table_ansi_colors);
+        neo4j_config_set_plan_table_colors(state.config,
+                neo4j_plan_table_ansi_colors);
     }
 
     const char *s;
@@ -246,11 +249,17 @@ int main(int argc, char *argv[])
             break;
         case COLORIZE_OPT:
             state.error_colorize = ansi_error_colorization;
-            state.render_flags |= NEO4J_RENDER_ANSI_COLOR;
+            neo4j_config_set_results_table_colors(state.config,
+                    neo4j_results_table_ansi_colors);
+            neo4j_config_set_plan_table_colors(state.config,
+                    neo4j_plan_table_ansi_colors);
             break;
         case NO_COLORIZE_OPT:
             state.error_colorize = no_error_colorization;
-            state.render_flags &= ~NEO4J_RENDER_ANSI_COLOR;
+            neo4j_config_set_results_table_colors(state.config,
+                    neo4j_results_table_no_colors);
+            neo4j_config_set_plan_table_colors(state.config,
+                    neo4j_plan_table_no_colors);
             break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;
@@ -431,7 +440,7 @@ int main(int argc, char *argv[])
     if (state.interactive)
     {
         state.render = render_results_table;
-        state.render_flags |= NEO4J_RENDER_SHOW_NULLS;
+        neo4j_config_set_render_nulls(state.config, true);
         state.show_timing = true;
         state.infile = "<interactive>";
         state.source_depth = 1;

@@ -62,26 +62,6 @@ static const struct border_glifs u8_border_glifs =
 #endif
 
 
-#define ANSI_COLOR_RESET "\x1b[0m"
-#define ANSI_COLOR_GREY "\x1b[38;5;238m"
-#define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
-
-static struct neo4j_ctable_colorization _neo4j_ctable_no_colorization =
-    { .border = { "", "" },
-      .header = { "", "" },
-      .cells = { "", "" } };
-
-static struct neo4j_ctable_colorization _neo4j_ctable_ansi_colorization =
-    { .border = { ANSI_COLOR_GREY, ANSI_COLOR_RESET },
-      .header = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
-      .cells = { "", "" } };
-
-const struct neo4j_ctable_colorization *neo4j_ctable_no_colorization =
-        &_neo4j_ctable_no_colorization;
-const struct neo4j_ctable_colorization *neo4j_ctable_ansi_colorization =
-        &_neo4j_ctable_ansi_colorization;
-
-
 static ssize_t render_field(FILE *stream, const char *s, size_t n,
         unsigned int width, uint_fast32_t flags, const char * const color[2]);
 static int write_unprintable(FILE *stream, int codepoint, int width);
@@ -126,7 +106,7 @@ static const struct border_glifs *glifs_for_encoding(uint_fast32_t flags)
 
 
 int render_border_line(FILE *stream, border_line_t line_type,
-        uint_fast32_t flags, const struct neo4j_ctable_colorization *colors)
+        uint_fast32_t flags, const struct neo4j_results_table_colors *colors)
 {
     assert(stream != NULL);
     assert(colors != NULL);
@@ -202,7 +182,7 @@ int render_border_line(FILE *stream, border_line_t line_type,
 int render_hrule(FILE *stream, unsigned int ncolumns,
         unsigned int *widths, hline_position_t position,
         bool undersize, uint_fast32_t flags,
-        const struct neo4j_ctable_colorization *colors)
+        const struct neo4j_results_table_colors *colors)
 {
     assert(stream != NULL);
     assert(ncolumns == 0 || widths != NULL);
@@ -332,7 +312,7 @@ int render_overflow(FILE *stream, uint_fast32_t flags,
 
 int render_row(FILE *stream, unsigned int ncolumns,
         const unsigned int *widths, bool undersize, uint_fast32_t flags,
-        const struct neo4j_ctable_colorization *colors,
+        const struct neo4j_results_table_colors *colors,
         const char * const field_color[2],
         render_row_callback_t callback, void *cdata)
 {

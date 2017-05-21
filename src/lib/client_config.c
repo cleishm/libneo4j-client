@@ -30,6 +30,47 @@
 #define NEO4J_DEFAULT_SNDBUF_SIZE 4096
 #define NEO4J_DEFAULT_SESSION_REQUEST_QUEUE_SIZE 256
 #define NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS 10
+#define NEO4J_DEFAULT_RENDER_INSPECT_ROWS 100
+
+
+#define ANSI_COLOR_RESET "\x1b[0m"
+#define ANSI_COLOR_GREY "\x1b[38;5;238m"
+#define ANSI_COLOR_BLUE "\x1b[38;5;75m"
+#define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
+
+
+static struct neo4j_results_table_colors _neo4j_results_table_no_colors =
+    { .border = { "", "" },
+      .header = { "", "" },
+      .cells = { "", "" } };
+
+static struct neo4j_results_table_colors _neo4j_results_table_ansi_colors =
+    { .border = { ANSI_COLOR_GREY, ANSI_COLOR_RESET },
+      .header = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .cells = { "", "" } };
+
+const struct neo4j_results_table_colors *neo4j_results_table_no_colors =
+        &_neo4j_results_table_no_colors;
+const struct neo4j_results_table_colors *neo4j_results_table_ansi_colors =
+        &_neo4j_results_table_ansi_colors;
+
+
+static struct neo4j_plan_table_colors _neo4j_plan_table_no_colors =
+    { .border = { "", "" },
+      .header = { "", "" },
+      .cells = { "", "" },
+      .graph = { "", "" } };
+
+static struct neo4j_plan_table_colors _neo4j_plan_table_ansi_colors =
+    { .border = { ANSI_COLOR_GREY, ANSI_COLOR_RESET },
+      .header = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .cells = { "", "" },
+      .graph = { ANSI_COLOR_BLUE, ANSI_COLOR_RESET } };
+
+const struct neo4j_plan_table_colors *neo4j_plan_table_no_colors =
+        &_neo4j_plan_table_no_colors;
+const struct neo4j_plan_table_colors *neo4j_plan_table_ansi_colors =
+        &_neo4j_plan_table_ansi_colors;
 
 
 static ssize_t default_password_callback(void *userdata, char *buf, size_t n);
@@ -62,9 +103,13 @@ neo4j_config_t *neo4j_new_config()
     config->io_sndbuf_size = NEO4J_DEFAULT_SNDBUF_SIZE;
     config->snd_min_chunk_size = 1024;
     config->snd_max_chunk_size = UINT16_MAX;
-    config->session_request_queue_size = NEO4J_DEFAULT_SESSION_REQUEST_QUEUE_SIZE;
+    config->session_request_queue_size =
+            NEO4J_DEFAULT_SESSION_REQUEST_QUEUE_SIZE;
     config->max_pipelined_requests = NEO4J_DEFAULT_MAX_PIPELINED_REQUESTS;
     config->trust_known = true;
+    config->render_inspect_rows = NEO4J_DEFAULT_RENDER_INSPECT_ROWS;
+    config->results_table_colors = neo4j_results_table_no_colors;
+    config->plan_table_colors = neo4j_plan_table_no_colors;
     return config;
 }
 
@@ -480,4 +525,161 @@ cleanup:
     memset_s(password_buf, sizeof(password_buf), 0, sizeof(password_buf));
     errno = errsv;
     return err;
+}
+
+
+void neo4j_config_set_render_nulls(neo4j_config_t *config, bool enable)
+{
+    if (enable)
+    {
+        config->render_flags |= NEO4J_RENDER_SHOW_NULLS;
+    }
+    else
+    {
+        config->render_flags &= ~NEO4J_RENDER_SHOW_NULLS;
+    }
+}
+
+
+bool neo4j_config_get_render_nulls(const neo4j_config_t *config)
+{
+    return config->render_flags & NEO4J_RENDER_SHOW_NULLS;
+}
+
+
+void neo4j_config_set_render_quoted_strings(neo4j_config_t *config,
+        bool enable)
+{
+    if (enable)
+    {
+        config->render_flags |= NEO4J_RENDER_QUOTE_STRINGS;
+    }
+    else
+    {
+        config->render_flags &= ~NEO4J_RENDER_QUOTE_STRINGS;
+    }
+}
+
+
+bool neo4j_config_get_render_quoted_strings(const neo4j_config_t *config)
+{
+    return config->render_flags & NEO4J_RENDER_QUOTE_STRINGS;
+}
+
+
+void neo4j_config_set_render_ascii(neo4j_config_t *config, bool enable)
+{
+    if (enable)
+    {
+        config->render_flags |= NEO4J_RENDER_ASCII;
+    }
+    else
+    {
+        config->render_flags &= ~NEO4J_RENDER_ASCII;
+    }
+}
+
+
+bool neo4j_config_get_render_ascii(const neo4j_config_t *config)
+{
+    return config->render_flags & NEO4J_RENDER_ASCII;
+}
+
+
+void neo4j_config_set_render_rowlines(neo4j_config_t *config, bool enable)
+{
+    if (enable)
+    {
+        config->render_flags |= NEO4J_RENDER_ROWLINES;
+    }
+    else
+    {
+        config->render_flags &= ~NEO4J_RENDER_ROWLINES;
+    }
+}
+
+
+bool neo4j_config_get_render_rowlines(const neo4j_config_t *config)
+{
+    return config->render_flags & NEO4J_RENDER_ROWLINES;
+}
+
+
+void neo4j_config_set_render_wrapped_values(neo4j_config_t *config,
+        bool enable)
+{
+    if (enable)
+    {
+        config->render_flags |= NEO4J_RENDER_WRAP_VALUES;
+    }
+    else
+    {
+        config->render_flags &= ~NEO4J_RENDER_WRAP_VALUES;
+    }
+}
+
+
+bool neo4j_config_get_render_wrapped_values(const neo4j_config_t *config)
+{
+    return config->render_flags & NEO4J_RENDER_WRAP_VALUES;
+}
+
+
+void neo4j_config_set_render_wrap_markers(neo4j_config_t *config, bool enable)
+{
+    if (enable)
+    {
+        config->render_flags &= ~NEO4J_RENDER_NO_WRAP_MARKERS;
+    }
+    else
+    {
+        config->render_flags |= NEO4J_RENDER_NO_WRAP_MARKERS;
+    }
+}
+
+
+bool neo4j_config_get_render_wrap_markers(const neo4j_config_t *config)
+{
+    return !(config->render_flags & NEO4J_RENDER_NO_WRAP_MARKERS);
+}
+
+
+void neo4j_config_set_render_inspect_rows(neo4j_config_t *config,
+        unsigned int rows)
+{
+    config->render_inspect_rows = rows;
+}
+
+
+unsigned int neo4j_config_get_render_inspect_rows(const neo4j_config_t *config)
+{
+    return config->render_inspect_rows;
+}
+
+
+void neo4j_config_set_results_table_colors(neo4j_config_t *config,
+        const struct neo4j_results_table_colors *colors)
+{
+    config->results_table_colors = colors;
+}
+
+
+const struct neo4j_results_table_colors *neo4j_config_get_results_table_colors(
+        const neo4j_config_t *config)
+{
+    return config->results_table_colors;
+}
+
+
+void neo4j_config_set_plan_table_colors(neo4j_config_t *config,
+        const struct neo4j_plan_table_colors *colors)
+{
+    config->plan_table_colors = colors;
+}
+
+
+const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
+        const neo4j_config_t *config)
+{
+    return config->plan_table_colors;
 }
