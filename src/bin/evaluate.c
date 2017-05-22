@@ -28,6 +28,8 @@ static int not_connected_error(evaluation_continuation_t *self,
         shell_state_t *state);
 static int run_failure(evaluation_continuation_t *self, shell_state_t *state);
 static int render_result(evaluation_continuation_t *self, shell_state_t *state);
+static void render_evaluation_failure(evaluation_continuation_t *self,
+        shell_state_t *state);
 static void echo(shell_state_t *state, const char *s, size_t n,
         const char *postfix);
 
@@ -167,32 +169,13 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
                     " (any open transaction has been rolled back)\n");
             goto cleanup;
         }
-        else if (errno != NEO4J_STATEMENT_EVALUATION_FAILED)
+        else if (errno == NEO4J_STATEMENT_EVALUATION_FAILED)
         {
-            print_error_errno(state, self->pos, errno, "Unexpected error");
+            render_evaluation_failure(self, state);
             goto cleanup;
         }
 
-        const struct neo4j_failure_details *details =
-                neo4j_failure_details(self->results);
-
-        struct cypher_input_position pos = self->pos;
-        bool is_indented = (details->line == 1 && pos.column > 1);
-        pos.offset += details->offset;
-        pos.column = (details->line == 1)?
-                pos.column + details->column - 1 : details->column;
-        pos.line += (details->line - 1);
-
-        print_error(state, pos, details->description);
-        if (details->context != NULL)
-        {
-            unsigned int offset = is_indented?
-                    details->context_offset + 3 : details->context_offset;
-            fprintf(state->err, "%s%s%s\n%*s^%s\n",
-                    state->error_colorize->ctx[0],
-                    is_indented? "..." : "", details->context, offset, "",
-                    state->error_colorize->ctx[1]);
-        }
+        print_error_errno(state, self->pos, errno, "Unexpected error");
         goto cleanup;
     }
 
@@ -210,13 +193,16 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     if (plan != NULL)
     {
         int err = render_plan_table(state, self->pos, plan);
-        int errsv = errno;
         neo4j_statement_plan_release(plan);
-        errno = errsv;
         if (err)
         {
             goto cleanup;
         }
+    }
+    else if (errno == NEO4J_STATEMENT_EVALUATION_FAILED)
+    {
+        render_evaluation_failure(self, state);
+        goto cleanup;
     }
     else if (errno != NEO4J_NO_PLAN_AVAILABLE)
     {
@@ -250,6 +236,32 @@ cleanup:
         return -1;
     }
     return result;
+}
+
+
+void render_evaluation_failure(evaluation_continuation_t *self,
+        shell_state_t *state)
+{
+    const struct neo4j_failure_details *details =
+            neo4j_failure_details(self->results);
+
+    struct cypher_input_position pos = self->pos;
+    bool is_indented = (details->line == 1 && pos.column > 1);
+    pos.offset += details->offset;
+    pos.column = (details->line == 1)?
+            pos.column + details->column - 1 : details->column;
+    pos.line += (details->line - 1);
+
+    print_error(state, pos, details->description);
+    if (details->context != NULL)
+    {
+        unsigned int offset = is_indented?
+                details->context_offset + 3 : details->context_offset;
+        fprintf(state->err, "%s%s%s\n%*s^%s\n",
+                state->error_colorize->ctx[0],
+                is_indented? "..." : "", details->context, offset, "",
+                state->error_colorize->ctx[1]);
+    }
 }
 
 
