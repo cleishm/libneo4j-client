@@ -227,11 +227,6 @@ int render_timing(shell_state_t *state,
     unsigned long long available = neo4j_results_available_after(results);
     unsigned long long consumed = neo4j_results_consumed_after(results);
 
-    if (available == 0)
-    {
-        return 0;
-    }
-
     if (fprintf(state->output, "%lld %s returned in %lldms (",
             count, (count != 1)? "rows" : "row", available + consumed) < 0)
     {
