@@ -17,6 +17,7 @@
 #include "../../config.h"
 #include "render.h"
 #include <assert.h>
+#include <ctype.h>
 #include <neo4j-client.h>
 #include <stdio.h>
 #include <string.h>
@@ -113,52 +114,80 @@ int terminal_width(shell_state_t *state)
 }
 
 
+struct update_formats
+{
+    const char *action;
+    const char *singular;
+    const char *plural;
+};
+
+
+static struct update_formats update_formats[] = {
+    { "created", "node", "nodes" },
+    { "deleted", "node", "nodes" },
+    { "created", "relationship", "relationships" },
+    { "deleted", "relationship", "relationships" },
+    { "set", "property", "properties" },
+    { "added", "label", "labels" },
+    { "removed", "label", "labels" },
+    { "created", "index", "indexes" },
+    { "dropped", "index", "indexes" },
+    { "added", "constraint", "constraints" },
+    { "dropped", "constraint", "constraints" },
+    { NULL, NULL, NULL }
+};
+
+
 int render_update_counts(shell_state_t *state,
         struct cypher_input_position pos,
         neo4j_result_stream_t *results)
 {
     assert(results != NULL);
-    struct neo4j_update_counts counts = neo4j_update_counts(results);
+    struct neo4j_update_counts update_counts = neo4j_update_counts(results);
 
-    static const char * const count_names[] = {
-        "Nodes created",
-        "Nodes deleted",
-        "Relationships created",
-        "Relationships deleted",
-        "Properties set",
-        "Labels added",
-        "Labels removed",
-        "Indexes added",
-        "Indexes removed",
-        "Constraints added",
-        "Constraints removed",
-        NULL
-    };
-    unsigned long long count_values[] = {
-        counts.nodes_created,
-        counts.nodes_deleted,
-        counts.relationships_created,
-        counts.relationships_deleted,
-        counts.properties_set,
-        counts.labels_added,
-        counts.labels_removed,
-        counts.indexes_added,
-        counts.indexes_removed,
-        counts.constraints_added,
-        counts.constraints_removed
+    unsigned long long counts[] = {
+        update_counts.nodes_created,
+        update_counts.nodes_deleted,
+        update_counts.relationships_created,
+        update_counts.relationships_deleted,
+        update_counts.properties_set,
+        update_counts.labels_added,
+        update_counts.labels_removed,
+        update_counts.indexes_added,
+        update_counts.indexes_removed,
+        update_counts.constraints_added,
+        update_counts.constraints_removed
     };
 
-    for (int i = 0; count_names[i] != NULL; ++i)
+    bool first = true;
+    struct update_formats *format = update_formats;
+    unsigned long long *count = counts;
+    for (; format->action != NULL; count++, format++)
     {
-        if (count_values[i] == 0)
+        if (*count == 0)
         {
             continue;
         }
-        if (fprintf(state->output, "%s: %llu\n",
-                count_names[i], count_values[i]) < 0)
+        if (first && fputc(toupper(format->action[0]), state->output) == EOF)
         {
             return -1;
         }
+        if (!first && fputs(", ", state->output) == EOF)
+        {
+            return -1;
+        }
+        if (fprintf(state->output, "%s %llu %s",
+                first? format->action + 1 : format->action, *count,
+                (*count == 1)? format->singular : format->plural) < 0)
+        {
+            return -1;
+        }
+        first = false;
+    }
+
+    if (!first && fputc('\n', state->output) == EOF)
+    {
+        return -1;
     }
 
     return 0;
