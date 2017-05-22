@@ -246,8 +246,7 @@ int peek_widths(const neo4j_config_t *config, neo4j_result_stream_t *results,
             if (neo4j_type(value) == NEO4J_STRING &&
                     !(config->render_flags & NEO4J_RENDER_QUOTE_STRINGS))
             {
-                const char *s = neo4j_ustring_value(value);
-                l = (s == NULL)? 0 : strlen(s);
+                l = neo4j_string_length(value);
             }
             else
             {

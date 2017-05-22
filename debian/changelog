@@ -1,6 +1,6 @@
-libneo4j-client (2.1.0-2) xenial; urgency=medium
+libneo4j-client (2.1.1-1) xenial; urgency=medium
 
-  * New upstream release 2.1.0
+  * New upstream release 2.1.1
     - Table output is much prettier, with cleaner boarders and _color_!
     - Values in table output are now wrapped (in neo4j-client, this can
       be disabled by unsetting the wrap option, e.g. `:set nowrap`).
