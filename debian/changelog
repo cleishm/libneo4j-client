@@ -1,6 +1,6 @@
-libneo4j-client (2.1.1-1) unstable; urgency=medium
+libneo4j-client (2.1.2-1) unstable; urgency=medium
 
-  * New upstream release 2.1.1
+  * New upstream release 2.1.2
     - Table output is much prettier, with cleaner boarders and _color_!
     - Values in table output are now wrapped (in neo4j-client, this can
       be disabled by unsetting the wrap option, e.g. `:set nowrap`).
@@ -12,17 +12,12 @@ libneo4j-client (2.1.1-1) unstable; urgency=medium
       Neo4j versions.
     - Fixed an issue that would prevent prompting for updated passwords
       when reattempting auth.
-
- -- Chris Leishman <chris@leishman.org>  Sun, 21 May 2017 20:13:39 +0000
-
-libneo4j-client (2.0.0-1) unstable; urgency=medium
-
   * New upstream release 2.0.0
     - Removed neo4j_session_t in favour of working only with connections
     - Replaced authentication callback mechanisms
     - Support rendering of multibyte characters in table output
 
- -- Chris Leishman <chris@leishman.org>  Tue, 25 Apr 2017 16:40:31 +0000
+ -- Chris Leishman <chris@leishman.org>  Mon, 22 May 2017 17:42:42 +0000
 
 libneo4j-client (1.2.1-1) unstable; urgency=medium
 
