@@ -207,9 +207,9 @@ int render_plan_table(shell_state_t *state,
     {
         width = 2;
     }
-    if (fprintf(state->output, "%sCompiler: %s\nPlanner: %s\nRuntime: %s\n%s:\n",
-                plan->is_profile? "\n" : "", plan->version, plan->planner,
-                plan->runtime, plan->is_profile? "Profile":"Plan") < 0)
+    if (fprintf(state->output, "Compiler: %s\nPlanner: %s\nRuntime: %s\n%s:\n",
+                plan->version, plan->planner, plan->runtime,
+                plan->is_profile? "Profile":"Plan") < 0)
     {
         return -1;
     }
@@ -227,10 +227,24 @@ int render_timing(shell_state_t *state,
     unsigned long long available = neo4j_results_available_after(results);
     unsigned long long consumed = neo4j_results_consumed_after(results);
 
-    if (available > 0 && fprintf(state->output,
-            "\n%lld rows returned in %lldms "
-            "(first row after %lldms, rendered after %lldms)\n",
-            count, available + consumed, available, client_time) < 0)
+    if (available == 0)
+    {
+        return 0;
+    }
+
+    if (fprintf(state->output, "%lld %s returned in %lldms (",
+            count, (count != 1)? "rows" : "row", available + consumed) < 0)
+    {
+        return -1;
+    }
+
+    if (count > 0 && fprintf(state->output, "first row after %lldms, ",
+            available) < 0)
+    {
+        return -1;
+    }
+
+    if (fprintf(state->output, "rendered after %lldms)\n", client_time) < 0)
     {
         return -1;
     }
