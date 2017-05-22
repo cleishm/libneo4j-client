@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
 
     if (isatty(fileno(stderr)))
     {
-        state.error_colorize = ansi_error_colorization;
+        state.colorize = ansi_shell_colorization;
         neo4j_config_set_results_table_colors(state.config,
                 neo4j_results_table_ansi_colors);
         neo4j_config_set_plan_table_colors(state.config,
@@ -248,14 +248,14 @@ int main(int argc, char *argv[])
             }
             break;
         case COLORIZE_OPT:
-            state.error_colorize = ansi_error_colorization;
+            state.colorize = ansi_shell_colorization;
             neo4j_config_set_results_table_colors(state.config,
                     neo4j_results_table_ansi_colors);
             neo4j_config_set_plan_table_colors(state.config,
                     neo4j_plan_table_ansi_colors);
             break;
         case NO_COLORIZE_OPT:
-            state.error_colorize = no_error_colorization;
+            state.colorize = no_shell_colorization;
             neo4j_config_set_results_table_colors(state.config,
                     neo4j_results_table_no_colors);
             neo4j_config_set_plan_table_colors(state.config,

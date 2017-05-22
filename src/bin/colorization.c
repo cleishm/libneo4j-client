@@ -18,19 +18,71 @@
 #include "colorization.h"
 
 
+#define ANSI_COLOR_RESET "\x1b[0m"
+#define ANSI_COLOR_BOLD "\x1b[1m"
+#define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_GREEN "\x1b[38;5;2m"
+#define ANSI_COLOR_BLUE "\x1b[38;5;4m"
+
+
 static struct error_colorization _no_error_colorization =
     { .typ = { "", "" },
       .pos = { "", "" },
       .msg = { "", "" },
-      .ctx = { "", "" } };
+      .ctx = { "", "" },
+      .ptr = { "", "" } };
 
 static struct error_colorization _ansi_error_colorization =
     { .typ = { ANSI_COLOR_RED ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
       .pos = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
-      .msg = { ANSI_COLOR_RESET, "" },
-      .ctx = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET } };
+      .msg = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .ctx = { "", "" },
+      .ptr = { ANSI_COLOR_RED, ANSI_COLOR_RESET } };
 
-const struct error_colorization *no_error_colorization =
-        &_no_error_colorization;
-const struct error_colorization *ansi_error_colorization =
-        &_ansi_error_colorization;
+static struct help_colorization _no_help_colorization =
+    { .cmd = { "", "" },
+      .arg = { "", "" },
+      .dsc = { "", "" } };
+
+static struct help_colorization _ansi_help_colorization =
+    { .cmd = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .arg = { ANSI_COLOR_GREEN, ANSI_COLOR_RESET },
+      .dsc = { ANSI_COLOR_BLUE, ANSI_COLOR_RESET } };
+
+static struct options_colorization _no_options_colorization =
+    { .opt = { "", "" },
+      .val = { "", "" },
+      .dsc = { "", "" } };
+
+static struct options_colorization _ansi_options_colorization =
+    { .opt = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .val = { ANSI_COLOR_GREEN, ANSI_COLOR_RESET },
+      .dsc = { ANSI_COLOR_BLUE, ANSI_COLOR_RESET } };
+
+static struct exports_colorization _no_exports_colorization =
+    { .key = { "", "" },
+      .val = { "", "" } };
+
+static struct exports_colorization _ansi_exports_colorization =
+    { .key = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .val = { ANSI_COLOR_GREEN, ANSI_COLOR_RESET } };
+
+
+static struct shell_colorization _no_shell_colorization =
+    { .error = &_no_error_colorization,
+      .help = &_no_help_colorization,
+      .options = &_no_options_colorization,
+      .exports = &_no_exports_colorization };
+
+static struct shell_colorization _ansi_shell_colorization =
+    { .error = &_ansi_error_colorization,
+      .help = &_ansi_help_colorization,
+      .options = &_ansi_options_colorization,
+      .exports = &_ansi_exports_colorization };
+
+
+const struct shell_colorization *no_shell_colorization =
+        &_no_shell_colorization;
+const struct shell_colorization *ansi_shell_colorization =
+        &_ansi_shell_colorization;

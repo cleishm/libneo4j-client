@@ -18,22 +18,50 @@
 #define NEO4J_COLORIZATION_H
 
 
-#define ANSI_COLOR_RESET "\x1b[0m"
-#define ANSI_COLOR_BOLD "\x1b[1m"
-#define ANSI_COLOR_RED "\x1b[31m"
-
-
 struct error_colorization
 {
     const char *typ[2];
     const char *pos[2];
     const char *msg[2];
     const char *ctx[2];
+    const char *ptr[2];
 };
 
 
-extern const struct error_colorization *no_error_colorization;
-extern const struct error_colorization *ansi_error_colorization;
+struct help_colorization
+{
+    const char *cmd[2];
+    const char *arg[2];
+    const char *dsc[2];
+};
+
+
+struct options_colorization
+{
+    const char *opt[2];
+    const char *val[2];
+    const char *dsc[2];
+};
+
+
+struct exports_colorization
+{
+    const char *key[2];
+    const char *val[2];
+};
+
+
+struct shell_colorization
+{
+    struct error_colorization *error;
+    struct help_colorization *help;
+    struct options_colorization *options;
+    struct exports_colorization *exports;
+};
+
+
+extern const struct shell_colorization *no_shell_colorization;
+extern const struct shell_colorization *ansi_shell_colorization;
 
 
 #endif/*NEO4J_COLORIZATION_H*/

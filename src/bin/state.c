@@ -43,7 +43,7 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->pipeline_max =
             neo4j_config_get_max_pipelined_requests(state->config) / 2;
     state->source_max_depth = NEO4J_DEFAULT_MAX_SOURCE_DEPTH;
-    state->error_colorize = no_error_colorization;
+    state->colorize = no_shell_colorization;
     neo4j_config_set_render_wrapped_values(state->config, true);
     return 0;
 }
@@ -81,12 +81,14 @@ static int valert(shell_state_t *state, struct cypher_input_position pos,
     int written = 0;
     int r;
 
+    struct error_colorization *colors = state->colorize->error;
+
     if (state->infile != NULL)
     {
         r = fprintf(state->err, "%s%s:%u:%u:%s %s%s:%s ",
-            state->error_colorize->pos[0], state->infile, pos.line,
-            pos.column, state->error_colorize->pos[1],
-            state->error_colorize->typ[0], type, state->error_colorize->typ[1]);
+            colors->pos[0], state->infile, pos.line,
+            pos.column, state->colorize->error->pos[1],
+            colors->typ[0], type, colors->typ[1]);
         if (r < 0)
         {
             return -1;
@@ -94,7 +96,7 @@ static int valert(shell_state_t *state, struct cypher_input_position pos,
         written += r;
     }
 
-    r = fprintf(state->err, "%s", state->error_colorize->msg[0]);
+    r = fprintf(state->err, "%s", colors->msg[0]);
     if (r < 0)
     {
         return -1;
@@ -107,7 +109,7 @@ static int valert(shell_state_t *state, struct cypher_input_position pos,
         return -1;
     }
     written += r;
-    r = fprintf(state->err, "%s\n", state->error_colorize->msg[1]);
+    r = fprintf(state->err, "%s\n", colors->msg[1]);
     if (r < 0)
     {
         return -1;

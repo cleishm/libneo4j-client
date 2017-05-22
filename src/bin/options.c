@@ -108,6 +108,7 @@ static struct options options[] =
 
 void options_display(shell_state_t *state, FILE *stream)
 {
+    struct options_colorization *colors = state->colorize->options;
     char buf[64];
     for (unsigned int i = 0; options[i].name != NULL; ++i)
     {
@@ -117,9 +118,11 @@ void options_display(shell_state_t *state, FILE *stream)
             const char *val = options[i].get(state, buf, sizeof(buf));
             assert(val != NULL);
             unsigned int end_offset = strlen(name) + strlen(val) + 3;
-            fprintf(stream, " %s=%s %*s// %s\n", name, val,
+            fprintf(stream, " %s%s%s=%s%s%s %*s%s// %s%s\n",
+                    colors->opt[0], name, colors->opt[1],
+                    colors->val[0], val, colors->val[1],
                     (end_offset < 20)? 20 - end_offset : 0, "",
-                    options[i].description);
+                    colors->dsc[0], options[i].description, colors->dsc[1]);
         }
     }
 }
@@ -222,7 +225,7 @@ int set_colorize(shell_state_t *state, const char *value)
 {
     if (value == NULL || strcmp(value, "on") == 0)
     {
-        state->error_colorize = ansi_error_colorization;
+        state->colorize = ansi_shell_colorization;
         neo4j_config_set_results_table_colors(state->config,
                 neo4j_results_table_ansi_colors);
         neo4j_config_set_plan_table_colors(state->config,
@@ -230,7 +233,7 @@ int set_colorize(shell_state_t *state, const char *value)
     }
     else if (strcmp(value, "off") == 0)
     {
-        state->error_colorize = no_error_colorization;
+        state->colorize = no_shell_colorization;
         neo4j_config_set_results_table_colors(state->config,
                 neo4j_results_table_no_colors);
         neo4j_config_set_plan_table_colors(state->config,
@@ -247,6 +250,7 @@ int set_colorize(shell_state_t *state, const char *value)
 
 int unset_colorize(shell_state_t *state)
 {
+    state->colorize = no_shell_colorization;
     neo4j_config_set_results_table_colors(state->config,
             neo4j_results_table_no_colors);
     neo4j_config_set_plan_table_colors(state->config,

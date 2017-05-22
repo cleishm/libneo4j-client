@@ -257,10 +257,14 @@ void render_evaluation_failure(evaluation_continuation_t *self,
     {
         unsigned int offset = is_indented?
                 details->context_offset + 3 : details->context_offset;
-        fprintf(state->err, "%s%s%s\n%*s^%s\n",
-                state->error_colorize->ctx[0],
-                is_indented? "..." : "", details->context, offset, "",
-                state->error_colorize->ctx[1]);
+        fprintf(state->err, "%s%s%s%s\n%*s%s%s%s\n",
+                state->colorize->error->ctx[0],
+                is_indented? "..." : "", details->context,
+                state->colorize->error->ctx[1],
+                offset, "",
+                state->colorize->error->ptr[0],
+                neo4j_config_get_render_ascii(state->config)? "^" : u8"\u25B2",
+                state->colorize->error->ptr[1]);
     }
 }
 
