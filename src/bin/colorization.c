@@ -21,7 +21,7 @@
 #define ANSI_COLOR_RESET "\x1b[0m"
 #define ANSI_COLOR_BOLD "\x1b[1m"
 #define ANSI_COLOR_BRIGHT "\x1b[38;5;15m"
-#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_RED "\x1b[31;1m"
 #define ANSI_COLOR_GREEN "\x1b[38;5;2m"
 #define ANSI_COLOR_BLUE "\x1b[38;5;4m"
 
@@ -34,9 +34,9 @@ static struct error_colorization _no_error_colorization =
       .ptr = { "", "" } };
 
 static struct error_colorization _ansi_error_colorization =
-    { .typ = { ANSI_COLOR_RED ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
+    { .typ = { ANSI_COLOR_RED, ANSI_COLOR_RESET },
       .pos = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
-      .msg = { ANSI_COLOR_BRIGHT, ANSI_COLOR_RESET },
+      .msg = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
       .ctx = { "", "" },
       .ptr = { ANSI_COLOR_RED, ANSI_COLOR_RESET } };
 

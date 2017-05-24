@@ -74,6 +74,8 @@ void shell_state_destroy(shell_state_t *state);
 
 int print_error(shell_state_t *state, struct cypher_input_position pos,
         const char *fmt, ...);
+int print_errno(shell_state_t *state, struct cypher_input_position pos,
+        int err);
 int print_error_errno(shell_state_t *state, struct cypher_input_position pos,
         int err, const char *msg);
 

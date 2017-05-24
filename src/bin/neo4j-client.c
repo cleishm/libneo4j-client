@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
+#include <locale.h>
 #include <neo4j-client.h>
 #include <signal.h>
 #include <stdio.h>
@@ -151,6 +152,8 @@ static int add_io_handler(struct io_handler *io_handlers,
 
 int main(int argc, char *argv[])
 {
+    setlocale(LC_ALL,"");
+
     FILE *tty = fopen(_PATH_TTY, "r+");
     if (tty == NULL && errno != ENOENT)
     {
@@ -191,9 +194,13 @@ int main(int argc, char *argv[])
     }
     state.histfile = histfile;
 
-    if (isatty(fileno(stderr)))
+    if (isatty(STDERR_FILENO))
     {
         state.colorize = ansi_shell_colorization;
+    }
+
+    if (isatty(STDOUT_FILENO))
+    {
         neo4j_config_set_results_table_colors(state.config,
                 neo4j_results_table_ansi_colors);
         neo4j_config_set_plan_table_colors(state.config,

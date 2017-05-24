@@ -85,10 +85,9 @@ static int valert(shell_state_t *state, struct cypher_input_position pos,
 
     if (state->infile != NULL)
     {
-        r = fprintf(state->err, "%s%s:%u:%u:%s %s%s:%s ",
+        r = fprintf(state->err, "%s%s:%u:%u:%s ",
             colors->pos[0], state->infile, pos.line,
-            pos.column, state->colorize->error->pos[1],
-            colors->typ[0], type, colors->typ[1]);
+            pos.column, state->colorize->error->pos[1]);
         if (r < 0)
         {
             return -1;
@@ -96,7 +95,9 @@ static int valert(shell_state_t *state, struct cypher_input_position pos,
         written += r;
     }
 
-    r = fprintf(state->err, "%s", colors->msg[0]);
+    r = fprintf(state->err, "%s%s:%s %s",
+            colors->typ[0], type, colors->typ[1],
+            colors->msg[0]);
     if (r < 0)
     {
         return -1;
@@ -138,6 +139,14 @@ int print_error(shell_state_t *state, struct cypher_input_position pos,
     int r = valert(state, pos, "error", fmt, ap);
     va_end(ap);
     return r;
+}
+
+
+int print_errno(shell_state_t *state, struct cypher_input_position pos, int err)
+{
+    char buf[256];
+    return alert(state, pos, "error", "%s",
+            neo4j_strerror(err, buf, sizeof(buf)));
 }
 
 
