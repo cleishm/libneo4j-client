@@ -76,7 +76,6 @@ AC_CHECK_DECL([htonll],[AC_DEFINE([HAVE_HTONLL],[1],
 AC_CHECK_DECL([ntohll],[AC_DEFINE([HAVE_NTOHLL],[1],
   [Define to 1 if you have ntohll.])])
 
-
 AC_CHECK_DECL([htobe64],[AC_DEFINE([HAVE_HTOBE64],[1],
   [Define to 1 if you have htobe64.])],
   [],
@@ -99,7 +98,6 @@ AC_CHECK_DECL([be64toh],[AC_DEFINE([HAVE_BE64TOH],[1],
 #include <sys/endian.h>
 #endif
   ])
-
 
 AC_CHECK_DECL([OSSwapHostToBigInt64],[AC_DEFINE([HAVE_OSSWAPHOSTTOBIGINT64],[1],
   [Define to 1 if you have OSSwapHostToBigInt64 in the <libkern/OSByteOrder.h> header file.])],
@@ -129,6 +127,20 @@ AC_SEARCH_LIBS([readpassphrase],[bsd])
 AC_CHECK_FUNCS([readpassphrase],[],[])
 
 AC_CHECK_FUNCS([memset_s],[],[])
+
+AC_CHECK_DECL([SO_NOSIGPIPE],[AC_DEFINE([HAVE_SO_NOSIGPIPE],[1],
+  [Define to 1 if you have SO_NOSIGPIPE in the <sys/socket.h> header file.])],
+  [],
+  [
+#include <sys/socket.h>
+  ])
+
+AC_CHECK_DECL([MSG_NOSIGNAL],[AC_DEFINE([HAVE_MSG_NOSIGNAL],[1],
+  [Define to 1 if you have MSG_NOSIGNAL in the <sys/socket.h> header file.])],
+  [],
+  [
+#include <sys/socket.h>
+  ])
 
 
 dnl Threading
