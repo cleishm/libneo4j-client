@@ -100,7 +100,8 @@ static void usage(FILE *s, const char *prog_name)
 " --ca-directory=dir  Specify a directory containing trusted certificates.\n"
 " --insecure          Do not attempt to establish a secure connection.\n"
 " --non-interactive   Use non-interactive mode and do not prompt for\n"
-"                     credentials when connecting.\n"
+"                     host verification or credentials when connecting\n"
+"                     (default when no TTY is connected to the process).\n"
 " --username=name, -u name\n"
 "                     Connect using the specified username.\n"
 " --password=pass, -p pass\n"
@@ -183,7 +184,7 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    state.interactive = isatty(STDIN_FILENO);
+    state.interactive = isatty(STDIN_FILENO) && isatty(STDOUT_FILENO);
 
     char histfile[PATH_MAX];
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
@@ -295,12 +296,6 @@ int main(int argc, char *argv[])
             password_set = true;
             break;
         case 'P':
-            if (tty == NULL)
-            {
-                fprintf(state.err,
-                        "Cannot prompt for a password without a tty\n");
-                goto cleanup;
-            }
             state.password_prompt = true;
             break;
         case KNOWN_HOSTS_OPT:
@@ -427,6 +422,12 @@ int main(int argc, char *argv[])
         {
             state.password_prompt = true;
         }
+    }
+    else if (state.password_prompt)
+    {
+        fprintf(state.err,
+                "Cannot prompt for a password in non-interactive mode\n");
+        goto cleanup;
     }
 
     if (argc >= 1 && db_connect(&state, cypher_input_position_zero,
