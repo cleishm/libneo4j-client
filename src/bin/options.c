@@ -58,6 +58,10 @@ static int set_outfile(shell_state_t *state, const char *value);
 static int unset_outfile(shell_state_t *state);
 static const char *get_outfile(shell_state_t *state, char *buf, size_t n);
 
+static int set_quotestrings(shell_state_t *state, const char *value);
+static int unset_quotestrings(shell_state_t *state);
+static const char *get_quotestrings(shell_state_t *state, char *buf, size_t n);
+
 static int set_username(shell_state_t *state, const char *value);
 static int unset_username(shell_state_t *state);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
@@ -93,6 +97,8 @@ static struct options options[] =
       { "output", set_output, false, NULL, NULL, NULL },
       { "outfile", set_outfile, false, unset_outfile, get_outfile,
           "redirect output to a file" },
+      { "quotestrings", set_quotestrings, true, unset_quotestrings, get_quotestrings,
+          "quote strings in result tables" },
       { "username", set_username, false, unset_username, get_username,
           "the default username for connections" },
       { "rowlines", set_rowlines, true, unset_rowlines, get_rowlines,
@@ -415,6 +421,38 @@ const char *get_outfile(shell_state_t *state, char *buf, size_t n)
     }
     snprintf(buf, n, "\"%s\"", state->outfile);
     return buf;
+}
+
+
+int set_quotestrings(shell_state_t *state, const char *value)
+{
+    if (value == NULL || strcmp(value, "yes") == 0)
+    {
+        neo4j_config_set_render_quoted_strings(state->config, true);
+    }
+    else if (strcmp(value, "no") == 0)
+    {
+        neo4j_config_set_render_quoted_strings(state->config, false);
+    }
+    else
+    {
+        fprintf(state->err, "Must set quotestrings to 'yes' or 'no'\n");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_quotestrings(shell_state_t *state)
+{
+    neo4j_config_set_render_quoted_strings(state->config, false);
+    return 0;
+}
+
+
+const char *get_quotestrings(shell_state_t *state, char *buf, size_t n)
+{
+    return neo4j_config_get_render_quoted_strings(state->config)? "yes" : "no";
 }
 
 
