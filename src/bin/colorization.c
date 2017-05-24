@@ -50,6 +50,14 @@ static struct help_colorization _ansi_help_colorization =
       .arg = { ANSI_COLOR_GREEN, ANSI_COLOR_RESET },
       .dsc = { ANSI_COLOR_BLUE, ANSI_COLOR_RESET } };
 
+static struct status_colorization _no_status_colorization =
+    { .url = { "", "" },
+      .wrn = { "", "" } };
+
+static struct status_colorization _ansi_status_colorization =
+    { .url = { ANSI_COLOR_BOLD, ANSI_COLOR_RESET },
+      .wrn = { ANSI_COLOR_RED, ANSI_COLOR_RESET } };
+
 static struct options_colorization _no_options_colorization =
     { .opt = { "", "" },
       .val = { "", "" },
@@ -72,11 +80,13 @@ static struct exports_colorization _ansi_exports_colorization =
 static struct shell_colorization _no_shell_colorization =
     { .error = &_no_error_colorization,
       .help = &_no_help_colorization,
+      .status = &_no_status_colorization,
       .options = &_no_options_colorization,
       .exports = &_no_exports_colorization };
 
 static struct shell_colorization _ansi_shell_colorization =
     { .error = &_ansi_error_colorization,
+      .status = &_ansi_status_colorization,
       .help = &_ansi_help_colorization,
       .options = &_ansi_options_colorization,
       .exports = &_ansi_exports_colorization };

@@ -36,6 +36,13 @@ struct help_colorization
 };
 
 
+struct status_colorization
+{
+    const char *url[2];
+    const char *wrn[2];
+};
+
+
 struct options_colorization
 {
     const char *opt[2];
@@ -55,6 +62,7 @@ struct shell_colorization
 {
     struct error_colorization *error;
     struct help_colorization *help;
+    struct status_colorization *status;
     struct options_colorization *options;
     struct exports_colorization *exports;
 };

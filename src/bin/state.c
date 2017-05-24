@@ -289,9 +289,10 @@ void shell_state_unexport(shell_state_t *state, neo4j_value_t name)
 
 void display_status(FILE* stream, shell_state_t *state)
 {
+    struct status_colorization *colors = state->colorize->status;
     if (state->connection == NULL)
     {
-        fprintf(stream, "Not connected\n");
+        fprintf(stream, "%sNot connected%s\n", colors->url[0], colors->url[1]);
     }
     else
     {
@@ -301,14 +302,24 @@ void display_status(FILE* stream, shell_state_t *state)
         unsigned int port = neo4j_connection_port(state->connection);
         bool secure = neo4j_connection_is_secure(state->connection);
         const char *server_id = neo4j_server_id(state->connection);
-        fprintf(stream, "Connected to 'neo4j://%s%s%s%s%s:%u'%s%s%s%s\n",
+
+        fprintf(stream, "Connected to '%sneo4j://%s%s%s%s%s:%u%s'",
+                colors->url[0],
                 (username != NULL)? username : "",
                 (username != NULL)? "@" : "",
                 ipv6? "[" : "", hostname, ipv6? "]" : "",
                 port,
-                secure? "" : " (insecure)",
-                (server_id != NULL)? " [" : "",
-                (server_id != NULL)? server_id : "",
-                (server_id != NULL)? "]" : "");
+                colors->url[1]);
+
+        if (!secure)
+        {
+            fprintf(stream, " (%sinsecure%s)", colors->wrn[0], colors->wrn[1]);
+        }
+
+        if (server_id != NULL)
+        {
+            fprintf(stream, " [%s]", server_id);
+        }
+        fputc('\n', stream);
     }
 }
