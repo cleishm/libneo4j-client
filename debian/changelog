@@ -1,3 +1,12 @@
+libneo4j-client (2.1.3-1) unstable; urgency=medium
+
+  * New upstream release 2.1.3
+    - Add :set quotestrings option
+    - Improved handling of some socket errors
+    - Additional output colorization
+
+ -- Chris Leishman <chris@leishman.org>  Thu, 25 May 2017 03:14:53 +0000
+
 libneo4j-client (2.1.2-1) unstable; urgency=medium
 
   * New upstream release 2.1.2

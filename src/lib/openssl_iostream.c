@@ -222,7 +222,7 @@ ssize_t openssl_writev(neo4j_iostream_t *self,
     }
     // TODO: check if BIO_write sets errno on error
     // TODO: if iovcnt > 1, this will always be a short write, so instead
-    // consider reading entire vector
+    // consider writing entire vector
     int len = (iov[0].iov_len < INT_MAX)? iov[0].iov_len : INT_MAX;
     return BIO_write(ios->bio, iov[0].iov_base, len);
 }

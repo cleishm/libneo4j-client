@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
+#include <locale.h>
 #include <neo4j-client.h>
 #include <signal.h>
 #include <stdio.h>
@@ -99,7 +100,8 @@ static void usage(FILE *s, const char *prog_name)
 " --ca-directory=dir  Specify a directory containing trusted certificates.\n"
 " --insecure          Do not attempt to establish a secure connection.\n"
 " --non-interactive   Use non-interactive mode and do not prompt for\n"
-"                     credentials when connecting.\n"
+"                     host verification or credentials when connecting\n"
+"                     (default when no TTY is connected to the process).\n"
 " --username=name, -u name\n"
 "                     Connect using the specified username.\n"
 " --password=pass, -p pass\n"
@@ -151,6 +153,8 @@ static int add_io_handler(struct io_handler *io_handlers,
 
 int main(int argc, char *argv[])
 {
+    setlocale(LC_ALL,"");
+
     FILE *tty = fopen(_PATH_TTY, "r+");
     if (tty == NULL && errno != ENOENT)
     {
@@ -180,7 +184,7 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    state.interactive = isatty(STDIN_FILENO);
+    state.interactive = isatty(STDIN_FILENO) && isatty(STDOUT_FILENO);
 
     char histfile[PATH_MAX];
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
@@ -191,9 +195,13 @@ int main(int argc, char *argv[])
     }
     state.histfile = histfile;
 
-    if (isatty(fileno(stderr)))
+    if (isatty(STDERR_FILENO))
     {
-        state.error_colorize = ansi_error_colorization;
+        state.colorize = ansi_shell_colorization;
+    }
+
+    if (isatty(STDOUT_FILENO))
+    {
         neo4j_config_set_results_table_colors(state.config,
                 neo4j_results_table_ansi_colors);
         neo4j_config_set_plan_table_colors(state.config,
@@ -248,14 +256,14 @@ int main(int argc, char *argv[])
             }
             break;
         case COLORIZE_OPT:
-            state.error_colorize = ansi_error_colorization;
+            state.colorize = ansi_shell_colorization;
             neo4j_config_set_results_table_colors(state.config,
                     neo4j_results_table_ansi_colors);
             neo4j_config_set_plan_table_colors(state.config,
                     neo4j_plan_table_ansi_colors);
             break;
         case NO_COLORIZE_OPT:
-            state.error_colorize = no_error_colorization;
+            state.colorize = no_shell_colorization;
             neo4j_config_set_results_table_colors(state.config,
                     neo4j_results_table_no_colors);
             neo4j_config_set_plan_table_colors(state.config,
@@ -288,12 +296,6 @@ int main(int argc, char *argv[])
             password_set = true;
             break;
         case 'P':
-            if (tty == NULL)
-            {
-                fprintf(state.err,
-                        "Cannot prompt for a password without a tty\n");
-                goto cleanup;
-            }
             state.password_prompt = true;
             break;
         case KNOWN_HOSTS_OPT:
@@ -420,6 +422,12 @@ int main(int argc, char *argv[])
         {
             state.password_prompt = true;
         }
+    }
+    else if (state.password_prompt)
+    {
+        fprintf(state.err,
+                "Cannot prompt for a password in non-interactive mode\n");
+        goto cleanup;
     }
 
     if (argc >= 1 && db_connect(&state, cypher_input_position_zero,
