@@ -72,7 +72,6 @@ int evaluate_statement(shell_state_t *state, const char *statement, size_t n,
             prepare_statement(state, statement, n, pos);
     if (continuation == NULL)
     {
-        print_error_errno(state, pos, errno, "Unexpected error");
         return -1;
     }
     return complete_evaluation(continuation, state);
@@ -86,12 +85,14 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
             sizeof(evaluation_continuation_t) + n + 1);
     if (continuation == NULL)
     {
+        print_error_errno(state, pos, errno, "calloc");
         return NULL;
     }
 
     if (state->show_timing && gettimeofday(&(continuation->start_time), NULL))
     {
         free(continuation);
+        print_error_errno(state, pos, errno, "gettimeofday");
         return NULL;
     }
 
@@ -135,7 +136,8 @@ int abort_evaluation(evaluation_continuation_t *continuation,
     if (continuation->results != NULL &&
             neo4j_close_results(continuation->results))
     {
-        print_error_errno(state, continuation->pos, errno, "Unexpected error");
+        print_error_errno(state, continuation->pos, errno,
+                "Failed to close results");
         res = -1;
     }
     free(continuation);
@@ -175,7 +177,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
             goto cleanup;
         }
 
-        print_error_errno(state, self->pos, errno, "Unexpected error");
+        print_error_errno(state, self->pos, errno, "Rendering results");
         goto cleanup;
     }
 
@@ -206,7 +208,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
     }
     else if (errno != NEO4J_NO_PLAN_AVAILABLE)
     {
-        print_error_errno(state, self->pos, errno, "Unexpected error");
+        print_error_errno(state, self->pos, errno, "Rendering plan");
         goto cleanup;
     }
 
@@ -215,7 +217,7 @@ int render_result(evaluation_continuation_t *self, shell_state_t *state)
         struct timeval end_time;
         if (gettimeofday(&end_time, NULL))
         {
-            print_error_errno(state, self->pos, errno, "Unexpected error");
+            print_error_errno(state, self->pos, errno, "gettimeofday");
             goto cleanup;
         }
         unsigned long long total =
@@ -257,10 +259,14 @@ void render_evaluation_failure(evaluation_continuation_t *self,
     {
         unsigned int offset = is_indented?
                 details->context_offset + 3 : details->context_offset;
-        fprintf(state->err, "%s%s%s\n%*s^%s\n",
-                state->error_colorize->ctx[0],
-                is_indented? "..." : "", details->context, offset, "",
-                state->error_colorize->ctx[1]);
+        fprintf(state->err, "%s%s%s%s\n%*s%s%s%s\n",
+                state->colorize->error->ctx[0],
+                is_indented? "..." : "", details->context,
+                state->colorize->error->ctx[1],
+                offset, "",
+                state->colorize->error->ptr[0],
+                neo4j_config_get_render_ascii(state->config)? "^" : u8"\u25B2",
+                state->colorize->error->ptr[1]);
     }
 }
 
@@ -378,7 +384,7 @@ int display_schema(shell_state_t* state, struct cypher_input_position pos)
 
     if (neo4j_close_results(constraints_result))
     {
-        print_error_errno(state, pos, errno, "Unexpected error");
+        print_error_errno(state, pos, errno, "Failed to close results");
         goto failure;
     }
 
