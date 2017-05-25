@@ -1,6 +1,15 @@
-libneo4j-client (2.1.1-1) xenial; urgency=medium
+libneo4j-client (2.1.3-1) xenial; urgency=medium
 
-  * New upstream release 2.1.1
+  * New upstream release 2.1.3
+    - Add :set quotestrings option
+    - Improved handling of some socket errors
+    - Additional output colorization
+
+ -- Chris Leishman <chris@leishman.org>  Thu, 25 May 2017 03:14:53 +0000
+
+libneo4j-client (2.1.2-1) xenial; urgency=medium
+
+  * New upstream release 2.1.2
     - Table output is much prettier, with cleaner boarders and _color_!
     - Values in table output are now wrapped (in neo4j-client, this can
       be disabled by unsetting the wrap option, e.g. `:set nowrap`).
@@ -24,7 +33,7 @@ libneo4j-client (2.0.0-1) xenial; urgency=medium
 
  -- Chris Leishman <chris@leishman.org>  Tue, 25 Apr 2017 16:40:31 +0000
 
-libneo4j-client (1.2.1-1) unstable; urgency=medium
+libneo4j-client (1.2.1-1) xenial; urgency=medium
 
   * New upstream release 1.2.1
     - Improvements to neo4j-client

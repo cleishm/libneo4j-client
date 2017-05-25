@@ -207,13 +207,16 @@ int eval_export(shell_state_t *state, const cypher_astnode_t *command,
 {
     if (cypher_ast_command_narguments(command) == 0)
     {
+        struct exports_colorization *colors = state->colorize->exports;
         for (unsigned int i = 0; i < state->nexports; ++i)
         {
-            fprintf(state->out, " %.*s=",
+            fprintf(state->out, " %s%.*s%s=%s",
+                colors->key[0],
                 neo4j_string_length(state->exports[i].key),
-                neo4j_ustring_value(state->exports[i].key));
+                neo4j_ustring_value(state->exports[i].key),
+                colors->key[1], colors->val[0]);
             neo4j_fprint(state->exports[i].value, state->out);
-            fputc('\n', state->out);
+            fprintf(state->out, "%s\n", colors->val[1]);
         }
         return 0;
     }
@@ -384,6 +387,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
         return -1;
     }
 
+    struct help_colorization *colors = state->colorize->help;
     fprintf(state->out,
 "Enter commands or cypher statements at the prompt.\n"
 "\n"
@@ -393,25 +397,27 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 "the Neo4j server for evaluation.\n"
 "\n"
 "Available commands:\n"
-":quit                  Exit the shell\n"
-":connect '<url>'       Connect to the specified URL\n"
-":connect host [port]   Connect to the specified host (and optional port)\n"
-":disconnect            Disconnect the client from the server\n"
-":export                Display currently exported parameters\n"
-":export name=val ...   Export parameters for queries\n"
-":unexport name ...     Unexport parameters for queries\n"
-":reset                 Reset the session with the server\n"
-":set                   Display current option values\n"
-":set option=value ...  Set shell options\n"
-":unset option ...      Unset shell options\n"
-":source file           Evaluate statements from the specified input file\n"
-":status                Show the client connection status\n"
-":schema                Show database schema indexes and constraints\n"
-":help                  Show usage information\n"
-":format (table|csv)    Set the output format\n"
-":width (<n>|auto)      Set the number of columns in the table output\n"
+"%1$s:quit%2$s                  %5$sExit the shell%6$s\n"
+"%1$s:connect%2$s %3$s'<url>'%4$s       %5$sConnect to the specified URL%6$s\n"
+"%1$s:connect%2$s %3$shost [port]%4$s   %5$sConnect to the specified host (and optional port)%6$s\n"
+"%1$s:disconnect%2$s            %5$sDisconnect the client from the server%6$s\n"
+"%1$s:export%2$s                %5$sDisplay currently exported parameters%6$s\n"
+"%1$s:export%2$s %3$sname=val ...%4$s   %5$sExport parameters for queries%6$s\n"
+"%1$s:unexport%2$s %3$sname ...%4$s     %5$sUnexport parameters for queries%6$s\n"
+"%1$s:reset%2$s                 %5$sReset the session with the server%6$s\n"
+"%1$s:set%2$s                   %5$sDisplay current option values%6$s\n"
+"%1$s:set%2$s %3$soption=value ...%4$s  %5$sSet shell options%6$s\n"
+"%1$s:unset%2$s %3$soption ...%4$s      %5$sUnset shell options%6$s\n"
+"%1$s:source%2$s %3$sfile%4$s           %5$sEvaluate statements from the specified input file%6$s\n"
+"%1$s:status%2$s                %5$sShow the client connection status%6$s\n"
+"%1$s:schema%2$s                %5$sShow database schema indexes and constraints%6$s\n"
+"%1$s:help%2$s                  %5$sShow usage information%6$s\n"
 "\n"
-"For more information, see the neo4j-client(1) manpage.\n");
+"For more information, see the neo4j-client(1) manpage.\n",
+        colors->cmd[0], colors->cmd[1],
+        colors->arg[0], colors->arg[1],
+        colors->dsc[0], colors->dsc[1]
+    );
     fflush(state->out);
     return 0;
 }
