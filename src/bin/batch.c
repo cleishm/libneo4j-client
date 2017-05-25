@@ -41,7 +41,7 @@ struct parse_callback_data
 
 static int parse_string(void *data, struct parse_callback_data *cdata);
 static int parse_stream(void *data, struct parse_callback_data *cdata);
-static int process(shell_state_t *state,
+static int process(shell_state_t *state, struct cypher_input_position pos,
         int (*parse)(void *data, struct parse_callback_data *cdata),
         void *parse_data);
 
@@ -54,11 +54,12 @@ static int finalize(shell_state_t *state, evaluation_queue_t *queue,
 static int abort_outstanding(shell_state_t *state, evaluation_queue_t *queue);
 
 
-int source(shell_state_t *state, const char *filename)
+int source(shell_state_t *state, struct cypher_input_position pos,
+        const char *filename)
 {
     if (state->source_depth >= state->source_max_depth)
     {
-        fprintf(state->err, "Too many nested calls to `:source`\n");
+        print_error(state, pos, "Too many nested calls to `:source`");
         return -1;
     }
 
@@ -73,7 +74,7 @@ int source(shell_state_t *state, const char *filename)
         stream = fopen(filename, "r");
         if (stream == NULL)
         {
-            fprintf(state->err, "Unable to read file '%s': %s\n",
+            print_error(state, pos, "Unable to read file '%s': %s",
                     filename, strerror(errno));
             return -1;
         }
@@ -84,7 +85,7 @@ int source(shell_state_t *state, const char *filename)
     const char *prev_infile = state->infile;
     state->infile = filename;
     ++(state->source_depth);
-    int result = batch(state, stream);
+    int result = batch(state, pos, stream);
     fclose(stream);
     --(state->source_depth);
     state->infile = prev_infile;
@@ -97,15 +98,16 @@ int source(shell_state_t *state, const char *filename)
 }
 
 
-int eval(shell_state_t *state, const char *script)
+int eval(shell_state_t *state, struct cypher_input_position pos,
+        const char *script)
 {
-    return process(state, parse_string, (void *)(uintptr_t)script);
+    return process(state, pos, parse_string, (void *)(uintptr_t)script);
 }
 
 
-int batch(shell_state_t *state, FILE *stream)
+int batch(shell_state_t *state, struct cypher_input_position pos, FILE *stream)
 {
-    return process(state, parse_stream, (void *)stream);
+    return process(state, pos, parse_stream, (void *)stream);
 }
 
 
@@ -121,7 +123,7 @@ int parse_stream(void *data, struct parse_callback_data *cdata)
 }
 
 
-int process(shell_state_t *state,
+int process(shell_state_t *state, struct cypher_input_position pos,
         int (*parse)(void *data, struct parse_callback_data *cdata),
         void *parse_data)
 {
@@ -129,7 +131,7 @@ int process(shell_state_t *state,
             (state->pipeline_max * sizeof(evaluation_continuation_t *)));
     if (queue == NULL)
     {
-        neo4j_perror(state->err, errno, "Unexpected error");
+        print_error_errno(state, pos, errno, "calloc");
         return -1;
     }
     queue->capacity = state->pipeline_max;
@@ -141,7 +143,7 @@ int process(shell_state_t *state,
     {
         if (err != -2)
         {
-            neo4j_perror(state->err, errno, "Unexpected error");
+            print_errno(state, pos, errno);
         }
         goto cleanup;
     }
@@ -205,7 +207,6 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
     assert(queue->depth <= queue->capacity);
     if ((queue->depth >= queue->capacity) && finalize(state, queue, 1))
     {
-        neo4j_perror(state->err, errno, "Unexpected error");
         return -1;
     }
     assert(queue->depth < queue->capacity);
@@ -214,7 +215,6 @@ int evaluate(shell_state_t *state, evaluation_queue_t *queue,
             prepare_statement(state, s, n, range.start);
     if (continuation == NULL)
     {
-        neo4j_perror(state->err, errno, "Unexpected error");
         return -1;
     }
 
