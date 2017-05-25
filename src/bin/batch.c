@@ -62,13 +62,23 @@ int source(shell_state_t *state, const char *filename)
         return -1;
     }
 
-    FILE *stream = fopen(filename, "r");
-    if (stream == NULL)
+    FILE *stream;
+    if (strcmp(filename, "-") == 0)
     {
-        fprintf(state->err, "Unable to read file '%s': %s\n",
-                filename, strerror(errno));
-        return -1;
+        stream = stdin;
+        filename = "<stdin>";
     }
+    else
+    {
+        stream = fopen(filename, "r");
+        if (stream == NULL)
+        {
+            fprintf(state->err, "Unable to read file '%s': %s\n",
+                    filename, strerror(errno));
+            return -1;
+        }
+    }
+
     bool interactive = state->interactive;
     state->interactive = false;
     const char *prev_infile = state->infile;
