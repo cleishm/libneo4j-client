@@ -120,14 +120,12 @@ $</pre></div>
 <span class="pl-k">MATCH (n:Person)</span>
 <span class="pl-k">RETURN count(n);</span>
 $
-$ <span class="pl-mb">neo4j-client -u neo4j -p pass -o result.out -i query.cyp</span>
+$ <span class="pl-mb">neo4j-client -u neo4j -p pass -o result.out -i query.cyp localhost</span>
 $ <span class="pl-mb">cat result.out</span>
 <span class="pl-k">+:export name='Emil'</span>
 <span class="pl-k">+begin;</span>
 <span class="pl-k">+MERGE (:Person {name: {name}});</span>
-<span class="pl-k">Nodes created: 1</span>
-<span class="pl-k">Properties set: 1</span>
-<span class="pl-k">Labels added: 1</span>
+<span class="pl-k">Created 1 node, set 1 property, added 1 label</span>
 <span class="pl-k">+commit;</span>
 <span class="pl-k">+MATCH (n:Person)</span>
 <span class="pl-k"> RETURN count(n);</span>
