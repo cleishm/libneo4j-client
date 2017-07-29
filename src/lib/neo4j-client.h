@@ -522,6 +522,8 @@ extern const neo4j_type_t NEO4J_INT;
 extern const neo4j_type_t NEO4J_FLOAT;
 /** The neo4j string value type. */
 extern const neo4j_type_t NEO4J_STRING;
+/** The neo4j bytes value type. */
+extern const neo4j_type_t NEO4J_BYTES;
 /** The neo4j list value type. */
 extern const neo4j_type_t NEO4J_LIST;
 /** The neo4j map value type. */
@@ -787,6 +789,44 @@ const char *neo4j_ustring_value(neo4j_value_t value);
  * @return A pointer to the supplied buffer.
  */
 char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length);
+
+
+/**
+ * Construct a neo4j value encoding a byte sequence.
+ *
+ * @param [u] A pointer to a byte sequence. The pointer must remain valid, and
+ *         the content unchanged, for the lifetime of the neo4j value.
+ * @param [n] The length of the byte sequence. This must be less than
+ *         UINT32_MAX in length (and will be truncated otherwise).
+ * @return A neo4j value encoding the String.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_bytes(const char *u, unsigned int n);
+
+/**
+ * Return the length of a neo4j byte sequence.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_BYTES.
+ *
+ * @param [value] The neo4j byte sequence.
+ * @return The length of the sequence.
+ */
+__neo4j_pure
+unsigned int neo4j_bytes_length(neo4j_value_t value);
+
+/**
+ * Return a pointer to a byte sequence.
+ *
+ * The pointer will be to a byte sequence. The length of the sequence can be
+ * obtained using neo4j_bytes_length(value).
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_BYTES.
+ *
+ * @param [value] The neo4j byte sequence.
+ * @return A pointer to a byte sequence.
+ */
+__neo4j_pure
+const char *neo4j_bytes_value(neo4j_value_t value);
 
 
 /**

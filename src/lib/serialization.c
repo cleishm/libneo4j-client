@@ -35,6 +35,7 @@ struct markers
 
 static struct markers int_markers = {0x00, 0xC8, 0xC9, 0xCA, 0xCB};
 static struct markers string_markers = {0x80, 0xD0, 0xD1, 0xD2, 0x00};
+static struct markers bytes_markers = {0x00, 0xCC, 0xCD, 0xCE, 0x00};
 static struct markers list_markers = {0x90, 0xD4, 0xD5, 0xD6, 0x00};
 static struct markers map_markers = {0xA0, 0xD8, 0xD9, 0xDA, 0x00};
 static struct markers structure_markers = {0xB0, 0xDC, 0xDD, 0x00, 0x00};
@@ -193,6 +194,26 @@ int neo4j_string_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 }
 
 
+/* bytes */
+
+int neo4j_bytes_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
+{
+    REQUIRE(value, -1);
+    REQUIRE(stream, -1);
+    assert(neo4j_type(*value) == NEO4J_BYTES);
+    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
+
+    struct iovec iov[3];
+    struct length_header header;
+    int iovcnt = build_header(iov, &header, v->length, &bytes_markers);
+    iov[iovcnt].iov_base = (void *)(uintptr_t)(v->bytes);
+    iov[iovcnt].iov_len = v->length;
+    iovcnt++;
+
+    return neo4j_ios_writev_all(stream, iov, iovcnt, NULL);
+}
+
+
 /* list */
 
 int neo4j_list_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
@@ -302,7 +323,8 @@ int build_header(struct iovec *iov, struct length_header *header,
 {
     int lengthBytes;
 
-    if ((length >> 4) == 0)
+    // 0x00 is reserved for tiny ints
+    if (markers->m4 != 0x00 && (length >> 4) == 0)
     {
         header->marker = markers->m4 + length;
         lengthBytes = 0;
@@ -321,6 +343,7 @@ int build_header(struct iovec *iov, struct length_header *header,
     }
     else
     {
+        assert((length >> 32) == 0);
         header->marker = markers->m32;
         header->length.l32 = htonl(length);
         lengthBytes = 4;
