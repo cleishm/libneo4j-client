@@ -1,5 +1,7 @@
 /* vi:set ts=4 sw=4 expandtab:
  *
+ * @configure_input@
+ *
  * Copyright 2016, Chris Leishman (http://github.com/cleishm)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -126,6 +128,20 @@ typedef int (*neo4j_basic_auth_callback_t)(void *userdata,
  * version
  * =====================================
  */
+
+/* Compile time version details.
+ * For runtime version inspection, use libcypher_parser_version() instead.
+ */
+#define NEO4J_VERSION "@PACKAGE_VERSION@"
+#define NEO4J_MAJOR_VERSION @PACKAGE_MAJOR_VERSION@
+#define NEO4J_MINOR_VERSION @PACKAGE_MINOR_VERSION@
+#define NEO4J_PATCH_VERSION @PACKAGE_PATCH_VERSION@
+#define NEO4J_DEVELOPMENT_VERSION "@PACKAGE_DEVELOPMENT_VERSION@"
+
+#define NEO4J_VERSION_NUMBER \
+    ((NEO4J_MAJOR_VERSION << 20) | \
+    (NEO4J_MINOR_VERSION << 12) | \
+    (NEO4J_PATCH_VERSION << 4) | @PACKAGE_STATUS_VERSION@)
 
 /**
  * The version string for libneo4j-client.

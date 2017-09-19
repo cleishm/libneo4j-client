@@ -36,6 +36,7 @@ TAGS
 /libneo4j-client-*.tar.gz
 /src/bin/neo4j-client
 /src/lib/*_leg.c
+/src/lib/neo4j-client.h
 /tests/check_libneo4j-client
 /tests/*.trs
 /tests/*.log
