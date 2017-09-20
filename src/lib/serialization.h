@@ -38,6 +38,7 @@ int neo4j_int_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_float_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_string_serialize(const neo4j_value_t *value,
         neo4j_iostream_t *stream);
+int neo4j_bytes_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_list_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_map_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_struct_serialize(const neo4j_value_t *value,

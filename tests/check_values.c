@@ -30,6 +30,8 @@ static FILE *memstream;
 
 static void setup(void)
 {
+    memset(buf, 0x7a, 1023);
+    buf[1023] = '\0';
     memstream = open_memstream(&memstream_buffer, &memstream_size);
 }
 
@@ -240,6 +242,28 @@ START_TEST (string_value)
     ck_assert_int_eq(neo4j_fprint(value, memstream), 19);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, "\"the \\\"rum diary\\\"\"");
+}
+END_TEST
+
+
+START_TEST (bytes_value)
+{
+    neo4j_value_t value = neo4j_bytes("UVWXYZ", 6);
+    ck_assert(neo4j_type(value) == NEO4J_BYTES);
+
+    ck_assert_int_eq(neo4j_bytes_length(value), 6);
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 13);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 4), 13);
+    ck_assert_str_eq(buf, "#55");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 14), 13);
+    ck_assert_str_eq(buf, "#55565758595a");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 13);
+    ck_assert_str_eq(buf, "#55565758595a");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 13);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "#55565758595a");
 }
 END_TEST
 
@@ -1039,6 +1063,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, float_eq);
     tcase_add_test(tc, string_value);
     tcase_add_test(tc, string_eq);
+    tcase_add_test(tc, bytes_value);
     tcase_add_test(tc, list_value);
     tcase_add_test(tc, list_eq);
     tcase_add_test(tc, map_value);

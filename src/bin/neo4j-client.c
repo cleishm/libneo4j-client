@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
+#include <locale.h>
 #include <neo4j-client.h>
 #include <signal.h>
 #include <stdio.h>
@@ -99,7 +100,8 @@ static void usage(FILE *s, const char *prog_name)
 " --ca-directory=dir  Specify a directory containing trusted certificates.\n"
 " --insecure          Do not attempt to establish a secure connection.\n"
 " --non-interactive   Use non-interactive mode and do not prompt for\n"
-"                     credentials when connecting.\n"
+"                     host verification or credentials when connecting\n"
+"                     (default when no TTY is connected to the process).\n"
 " --username=name, -u name\n"
 "                     Connect using the specified username.\n"
 " --password=pass, -p pass\n"
@@ -137,7 +139,8 @@ struct io_handler
 {
     char *arg;
     bool is_output;
-    int (*handle)(shell_state_t *state, const char *arg);
+    int (*handle)(shell_state_t *state, struct cypher_input_position pos,
+            const char *arg);
 };
 
 #define NEO4J_MAX_IO_ARGS 128
@@ -146,11 +149,14 @@ static void interrupt_handler(int signal);
 static int add_io_handler(struct io_handler *io_handlers,
         unsigned int *nio_handlers,
         const char *arg, bool is_output,
-        int (*handler)(shell_state_t *state, const char *arg));
+        int (*handler)(shell_state_t *state, struct cypher_input_position pos,
+            const char *arg));
 
 
 int main(int argc, char *argv[])
 {
+    setlocale(LC_ALL,"");
+
     FILE *tty = fopen(_PATH_TTY, "r+");
     if (tty == NULL && errno != ENOENT)
     {
@@ -180,7 +186,7 @@ int main(int argc, char *argv[])
         goto cleanup;
     }
 
-    state.interactive = isatty(STDIN_FILENO);
+    state.interactive = isatty(STDIN_FILENO) && isatty(STDOUT_FILENO);
 
     char histfile[PATH_MAX];
     if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
@@ -191,9 +197,13 @@ int main(int argc, char *argv[])
     }
     state.histfile = histfile;
 
-    if (isatty(fileno(stderr)))
+    if (isatty(STDERR_FILENO))
     {
-        state.error_colorize = ansi_error_colorization;
+        state.colorize = ansi_shell_colorization;
+    }
+
+    if (isatty(STDOUT_FILENO))
+    {
         neo4j_config_set_results_table_colors(state.config,
                 neo4j_results_table_ansi_colors);
         neo4j_config_set_plan_table_colors(state.config,
@@ -248,14 +258,14 @@ int main(int argc, char *argv[])
             }
             break;
         case COLORIZE_OPT:
-            state.error_colorize = ansi_error_colorization;
+            state.colorize = ansi_shell_colorization;
             neo4j_config_set_results_table_colors(state.config,
                     neo4j_results_table_ansi_colors);
             neo4j_config_set_plan_table_colors(state.config,
                     neo4j_plan_table_ansi_colors);
             break;
         case NO_COLORIZE_OPT:
-            state.error_colorize = no_error_colorization;
+            state.colorize = no_shell_colorization;
             neo4j_config_set_results_table_colors(state.config,
                     neo4j_results_table_no_colors);
             neo4j_config_set_plan_table_colors(state.config,
@@ -288,12 +298,6 @@ int main(int argc, char *argv[])
             password_set = true;
             break;
         case 'P':
-            if (tty == NULL)
-            {
-                fprintf(state.err,
-                        "Cannot prompt for a password without a tty\n");
-                goto cleanup;
-            }
             state.password_prompt = true;
             break;
         case KNOWN_HOSTS_OPT:
@@ -421,6 +425,12 @@ int main(int argc, char *argv[])
             state.password_prompt = true;
         }
     }
+    else if (state.password_prompt)
+    {
+        fprintf(state.err,
+                "Cannot prompt for a password in non-interactive mode\n");
+        goto cleanup;
+    }
 
     if (argc >= 1 && db_connect(&state, cypher_input_position_zero,
                 argv[0], (argc > 1)? argv[1] : NULL))
@@ -454,7 +464,8 @@ int main(int argc, char *argv[])
         state.render = render_results_csv;
         for (unsigned int i = 0; i < nio_handlers; ++i)
         {
-            if (io_handlers[i].handle(&state, io_handlers[i].arg))
+            if (io_handlers[i].handle(&state, cypher_input_position_zero,
+                    io_handlers[i].arg))
             {
                 goto cleanup;
             }
@@ -465,7 +476,7 @@ int main(int argc, char *argv[])
         state.render = render_results_csv;
         state.infile = "<stdin>";
         state.source_depth = 1;
-        if (batch(&state, state.in))
+        if (batch(&state, cypher_input_position_zero, state.in))
         {
             goto cleanup;
         }
@@ -494,7 +505,8 @@ cleanup:
 
 int add_io_handler(struct io_handler *io_handlers, unsigned int *nio_handlers,
         const char *arg, bool is_output,
-        int (*handler)(shell_state_t *state, const char *arg))
+        int (*handler)(shell_state_t *state, struct cypher_input_position pos,
+            const char *arg))
 {
     if (*nio_handlers >= NEO4J_MAX_IO_ARGS)
     {

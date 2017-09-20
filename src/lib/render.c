@@ -569,7 +569,7 @@ ssize_t render_field(FILE *stream, const char *s, size_t n, unsigned int width,
 int write_unprintable(FILE *stream, int codepoint, int width)
 {
     assert(codepoint >= 0);
-    char buf[10];
+    char buf[11];
     char *replacement;
     unsigned int n = 2;
     switch (codepoint)

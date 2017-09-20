@@ -138,7 +138,15 @@ inline int unsupported_sock_error(int err)
 void set_socket_options(int fd, const neo4j_config_t *config,
         neo4j_logger_t *logger)
 {
-    int option;
+    int option = 1;
+
+#ifdef HAVE_SO_NOSIGPIPE
+    if (setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &option, sizeof(int)))
+    {
+        neo4j_log_warn_errno(logger, "setsockopt");
+        // continue
+    }
+#endif
 
     if ((option = config->so_sndbuf_size) > 0)
     {

@@ -14,13 +14,14 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[2.1.2])
-AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
+AC_INIT([libneo4j-client],[2.2.0])
+AC_CONFIG_SRCDIR([src/lib/neo4j-client.h.in])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE([enable])
 
+DECLARE_VERSIONS
 WITH_LIBS
 
 GCC_CFLAGS="-fvisibility=hidden -pipe -Wall -W -Werror \
@@ -53,7 +54,7 @@ AC_CHECK_HEADERS([stdatomic.h])
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_FUNC_STRERROR_R
-MACRO_STATIC_ASSERT
+STATIC_ASSERT
 LT_LIB_M
 AM_LANGINFO_CODESET
 
@@ -75,7 +76,6 @@ AC_CHECK_DECL([htonll],[AC_DEFINE([HAVE_HTONLL],[1],
   [Define to 1 if you have htonll.])])
 AC_CHECK_DECL([ntohll],[AC_DEFINE([HAVE_NTOHLL],[1],
   [Define to 1 if you have ntohll.])])
-
 
 AC_CHECK_DECL([htobe64],[AC_DEFINE([HAVE_HTOBE64],[1],
   [Define to 1 if you have htobe64.])],
@@ -99,7 +99,6 @@ AC_CHECK_DECL([be64toh],[AC_DEFINE([HAVE_BE64TOH],[1],
 #include <sys/endian.h>
 #endif
   ])
-
 
 AC_CHECK_DECL([OSSwapHostToBigInt64],[AC_DEFINE([HAVE_OSSWAPHOSTTOBIGINT64],[1],
   [Define to 1 if you have OSSwapHostToBigInt64 in the <libkern/OSByteOrder.h> header file.])],
@@ -129,6 +128,20 @@ AC_SEARCH_LIBS([readpassphrase],[bsd])
 AC_CHECK_FUNCS([readpassphrase],[],[])
 
 AC_CHECK_FUNCS([memset_s],[],[])
+
+AC_CHECK_DECL([SO_NOSIGPIPE],[AC_DEFINE([HAVE_SO_NOSIGPIPE],[1],
+  [Define to 1 if you have SO_NOSIGPIPE in the <sys/socket.h> header file.])],
+  [],
+  [
+#include <sys/socket.h>
+  ])
+
+AC_CHECK_DECL([MSG_NOSIGNAL],[AC_DEFINE([HAVE_MSG_NOSIGNAL],[1],
+  [Define to 1 if you have MSG_NOSIGNAL in the <sys/socket.h> header file.])],
+  [],
+  [
+#include <sys/socket.h>
+  ])
 
 
 dnl Threading
@@ -220,6 +233,7 @@ AC_CONFIG_FILES([
     src/Makefile \
     src/bin/Makefile \
     src/lib/Makefile \
+    src/lib/neo4j-client.h \
     tests/Makefile
 ])
 AC_OUTPUT

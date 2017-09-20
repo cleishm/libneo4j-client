@@ -61,6 +61,9 @@
 /* Define to 1 if you have the `mkstemp' function. */
 #undef HAVE_MKSTEMP
 
+/* Define to 1 if you have MSG_NOSIGNAL in the <sys/socket.h> header file. */
+#undef HAVE_MSG_NOSIGNAL
+
 /* Define to 1 if you have ntohll. */
 #undef HAVE_NTOHLL
 
@@ -89,6 +92,9 @@
 
 /* Define to 1 if you have the <readpassphrase.h> header file. */
 #undef HAVE_READPASSPHRASE_H
+
+/* Define to 1 if you have SO_NOSIGPIPE in the <sys/socket.h> header file. */
+#undef HAVE_SO_NOSIGPIPE
 
 /* Define to 1 if you have the <stdatomic.h> header file. */
 #undef HAVE_STDATOMIC_H
@@ -144,8 +150,20 @@
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
+/* Define to the development version of this package */
+#undef PACKAGE_DEVELOPMENT_VERSION
+
+/* Define to the major version of this package */
+#undef PACKAGE_MAJOR_VERSION
+
+/* Define to the minor version of this package */
+#undef PACKAGE_MINOR_VERSION
+
 /* Define to the full name of this package. */
 #undef PACKAGE_NAME
+
+/* Define to the patch version of this package */
+#undef PACKAGE_PATCH_VERSION
 
 /* Define to the full name and version of this package. */
 #undef PACKAGE_STRING

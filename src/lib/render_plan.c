@@ -326,14 +326,14 @@ int render_op(FILE *stream, const char *operator_type, unsigned int op_depth,
         }
         if (offset >= op_depth*2)
         {
-            if (fputs((flags & NEO4J_RENDER_ASCII)?
+            if (fputs((flags & NEO4J_RENDER_ASCII_ART)?
                         "*" : u8"\u25B8", stream) == EOF)
             {
                 return -1;
             }
             break;
         }
-        if (fputs((flags & NEO4J_RENDER_ASCII)?
+        if (fputs((flags & NEO4J_RENDER_ASCII_ART)?
                     "|" : u8"\u2502", stream) == EOF)
         {
             return -1;
@@ -489,7 +489,7 @@ int render_wrap(FILE *stream, unsigned int op_depth, unsigned int widths[4],
     while (width < op_depth*2)
     {
         width += 2;
-        if (fputs((flags & NEO4J_RENDER_ASCII)?
+        if (fputs((flags & NEO4J_RENDER_ASCII_ART)?
                 " |" : u8" \u2502", stream) == EOF)
         {
             return -1;
@@ -563,7 +563,7 @@ int render_tr(FILE *stream, unsigned int op_depth, bool branch,
     do
     {
         width += 2;
-        if (fputs((flags & NEO4J_RENDER_ASCII)?
+        if (fputs((flags & NEO4J_RENDER_ASCII_ART)?
                     " |" : u8" \u2502", stream) == EOF)
         {
             return -1;

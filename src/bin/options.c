@@ -24,57 +24,62 @@
 struct options
 {
     const char *name;
-    int (*set)(shell_state_t *state, const char *value);
+    int (*set)(shell_state_t *state, struct cypher_input_position pos,
+            const char *value);
     bool allow_null;
-    int (*unset)(shell_state_t *state);
+    int (*unset)(shell_state_t *state, struct cypher_input_position pos);
     const char *(*get)(shell_state_t *state, char *buf, size_t n);
     const char *description;
 };
 
-static int set_ascii(shell_state_t *state, const char *value);
-static int unset_ascii(shell_state_t *state);
+static int set_ascii(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_ascii(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_ascii(shell_state_t *state, char *buf, size_t n);
 
-static int set_colorize(shell_state_t *state, const char *value);
-static int unset_colorize(shell_state_t *state);
+static int set_colorize(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_colorize(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_colorize(shell_state_t *state, char *buf, size_t n);
 
-static int set_echo(shell_state_t *state, const char *value);
-static int unset_echo(shell_state_t *state);
+static int set_echo(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_echo(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_echo(shell_state_t *state, char *buf, size_t n);
 
-static int set_insecure(shell_state_t *state, const char *value);
-static int unset_insecure(shell_state_t *state);
+static int set_insecure(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_insecure(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_insecure(shell_state_t *state, char *buf, size_t n);
 
-static int set_inspect(shell_state_t *state, const char *value);
-static int unset_inspect(shell_state_t *state);
+static int set_inspect(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_inspect(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_inspect(shell_state_t *state, char *buf, size_t n);
 
-static int set_output(shell_state_t *state, const char *value);
+static int set_output(shell_state_t *state, struct cypher_input_position pos, const char *value);
 static const char *get_format(shell_state_t *state, char *buf, size_t n);
 
-static int set_outfile(shell_state_t *state, const char *value);
-static int unset_outfile(shell_state_t *state);
+static int set_outfile(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_outfile(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_outfile(shell_state_t *state, char *buf, size_t n);
 
-static int set_username(shell_state_t *state, const char *value);
-static int unset_username(shell_state_t *state);
+static int set_quotestrings(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_quotestrings(shell_state_t *state, struct cypher_input_position pos);
+static const char *get_quotestrings(shell_state_t *state, char *buf, size_t n);
+
+static int set_username(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_username(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_username(shell_state_t *state, char *buf, size_t n);
 
-static int unset_width(shell_state_t *state);
+static int unset_width(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_width(shell_state_t *state, char *buf, size_t n);
 
-static int set_rowlines(shell_state_t *state, const char *value);
-static int unset_rowlines(shell_state_t *state);
+static int set_rowlines(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_rowlines(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_rowlines(shell_state_t *state, char *buf, size_t n);
 
-static int set_timing(shell_state_t *state, const char *value);
-static int unset_timing(shell_state_t *state);
+static int set_timing(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_timing(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_timing(shell_state_t *state, char *buf, size_t n);
 
-static int set_wrap(shell_state_t *state, const char *value);
-static int unset_wrap(shell_state_t *state);
+static int set_wrap(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static int unset_wrap(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_wrap(shell_state_t *state, char *buf, size_t n);
 
 static struct options options[] =
@@ -93,6 +98,8 @@ static struct options options[] =
       { "output", set_output, false, NULL, NULL, NULL },
       { "outfile", set_outfile, false, unset_outfile, get_outfile,
           "redirect output to a file" },
+      { "quotestrings", set_quotestrings, true, unset_quotestrings, get_quotestrings,
+          "quote strings in result tables" },
       { "username", set_username, false, unset_username, get_username,
           "the default username for connections" },
       { "rowlines", set_rowlines, true, unset_rowlines, get_rowlines,
@@ -108,6 +115,7 @@ static struct options options[] =
 
 void options_display(shell_state_t *state, FILE *stream)
 {
+    struct options_colorization *colors = state->colorize->options;
     char buf[64];
     for (unsigned int i = 0; options[i].name != NULL; ++i)
     {
@@ -117,16 +125,18 @@ void options_display(shell_state_t *state, FILE *stream)
             const char *val = options[i].get(state, buf, sizeof(buf));
             assert(val != NULL);
             unsigned int end_offset = strlen(name) + strlen(val) + 3;
-            fprintf(stream, " %s=%s %*s// %s\n", name, val,
+            fprintf(stream, " %s%s%s=%s%s%s %*s%s// %s%s\n",
+                    colors->opt[0], name, colors->opt[1],
+                    colors->val[0], val, colors->val[1],
                     (end_offset < 20)? 20 - end_offset : 0, "",
-                    options[i].description);
+                    colors->dsc[0], options[i].description, colors->dsc[1]);
         }
     }
 }
 
 
-int option_set(shell_state_t *state, const char *name,
-        const char *value)
+int option_set(shell_state_t *state, struct cypher_input_position pos,
+        const char *name, const char *value)
 {
     if (value != NULL && *value == '\0')
     {
@@ -139,11 +149,10 @@ int option_set(shell_state_t *state, const char *name,
         {
             if (value == NULL && !options[i].allow_null)
             {
-                fprintf(state->err, "Option '%s' requires a value\n",
-                        name);
+                print_error(state, pos, "Option '%s' requires a value", name);
                 return -1;
             }
-            return options[i].set(state, value);
+            return options[i].set(state, pos, value);
         }
     }
 
@@ -153,17 +162,18 @@ int option_set(shell_state_t *state, const char *name,
         {
             if (options[i].allow_null && strcmp(options[i].name, name + 2) == 0)
             {
-                return options[i].unset(state);
+                return options[i].unset(state, pos);
             }
         }
     }
 
-    fprintf(state->err, "Unknown option '%s'\n", name);
+    print_error(state, pos, "Unknown option '%s'", name);
     return -1;
 }
 
 
-int option_unset(shell_state_t *state, const char *name)
+int option_unset(shell_state_t *state, struct cypher_input_position pos,
+        const char *name)
 {
     for (unsigned int i = 0; options[i].name != NULL; ++i)
     {
@@ -171,22 +181,23 @@ int option_unset(shell_state_t *state, const char *name)
         {
             if (options[i].unset != NULL)
             {
-                return options[i].unset(state);
+                return options[i].unset(state, pos);
             }
             else
             {
-                fprintf(state->err, "Cannot unset option '%s'\n", name);
+                print_error(state, pos, "Cannot unset option '%s'", name);
                 return -1;
             }
         }
     }
 
-    fprintf(state->err, "Unknown option '%s'\n", name);
+    print_error(state, pos, "Unknown option '%s'", name);
     return -1;
 }
 
 
-int set_ascii(shell_state_t *state, const char *value)
+int set_ascii(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (value == NULL || strcmp(value, "on") == 0)
     {
@@ -198,14 +209,14 @@ int set_ascii(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set ascii to 'on' or 'off'\n");
+        print_error(state, pos, "Must set ascii to 'on' or 'off'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_ascii(shell_state_t *state)
+int unset_ascii(shell_state_t *state, struct cypher_input_position pos)
 {
     neo4j_config_set_render_ascii(state->config, false);
     return 0;
@@ -218,11 +229,12 @@ const char *get_ascii(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_colorize(shell_state_t *state, const char *value)
+int set_colorize(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (value == NULL || strcmp(value, "on") == 0)
     {
-        state->error_colorize = ansi_error_colorization;
+        state->colorize = ansi_shell_colorization;
         neo4j_config_set_results_table_colors(state->config,
                 neo4j_results_table_ansi_colors);
         neo4j_config_set_plan_table_colors(state->config,
@@ -230,7 +242,7 @@ int set_colorize(shell_state_t *state, const char *value)
     }
     else if (strcmp(value, "off") == 0)
     {
-        state->error_colorize = no_error_colorization;
+        state->colorize = no_shell_colorization;
         neo4j_config_set_results_table_colors(state->config,
                 neo4j_results_table_no_colors);
         neo4j_config_set_plan_table_colors(state->config,
@@ -238,15 +250,16 @@ int set_colorize(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set color to 'on' or 'off'\n");
+        print_error(state, pos, "Must set color to 'on' or 'off'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_colorize(shell_state_t *state)
+int unset_colorize(shell_state_t *state, struct cypher_input_position pos)
 {
+    state->colorize = no_shell_colorization;
     neo4j_config_set_results_table_colors(state->config,
             neo4j_results_table_no_colors);
     neo4j_config_set_plan_table_colors(state->config,
@@ -262,7 +275,8 @@ const char *get_colorize(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_echo(shell_state_t *state, const char *value)
+int set_echo(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (value == NULL || strcmp(value, "on") == 0)
     {
@@ -274,14 +288,14 @@ int set_echo(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set echo to 'on' or 'off'\n");
+        print_error(state, pos, "Must set echo to 'on' or 'off'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_echo(shell_state_t *state)
+int unset_echo(shell_state_t *state, struct cypher_input_position pos)
 {
     state->echo = false;
     return 0;
@@ -294,7 +308,8 @@ const char *get_echo(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_insecure(shell_state_t *state, const char *value)
+int set_insecure(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
@@ -306,14 +321,14 @@ int set_insecure(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set insecure to 'yes' or 'no'\n");
+        print_error(state, pos, "Must set insecure to 'yes' or 'no'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_insecure(shell_state_t *state)
+int unset_insecure(shell_state_t *state, struct cypher_input_position pos)
 {
     state->connect_flags &= ~NEO4J_INSECURE;
     return 0;
@@ -326,18 +341,20 @@ const char *get_insecure(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_inspect(shell_state_t *state, const char *value)
+int set_inspect(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     char *endptr;
     unsigned long rows = strtoul(value, &endptr, 10);
     if (*value == '\0' || *endptr != '\0')
     {
-        fprintf(state->err, "Invalid value '%s' for inspect\n", value);
+        print_error(state, pos, "Invalid value '%s' for inspect", value);
         return -1;
     }
     if (rows > UINT_MAX)
     {
-        fprintf(state->err, "Value for :inspect (%ld) out of range [0,%d]\n",
+        print_error(state, pos,
+                "Value for :inspect (%ld) out of range [0,%d]",
                 rows, UINT_MAX);
         return -1;
     }
@@ -347,7 +364,7 @@ int set_inspect(shell_state_t *state, const char *value)
 }
 
 
-int unset_inspect(shell_state_t *state)
+int unset_inspect(shell_state_t *state, struct cypher_input_position pos)
 {
     neo4j_config_set_render_inspect_rows(state->config, 0);
     return 0;
@@ -362,12 +379,13 @@ const char *get_inspect(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_format(shell_state_t *state, const char *value)
+int set_format(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     renderer_t renderer = find_renderer(value);
     if (renderer == NULL)
     {
-        fprintf(state->err, "Unknown output format '%s'\n", value);
+        print_error(state, pos, "Unknown output format '%s'", value);
         return -1;
     }
     state->render = renderer;
@@ -375,12 +393,12 @@ int set_format(shell_state_t *state, const char *value)
 }
 
 
-int set_output(shell_state_t *state, const char *value)
+int set_output(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
-    fprintf(state->err,
-            "WARNING: `:set output=value` is deprecated. "
-            "Use `:set format=value` instead.\n");
-    return set_format(state, value);
+    print_warning(state, pos, "`:set output=value` is deprecated. "
+            "Use `:set format=value` instead.");
+    return set_format(state, pos, value);
 }
 
 
@@ -391,15 +409,16 @@ const char *get_format(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_outfile(shell_state_t *state, const char *value)
+int set_outfile(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
-    return redirect_output(state, value);
+    return redirect_output(state, pos, value);
 }
 
 
-int unset_outfile(shell_state_t *state)
+int unset_outfile(shell_state_t *state, struct cypher_input_position pos)
 {
-    return set_outfile(state, NULL);
+    return set_outfile(state, pos, NULL);
 }
 
 
@@ -414,14 +433,48 @@ const char *get_outfile(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_username(shell_state_t *state, const char *value)
+int set_quotestrings(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
+{
+    if (value == NULL || strcmp(value, "yes") == 0)
+    {
+        neo4j_config_set_render_quoted_strings(state->config, true);
+    }
+    else if (strcmp(value, "no") == 0)
+    {
+        neo4j_config_set_render_quoted_strings(state->config, false);
+    }
+    else
+    {
+        print_error(state, pos, "Must set quotestrings to 'yes' or 'no'");
+        return -1;
+    }
+    return 0;
+}
+
+
+int unset_quotestrings(shell_state_t *state, struct cypher_input_position pos)
+{
+    neo4j_config_set_render_quoted_strings(state->config, false);
+    return 0;
+}
+
+
+const char *get_quotestrings(shell_state_t *state, char *buf, size_t n)
+{
+    return neo4j_config_get_render_quoted_strings(state->config)? "yes" : "no";
+}
+
+
+int set_username(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     return neo4j_config_set_username(state->config,
             (*value != '\0')? value : NULL);
 }
 
 
-int unset_username(shell_state_t *state)
+int unset_username(shell_state_t *state, struct cypher_input_position pos)
 {
     return neo4j_config_set_username(state->config, NULL);
 }
@@ -439,7 +492,8 @@ const char *get_username(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_width(shell_state_t *state, const char *value)
+int set_width(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (strcmp(value, "auto") == 0)
     {
@@ -450,7 +504,7 @@ int set_width(shell_state_t *state, const char *value)
     long width = strtol(value, NULL, 10);
     if (width < 2 || width >= NEO4J_RENDER_MAX_WIDTH)
     {
-        fprintf(state->err, "Width value (%ld) out of range [2,%d)\n",
+        print_error(state, pos, "Width value (%ld) out of range [2,%d)",
                 width, NEO4J_RENDER_MAX_WIDTH);
         return -1;
     }
@@ -460,7 +514,7 @@ int set_width(shell_state_t *state, const char *value)
 }
 
 
-int unset_width(shell_state_t *state)
+int unset_width(shell_state_t *state, struct cypher_input_position pos)
 {
     state->width = 0;
     return 0;
@@ -478,7 +532,8 @@ const char *get_width(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_rowlines(shell_state_t *state, const char *value)
+int set_rowlines(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
@@ -490,14 +545,14 @@ int set_rowlines(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set rowlines to 'yes' or 'no'\n");
+        print_error(state, pos, "Must set rowlines to 'yes' or 'no'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_rowlines(shell_state_t *state)
+int unset_rowlines(shell_state_t *state, struct cypher_input_position pos)
 {
     neo4j_config_set_render_rowlines(state->config, false);
     return 0;
@@ -510,7 +565,8 @@ const char *get_rowlines(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_timing(shell_state_t *state, const char *value)
+int set_timing(shell_state_t *state, struct cypher_input_position pos,
+        const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
@@ -522,14 +578,14 @@ int set_timing(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set timing to 'yes' or 'no'\n");
+        print_error(state, pos, "Must set timing to 'yes' or 'no'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_timing(shell_state_t *state)
+int unset_timing(shell_state_t *state, struct cypher_input_position pos)
 {
     state->show_timing = false;
     return 0;
@@ -542,7 +598,7 @@ const char *get_timing(shell_state_t *state, char *buf, size_t n)
 }
 
 
-int set_wrap(shell_state_t *state, const char *value)
+int set_wrap(shell_state_t *state, struct cypher_input_position pos, const char *value)
 {
     if (value == NULL || strcmp(value, "yes") == 0)
     {
@@ -554,14 +610,14 @@ int set_wrap(shell_state_t *state, const char *value)
     }
     else
     {
-        fprintf(state->err, "Must set wrap to 'yes' or 'no'\n");
+        print_error(state, pos, "Must set wrap to 'yes' or 'no'");
         return -1;
     }
     return 0;
 }
 
 
-int unset_wrap(shell_state_t *state)
+int unset_wrap(shell_state_t *state, struct cypher_input_position pos)
 {
     neo4j_config_set_render_wrapped_values(state->config, false);
     return 0;

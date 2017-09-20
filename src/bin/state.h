@@ -50,7 +50,7 @@ struct shell_state
     neo4j_connection_t *connection;
     char *temp_buffer;
     size_t temp_buffer_capacity;
-    const struct error_colorization *error_colorize;
+    const struct shell_colorization *colorize;
     renderer_t render;
     int width;
     bool show_timing;
@@ -74,6 +74,8 @@ void shell_state_destroy(shell_state_t *state);
 
 int print_error(shell_state_t *state, struct cypher_input_position pos,
         const char *fmt, ...);
+int print_errno(shell_state_t *state, struct cypher_input_position pos,
+        int err);
 int print_error_errno(shell_state_t *state, struct cypher_input_position pos,
         int err, const char *msg);
 
@@ -81,7 +83,8 @@ int print_warning(shell_state_t *state, struct cypher_input_position pos,
         const char *fmt, ...);
 
 
-int redirect_output(shell_state_t *state, const char *filename);
+int redirect_output(shell_state_t *state, struct cypher_input_position pos,
+        const char *filename);
 
 
 int shell_state_add_export(shell_state_t *state, neo4j_value_t name,

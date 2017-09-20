@@ -104,7 +104,11 @@ ssize_t neo4j_posix_write(neo4j_iostream_t *self, const void *buf, size_t nbyte)
         errno = EPIPE;
         return -1;
     }
+#ifdef HAVE_MSG_NOSIGNAL
+    return send(ios->fd, buf, nbyte, MSG_NOSIGNAL);
+#else
     return write(ios->fd, buf, nbyte);
+#endif
 }
 
 
@@ -122,7 +126,15 @@ ssize_t neo4j_posix_writev(neo4j_iostream_t *self,
     {
         iovcnt = INT_MAX;
     }
+#ifdef HAVE_MSG_NOSIGNAL
+    struct msghdr message;
+    memset(&message, 0, sizeof(struct msghdr));
+    message.msg_iov = (struct iovec *)(uintptr_t)iov;
+    message.msg_iovlen = iovcnt;
+    return sendmsg(ios->fd, &message, MSG_NOSIGNAL);
+#else
     return writev(ios->fd, iov, iovcnt);
+#endif
 }
 
 

@@ -45,6 +45,9 @@ DESERIALIZER_FUNC_DEF(int64_deserialize);
 DESERIALIZER_FUNC_DEF(string8_deserialize);
 DESERIALIZER_FUNC_DEF(string16_deserialize);
 DESERIALIZER_FUNC_DEF(string32_deserialize);
+DESERIALIZER_FUNC_DEF(bytes8_deserialize);
+DESERIALIZER_FUNC_DEF(bytes16_deserialize);
+DESERIALIZER_FUNC_DEF(bytes32_deserialize);
 DESERIALIZER_FUNC_DEF(list8_deserialize);
 DESERIALIZER_FUNC_DEF(list16_deserialize);
 DESERIALIZER_FUNC_DEF(list32_deserialize);
@@ -55,6 +58,8 @@ DESERIALIZER_FUNC_DEF(struct8_deserialize);
 DESERIALIZER_FUNC_DEF(struct16_deserialize);
 
 static int string_deserialize(uint32_t length, neo4j_iostream_t *stream,
+        neo4j_mpool_t *pool, neo4j_value_t *value);
+static int bytes_deserialize(uint32_t length, neo4j_iostream_t *stream,
         neo4j_mpool_t *pool, neo4j_value_t *value);
 static int list_deserialize(uint32_t nitems, neo4j_iostream_t *stream,
         neo4j_mpool_t *pool, neo4j_value_t *value);
@@ -269,9 +274,9 @@ static const deserializer_t deserializers[UINT8_MAX+1] =
       int16_deserialize,                 // 0xc9
       int32_deserialize,                 // 0xca
       int64_deserialize,                 // 0xcb
-      NULL,                              // 0xcc
-      NULL,                              // 0xcd
-      NULL,                              // 0xce
+      bytes8_deserialize,                // 0xcc
+      bytes16_deserialize,               // 0xcd
+      bytes32_deserialize,               // 0xce
       NULL,                              // 0xcf
       string8_deserialize,               // 0xd0
       string16_deserialize,              // 0xd1
@@ -524,6 +529,41 @@ int string32_deserialize(uint8_t marker, neo4j_iostream_t *stream,
     return string_deserialize(length, stream, pool, value);
 }
 
+int bytes8_deserialize(uint8_t marker, neo4j_iostream_t *stream,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    uint8_t length;
+    if (neo4j_ios_read_all(stream, &length, sizeof(length), NULL) < 0)
+    {
+        return -1;
+    }
+    return bytes_deserialize(length, stream, pool, value);
+}
+
+int bytes16_deserialize(uint8_t marker, neo4j_iostream_t *stream,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    uint16_t length;
+    if (neo4j_ios_read_all(stream, &length, sizeof(length), NULL) < 0)
+    {
+        return -1;
+    }
+    length = ntohs(length);
+    return bytes_deserialize(length, stream, pool, value);
+}
+
+int bytes32_deserialize(uint8_t marker, neo4j_iostream_t *stream,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    uint32_t length;
+    if (neo4j_ios_read_all(stream, &length, sizeof(length), NULL) < 0)
+    {
+        return -1;
+    }
+    length = ntohl(length);
+    return bytes_deserialize(length, stream, pool, value);
+}
+
 int list8_deserialize(uint8_t marker, neo4j_iostream_t *stream,
         neo4j_mpool_t *pool, neo4j_value_t *value)
 {
@@ -617,6 +657,7 @@ int struct16_deserialize(uint8_t marker, neo4j_iostream_t *stream,
     return struct_deserialize(nfields, stream, pool, value);
 }
 
+
 int string_deserialize(uint32_t length, neo4j_iostream_t *stream,
         neo4j_mpool_t *pool, neo4j_value_t *value)
 {
@@ -636,6 +677,29 @@ int string_deserialize(uint32_t length, neo4j_iostream_t *stream,
     }
 
     *value = neo4j_ustring(ustring, length);
+    return 0;
+}
+
+
+int bytes_deserialize(uint32_t length, neo4j_iostream_t *stream,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    char *bytes = NULL;
+    if (length > 0)
+    {
+        bytes = neo4j_mpool_alloc(pool, length);
+        if (bytes == NULL)
+        {
+            return -1;
+        }
+
+        if (neo4j_ios_read_all(stream, bytes, length, NULL) < 0)
+        {
+            return -1;
+        }
+    }
+
+    *value = neo4j_bytes(bytes, length);
     return 0;
 }
 
