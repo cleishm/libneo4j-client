@@ -343,7 +343,7 @@ int build_header(struct iovec *iov, struct length_header *header,
     }
     else
     {
-        assert((length >> 32) == 0);
+        assert(((uint64_t)length >> 32) == 0);
         header->marker = markers->m32;
         header->length.l32 = htonl(length);
         lengthBytes = 4;
