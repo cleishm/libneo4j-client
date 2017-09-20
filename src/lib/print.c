@@ -300,6 +300,65 @@ ssize_t string_fprint(FILE *stream, char quot, const char *s, size_t len)
 }
 
 
+/* bytes */
+
+size_t neo4j_bytes_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_BYTES);
+    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
+
+    if (n > 0)
+    {
+        buf[0] = '#';
+    }
+    size_t l = 1;
+
+    for (unsigned int i = 0; i < v->length; ++i)
+    {
+        int r = snprintf(buf + l, (l < n)? n-l : 0, "%02x", v->bytes[i]);
+        if (r < 0)
+        {
+            return -1;
+        }
+        l += r;
+    }
+
+    if (n > 0)
+    {
+        buf[minzu(n - 1, l)] = '\0';
+    }
+    return l;
+}
+
+
+ssize_t neo4j_bytes_fprint(const neo4j_value_t *value, FILE *stream)
+{
+    REQUIRE(value != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_BYTES);
+    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
+
+    if (fputc('#', stream) == EOF)
+    {
+        return -1;
+    }
+
+    ssize_t l = 1;
+    for (unsigned int i = 0; i < v->length; ++i)
+    {
+        int r = fprintf(stream, "%02x", v->bytes[i]);
+        if (r < 0)
+        {
+            return -1;
+        }
+        l += r;
+    }
+
+    return l;
+}
+
+
 /* list */
 
 size_t neo4j_list_str(const neo4j_value_t *value, char *buf, size_t n)
