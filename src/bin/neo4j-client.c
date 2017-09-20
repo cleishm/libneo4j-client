@@ -139,7 +139,8 @@ struct io_handler
 {
     char *arg;
     bool is_output;
-    int (*handle)(shell_state_t *state, const char *arg);
+    int (*handle)(shell_state_t *state, struct cypher_input_position pos,
+            const char *arg);
 };
 
 #define NEO4J_MAX_IO_ARGS 128
@@ -148,7 +149,8 @@ static void interrupt_handler(int signal);
 static int add_io_handler(struct io_handler *io_handlers,
         unsigned int *nio_handlers,
         const char *arg, bool is_output,
-        int (*handler)(shell_state_t *state, const char *arg));
+        int (*handler)(shell_state_t *state, struct cypher_input_position pos,
+            const char *arg));
 
 
 int main(int argc, char *argv[])
@@ -462,7 +464,8 @@ int main(int argc, char *argv[])
         state.render = render_results_csv;
         for (unsigned int i = 0; i < nio_handlers; ++i)
         {
-            if (io_handlers[i].handle(&state, io_handlers[i].arg))
+            if (io_handlers[i].handle(&state, cypher_input_position_zero,
+                    io_handlers[i].arg))
             {
                 goto cleanup;
             }
@@ -473,7 +476,7 @@ int main(int argc, char *argv[])
         state.render = render_results_csv;
         state.infile = "<stdin>";
         state.source_depth = 1;
-        if (batch(&state, state.in))
+        if (batch(&state, cypher_input_position_zero, state.in))
         {
             goto cleanup;
         }
@@ -502,7 +505,8 @@ cleanup:
 
 int add_io_handler(struct io_handler *io_handlers, unsigned int *nio_handlers,
         const char *arg, bool is_output,
-        int (*handler)(shell_state_t *state, const char *arg))
+        int (*handler)(shell_state_t *state, struct cypher_input_position pos,
+            const char *arg))
 {
     if (*nio_handlers >= NEO4J_MAX_IO_ARGS)
     {

@@ -91,6 +91,20 @@ struct neo4j_string
 ASSERT_VALUE_ALIGNMENT(struct neo4j_string);
 
 
+struct neo4j_bytes
+{
+    uint8_t _vt_off;
+    uint8_t _type;
+    uint16_t _pad1;
+    uint32_t length;
+    union {
+        const char *bytes;
+        union _neo4j_value_data _pad2;
+    };
+};
+ASSERT_VALUE_ALIGNMENT(struct neo4j_bytes);
+
+
 struct neo4j_list
 {
     uint8_t _vt_off;

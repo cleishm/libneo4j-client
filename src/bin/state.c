@@ -170,7 +170,8 @@ int print_warning(shell_state_t *state, struct cypher_input_position pos,
 }
 
 
-int redirect_output(shell_state_t *state, const char *filename)
+int redirect_output(shell_state_t *state, struct cypher_input_position pos,
+        const char *filename)
 {
     char *outfile = NULL;
     FILE *output = state->out;
@@ -180,14 +181,14 @@ int redirect_output(shell_state_t *state, const char *filename)
         outfile = strdup(filename);
         if (outfile == NULL)
         {
-            fprintf(state->err, "Unexpected error: %s", strerror(errno));
+            print_error_errno(state, pos, errno, "strdup");
             return -1;
         }
 
         output = fopen(filename, "w");
         if (output == NULL)
         {
-            fprintf(state->err, "Unable to open output file '%s': %s\n",
+            print_error(state, pos, "Unable to open output file '%s': %s",
                     filename, strerror(errno));
             return -1;
         }

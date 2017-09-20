@@ -436,7 +436,7 @@ int eval_format(shell_state_t *state, const cypher_astnode_t *command,
 
     assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
     const char *value = cypher_ast_string_get_value(arg);
-    return set_format(state, value);
+    return set_format(state, pos, value);
 }
 
 
@@ -464,11 +464,18 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command,
         (arg = cypher_ast_command_get_argument(command, i)) != NULL; ++i)
     {
         assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
+        struct cypher_input_range range = cypher_astnode_range(arg);
+        struct cypher_input_position arg_pos = pos;
+        arg_pos.offset += range.start.offset;
+        arg_pos.column = (range.start.line == 1)?
+                pos.column + range.start.column - 1 : range.start.column;
+        arg_pos.line += (range.start.line - 1);
+
         const char *str = cypher_ast_string_get_value(arg);
         const char *eq = strchr(str, '=');
         if (eq == NULL)
         {
-            if (option_set(state, str, NULL))
+            if (option_set(state, arg_pos, str, NULL))
             {
                 return -1;
             }
@@ -483,7 +490,7 @@ int eval_set(shell_state_t *state, const cypher_astnode_t *command,
             }
             strncpy(name, str, varlen);
             name[varlen] = '\0';
-            if (option_set(state, name, eq + 1))
+            if (option_set(state, arg_pos, name, eq + 1))
             {
                 return -1;
             }
@@ -504,7 +511,7 @@ int eval_source(shell_state_t *state, const cypher_astnode_t *command,
         return -1;
     }
 
-    return source(state, cypher_ast_string_get_value(arg));
+    return source(state, pos, cypher_ast_string_get_value(arg));
 }
 
 
@@ -532,7 +539,7 @@ int eval_unset(shell_state_t *state, const cypher_astnode_t *command,
         strncpy(name, value, varlen);
         name[varlen] = '\0';
 
-        if (option_unset(state, name))
+        if (option_unset(state, pos, name))
         {
             return -1;
         }
@@ -579,7 +586,7 @@ int eval_width(shell_state_t *state, const cypher_astnode_t *command,
 
     assert(cypher_astnode_instanceof(arg, CYPHER_AST_STRING));
     const char *value = cypher_ast_string_get_value(arg);
-    return set_width(state, value);
+    return set_width(state, pos, value);
 }
 
 

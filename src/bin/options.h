@@ -19,12 +19,16 @@
 
 #include "state.h"
 
-int option_set(shell_state_t *state, const char *name, const char *value);
-int option_unset(shell_state_t *state, const char *name);
+int option_set(shell_state_t *state, struct cypher_input_position pos,
+        const char *name, const char *value);
+int option_unset(shell_state_t *state, struct cypher_input_position pos,
+        const char *name);
 
 void options_display(shell_state_t *state, FILE *stream);
 
-int set_format(shell_state_t *state, const char *value);
-int set_width(shell_state_t *state, const char *value);
+int set_format(shell_state_t *state, struct cypher_input_position pos,
+        const char *value);
+int set_width(shell_state_t *state, struct cypher_input_position pos,
+        const char *value);
 
 #endif/*NEO4J_OPTIONS_H*/

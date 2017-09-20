@@ -734,6 +734,42 @@ START_TEST (test_peek_beyond_depth)
 END_TEST
 
 
+START_TEST (test_run_with_long_statement)
+{
+    char statement[65538];
+    for (unsigned int i = 0; i < 65537; ++i)
+    {
+        statement[i] = (char) (random() & 0xff);
+    }
+    statement[65537] = '\0';
+
+    neo4j_result_stream_t *results = neo4j_run(connection, statement, neo4j_null);
+    ck_assert_ptr_ne(results, NULL);
+
+    queue_run_success(server_ios); // RUN
+    queue_stream_end_success(server_ios); // PULL_ALL
+
+    ck_assert_int_eq(neo4j_check_failure(results), 0);
+
+    const neo4j_value_t *argv;
+    uint16_t argc;
+    neo4j_message_type_t type = recv_message(server_ios, &mpool,
+            &argv, &argc);
+    ck_assert(type == NEO4J_RUN_MESSAGE);
+    ck_assert_int_eq(argc, 2);
+    ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
+    char buf[131072];
+    ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)), statement);
+    ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+    ck_assert_int_eq(neo4j_map_size(argv[1]), 0);
+
+    ck_assert_int_eq(neo4j_close_results(results), 0);
+
+    ck_assert(rb_is_empty(in_rb));
+}
+END_TEST
+
+
 TCase* result_stream_tcase(void)
 {
     TCase *tc = tcase_create("result stream");
@@ -753,5 +789,6 @@ TCase* result_stream_tcase(void)
     tcase_add_test(tc, test_send_returns_failure_when_statement_fails);
     tcase_add_test(tc, test_peek_retrieves_records_in_order);
     tcase_add_test(tc, test_peek_beyond_depth);
+    tcase_add_test(tc, test_run_with_long_statement);
     return tc;
 }
