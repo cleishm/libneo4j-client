@@ -19,10 +19,13 @@
 
 #include "state.h"
 
-int source(shell_state_t *state, const char *filename);
+int source(shell_state_t *state, struct cypher_input_position pos,
+        const char *filename);
 
-int eval(shell_state_t *state, const char *script);
+int eval(shell_state_t *state, struct cypher_input_position pos,
+        const char *script);
 
-int batch(shell_state_t *state, FILE *stream);
+int batch(shell_state_t *state, struct cypher_input_position pos,
+        FILE *stream);
 
 #endif/*NEO4J_BATCH_H*/

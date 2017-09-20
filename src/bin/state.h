@@ -83,7 +83,8 @@ int print_warning(shell_state_t *state, struct cypher_input_position pos,
         const char *fmt, ...);
 
 
-int redirect_output(shell_state_t *state, const char *filename);
+int redirect_output(shell_state_t *state, struct cypher_input_position pos,
+        const char *filename);
 
 
 int shell_state_add_export(shell_state_t *state, neo4j_value_t name,

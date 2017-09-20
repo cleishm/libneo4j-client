@@ -1,5 +1,6 @@
 libneo4j-client.so.11 libneo4j-client11 #MINVER#
  NEO4J_BOOL@Base 1.2.0
+ NEO4J_BYTES@Base 2.2.0
  NEO4J_FLOAT@Base 1.2.0
  NEO4J_IDENTITY@Base 1.2.0
  NEO4J_INT@Base 1.2.0
@@ -16,6 +17,9 @@ libneo4j-client.so.11 libneo4j-client11 #MINVER#
  neo4j_basename@Base 1.2.0
  neo4j_bool@Base 1.2.0
  neo4j_bool_value@Base 1.2.0
+ neo4j_bytes@Base 2.2.0
+ neo4j_bytes_length@Base 2.2.0
+ neo4j_bytes_value@Base 2.2.0
  neo4j_check_failure@Base 1.2.0
  neo4j_client_cleanup@Base 1.2.0
  neo4j_client_init@Base 1.2.0

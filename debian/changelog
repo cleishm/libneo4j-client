@@ -1,3 +1,14 @@
+libneo4j-client (2.2.0-1) unstable; urgency=medium
+
+  * New upstream release 2.2.0
+    - Fix compile issue with latest GCC version. Closes: #876218
+    - Add support for BYTES type
+    - Handle '-' as an input filename to represent stdin
+    - Improve error reporting of failed commands
+    - Add #define's for compile time version inspection
+
+ -- Chris Leishman <chris@leishman.org>  Wed, 20 Sep 2017 07:30:52 +0000
+
 libneo4j-client (2.1.3-1) unstable; urgency=medium
 
   * New upstream release 2.1.3

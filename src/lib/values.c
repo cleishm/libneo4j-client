@@ -31,6 +31,7 @@ static bool bool_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool int_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool float_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool string_eq(const neo4j_value_t *value, const neo4j_value_t *other);
+static bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool list_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool map_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other);
@@ -50,6 +51,7 @@ static const struct neo4j_type bool_type = { .name = "Boolean" };
 static const struct neo4j_type int_type = { .name = "Integer" };
 static const struct neo4j_type float_type = { .name = "Float" };
 static const struct neo4j_type string_type = { .name = "String" };
+static const struct neo4j_type bytes_type = { .name = "Bytes" };
 static const struct neo4j_type list_type = { .name = "List" };
 static const struct neo4j_type map_type = { .name = "Map" };
 static const struct neo4j_type node_type = { .name = "Node" };
@@ -72,6 +74,7 @@ struct neo4j_types
     const struct neo4j_type *path_type;
     const struct neo4j_type *identity_type;
     const struct neo4j_type *struct_type;
+    const struct neo4j_type *bytes_type;
 };
 static const struct neo4j_types neo4j_types =
 {
@@ -86,7 +89,8 @@ static const struct neo4j_types neo4j_types =
     .relationship_type = &relationship_type,
     .path_type = &path_type,
     .identity_type = &identity_type,
-    .struct_type = &struct_type
+    .struct_type = &struct_type,
+    .bytes_type = &bytes_type
 };
 
 #define TYPE_OFFSET(name) \
@@ -106,6 +110,7 @@ const uint8_t NEO4J_RELATIONSHIP = TYPE_OFFSET(relationship_type);
 const uint8_t NEO4J_PATH = TYPE_OFFSET(path_type);
 const uint8_t NEO4J_IDENTITY = TYPE_OFFSET(identity_type);
 const uint8_t NEO4J_STRUCT = TYPE_OFFSET(struct_type);
+const uint8_t NEO4J_BYTES = TYPE_OFFSET(bytes_type);
 static const uint8_t _MAX_TYPE =
     (sizeof(struct neo4j_types) / sizeof(struct neo4j_type *));
 
@@ -200,6 +205,11 @@ static struct neo4j_value_vt struct_vt =
       .fprint = neo4j_struct_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
+static struct neo4j_value_vt bytes_vt =
+    { .str = neo4j_bytes_str,
+      .fprint = neo4j_bytes_fprint,
+      .serialize = neo4j_bytes_serialize,
+      .eq = bytes_eq };
 
 struct neo4j_value_vts
 {
@@ -215,6 +225,7 @@ struct neo4j_value_vts
     const struct neo4j_value_vt *path_vt;
     const struct neo4j_value_vt *identity_vt;
     const struct neo4j_value_vt *struct_vt;
+    const struct neo4j_value_vt *bytes_vt;
 };
 static const struct neo4j_value_vts neo4j_value_vts =
 {
@@ -229,7 +240,8 @@ static const struct neo4j_value_vts neo4j_value_vts =
     .relationship_vt = &relationship_vt,
     .path_vt = &path_vt,
     .identity_vt = &identity_vt,
-    .struct_vt = &struct_vt
+    .struct_vt = &struct_vt,
+    .bytes_vt = &bytes_vt
 };
 
 #define VT_OFFSET(name) \
@@ -249,6 +261,7 @@ static const struct neo4j_value_vts neo4j_value_vts =
 #define PATH_VT_OFF VT_OFFSET(path_vt)
 #define IDENTITY_VT_OFF VT_OFFSET(identity_vt)
 #define STRUCT_VT_OFF VT_OFFSET(struct_vt)
+#define BYTES_VT_OFF VT_OFFSET(bytes_vt)
 static const uint8_t _MAX_VT_OFF =
     (sizeof(struct neo4j_value_vts) / sizeof(struct neo4j_value_vt *));
 
@@ -458,6 +471,49 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length)
     memcpy(buffer, v->ustring, tocopy);
     buffer[tocopy] = '\0';
     return buffer;
+}
+
+
+// bytes
+
+neo4j_value_t neo4j_bytes(const char *u, unsigned int n)
+{
+#if UINT_MAX != UINT32_MAX
+    if (n > UINT32_MAX)
+    {
+        n = UINT32_MAX;
+    }
+#endif
+    struct neo4j_bytes v =
+        { ._type = NEO4J_BYTES, ._vt_off = BYTES_VT_OFF,
+          .bytes = u, .length = n };
+    return *((neo4j_value_t *)(&v));
+}
+
+
+bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other)
+{
+    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
+    const struct neo4j_bytes *o = (const struct neo4j_bytes *)other;
+    if (v->length != o->length)
+    {
+        return false;
+    }
+    return memcmp(v->bytes, o->bytes, v->length) == 0;
+}
+
+
+unsigned int neo4j_bytes_length(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_BYTES, 0);
+    return ((const struct neo4j_bytes *)&value)->length;
+}
+
+
+const char *neo4j_bytes_value(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_BYTES, NULL);
+    return ((const struct neo4j_bytes *)&value)->bytes;
 }
 
 

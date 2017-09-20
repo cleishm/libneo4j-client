@@ -14,13 +14,14 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[2.1.3])
-AC_CONFIG_SRCDIR([src/lib/neo4j-client.h])
+AC_INIT([libneo4j-client],[2.2.0])
+AC_CONFIG_SRCDIR([src/lib/neo4j-client.h.in])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE([enable])
 
+DECLARE_VERSIONS
 WITH_LIBS
 
 GCC_CFLAGS="-fvisibility=hidden -pipe -Wall -W -Werror \
@@ -53,7 +54,7 @@ AC_CHECK_HEADERS([stdatomic.h])
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_FUNC_STRERROR_R
-MACRO_STATIC_ASSERT
+STATIC_ASSERT
 LT_LIB_M
 AM_LANGINFO_CODESET
 
@@ -232,6 +233,7 @@ AC_CONFIG_FILES([
     src/Makefile \
     src/bin/Makefile \
     src/lib/Makefile \
+    src/lib/neo4j-client.h \
     tests/Makefile
 ])
 AC_OUTPUT
