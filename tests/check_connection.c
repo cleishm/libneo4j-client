@@ -506,7 +506,7 @@ START_TEST (test_drains_outstanding_requests_on_close)
 
     neo4j_close(connection);
 
-    ck_assert(resp.type == NEO4J_IGNORED_MESSAGE);
+    ck_assert(resp.type == NULL);
 }
 END_TEST
 
@@ -593,7 +593,7 @@ START_TEST (test_drains_outstanding_requests_on_reset)
     ck_assert_int_eq(result, 0);
 
     neo4j_reset(connection);
-    ck_assert(resp.type == NEO4J_IGNORED_MESSAGE);
+    ck_assert(resp.type == NULL);
 
     neo4j_close(connection);
 }
@@ -704,7 +704,7 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, EPROTO);
     ck_assert(resp1.type == NEO4J_FAILURE_MESSAGE);
-    ck_assert(resp2.type == NEO4J_IGNORED_MESSAGE);
+    ck_assert(resp2.type == NULL);
 
     result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
             response_recv_callback, &resp1);

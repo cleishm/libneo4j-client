@@ -769,7 +769,7 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     results->starting = false;
     --(results->refcount);
 
-    if (connection == NULL)
+    if (type == NULL || connection == NULL)
     {
         return 0;
     }
@@ -884,7 +884,7 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
     neo4j_logger_t *logger = results->logger;
     neo4j_connection_t *connection = results->connection;
 
-    if (connection == NULL)
+    if (connection == NULL || type == NULL)
     {
         return 0;
     }

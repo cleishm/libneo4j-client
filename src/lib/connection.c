@@ -567,7 +567,7 @@ int neo4j_connection_send(neo4j_connection_t *connection,
     {
         char ebuf[256];
         neo4j_log_error(connection->logger,
-                "Error sending message on %p: %s\n", (void *)connection,
+                "Error sending message on %p: %s", (void *)connection,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
     }
     return res;
@@ -589,7 +589,7 @@ int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     {
         char ebuf[256];
         neo4j_log_error(connection->logger,
-                "Error receiving message on %p: %s\n", (void *)connection,
+                "Error receiving message on %p: %s", (void *)connection,
                 neo4j_strerror(errno, ebuf, sizeof(ebuf)));
     }
     return res;
@@ -1006,8 +1006,7 @@ int drain_queued_requests(neo4j_connection_t *connection)
         neo4j_log_trace(connection->logger, "draining %s (%p) from queue on %p",
                 neo4j_message_type_str(request->type),
                 (void *)request, (void *)connection);
-        int result = request->receive(request->cdata,
-                NEO4J_IGNORED_MESSAGE, NULL, 0);
+        int result = request->receive(request->cdata, NULL, NULL, 0);
         assert(result <= 0);
         if (err == 0 && result < 0)
         {
@@ -1181,6 +1180,11 @@ cleanup:
 int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
 {
+    if (type == NULL)
+    {
+        return 0;
+    }
+
     assert(cdata != NULL);
     neo4j_connection_t *connection = ((struct init_cdata *)cdata)->connection;
 
@@ -1312,7 +1316,7 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     assert(cdata != NULL);
     neo4j_connection_t *connection = (neo4j_connection_t *)cdata;
 
-    if (type == NEO4J_IGNORED_MESSAGE)
+    if (type == NULL)
     {
         // only when draining after connection close
         return 0;
