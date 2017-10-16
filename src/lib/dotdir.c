@@ -29,21 +29,57 @@
 #define NEO4J_DOT_DIR ".neo4j"
 
 
-static ssize_t homedir(char *buf, size_t n);
+static ssize_t _neo4j_dotdir(char **buf, size_t *n, const char *append);
+static ssize_t homedir(char **buf, size_t *n);
 
 
+// deprecated name
 ssize_t neo4j_dot_dir(char *buf, size_t n, const char *append)
 {
-    char hbuf[PATH_MAX];
-    ssize_t hlen = homedir(hbuf, sizeof(hbuf));
+    return neo4j_dotdir(buf, n, append);
+}
+
+
+ssize_t neo4j_dotdir(char *buf, size_t n, const char *append)
+{
+    return _neo4j_dotdir((buf != NULL)? &buf : NULL, &n, append);
+}
+
+
+char *neo4j_adotdir(const char *append)
+{
+    char *buf = NULL;
+    size_t n = 0;
+    if (_neo4j_dotdir(&buf, &n, append) < 0)
+    {
+        return NULL;
+    }
+    return buf;
+}
+
+
+ssize_t _neo4j_dotdir(char **buf, size_t *n, const char *append)
+{
+    bool allocate = (buf != NULL && *buf == NULL);
+
+    ssize_t hlen = homedir(buf, n);
     if (hlen < 0)
     {
-        if (errno == ERANGE)
-        {
-            errno = ENAMETOOLONG;
-        }
-        return -1;
+        errno = ERANGE;
+        goto failure;
     }
+    assert(buf == NULL || (*buf != NULL && *n > 0));
+
+    size_t dlen = sizeof(NEO4J_DOT_DIR) - 1;
+    assert(dlen < SIZE_MAX);
+    if ((!allocate && (*n - hlen - 1) < (1 + dlen)) ||
+        (allocate && (SIZE_MAX - hlen - 1) < (1 + dlen)))
+    {
+        errno = ERANGE;
+        goto failure;
+    }
+
+    size_t len = (size_t)hlen + 1 + dlen;
 
     size_t alen = 0;
     if (append != NULL)
@@ -52,40 +88,66 @@ ssize_t neo4j_dot_dir(char *buf, size_t n, const char *append)
             ;
         alen = strlen(append);
     }
-
-    size_t dlen = sizeof(NEO4J_DOT_DIR) - 1;
-    size_t len = (size_t)hlen + 1 + dlen + ((alen > 0)? 1 + alen : 0);
+    if (alen > 0)
+    {
+        if (alen >= SIZE_MAX || (SIZE_MAX - len - 1) < (1 + alen))
+        {
+            errno = ERANGE;
+            goto failure;
+        }
+        len += 1 + alen;
+    }
 
     if (buf != NULL)
     {
-        if ((len + 1) > n)
+        if (*n < (len + 1))
         {
-            errno = ERANGE;
-            return -1;
+            if (!allocate)
+            {
+                errno = ERANGE;
+                goto failure;
+            }
+            assert(buf != NULL);
+            char *rbuf = realloc(*buf, len + 1);
+            if (rbuf == NULL)
+            {
+                goto failure;
+            }
+            *buf = rbuf;
+            *n = len + 1;
         }
 
-        memcpy(buf, hbuf, hlen);
-        buf += hlen;
-        *(buf++) = '/';
-        memcpy(buf, NEO4J_DOT_DIR, dlen);
-        buf += dlen;
+        assert(len < *n);
+        char *p = *buf + hlen;
+        *(p++) = '/';
+        memcpy(p, NEO4J_DOT_DIR, dlen);
+        p += dlen;
         if (alen > 0)
         {
-            *(buf++) = '/';
-            memcpy(buf, append, alen);
-            buf += alen;
+            *(p++) = '/';
+            memcpy(p, append, alen);
+            p += alen;
         }
-        *buf = '\0';
+        *p = '\0';
     }
 
     return len;
+
+    int errsv;
+failure:
+    errsv = errno;
+    if (allocate)
+    {
+        free(*buf);
+        *buf = NULL;
+    }
+    errno = errsv;
+    return -1;
 }
 
 
-ssize_t homedir(char *buf, size_t n)
+ssize_t homedir(char **buf, size_t *n)
 {
-    assert(buf != NULL);
-
     ssize_t result = -1;
     char *pwbuf = NULL;
 
@@ -123,22 +185,32 @@ ssize_t homedir(char *buf, size_t n)
     size_t hlen = strlen(hdir);
     for (; hlen > 0 && hdir[hlen-1] == '/'; --hlen)
         ;
-    if ((hlen + 1) > n)
+    if (buf != NULL)
     {
-        errno = ERANGE;
-        return -1;
+        if (*buf == NULL)
+        {
+            *buf = malloc(hlen + 1);
+            if (*buf == NULL)
+            {
+                goto cleanup;
+            }
+            *n = hlen + 1;
+        }
+        else if ((hlen + 1) > *n)
+        {
+            errno = ERANGE;
+            goto cleanup;
+        }
+
+        memcpy(*buf, hdir, hlen + 1);
     }
-    memcpy(buf, hdir, hlen + 1);
 
     result = hlen;
 
     int errsv;
 cleanup:
     errsv = errno;
-    if (pwbuf != NULL)
-    {
-        free(pwbuf);
-    }
+    free(pwbuf);
     errno = errsv;
     return result;
 }

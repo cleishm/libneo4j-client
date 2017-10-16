@@ -23,7 +23,7 @@
 #include <unistd.h>
 
 static neo4j_config_t *config;
-static char known_hosts[PATH_MAX];
+static char known_hosts[256];
 
 static void setup(void)
 {
@@ -266,16 +266,16 @@ END_TEST
 
 START_TEST (test_trust_creates_known_hosts_file_and_directory)
 {
-    char dir[PATH_MAX];
+    char dir[1024];
     int r = check_tmpdir(dir, sizeof(dir), ".neo4j_XXXXXX");
     ck_assert_int_eq(r, 0);
 
+    char path[1024];
     const char *kh_path = "/sub/dir/kh";
     size_t dirlen = strlen(dir);
-    ck_assert_int_lt(dirlen + strlen(kh_path), PATH_MAX);
-    char path[PATH_MAX];
+    ck_assert_int_lt(dirlen + strlen(kh_path), sizeof(path));
     memcpy(path, dir, dirlen);
-    strncpy(path + dirlen, kh_path, PATH_MAX - dirlen);
+    strncpy(path + dirlen, kh_path, sizeof(path) - dirlen);
 
     ck_assert_int_eq(neo4j_config_set_known_hosts_file(config, path), 0);
 

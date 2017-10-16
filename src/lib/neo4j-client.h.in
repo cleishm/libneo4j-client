@@ -1561,7 +1561,23 @@ unsigned int neo4j_config_get_max_pipelined_requests(
  * @return The length of the resulting path (not including the null
  *         terminating character), or -1 on error (errno will be set).
  */
+ssize_t neo4j_dotdir(char *buffer, size_t n, const char *append);
 ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
+
+/**
+ * Return a path within the neo4j dot directory.
+ *
+ * The neo4j dot directory is typically ".neo4j" within the users home
+ * directory. If append is `NULL`, then an absoulte path to the home
+ * directory is placed into buffer.
+ *
+ * @param [append] The relative path to append to the dot directory, which
+ *         may be `NULL`.
+ * @return The resulting path as a null-terminated string (which must
+ *         later be deallocated by calling free()) or `NULL`
+ *         on error (errno will be set).
+ */
+char *neo4j_adotdir(const char *append);
 
 
 /*
@@ -2591,6 +2607,20 @@ int neo4j_render_plan_ctable(const neo4j_config_t *config, FILE *stream,
 ssize_t neo4j_dirname(const char *path, char *buffer, size_t n);
 
 /**
+ * Obtain the parent directory of a specified path.
+ *
+ * Any trailing '/' characters are not counted as part of the directory name.
+ * If `path` is `NULL`, the empty string, or contains no '/' characters, the
+ * path "." is placed into the result buffer.
+ *
+ * @param [path] The path.
+ * @return The resulting path as a null-terminated string (which must
+ *         later be deallocated by calling free()) or `NULL` on error
+ *         (errno will be set).
+ */
+char *neo4j_adirname(const char *path);
+
+/**
  * Obtain the basename of a specified path.
  *
  * @param [path] The path.
@@ -2599,6 +2629,16 @@ ssize_t neo4j_dirname(const char *path, char *buffer, size_t n);
  * @return The length of the base name, or -1 on error (errno will be set).
  */
 ssize_t neo4j_basename(const char *path, char *buffer, size_t n);
+
+/**
+ * Obtain the basename of a specified path.
+ *
+ * @param [path] The path.
+ * @return The resulting path as a null-terminated string (which must
+ *         later be deallocated by calling free()) or `NULL` on error
+ *         (errno will be set).
+ */
+char *neo4j_abasename(const char *path);
 
 /**
  * Create a directory and any required parent directories.

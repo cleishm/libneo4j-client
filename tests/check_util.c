@@ -24,7 +24,7 @@
 
 START_TEST (test_neo4j_dirname)
 {
-    char buf[PATH_MAX];
+    char buf[256];
     ck_assert_int_eq(neo4j_dirname("/foo/bar.baz/", NULL, 0), 4);
     ck_assert_int_eq(neo4j_dirname("/foo/bar.baz/", buf, sizeof(buf)), 4);
     ck_assert_str_eq(buf, "/foo");
@@ -54,7 +54,7 @@ END_TEST
 
 START_TEST (test_neo4j_basename)
 {
-    char buf[PATH_MAX];
+    char buf[256];
     ck_assert_int_eq(neo4j_basename("/foo/bar.baz/", NULL, 0), 7);
     ck_assert_int_eq(neo4j_basename("/foo/bar.baz/", buf, sizeof(buf)), 7);
     ck_assert_str_eq(buf, "bar.baz");

@@ -23,8 +23,32 @@
 #include <sys/stat.h>
 
 
+static ssize_t _neo4j_dirname(const char *path, char **buffer, size_t *n);
+static ssize_t _neo4j_basename(const char *path, char **buffer, size_t *n);
+
+
 ssize_t neo4j_dirname(const char *path, char *buffer, size_t n)
 {
+    return _neo4j_dirname(path, (buffer != NULL)? &buffer : NULL, &n);
+}
+
+
+char *neo4j_adirname(const char *path)
+{
+    char *buffer = NULL;
+    size_t n = 0;
+    if (_neo4j_dirname(path, &buffer, &n) < 0)
+    {
+        return NULL;
+    }
+    return buffer;
+}
+
+
+ssize_t _neo4j_dirname(const char *path, char **buffer, size_t *n)
+{
+    assert(n != NULL);
+
     if (path == NULL)
     {
         path = "";
@@ -48,21 +72,50 @@ ssize_t neo4j_dirname(const char *path, char *buffer, size_t n)
     size_t len = end - path;
     if (buffer != NULL)
     {
-        if ((len + 1) > n)
+        if (*buffer == NULL)
+        {
+            *buffer = malloc(len + 1);
+            if (*buffer == NULL)
+            {
+                return -1;
+            }
+        }
+        else if ((len + 1) > *n)
         {
             errno = ERANGE;
             return -1;
         }
 
-        memcpy(buffer, path, len);
-        buffer[len] = '\0';
+        memcpy(*buffer, path, len);
+        (*buffer)[len] = '\0';
     }
+    *n = len + 1;
     return len;
 }
 
 
 ssize_t neo4j_basename(const char *path, char *buffer, size_t n)
 {
+    return _neo4j_basename(path, (buffer != NULL)? &buffer : NULL, &n);
+}
+
+
+char *neo4j_abasename(const char *path)
+{
+    char *buffer = NULL;
+    size_t n = 0;
+    if (_neo4j_basename(path, &buffer, &n) < 0)
+    {
+        return NULL;
+    }
+    return buffer;
+}
+
+
+ssize_t _neo4j_basename(const char *path, char **buffer, size_t *n)
+{
+    assert(n != NULL);
+
     if (path == NULL)
     {
         path = "";
@@ -89,15 +142,24 @@ ssize_t neo4j_basename(const char *path, char *buffer, size_t n)
     size_t len = end - p;
     if (buffer != NULL)
     {
-        if ((len + 1) > n)
+        if (*buffer == NULL)
+        {
+            *buffer = malloc(len + 1);
+            if (*buffer == NULL)
+            {
+                return -1;
+            }
+        }
+        else if ((len + 1) > *n)
         {
             errno = ERANGE;
             return -1;
         }
 
-        memcpy(buffer, p, len);
-        buffer[len] = '\0';
+        memcpy(*buffer, p, len);
+        (*buffer)[len] = '\0';
     }
+    *n = len + 1;
     return len;
 }
 
@@ -106,7 +168,6 @@ int neo4j_mkdir_p(const char *path)
 {
     REQUIRE(path != NULL, -1);
 
-    char buf[PATH_MAX];
     size_t len = strlen(path);
     while (len > 0 && path[len-1] == '/')
     {
@@ -116,14 +177,13 @@ int neo4j_mkdir_p(const char *path)
     {
         return 0;
     }
-    if (len >= PATH_MAX)
+    char *buf = strndup(path, len);
+    if (buf == NULL)
     {
-        errno = ENAMETOOLONG;
         return -1;
     }
 
-    memcpy(buf, path, len);
-    buf[len] = '\0';
+    int result = -1;
 
     for (char *slash = buf; *slash != '\0';)
     {
@@ -138,18 +198,22 @@ int neo4j_mkdir_p(const char *path)
         {
             if (errno != ENOENT || (mkdir(buf, 0777) && errno != EEXIST))
             {
-                return -1;
+                goto cleanup;
             }
         }
         else if (!S_ISDIR(sb.st_mode))
         {
-            return -1;
+            goto cleanup;
         }
 
         *slash = prev;
     }
 
-    return 0;
+    result = 0;
+
+cleanup:
+    free(buf);
+    return result;
 }
 
 

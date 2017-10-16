@@ -47,16 +47,13 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
 
     REQUIRE(strlen(hostname) < 256 && hostname[0] != '\0', -1);
 
-    char buf[PATH_MAX];
+    char *buf = NULL;
     const char *file = config->known_hosts_file;
     if (file == NULL)
     {
-        if (neo4j_dot_dir(buf, sizeof(buf), NEO4J_KNOWN_HOSTS) < 0)
+        buf = neo4j_adotdir(NEO4J_KNOWN_HOSTS);
+        if (buf == NULL)
         {
-            if (errno == ERANGE)
-            {
-                errno = ENAMETOOLONG;
-            }
             goto cleanup;
         }
         file = buf;
@@ -120,6 +117,7 @@ int neo4j_check_known_hosts(const char * restrict hostname, int port,
     int errsv;
 cleanup:
     errsv = errno;
+    free(buf);
     neo4j_logger_release(logger);
     errno = errsv;
     return result;
@@ -209,15 +207,14 @@ int update_stored_fingerprint(const char * restrict file,
 
     size_t filelen = strlen(file);
     size_t suffixlen = strlen(NEO4J_TEMP_FILE_SUFFIX);
-    char outfile[PATH_MAX];
-    if ((filelen + suffixlen + 1) > PATH_MAX)
+    size_t outfilelen = filelen + suffixlen + 1;
+    char *outfile = malloc(outfilelen);
+    if (outfile == NULL)
     {
-        neo4j_log_error(logger, "Temporary filename too long");
-        errno = ENAMETOOLONG;
         goto failure;
     }
 
-    neo4j_dirname(file, outfile, sizeof(outfile));
+    neo4j_dirname(file, outfile, outfilelen);
     if (neo4j_mkdir_p(outfile))
     {
         neo4j_log_error(logger, "Failed to create directory '%s': %s", outfile,
@@ -305,6 +302,8 @@ int update_stored_fingerprint(const char * restrict file,
         goto failure;
     }
 
+    free(outfile);
+
     return 0;
 
     int errsv;
@@ -322,9 +321,13 @@ failure:
     {
         close(out_fd);
     }
-    if (outfile[0] != '\0')
+    if (outfile != NULL)
     {
-        unlink(outfile);
+        if (outfile[0] != '\0')
+        {
+            unlink(outfile);
+        }
+        free(outfile);
     }
     errno = errsv;
     return -1;

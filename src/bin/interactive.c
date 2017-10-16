@@ -202,16 +202,21 @@ int setup_history(shell_state_t *state, History *el_history)
 {
     assert(state->histfile != NULL);
 
-    char dir[PATH_MAX];
-    if (neo4j_dirname(state->histfile, dir, sizeof(dir)) < 0)
+    size_t hlen = strlen(state->histfile);
+
+    char *dir = neo4j_adirname(state->histfile);
+    if (dir == NULL)
     {
         fprintf(state->err, "Invalid history file\n");
         return -1;
     }
+
+    int res = -1;
+
     if (neo4j_mkdir_p(dir))
     {
         neo4j_perror(state->err, errno, "Failed to create history file");
-        return -1;
+        goto cleanup;
     }
 
     HistEvent ev;
@@ -220,16 +225,24 @@ int setup_history(shell_state_t *state, History *el_history)
         if (errno != ENOENT)
         {
             neo4j_perror(state->err, errno, "Failed to load history");
-            return -1;
+            goto cleanup;
         }
 
         if (history(el_history, &ev, H_SAVE, state->histfile) < 0)
         {
             neo4j_perror(state->err, errno, "Failed to create history file");
-            return -1;
+            goto cleanup;
         }
     }
-    return 0;
+
+    res = 0;
+
+    int errsv;
+cleanup:
+    errsv = errno;
+    free(dir);
+    errno = errsv;
+    return res;
 }
 
 

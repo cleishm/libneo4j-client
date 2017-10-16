@@ -23,11 +23,13 @@
 
 
 static const char *oldhome = NULL;
+static char *temp = NULL;
 
 
 static void setup(void)
 {
     oldhome = getenv("HOME");
+    temp = NULL;
 }
 
 
@@ -41,29 +43,36 @@ static void teardown(void)
     {
         unsetenv("HOME");
     }
+    free(temp);
 }
 
 
-START_TEST (test_neo4j_dot_dir_returns_default_dir)
+START_TEST (test_neo4j_dotdir_returns_default_dir)
 {
     setenv("HOME", "/path/to/home", 1);
-    char buf[PATH_MAX];
-    ck_assert_int_eq(neo4j_dot_dir(buf, sizeof(buf), NULL), 20);
+    char buf[256];
+    ck_assert_int_eq(neo4j_dotdir(buf, sizeof(buf), NULL), 20);
     ck_assert_str_eq(buf, "/path/to/home/.neo4j");
 
-    ck_assert_int_eq(neo4j_dot_dir(NULL, 0, NULL), 20);
+    ck_assert_int_eq(neo4j_dotdir(NULL, 0, NULL), 20);
+
+    temp = neo4j_adotdir(NULL);
+    ck_assert_str_eq(temp, "/path/to/home/.neo4j");
 }
 END_TEST
 
 
-START_TEST (test_neo4j_dot_dir_appends_dir)
+START_TEST (test_neo4j_dotdir_appends_dir)
 {
     setenv("HOME", "/path/to/home", 1);
-    char buf[PATH_MAX];
-    ck_assert_int_eq(neo4j_dot_dir(buf, sizeof(buf), "foo.bar"), 28);
+    char buf[256];
+    ck_assert_int_eq(neo4j_dotdir(buf, sizeof(buf), "foo.bar"), 28);
     ck_assert_str_eq(buf, "/path/to/home/.neo4j/foo.bar");
 
-    ck_assert_int_eq(neo4j_dot_dir(NULL, 0, "foo.bar"), 28);
+    ck_assert_int_eq(neo4j_dotdir(NULL, 0, "foo.bar"), 28);
+
+    temp = neo4j_adotdir("foo.bar");
+    ck_assert_str_eq(temp, "/path/to/home/.neo4j/foo.bar");
 }
 END_TEST
 
@@ -72,7 +81,7 @@ TCase* dotdir_tcase(void)
 {
     TCase *tc = tcase_create("dotdir");
     tcase_add_checked_fixture(tc, setup, teardown);
-    tcase_add_test(tc, test_neo4j_dot_dir_returns_default_dir);
-    tcase_add_test(tc, test_neo4j_dot_dir_appends_dir);
+    tcase_add_test(tc, test_neo4j_dotdir_returns_default_dir);
+    tcase_add_test(tc, test_neo4j_dotdir_appends_dir);
     return tc;
 }

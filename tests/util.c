@@ -46,7 +46,7 @@ int create_tmpdir(char *buf, size_t n)
     }
     size_t c = strlen(dir);
     size_t tlen = strlen(CHECK_TMPDIR_TEMPLATE);
-    if ((c + tlen + 1) > n)
+    if (n < c || (n - c) < (tlen + 1))
     {
         errno = ERANGE;
         return -1;

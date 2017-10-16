@@ -32,7 +32,7 @@ int main(void)
     printf("Initialising check using random seed: %d\n", seed);
     srandom(seed);
 
-    char tmpdir_buf[PATH_MAX];
+    char tmpdir_buf[1024];
     tmpdir_buf[0] = '\0';
     char *tdir;
     if ((tdir = getenv("CHECK_TMPDIR")) == NULL)

@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    char prog_name[PATH_MAX];
+    char prog_name[256];
     if (neo4j_basename(argv[0], prog_name, sizeof(prog_name)) < 0)
     {
         perror("Unexpected error");
@@ -175,6 +175,7 @@ int main(int argc, char *argv[])
     struct neo4j_logger_provider *provider = NULL;
     struct io_handler io_handlers[NEO4J_MAX_IO_ARGS];
     unsigned int nio_handlers = 0;
+    char *histfile = NULL;
 
     neo4j_client_init();
 
@@ -187,12 +188,9 @@ int main(int argc, char *argv[])
     }
 
     state.interactive = isatty(STDIN_FILENO) && isatty(STDOUT_FILENO);
-
-    char histfile[PATH_MAX];
-    if (neo4j_dot_dir(histfile, sizeof(histfile), NEO4J_HISTORY_FILE) < 0)
+    if ((histfile = neo4j_adotdir(NEO4J_HISTORY_FILE)) == NULL)
     {
-        neo4j_perror(state.err, (errno == ERANGE)? ENAMETOOLONG : errno,
-                "Unexpected error");
+        neo4j_perror(state.err, errno, "Unexpected error");
         goto cleanup;
     }
     state.histfile = histfile;
@@ -485,6 +483,7 @@ int main(int argc, char *argv[])
     result = EXIT_SUCCESS;
 
 cleanup:
+    free(histfile);
     shell_state_destroy(&state);
     if (provider != NULL)
     {
