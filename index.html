@@ -186,7 +186,7 @@ enabling you to obtain the required flags using
     }
 
     <span class="pl-c1">neo4j_result_t</span> *result = <span class="pl-c1">neo4j_fetch_next</span>(results);
-    <span class="pl-k">if</span> (results == <span class="pl-c1">NULL</span>)
+    <span class="pl-k">if</span> (result == <span class="pl-c1">NULL</span>)
     {
         <span class="pl-c1">neo4j_perror</span>(stderr, errno, <span class="pl-s"><span class="pl-pds">"</span>Failed to fetch result<span class="pl-pds">"</span></span>);
         <span class="pl-k">return</span> EXIT_FAILURE;
