@@ -42,9 +42,9 @@ $ sudo apt-get install neo4j-client libneo4j-client-dev
 
 There are also packages available for other platforms, including
 [Debian](https://packages.debian.org/source/sid/libneo4j-client),
-[Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
-[CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
-[openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed).
+[Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client/Fedora_23),
+[CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client/CentOS_7) and
+[openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client/openSUSE_Tumbleweed).
 
 Otherwise, please see [Building](#building) below.
 
@@ -247,9 +247,9 @@ management system for your operating system (currently
 [Mac OS X](#getting_started),
 [Debian](https://packages.debian.org/source/sid/libneo4j-client),
 [Ubuntu](#getting_started),
-[Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=Fedora_23),
-[CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=CentOS_7) and
-[openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client?repository=openSUSE_Tumbleweed)).
+[Fedora](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client/Fedora_23),
+[CentOS](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client/CentOS_7) and
+[openSUSE](https://build.opensuse.org/package/binaries/home:cleishm/libneo4j-client/openSUSE_Tumbleweed)).
 
 If neo4j-client is not available via your package management system,
 please [download the latest release](
