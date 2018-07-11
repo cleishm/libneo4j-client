@@ -35,10 +35,12 @@
 #define __neo4j_pure __attribute__((pure))
 #define __neo4j_malloc __attribute__((malloc))
 #define __neo4j_must_check __attribute__((warn_unused_result))
+#define __neo4j_deprecated __attribute__((deprecated))
 #else
 #define __neo4j_pure /*pure*/
 #define __neo4j_malloc /*malloc*/
 #define __neo4j_must_check /*must check*/
+#define __neo4j_deprecated /*deprecated*/
 #endif
 
 #if (__STDC_VERSION__ >= 199901L)
@@ -1562,7 +1564,8 @@ unsigned int neo4j_config_get_max_pipelined_requests(
  *         terminating character), or -1 on error (errno will be set).
  */
 ssize_t neo4j_dotdir(char *buffer, size_t n, const char *append);
-ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append);
+ssize_t neo4j_dot_dir(char *buffer, size_t n, const char *append)
+    __neo4j_deprecated;
 
 /**
  * Return a path within the neo4j dot directory.
@@ -1610,7 +1613,8 @@ char *neo4j_adotdir(const char *append);
  * @param [uri] A URI describing the server to connect to, which may also
  *         include authentication data (which will override any provided
  *         in the config).
- * @param [config] The neo4j client configuration to use for this connection.
+ * @param [config] The neo4j client configuration to use for this connection,
+ *         or `NULL` if the default configuration should be used.
  * @param [flags] A bitmask of flags to control connections.
  * @return A pointer to a `neo4j_connection_t` structure, or `NULL` on error
  *         (errno will be set).
@@ -1631,7 +1635,8 @@ neo4j_connection_t *neo4j_connect(const char *uri, neo4j_config_t *config,
  *
  * @param [hostname] The hostname to connect to.
  * @param [port] The port to connect to.
- * @param [config] The neo4j client configuration to use for this connection.
+ * @param [config] The neo4j client configuration to use for this connection,
+ *         or `NULL` if the default configuration should be used.
  * @param [flags] A bitmask of flags to control connections.
  * @return A pointer to a `neo4j_connection_t` structure, or `NULL` on error
  *         (errno will be set).
@@ -2545,8 +2550,11 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
-int neo4j_render_ccsv(const neo4j_config_t *config, FILE *stream,
+int neo4j_render_results_csv(const neo4j_config_t *config, FILE *stream,
         neo4j_result_stream_t *results);
+__neo4j_must_check
+int neo4j_render_ccsv(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results) __neo4j_deprecated;
 
 /**
  * Render a statement plan as a table.

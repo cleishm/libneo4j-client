@@ -72,7 +72,7 @@ int render_results_csv(shell_state_t *state,
         struct cypher_input_position pos,
         neo4j_result_stream_t *results)
 {
-    return neo4j_render_ccsv(state->config, state->output, results);
+    return neo4j_render_results_csv(state->config, state->output, results);
 }
 
 

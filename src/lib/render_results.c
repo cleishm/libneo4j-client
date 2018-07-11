@@ -349,13 +349,21 @@ int neo4j_render_csv(FILE *stream, neo4j_result_stream_t *results,
 {
     neo4j_config_t *config = neo4j_new_config();
     config->render_flags |= flags;
-    int err = neo4j_render_ccsv(config, stream, results);
+    int err = neo4j_render_results_csv(config, stream, results);
     neo4j_config_free(config);
     return err;
 }
 
 
+// deprecated
 int neo4j_render_ccsv(const neo4j_config_t *config, FILE *stream,
+        neo4j_result_stream_t *results)
+{
+    return neo4j_render_results_csv(config, stream, results);
+}
+
+
+int neo4j_render_results_csv(const neo4j_config_t *config, FILE *stream,
         neo4j_result_stream_t *results)
 {
     REQUIRE(config != NULL, -1);
