@@ -202,8 +202,6 @@ int setup_history(shell_state_t *state, History *el_history)
 {
     assert(state->histfile != NULL);
 
-    size_t hlen = strlen(state->histfile);
-
     char *dir = neo4j_adirname(state->histfile);
     if (dir == NULL)
     {
