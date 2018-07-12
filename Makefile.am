@@ -1,39 +1,32 @@
-include aminclude.am
+ACLOCAL_AMFLAGS = -I build-aux/m4
+SUBDIRS = lib
 
-SUBDIRS = m4 src .
-ACLOCAL_AMFLAGS = -I m4
-
-man1_MANS = neo4j-client.1
-
-if HAVE_CHECK
-SUBDIRS += tests
+if WANT_TOOLS
+SUBDIRS += shell
 endif
 
-doc: doxygen-doc
-
-doc/libneo4j-client.tag: src/.doc/neo4j-client.h
-src/.doc/neo4j-client.h: src/lib/neo4j-client.h
-	@mkdir -p src/.doc
-	(cat "$<" && sed -ne "s/^.*@fn \(.*\)$$/\1;/p" < "$<") >> "$@"
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = neo4j-client.pc
-
 EXTRA_DIST = \
-	doxygen.cfg \
+	build-aux \
 	LICENSE \
-	neo4j-client.1.in \
 	README.md
 
 docker-check:
 	$(MAKE) dist
-	docker run --rm -v $(abs_builddir):/$(PACKAGE) -ti debian-unstable-dev \
-		sh -c 'tar xzmf /$(PACKAGE)/$(DIST_ARCHIVES) && cd $(distdir) && ./configure --enable-silent-rules && make check'
+	@echo "Building docker image..."
+	@docker run -t --rm -v $(abs_builddir):/$(PACKAGE) \
+		`docker build . -q -f build-aux/build.dockerfile` \
+		sh /$(PACKAGE)/build-aux/check-package.sh /$(PACKAGE)/$(DIST_ARCHIVES) $(distdir)
 
 docker-valgrind:
 	$(MAKE) dist
-	docker run --rm -v $(abs_builddir):/$(PACKAGE) -ti debian-unstable-dev \
-		sh -c 'tar xzmf /$(PACKAGE)/$(DIST_ARCHIVES) && cd $(distdir) && ./configure --enable-silent-rules --disable-debug && make check && CK_FORK=no valgrind --suppressions="/$(PACKAGE)/valgrind.suppressions" --leak-check=full --show-leak-kinds=all ./tests/check_$(PACKAGE)'
+	@echo "Building docker image..."
+	@docker run -t --rm -v $(abs_builddir):/$(PACKAGE) \
+		`docker build . -q -f build-aux/build.dockerfile` \
+		sh /$(PACKAGE)/build-aux/valgrind-package.sh /$(PACKAGE)/$(DIST_ARCHIVES) $(distdir)
 
-clean-local:
-	rm -rf doc src/.doc
+MAINTAINERCLEANFILES = \
+	build-aux/m4/libtool.m4 \
+	build-aux/m4/ltoptions.m4 \
+	build-aux/m4/ltsugar.m4 \
+	build-aux/m4/ltversion.m4 \
+	build-aux/m4/lt~obsolete.m4

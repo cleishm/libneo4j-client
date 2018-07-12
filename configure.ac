@@ -15,8 +15,9 @@
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
 AC_INIT([libneo4j-client],[2.2.1~devel])
-AC_CONFIG_SRCDIR([src/lib/neo4j-client.h.in])
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_SRCDIR([lib/src/neo4j-client.h.in])
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([build-aux/m4])
 AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE([enable])
@@ -221,19 +222,21 @@ DX_RTF_FEATURE(OFF)
 DX_XML_FEATURE(OFF)
 DX_PDF_FEATURE(ON)
 DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN(libneo4j-client, doxygen.cfg, doc)
+DX_INIT_DOXYGEN(libneo4j-client, doxygen.cfg, .)
 
 AC_SUBST([REQUIRES], [`echo "$REQUIRES" | cut -c3-`])
 
 AC_CONFIG_FILES([
-    neo4j-client.1 \
-    neo4j-client.pc \
     Makefile \
-    m4/Makefile \
-    src/Makefile \
-    src/bin/Makefile \
-    src/lib/Makefile \
-    src/lib/neo4j-client.h \
-    tests/Makefile
+    lib/Makefile \
+    lib/neo4j-client.pc \
+    lib/doc/Makefile
+    lib/src/Makefile \
+    lib/src/neo4j-client.h \
+    lib/test/Makefile \
+    shell/Makefile \
+    shell/doc/Makefile \
+    shell/doc/neo4j-client.1 \
+    shell/src/Makefile
 ])
 AC_OUTPUT
