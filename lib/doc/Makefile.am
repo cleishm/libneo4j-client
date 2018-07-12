@@ -5,8 +5,8 @@ all-local:
 	$(MAKE) doxygen-doc
 endif
 
-libcypher-parser.tag: .deps/cypher-parser.h
-.deps/cypher-parser.h: ../src/cypher-parser.h
+libneo4j-client.tag: .deps/neo4j-client.h
+.deps/neo4j-client.h: ../src/neo4j-client.h
 	@mkdir -p .deps
 	(cat "$<" && sed -ne "s/^.*@fn \(.*\)$$/\1;/p" < "$<") >> "$@"
 

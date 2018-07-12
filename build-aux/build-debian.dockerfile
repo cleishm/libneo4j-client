@@ -6,6 +6,7 @@ RUN apt-get update
 RUN apt-get -y upgrade
 RUN apt-get install -y build-essential autotools-dev automake libtool pkg-config
 RUN apt-get install -y check valgrind
+RUN apt-get install -y xsltproc
 RUN apt-get install -y libssl-dev
 RUN apt-get install -y libedit-dev
 RUN apt-get install -y libcypher-parser-dev
