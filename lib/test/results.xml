@@ -1,0 +1,2511 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://check.sourceforge.net/xml/check_unittest.xslt"?>
+<testsuites xmlns="http://check.sourceforge.net/ns">
+  <datetime>2018-07-12 11:12:26</datetime>
+  <suite>
+    <title>libneo4j-client</title>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:60</fn>
+      <id>read_fills_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000039</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:77</fn>
+      <id>readv_fills_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000261</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:92</fn>
+      <id>read_consumes_buffer_and_reads_extra</id>
+      <iteration>0</iteration>
+      <duration>0.000094</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:115</fn>
+      <id>readv_consumes_buffer_and_reads_extra</id>
+      <iteration>0</iteration>
+      <duration>0.000326</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:133</fn>
+      <id>read_consumes_buffer_and_refills</id>
+      <iteration>0</iteration>
+      <duration>0.000095</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:157</fn>
+      <id>readv_consumes_buffer_and_refills</id>
+      <iteration>0</iteration>
+      <duration>0.000305</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:172</fn>
+      <id>small_write_goes_to_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000058</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:192</fn>
+      <id>small_writev_goes_to_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000093</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:207</fn>
+      <id>overfilling_buffer_with_write_causes_flush</id>
+      <iteration>0</iteration>
+      <duration>0.000064</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:227</fn>
+      <id>overfilling_buffer_with_writev_causes_flush</id>
+      <iteration>0</iteration>
+      <duration>0.000257</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:239</fn>
+      <id>large_write_skips_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000056</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:258</fn>
+      <id>large_writev_skips_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000271</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:276</fn>
+      <id>unwritten_write_is_pushed_to_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000052</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:299</fn>
+      <id>unwritten_writev_is_pushed_to_buffer</id>
+      <iteration>0</iteration>
+      <duration>0.000431</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:317</fn>
+      <id>unwritten_write_is_pushed_to_buffer_until_full</id>
+      <iteration>0</iteration>
+      <duration>0.000052</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_buffering_iostream.c:342</fn>
+      <id>unwritten_writev_is_pushed_to_buffer_until_full</id>
+      <iteration>0</iteration>
+      <duration>0.000202</duration>
+      <description>buffering_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:62</fn>
+      <id>receive_single_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000076</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:85</fn>
+      <id>receive_partial_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000112</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:110</fn>
+      <id>receive_multiple_chunks</id>
+      <iteration>0</iteration>
+      <duration>0.000077</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:143</fn>
+      <id>receive_multiple_chunks_in_multiple_vectors</id>
+      <iteration>0</iteration>
+      <duration>0.000228</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:163</fn>
+      <id>receive_broken_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000277</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:183</fn>
+      <id>receive_broken_sequence</id>
+      <iteration>0</iteration>
+      <duration>0.000209</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:194</fn>
+      <id>write_nothing</id>
+      <iteration>0</iteration>
+      <duration>0.000047</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:225</fn>
+      <id>write_single_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000255</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:260</fn>
+      <id>write_undersized_chunk_and_flush_on_next_write</id>
+      <iteration>0</iteration>
+      <duration>0.000361</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:294</fn>
+      <id>write_undersized_chunk_and_flush_on_close</id>
+      <iteration>0</iteration>
+      <duration>0.000261</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:342</fn>
+      <id>write_multiple_chunks</id>
+      <iteration>0</iteration>
+      <duration>0.000494</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:386</fn>
+      <id>write_oversized_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000286</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:420</fn>
+      <id>writev_single_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000332</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:479</fn>
+      <id>writev_oversized_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000313</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:540</fn>
+      <id>writev_multivec_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000299</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:617</fn>
+      <id>writev_large_multivec_chunk</id>
+      <iteration>0</iteration>
+      <duration>0.000567</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_chunking_iostream.c:733</fn>
+      <id>writev_multiple_mixed_chunks</id>
+      <iteration>0</iteration>
+      <duration>0.000519</duration>
+      <description>chunking_iostream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_config.c:26</fn>
+      <id>test_neo4j_config_create_and_release</id>
+      <iteration>0</iteration>
+      <duration>0.000089</duration>
+      <description>config</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:221</fn>
+      <id>test_connects_URI_and_sends_init</id>
+      <iteration>0</iteration>
+      <duration>0.000438</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:282</fn>
+      <id>test_connects_URI_containing_credentials_and_sends_init</id>
+      <iteration>0</iteration>
+      <duration>0.000486</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:341</fn>
+      <id>test_connects_tcp_and_sends_init</id>
+      <iteration>0</iteration>
+      <duration>0.000793</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:363</fn>
+      <id>test_expired_credentials</id>
+      <iteration>0</iteration>
+      <duration>0.000436</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:375</fn>
+      <id>test_fails_invalid_URI</id>
+      <iteration>0</iteration>
+      <duration>0.000050</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:385</fn>
+      <id>test_fails_unknown_URI_scheme</id>
+      <iteration>0</iteration>
+      <duration>0.000059</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:393</fn>
+      <id>test_returns_einval_for_invalid_close_argument</id>
+      <iteration>0</iteration>
+      <duration>0.000036</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:410</fn>
+      <id>test_fails_if_connection_factory_fails</id>
+      <iteration>0</iteration>
+      <duration>0.000112</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:425</fn>
+      <id>test_fails_if_unknown_protocol</id>
+      <iteration>0</iteration>
+      <duration>0.000166</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:448</fn>
+      <id>test_fails_if_init_failure</id>
+      <iteration>0</iteration>
+      <duration>0.000310</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:469</fn>
+      <id>test_fails_if_init_failure_and_close</id>
+      <iteration>0</iteration>
+      <duration>0.000723</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:488</fn>
+      <id>test_fails_if_connection_closes</id>
+      <iteration>0</iteration>
+      <duration>0.000207</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:509</fn>
+      <id>test_drains_outstanding_requests_on_close</id>
+      <iteration>0</iteration>
+      <duration>0.000380</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:542</fn>
+      <id>test_awaits_inflight_requests_on_close</id>
+      <iteration>0</iteration>
+      <duration>0.000340</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:573</fn>
+      <id>test_sends_reset_on_reset</id>
+      <iteration>0</iteration>
+      <duration>0.000374</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:596</fn>
+      <id>test_drains_outstanding_requests_on_reset</id>
+      <iteration>0</iteration>
+      <duration>0.000312</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:632</fn>
+      <id>test_awaits_inflight_requests_on_reset</id>
+      <iteration>0</iteration>
+      <duration>0.000335</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:672</fn>
+      <id>test_drains_requests_and_acks_after_failure</id>
+      <iteration>0</iteration>
+      <duration>0.000402</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:712</fn>
+      <id>test_cant_continue_after_eproto_in_failure</id>
+      <iteration>0</iteration>
+      <duration>0.001702</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:753</fn>
+      <id>test_cant_continue_after_eproto_in_ack_failure</id>
+      <iteration>0</iteration>
+      <duration>0.000607</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_connection.c:788</fn>
+      <id>test_drains_acks_when_closed</id>
+      <iteration>0</iteration>
+      <duration>0.000428</duration>
+      <description>connection</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:67</fn>
+      <id>deserialize_positive_tiny_int</id>
+      <iteration>0</iteration>
+      <duration>0.000075</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:88</fn>
+      <id>deserialize_tiny_string</id>
+      <iteration>0</iteration>
+      <duration>0.000203</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:114</fn>
+      <id>deserialize_tiny_list</id>
+      <iteration>0</iteration>
+      <duration>0.000124</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:148</fn>
+      <id>deserialize_tiny_map</id>
+      <iteration>0</iteration>
+      <duration>0.000218</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:176</fn>
+      <id>deserialize_tiny_struct</id>
+      <iteration>0</iteration>
+      <duration>0.000169</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:191</fn>
+      <id>deserialize_null</id>
+      <iteration>0</iteration>
+      <duration>0.000206</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:214</fn>
+      <id>deserialize_float</id>
+      <iteration>0</iteration>
+      <duration>0.000083</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:230</fn>
+      <id>deserialize_boolean_false</id>
+      <iteration>0</iteration>
+      <duration>0.000073</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:246</fn>
+      <id>deserialize_boolean_true</id>
+      <iteration>0</iteration>
+      <duration>0.000060</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:277</fn>
+      <id>deserialize_int8</id>
+      <iteration>0</iteration>
+      <duration>0.000120</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:310</fn>
+      <id>deserialize_int16</id>
+      <iteration>0</iteration>
+      <duration>0.000163</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:345</fn>
+      <id>deserialize_int32</id>
+      <iteration>0</iteration>
+      <duration>0.000250</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:379</fn>
+      <id>deserialize_int64</id>
+      <iteration>0</iteration>
+      <duration>0.000263</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:419</fn>
+      <id>deserialize_string8</id>
+      <iteration>0</iteration>
+      <duration>0.000077</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:500</fn>
+      <id>deserialize_string16</id>
+      <iteration>0</iteration>
+      <duration>0.000112</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:528</fn>
+      <id>deserialize_list8</id>
+      <iteration>0</iteration>
+      <duration>0.000337</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:587</fn>
+      <id>deserialize_list16</id>
+      <iteration>0</iteration>
+      <duration>0.004668</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:629</fn>
+      <id>deserialize_map8</id>
+      <iteration>0</iteration>
+      <duration>0.000841</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:649</fn>
+      <id>deserialize_map8_with_invalid_key_type</id>
+      <iteration>0</iteration>
+      <duration>0.000082</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:679</fn>
+      <id>deserialize_struct8</id>
+      <iteration>0</iteration>
+      <duration>0.000397</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:743</fn>
+      <id>deserialize_struct16</id>
+      <iteration>0</iteration>
+      <duration>0.004124</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:766</fn>
+      <id>deserialize_negative_tiny_int</id>
+      <iteration>0</iteration>
+      <duration>0.000114</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:807</fn>
+      <id>deserialize_node</id>
+      <iteration>0</iteration>
+      <duration>0.000121</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:823</fn>
+      <id>deserialize_node_with_incorrect_field_count</id>
+      <iteration>0</iteration>
+      <duration>0.000059</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:841</fn>
+      <id>deserialize_node_with_incorrect_identifier_type</id>
+      <iteration>0</iteration>
+      <duration>0.000061</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:858</fn>
+      <id>deserialize_node_with_incorrect_labels_type</id>
+      <iteration>0</iteration>
+      <duration>0.000095</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:876</fn>
+      <id>deserialize_node_with_bad_label_type</id>
+      <iteration>0</iteration>
+      <duration>0.000096</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:893</fn>
+      <id>deserialize_node_with_incorrect_map_type</id>
+      <iteration>0</iteration>
+      <duration>0.000059</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:931</fn>
+      <id>deserialize_relationship</id>
+      <iteration>0</iteration>
+      <duration>0.000113</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:991</fn>
+      <id>deserialize_path</id>
+      <iteration>0</iteration>
+      <duration>0.000235</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_deserialization.c:1029</fn>
+      <id>deserialize_unbound_relationship</id>
+      <iteration>0</iteration>
+      <duration>0.000318</duration>
+      <description>deserialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_dotdir.c:60</fn>
+      <id>test_neo4j_dotdir_returns_default_dir</id>
+      <iteration>0</iteration>
+      <duration>0.000081</duration>
+      <description>dotdir</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_dotdir.c:75</fn>
+      <id>test_neo4j_dotdir_appends_dir</id>
+      <iteration>0</iteration>
+      <duration>0.000082</duration>
+      <description>dotdir</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_error_handling.c:47</fn>
+      <id>test_strerror_delegates_for_standard_errnums</id>
+      <iteration>0</iteration>
+      <duration>0.000069</duration>
+      <description>error handling</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_error_handling.c:55</fn>
+      <id>test_strerror_invalid_arguments</id>
+      <iteration>0</iteration>
+      <duration>0.000094</duration>
+      <description>error handling</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_logging.c:108</fn>
+      <id>test_logging_handles_null_logger</id>
+      <iteration>0</iteration>
+      <duration>0.000044</duration>
+      <description>logging</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_logging.c:137</fn>
+      <id>test_logging_logs_event</id>
+      <iteration>0</iteration>
+      <duration>0.000096</duration>
+      <description>logging</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_logging.c:161</fn>
+      <id>std_logger_provider_returns_same_logger_for_name</id>
+      <iteration>0</iteration>
+      <duration>0.000067</duration>
+      <description>logging</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:142</fn>
+      <id>fill_debounce_and_drain</id>
+      <iteration>0</iteration>
+      <duration>0.000310</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:165</fn>
+      <id>fill_debounce_and_part_drain</id>
+      <iteration>0</iteration>
+      <duration>0.000288</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:189</fn>
+      <id>fill_1block_and_drain</id>
+      <iteration>0</iteration>
+      <duration>0.002049</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:213</fn>
+      <id>fill_1block_and_part_drain</id>
+      <iteration>0</iteration>
+      <duration>0.001925</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:255</fn>
+      <id>fill_1block_plus_debounce_and_part_drain</id>
+      <iteration>0</iteration>
+      <duration>0.001809</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:278</fn>
+      <id>fill_and_drain</id>
+      <iteration>0</iteration>
+      <duration>0.044092</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:318</fn>
+      <id>fill_and_partially_drain</id>
+      <iteration>0</iteration>
+      <duration>0.016059</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:339</fn>
+      <id>merge_with_empty_pool</id>
+      <iteration>0</iteration>
+      <duration>0.001434</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:364</fn>
+      <id>merge_with_full_pool</id>
+      <iteration>0</iteration>
+      <duration>0.007651</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:390</fn>
+      <id>merge_with_underfull_pool</id>
+      <iteration>0</iteration>
+      <duration>0.014772</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:416</fn>
+      <id>merge_with_underfull_below_offset_pool</id>
+      <iteration>0</iteration>
+      <duration>0.015765</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:442</fn>
+      <id>merge_overfull_with_underfull_pool</id>
+      <iteration>0</iteration>
+      <duration>0.013443</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:468</fn>
+      <id>merge_overfull_with_underfull_below_debounce_pool</id>
+      <iteration>0</iteration>
+      <duration>0.013040</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:494</fn>
+      <id>merge_with_overfull_pool</id>
+      <iteration>0</iteration>
+      <duration>0.013926</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:520</fn>
+      <id>merge_overfull_with_overfull_pool</id>
+      <iteration>0</iteration>
+      <duration>0.009216</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:541</fn>
+      <id>merge_with_empty_pool_of_smaller_blocksize</id>
+      <iteration>0</iteration>
+      <duration>0.005018</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:567</fn>
+      <id>merge_with_pool_of_smaller_blocksize</id>
+      <iteration>0</iteration>
+      <duration>0.009591</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:588</fn>
+      <id>merge_with_empty_pool_of_larger_blocksize</id>
+      <iteration>0</iteration>
+      <duration>0.002280</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_memory.c:614</fn>
+      <id>merge_with_pool_of_larger_blocksize</id>
+      <iteration>0</iteration>
+      <duration>0.011804</duration>
+      <description>memory</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:28</fn>
+      <id>single_column_reduction</id>
+      <iteration>0</iteration>
+      <duration>0.000064</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:38</fn>
+      <id>first_column_reduction</id>
+      <iteration>0</iteration>
+      <duration>0.000129</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:48</fn>
+      <id>equal_columns_reduction</id>
+      <iteration>0</iteration>
+      <duration>0.000064</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:59</fn>
+      <id>some_equal_columns_reduction</id>
+      <iteration>0</iteration>
+      <duration>0.000072</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:70</fn>
+      <id>multi_step_reduction</id>
+      <iteration>0</iteration>
+      <duration>0.000071</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:83</fn>
+      <id>uneven_reduction</id>
+      <iteration>0</iteration>
+      <duration>0.000093</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:92</fn>
+      <id>single_column_reduction_with_min</id>
+      <iteration>0</iteration>
+      <duration>0.000201</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:104</fn>
+      <id>multi_columns_reduction_with_min</id>
+      <iteration>0</iteration>
+      <duration>0.000117</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:113</fn>
+      <id>single_column_expand</id>
+      <iteration>0</iteration>
+      <duration>0.000163</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_fit_column_widths.c:125</fn>
+      <id>multi_column_expand</id>
+      <iteration>0</iteration>
+      <duration>0.000110</duration>
+      <description>fit_column_widths</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:121</fn>
+      <id>render_simple_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000316</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:161</fn>
+      <id>render_branched_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000273</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:208</fn>
+      <id>render_multi_branched_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000549</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:253</fn>
+      <id>render_deep_branched_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000293</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:299</fn>
+      <id>render_narrow_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000357</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:333</fn>
+      <id>render_undersized_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000185</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:366</fn>
+      <id>render_very_undersized_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000225</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:399</fn>
+      <id>render_vvery_undersized_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000175</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:432</fn>
+      <id>render_vvvery_undersized_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000183</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:461</fn>
+      <id>render_simple_profile</id>
+      <iteration>0</iteration>
+      <duration>0.000235</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_plan.c:490</fn>
+      <id>render_narrow_profile</id>
+      <iteration>0</iteration>
+      <duration>0.000199</duration>
+      <description>render_plan</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:110</fn>
+      <id>render_empty_table</id>
+      <iteration>0</iteration>
+      <duration>0.000150</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:141</fn>
+      <id>render_simple_table</id>
+      <iteration>0</iteration>
+      <duration>0.000164</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:173</fn>
+      <id>render_simple_table_with_quoted_strings</id>
+      <iteration>0</iteration>
+      <duration>0.000604</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:204</fn>
+      <id>render_narrow_table</id>
+      <iteration>0</iteration>
+      <duration>0.000312</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:235</fn>
+      <id>render_very_narrow_table</id>
+      <iteration>0</iteration>
+      <duration>0.000210</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:266</fn>
+      <id>render_undersized_table</id>
+      <iteration>0</iteration>
+      <duration>0.000364</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:297</fn>
+      <id>render_min_width_table</id>
+      <iteration>0</iteration>
+      <duration>0.000262</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:313</fn>
+      <id>render_zero_col_table</id>
+      <iteration>0</iteration>
+      <duration>0.000063</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:349</fn>
+      <id>render_table_with_wrapped_values</id>
+      <iteration>0</iteration>
+      <duration>0.000501</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:389</fn>
+      <id>render_undersized_table_with_wrapped_values</id>
+      <iteration>0</iteration>
+      <duration>0.000199</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:419</fn>
+      <id>render_table_with_nulls</id>
+      <iteration>0</iteration>
+      <duration>0.000189</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:450</fn>
+      <id>render_table_with_visible_nulls</id>
+      <iteration>0</iteration>
+      <duration>0.000457</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:465</fn>
+      <id>render_no_table_if_stream_has_error</id>
+      <iteration>0</iteration>
+      <duration>0.000068</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:483</fn>
+      <id>render_empty_csv</id>
+      <iteration>0</iteration>
+      <duration>0.000137</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:508</fn>
+      <id>render_simple_csv</id>
+      <iteration>0</iteration>
+      <duration>0.000114</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:533</fn>
+      <id>render_quotes_in_csv_values</id>
+      <iteration>0</iteration>
+      <duration>0.000114</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_render_results.c:547</fn>
+      <id>render_zero_col_csv</id>
+      <iteration>0</iteration>
+      <duration>0.000085</duration>
+      <description>render_results</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:284</fn>
+      <id>test_run_returns_results_and_completes</id>
+      <iteration>0</iteration>
+      <duration>0.000274</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:300</fn>
+      <id>test_run_can_close_immediately_after_fetch</id>
+      <iteration>0</iteration>
+      <duration>0.000124</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:327</fn>
+      <id>test_run_returns_fieldnames</id>
+      <iteration>0</iteration>
+      <duration>0.000126</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:358</fn>
+      <id>test_run_returns_profile</id>
+      <iteration>0</iteration>
+      <duration>0.000166</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:410</fn>
+      <id>test_run_returns_plan</id>
+      <iteration>0</iteration>
+      <duration>0.000291</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:434</fn>
+      <id>test_run_returns_failure_when_statement_fails</id>
+      <iteration>0</iteration>
+      <duration>0.000105</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:466</fn>
+      <id>test_run_returns_failure_during_streaming</id>
+      <iteration>0</iteration>
+      <duration>0.000208</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:493</fn>
+      <id>test_run_skips_results_after_connection_close</id>
+      <iteration>0</iteration>
+      <duration>0.000120</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:529</fn>
+      <id>test_run_skips_results_after_connection_reset</id>
+      <iteration>0</iteration>
+      <duration>0.000284</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:559</fn>
+      <id>test_run_returns_same_failure_after_connection_close</id>
+      <iteration>0</iteration>
+      <duration>0.000168</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:601</fn>
+      <id>test_send_completes</id>
+      <iteration>0</iteration>
+      <duration>0.000266</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:628</fn>
+      <id>test_send_returns_fieldnames</id>
+      <iteration>0</iteration>
+      <duration>0.000189</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:652</fn>
+      <id>test_send_returns_failure_when_statement_fails</id>
+      <iteration>0</iteration>
+      <duration>0.000142</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:699</fn>
+      <id>test_peek_retrieves_records_in_order</id>
+      <iteration>0</iteration>
+      <duration>0.002777</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:732</fn>
+      <id>test_peek_beyond_depth</id>
+      <iteration>0</iteration>
+      <duration>0.000230</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_result_stream.c:768</fn>
+      <id>test_run_with_long_statement</id>
+      <iteration>0</iteration>
+      <duration>0.000353</duration>
+      <description>result stream</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:59</fn>
+      <id>test_to_rb_from_memory</id>
+      <iteration>0</iteration>
+      <duration>0.000082</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:75</fn>
+      <id>test_to_rb_from_memory_wrapped_around</id>
+      <iteration>0</iteration>
+      <duration>0.000061</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:117</fn>
+      <id>test_to_rb_from_memory_in_center</id>
+      <iteration>0</iteration>
+      <duration>0.000071</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:99</fn>
+      <id>test_to_rb_from_scattered_memory</id>
+      <iteration>0</iteration>
+      <duration>0.000063</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:149</fn>
+      <id>test_to_rb_from_fd</id>
+      <iteration>0</iteration>
+      <duration>0.000137</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:159</fn>
+      <id>test_return_enobufs_if_full</id>
+      <iteration>0</iteration>
+      <duration>0.000043</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:181</fn>
+      <id>test_to_memory_from_rb</id>
+      <iteration>0</iteration>
+      <duration>0.000067</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:200</fn>
+      <id>test_to_memory_from_rb_wrapped_around</id>
+      <iteration>0</iteration>
+      <duration>0.000075</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:228</fn>
+      <id>test_to_scattered_memory_from_rb</id>
+      <iteration>0</iteration>
+      <duration>0.000058</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:256</fn>
+      <id>test_to_fd_from_rb</id>
+      <iteration>0</iteration>
+      <duration>0.000175</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:277</fn>
+      <id>test_advance</id>
+      <iteration>0</iteration>
+      <duration>0.000055</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:291</fn>
+      <id>test_discard</id>
+      <iteration>0</iteration>
+      <duration>0.000057</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_ring_buffer.c:302</fn>
+      <id>test_clear</id>
+      <iteration>0</iteration>
+      <duration>0.000052</duration>
+      <description>ring_buffer</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:56</fn>
+      <id>serialize_null</id>
+      <iteration>0</iteration>
+      <duration>0.000122</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:81</fn>
+      <id>serialize_bool</id>
+      <iteration>0</iteration>
+      <duration>0.000109</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:114</fn>
+      <id>serialize_tiny_int</id>
+      <iteration>0</iteration>
+      <duration>0.000133</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:150</fn>
+      <id>serialize_int8</id>
+      <iteration>0</iteration>
+      <duration>0.000134</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:186</fn>
+      <id>serialize_int16</id>
+      <iteration>0</iteration>
+      <duration>0.000099</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:222</fn>
+      <id>serialize_int32</id>
+      <iteration>0</iteration>
+      <duration>0.000089</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:261</fn>
+      <id>serialize_int64</id>
+      <iteration>0</iteration>
+      <duration>0.000089</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:290</fn>
+      <id>serialize_float</id>
+      <iteration>0</iteration>
+      <duration>0.000107</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:330</fn>
+      <id>serialize_tiny_string</id>
+      <iteration>0</iteration>
+      <duration>0.000094</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:370</fn>
+      <id>serialize_string8</id>
+      <iteration>0</iteration>
+      <duration>0.000066</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:451</fn>
+      <id>serialize_string16</id>
+      <iteration>0</iteration>
+      <duration>0.000106</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:472</fn>
+      <id>serialize_tiny_list</id>
+      <iteration>0</iteration>
+      <duration>0.000093</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:497</fn>
+      <id>serialize_list8</id>
+      <iteration>0</iteration>
+      <duration>0.000103</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:553</fn>
+      <id>serialize_list16</id>
+      <iteration>0</iteration>
+      <duration>0.000135</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:574</fn>
+      <id>serialize_tiny_struct</id>
+      <iteration>0</iteration>
+      <duration>0.000087</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:600</fn>
+      <id>serialize_struct8</id>
+      <iteration>0</iteration>
+      <duration>0.000259</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:656</fn>
+      <id>serialize_struct16</id>
+      <iteration>0</iteration>
+      <duration>0.000117</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:679</fn>
+      <id>serialize_tiny_map</id>
+      <iteration>0</iteration>
+      <duration>0.000179</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_serialization.c:721</fn>
+      <id>serialize_map8</id>
+      <iteration>0</iteration>
+      <duration>0.000221</duration>
+      <description>serialization</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:100</fn>
+      <id>test_finds_trusted_host</id>
+      <iteration>0</iteration>
+      <duration>0.000124</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:109</fn>
+      <id>test_finds_trusted_host_with_indent</id>
+      <iteration>0</iteration>
+      <duration>0.000115</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:118</fn>
+      <id>test_unfound_host_with_no_callback_registered</id>
+      <iteration>0</iteration>
+      <duration>0.000116</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:127</fn>
+      <id>test_commented_host</id>
+      <iteration>0</iteration>
+      <duration>0.000401</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:136</fn>
+      <id>test_mismatch_host_with_no_callback_registered</id>
+      <iteration>0</iteration>
+      <duration>0.000188</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:151</fn>
+      <id>test_unfound_host_invokes_callback_and_rejects</id>
+      <iteration>0</iteration>
+      <duration>0.000182</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:166</fn>
+      <id>test_mismatch_host_invokes_callback_and_rejects</id>
+      <iteration>0</iteration>
+      <duration>0.000159</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:190</fn>
+      <id>test_unfound_host_invokes_callback_and_accepts_once</id>
+      <iteration>0</iteration>
+      <duration>0.000299</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:214</fn>
+      <id>test_mismatch_host_invokes_callback_and_accepts_once</id>
+      <iteration>0</iteration>
+      <duration>0.000339</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:238</fn>
+      <id>test_unfound_host_invokes_callback_and_trusts</id>
+      <iteration>0</iteration>
+      <duration>0.001216</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:262</fn>
+      <id>test_mismatch_host_invokes_callback_and_trusts</id>
+      <iteration>0</iteration>
+      <duration>0.000687</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_tofu.c:295</fn>
+      <id>test_trust_creates_known_hosts_file_and_directory</id>
+      <iteration>0</iteration>
+      <duration>0.000979</duration>
+      <description>tofu</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:29</fn>
+      <id>test_u8clen_ascii</id>
+      <iteration>0</iteration>
+      <duration>0.000216</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:51</fn>
+      <id>test_u8clen_boundaries</id>
+      <iteration>0</iteration>
+      <duration>0.000255</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:60</fn>
+      <id>test_u8clen_unexpected_continuation</id>
+      <iteration>0</iteration>
+      <duration>0.000526</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:84</fn>
+      <id>test_u8clen_lonely_start</id>
+      <iteration>0</iteration>
+      <duration>0.000508</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:99</fn>
+      <id>test_u8clen_missing_last</id>
+      <iteration>0</iteration>
+      <duration>0.000126</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:107</fn>
+      <id>test_u8clen_impossible_bytes</id>
+      <iteration>0</iteration>
+      <duration>0.000097</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:124</fn>
+      <id>test_u8clen_overlong_sequence</id>
+      <iteration>0</iteration>
+      <duration>0.000123</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:137</fn>
+      <id>test_u8clen_utf16_surrogates</id>
+      <iteration>0</iteration>
+      <duration>0.000160</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:146</fn>
+      <id>test_u8cwidth_ascii</id>
+      <iteration>0</iteration>
+      <duration>0.000063</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:158</fn>
+      <id>test_u8cwidth_8_bit_control</id>
+      <iteration>0</iteration>
+      <duration>0.000091</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_u8.c:168</fn>
+      <id>test_u8cswidth</id>
+      <iteration>0</iteration>
+      <duration>0.000113</duration>
+      <description>u8</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:33</fn>
+      <id>test_parse_full_uri</id>
+      <iteration>0</iteration>
+      <duration>0.000103</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:49</fn>
+      <id>test_parse_full_uri_with_userinfo</id>
+      <iteration>0</iteration>
+      <duration>0.000104</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:65</fn>
+      <id>test_parse_file_uri</id>
+      <iteration>0</iteration>
+      <duration>0.000142</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:90</fn>
+      <id>test_parse_uri_with_ipv6_host</id>
+      <iteration>0</iteration>
+      <duration>0.001566</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:106</fn>
+      <id>test_parse_uri_without_path</id>
+      <iteration>0</iteration>
+      <duration>0.000129</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:133</fn>
+      <id>test_parse_uri_without_port</id>
+      <iteration>0</iteration>
+      <duration>0.000245</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:149</fn>
+      <id>test_parse_uri_without_port_or_path</id>
+      <iteration>0</iteration>
+      <duration>0.000100</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:165</fn>
+      <id>test_parse_uri_without_path_and_with_query</id>
+      <iteration>0</iteration>
+      <duration>0.000147</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:181</fn>
+      <id>test_parse_uri_without_query_and_with_fragment</id>
+      <iteration>0</iteration>
+      <duration>0.000142</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:193</fn>
+      <id>test_parse_uri_with_null_uri</id>
+      <iteration>0</iteration>
+      <duration>0.000096</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:204</fn>
+      <id>test_parse_uri_with_empty_uri</id>
+      <iteration>0</iteration>
+      <duration>0.000140</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:224</fn>
+      <id>test_parse_uri_with_no_scheme</id>
+      <iteration>0</iteration>
+      <duration>0.000161</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:240</fn>
+      <id>test_parse_uri_with_no_slash</id>
+      <iteration>0</iteration>
+      <duration>0.000102</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:255</fn>
+      <id>test_parse_uri_with_no_host</id>
+      <iteration>0</iteration>
+      <duration>0.000185</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:267</fn>
+      <id>test_parse_uri_with_invalid_host</id>
+      <iteration>0</iteration>
+      <duration>0.000088</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:278</fn>
+      <id>test_parse_uri_with_invalid_ipv6_host</id>
+      <iteration>0</iteration>
+      <duration>0.000145</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:289</fn>
+      <id>test_parse_uri_with_invalid_port</id>
+      <iteration>0</iteration>
+      <duration>0.000102</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_uri.c:300</fn>
+      <id>test_parse_uri_with_invalid_path</id>
+      <iteration>0</iteration>
+      <duration>0.000076</duration>
+      <description>uri</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_util.c:50</fn>
+      <id>test_neo4j_dirname</id>
+      <iteration>0</iteration>
+      <duration>0.000230</duration>
+      <description>util</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_util.c:80</fn>
+      <id>test_neo4j_basename</id>
+      <iteration>0</iteration>
+      <duration>0.000151</duration>
+      <description>util</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_util.c:104</fn>
+      <id>test_strcasecmp_indep</id>
+      <iteration>0</iteration>
+      <duration>0.000076</duration>
+      <description>util</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_util.c:137</fn>
+      <id>test_strncasecmp_indep</id>
+      <iteration>0</iteration>
+      <duration>0.000095</duration>
+      <description>util</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_util.c:154</fn>
+      <id>test_hostname_matching</id>
+      <iteration>0</iteration>
+      <duration>0.000177</duration>
+      <description>util</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:61</fn>
+      <id>null_value</id>
+      <iteration>0</iteration>
+      <duration>0.000250</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:69</fn>
+      <id>null_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000071</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:93</fn>
+      <id>bool_value</id>
+      <iteration>0</iteration>
+      <duration>0.000148</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:104</fn>
+      <id>bool_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000064</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:126</fn>
+      <id>int_value</id>
+      <iteration>0</iteration>
+      <duration>0.000112</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:140</fn>
+      <id>int_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000081</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:163</fn>
+      <id>float_value</id>
+      <iteration>0</iteration>
+      <duration>0.000195</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:177</fn>
+      <id>float_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000084</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:244</fn>
+      <id>string_value</id>
+      <iteration>0</iteration>
+      <duration>0.000597</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:278</fn>
+      <id>string_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000064</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:266</fn>
+      <id>bytes_value</id>
+      <iteration>0</iteration>
+      <duration>0.000126</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:335</fn>
+      <id>list_value</id>
+      <iteration>0</iteration>
+      <duration>0.000770</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:359</fn>
+      <id>list_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000156</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:404</fn>
+      <id>map_value</id>
+      <iteration>0</iteration>
+      <duration>0.000574</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:416</fn>
+      <id>invalid_map_value</id>
+      <iteration>0</iteration>
+      <duration>0.000073</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:450</fn>
+      <id>map_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000108</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:464</fn>
+      <id>map_get</id>
+      <iteration>0</iteration>
+      <duration>0.000061</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:495</fn>
+      <id>node_value</id>
+      <iteration>0</iteration>
+      <duration>0.000418</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:512</fn>
+      <id>invalid_node_label_value</id>
+      <iteration>0</iteration>
+      <duration>0.000065</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:546</fn>
+      <id>relationship_value</id>
+      <iteration>0</iteration>
+      <duration>0.000187</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:573</fn>
+      <id>unbound_relationship_value</id>
+      <iteration>0</iteration>
+      <duration>0.000109</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:639</fn>
+      <id>path_value</id>
+      <iteration>0</iteration>
+      <duration>0.000116</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:679</fn>
+      <id>invalid_path_node_value</id>
+      <iteration>0</iteration>
+      <duration>0.000049</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:717</fn>
+      <id>invalid_path_relationship_value</id>
+      <iteration>0</iteration>
+      <duration>0.000055</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:761</fn>
+      <id>invalid_path_seq_length</id>
+      <iteration>0</iteration>
+      <duration>0.000251</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:805</fn>
+      <id>invalid_path_seq_rel_index_type</id>
+      <iteration>0</iteration>
+      <duration>0.000052</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:849</fn>
+      <id>invalid_path_seq_node_index_type</id>
+      <iteration>0</iteration>
+      <duration>0.000052</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:893</fn>
+      <id>invalid_path_seq_rel_index_range</id>
+      <iteration>0</iteration>
+      <duration>0.000055</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:937</fn>
+      <id>invalid_path_seq_rel_zero_index_range</id>
+      <iteration>0</iteration>
+      <duration>0.000065</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:981</fn>
+      <id>invalid_path_seq_rel_neg_index_range</id>
+      <iteration>0</iteration>
+      <duration>0.000048</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:1047</fn>
+      <id>identity_value</id>
+      <iteration>0</iteration>
+      <duration>0.000114</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:1006</fn>
+      <id>struct_value</id>
+      <iteration>0</iteration>
+      <duration>0.000356</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_values.c:1031</fn>
+      <id>struct_eq</id>
+      <iteration>0</iteration>
+      <duration>0.000101</duration>
+      <description>values</description>
+      <message>Passed</message>
+    </test>
+    <test result="success">
+      <path>.</path>
+      <fn>check_openssl.c:60</fn>
+      <id>server_refuses_handshake</id>
+      <iteration>0</iteration>
+      <duration>0.000912</duration>
+      <description>openssl</description>
+      <message>Passed</message>
+    </test>
+  </suite>
+  <duration>1.298033</duration>
+</testsuites>
