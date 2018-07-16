@@ -291,7 +291,9 @@ int neo4j_struct_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
     REQUIRE(value != NULL, -1);
     REQUIRE(stream != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_STRUCT ||
-            neo4j_type(*value) == NEO4J_NODE);
+            neo4j_type(*value) == NEO4J_NODE ||
+            neo4j_type(*value) == NEO4J_RELATIONSHIP ||
+            neo4j_type(*value) == NEO4J_PATH);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     REQUIRE(v->nfields == 0 || v->fields != NULL, -1);
 
