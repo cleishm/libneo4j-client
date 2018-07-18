@@ -32,12 +32,14 @@
 #include <sys/uio.h>
 
 #if __GNUC__ > 3
+#define __neo4j_const __attribute__((const))
 #define __neo4j_pure __attribute__((pure))
 #define __neo4j_malloc __attribute__((malloc))
 #define __neo4j_must_check __attribute__((warn_unused_result))
 #define __neo4j_deprecated __attribute__((deprecated))
 #else
 #define __neo4j_pure /*pure*/
+#define __neo4j_const /*const*/
 #define __neo4j_malloc /*malloc*/
 #define __neo4j_must_check /*must check*/
 #define __neo4j_deprecated /*deprecated*/
@@ -148,13 +150,13 @@ typedef int (*neo4j_basic_auth_callback_t)(void *userdata,
 /**
  * The version string for libneo4j-client.
  */
-__neo4j_pure
+__neo4j_const
 const char *libneo4j_client_version(void);
 
 /**
  * The default client ID string for libneo4j-client.
  */
-__neo4j_pure
+__neo4j_const
 const char *libneo4j_client_id(void);
 
 
@@ -298,7 +300,7 @@ void neo4j_std_logger_provider_free(struct neo4j_logger_provider *provider);
  * @param [level] The logging level.
  * @return A `NULL` terminated ASCII string describing the logging level.
  */
-__neo4j_pure
+__neo4j_const
 const char *neo4j_log_level_str(uint_fast8_t level);
 
 
@@ -600,7 +602,7 @@ struct neo4j_map_entry
  * @param [type] The neo4j type.
  * @return `true` if the node is of the specified type and `false` otherwise.
  */
-__neo4j_pure
+__neo4j_const
 bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type);
 
 /**
@@ -609,7 +611,7 @@ bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type);
  * @param [t] The neo4j type.
  * @return A pointer to a `NULL` terminated string containing the type name.
  */
-__neo4j_pure
+__neo4j_const
 const char *neo4j_typestr(neo4j_type_t t);
 
 /**
@@ -681,7 +683,7 @@ extern const neo4j_value_t neo4j_null;
  * @param [value] A boolean value.
  * @return A neo4j value encoding the Bool.
  */
-__neo4j_pure
+__neo4j_const
 neo4j_value_t neo4j_bool(bool value);
 
 /**
@@ -692,7 +694,7 @@ neo4j_value_t neo4j_bool(bool value);
  * @param [value] The neo4j value
  * @return The native boolean true or false
  */
-__neo4j_pure
+__neo4j_const
 bool neo4j_bool_value(neo4j_value_t value);
 
 
@@ -703,7 +705,7 @@ bool neo4j_bool_value(neo4j_value_t value);
  *         INT64_MAX, or it will be capped to the closest value.
  * @return A neo4j value encoding the Int.
  */
-__neo4j_pure
+__neo4j_const
 neo4j_value_t neo4j_int(long long value);
 
 /**
@@ -714,7 +716,7 @@ neo4j_value_t neo4j_int(long long value);
  * @param [value] The neo4j value
  * @return The native integer value
  */
-__neo4j_pure
+__neo4j_const
 long long neo4j_int_value(neo4j_value_t value);
 
 
@@ -724,7 +726,7 @@ long long neo4j_int_value(neo4j_value_t value);
  * @param [value] A double precision floating point value.
  * @return A neo4j value encoding the Float.
  */
-__neo4j_pure
+__neo4j_const
 neo4j_value_t neo4j_float(double value);
 
 /**
@@ -735,7 +737,7 @@ neo4j_value_t neo4j_float(double value);
  * @param [value] The neo4j value
  * @return The native double value
  */
-__neo4j_pure
+__neo4j_const
 double neo4j_float_value(neo4j_value_t value);
 
 
@@ -759,7 +761,7 @@ double neo4j_float_value(neo4j_value_t value);
  *         UINT32_MAX in length (and will be truncated otherwise).
  * @return A neo4j value encoding the String.
  */
-__neo4j_pure
+__neo4j_const
 neo4j_value_t neo4j_ustring(const char *u, unsigned int n);
 
 /**
@@ -770,7 +772,7 @@ neo4j_value_t neo4j_ustring(const char *u, unsigned int n);
  * @param [value] The neo4j string.
  * @return The length of the string in bytes.
  */
-__neo4j_pure
+__neo4j_const
 unsigned int neo4j_string_length(neo4j_value_t value);
 
 /**
@@ -785,7 +787,7 @@ unsigned int neo4j_string_length(neo4j_value_t value);
  * @param [value] The neo4j string.
  * @return A pointer to a UTF-8 string, which will not be terminated.
  */
-__neo4j_pure
+__neo4j_const
 const char *neo4j_ustring_value(neo4j_value_t value);
 
 /**
@@ -818,7 +820,7 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length);
  *         UINT32_MAX in length (and will be truncated otherwise).
  * @return A neo4j value encoding the String.
  */
-__neo4j_pure
+__neo4j_const
 neo4j_value_t neo4j_bytes(const char *u, unsigned int n);
 
 /**
@@ -829,7 +831,7 @@ neo4j_value_t neo4j_bytes(const char *u, unsigned int n);
  * @param [value] The neo4j byte sequence.
  * @return The length of the sequence.
  */
-__neo4j_pure
+__neo4j_const
 unsigned int neo4j_bytes_length(neo4j_value_t value);
 
 /**
@@ -843,7 +845,7 @@ unsigned int neo4j_bytes_length(neo4j_value_t value);
  * @param [value] The neo4j byte sequence.
  * @return A pointer to a byte sequence.
  */
-__neo4j_pure
+__neo4j_const
 const char *neo4j_bytes_value(neo4j_value_t value);
 
 
@@ -857,7 +859,7 @@ const char *neo4j_bytes_value(neo4j_value_t value);
  *         UINT32_MAX (or the list will be truncated).
  * @return A neo4j value encoding the List.
  */
-__neo4j_pure
+__neo4j_const
 neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n);
 
 /**
@@ -868,7 +870,7 @@ neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n);
  * @param [value] The neo4j list.
  * @return The number of entries.
  */
-__neo4j_pure
+__neo4j_const
 unsigned int neo4j_list_length(neo4j_value_t value);
 
 /**
@@ -906,7 +908,7 @@ neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n);
  * @param [value] The neo4j map.
  * @return The number of entries.
  */
-__neo4j_pure
+__neo4j_const
 unsigned int neo4j_map_size(neo4j_value_t value);
 
 /**
