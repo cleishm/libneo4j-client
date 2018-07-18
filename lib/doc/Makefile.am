@@ -8,7 +8,7 @@ endif
 libneo4j-client.tag: .deps/neo4j-client.h
 .deps/neo4j-client.h: ../src/neo4j-client.h
 	@mkdir -p .deps
-	(cat "$<" && sed -ne "s/^.*@fn \(.*\)$$/\1;/p" < "$<") >> "$@"
+	(cat "$<" && sed -ne "s/^.*@fn \(.*\)$$/\1;/p" < "$<") > "$@"
 
 EXTRA_DIST = doxygen.cfg
 
