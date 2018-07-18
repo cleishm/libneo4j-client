@@ -184,6 +184,8 @@ START_TEST (test_connects_URI_and_sends_init)
     // check resulting connection
     ck_assert(!neo4j_credentials_expired(connection));
     ck_assert_str_eq(neo4j_server_id(connection), "neo4j/1.2.3");
+    ck_assert(neo4j_connection_is_secure(connection));
+    ck_assert_int_eq(neo4j_connection_protocol_version(connection), 1);
 
     // check protocol HELLO was sent
     uint8_t expected_hello[4] = { 0x60, 0x60, 0xB0, 0x17 };
@@ -192,7 +194,7 @@ START_TEST (test_connects_URI_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(2), htonl(1), 0, 0 };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -253,7 +255,7 @@ START_TEST (test_connects_URI_containing_credentials_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(2), htonl(1), 0, 0 };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -312,7 +314,7 @@ START_TEST (test_connects_tcp_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(2), htonl(1), 0, 0 };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);

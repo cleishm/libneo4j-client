@@ -25,16 +25,22 @@
 #include <limits.h>
 #include <stddef.h>
 
+static bool supported_v1(const neo4j_value_t *value, uint32_t version);
+static bool supported_v2(const neo4j_value_t *value, uint32_t version);
+
+static bool list_issupported(const neo4j_value_t *value, uint32_t version);
+static bool map_issupported(const neo4j_value_t *value, uint32_t version);
+static bool struct_issupported(const neo4j_value_t *value, uint32_t version);
 
 static bool null_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool bool_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool int_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool float_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool string_eq(const neo4j_value_t *value, const neo4j_value_t *other);
-static bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool list_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool map_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other);
+static bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 
 
 /////////////////////////////
@@ -51,7 +57,6 @@ static const struct neo4j_type bool_type = { .name = "Boolean" };
 static const struct neo4j_type int_type = { .name = "Integer" };
 static const struct neo4j_type float_type = { .name = "Float" };
 static const struct neo4j_type string_type = { .name = "String" };
-static const struct neo4j_type bytes_type = { .name = "Bytes" };
 static const struct neo4j_type list_type = { .name = "List" };
 static const struct neo4j_type map_type = { .name = "Map" };
 static const struct neo4j_type node_type = { .name = "Node" };
@@ -59,6 +64,7 @@ static const struct neo4j_type relationship_type = { .name = "Relationship" };
 static const struct neo4j_type path_type = { .name = "Path" };
 static const struct neo4j_type identity_type = { .name = "Identity" };
 static const struct neo4j_type struct_type = { .name = "Struct" };
+static const struct neo4j_type bytes_type = { .name = "Bytes" };
 
 struct neo4j_types
 {
@@ -75,9 +81,11 @@ struct neo4j_types
     const struct neo4j_type *identity_type;
     const struct neo4j_type *struct_type;
     const struct neo4j_type *bytes_type;
+    const struct neo4j_type *point_type;
 };
 static const struct neo4j_types neo4j_types =
 {
+    // protocol V1 types
     .null_type = &null_type,
     .bool_type = &bool_type,
     .int_type = &int_type,
@@ -90,6 +98,7 @@ static const struct neo4j_types neo4j_types =
     .path_type = &path_type,
     .identity_type = &identity_type,
     .struct_type = &struct_type,
+    // protocol V2 types
     .bytes_type = &bytes_type
 };
 
@@ -126,7 +135,13 @@ bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type)
 }
 
 
-const char *neo4j_typestr(const neo4j_type_t type)
+unsigned int neo4j_typeversion(neo4j_type_t type)
+{
+    return (type <= NEO4J_BYTES)? 1 : 2;
+}
+
+
+const char *neo4j_typestr(neo4j_type_t type)
 {
     assert(type < _MAX_TYPE);
     return TYPE_PTR(type)->name;
@@ -141,6 +156,7 @@ struct neo4j_value_vt
 {
     size_t (*str)(const neo4j_value_t *self, char *strbuf, size_t n);
     ssize_t (*fprint)(const neo4j_value_t *self, FILE *stream);
+    bool (*issupported)(const neo4j_value_t *self, uint32_t version);
     int (*serialize)(const neo4j_value_t *self, neo4j_iostream_t *stream);
     bool (*eq)(const neo4j_value_t *self, const neo4j_value_t *other);
 };
@@ -148,66 +164,79 @@ struct neo4j_value_vt
 static struct neo4j_value_vt null_vt =
     { .str = neo4j_null_str,
       .fprint = neo4j_null_fprint,
+      .issupported = supported_v1,
       .serialize = neo4j_null_serialize,
       .eq = null_eq };
 static struct neo4j_value_vt bool_vt =
     { .str = neo4j_bool_str,
       .fprint = neo4j_bool_fprint,
+      .issupported = supported_v1,
       .serialize = neo4j_bool_serialize,
       .eq = bool_eq };
 static struct neo4j_value_vt int_vt =
     { .str = neo4j_int_str,
       .fprint = neo4j_int_fprint,
+      .issupported = supported_v1,
       .serialize = neo4j_int_serialize,
       .eq = int_eq };
 static struct neo4j_value_vt float_vt =
     { .str = neo4j_float_str,
       .fprint = neo4j_float_fprint,
+      .issupported = supported_v1,
       .serialize = neo4j_float_serialize,
       .eq = float_eq };
 static struct neo4j_value_vt string_vt =
     { .str = neo4j_string_str,
       .fprint = neo4j_string_fprint,
+      .issupported = supported_v1,
       .serialize = neo4j_string_serialize,
       .eq = string_eq };
 static struct neo4j_value_vt list_vt =
     { .str = neo4j_list_str,
       .fprint = neo4j_list_fprint,
+      .issupported = list_issupported,
       .serialize = neo4j_list_serialize,
       .eq = list_eq };
 static struct neo4j_value_vt map_vt =
     { .str = neo4j_map_str,
       .fprint = neo4j_map_fprint,
+      .issupported = map_issupported,
       .serialize = neo4j_map_serialize,
       .eq = map_eq };
 static struct neo4j_value_vt node_vt =
     { .str = neo4j_node_str,
       .fprint = neo4j_node_fprint,
+      .issupported = struct_issupported,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt relationship_vt =
     { .str = neo4j_rel_str,
       .fprint = neo4j_rel_fprint,
+      .issupported = struct_issupported,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt path_vt =
     { .str = neo4j_path_str,
       .fprint = neo4j_path_fprint,
+      .issupported = struct_issupported,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt identity_vt =
     { .str = neo4j_int_str,
       .fprint = neo4j_int_fprint,
+      .issupported = supported_v1,
       .serialize = neo4j_int_serialize,
       .eq = int_eq };
 static struct neo4j_value_vt struct_vt =
     { .str = neo4j_struct_str,
       .fprint = neo4j_struct_fprint,
+      .issupported = struct_issupported,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
 static struct neo4j_value_vt bytes_vt =
     { .str = neo4j_bytes_str,
       .fprint = neo4j_bytes_fprint,
+      .issupported = supported_v2,
       .serialize = neo4j_bytes_serialize,
       .eq = bytes_eq };
 
@@ -299,6 +328,15 @@ ssize_t neo4j_fprint(neo4j_value_t value, FILE *stream)
 }
 
 
+bool neo4j_issupported(neo4j_value_t value, unsigned int version)
+{
+    REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
+    REQUIRE(value._type < _MAX_TYPE, -1);
+    const struct neo4j_value_vt *vt = VT_PTR(value._vt_off);
+    return vt->issupported(&value, version);
+}
+
+
 int neo4j_serialize(neo4j_value_t value, neo4j_iostream_t *stream)
 {
     REQUIRE(value._vt_off < _MAX_VT_OFF, -1);
@@ -316,6 +354,22 @@ bool neo4j_eq(neo4j_value_t value1, neo4j_value_t value2)
     REQUIRE(neo4j_type(value1) == neo4j_type(value2), false);
     const struct neo4j_value_vt *vt = VT_PTR(value1._vt_off);
     return vt->eq(&value1, &value2);
+}
+
+
+/////////////////
+// common methods
+/////////////////
+
+bool supported_v1(const neo4j_value_t *value, uint32_t version)
+{
+    return true;
+}
+
+
+bool supported_v2(const neo4j_value_t *value, uint32_t version)
+{
+    return version >= 2;
 }
 
 
@@ -474,49 +528,6 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length)
 }
 
 
-// bytes
-
-neo4j_value_t neo4j_bytes(const char *u, unsigned int n)
-{
-#if UINT_MAX != UINT32_MAX
-    if (n > UINT32_MAX)
-    {
-        n = UINT32_MAX;
-    }
-#endif
-    struct neo4j_bytes v =
-        { ._type = NEO4J_BYTES, ._vt_off = BYTES_VT_OFF,
-          .bytes = u, .length = n };
-    return *((neo4j_value_t *)(&v));
-}
-
-
-bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other)
-{
-    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
-    const struct neo4j_bytes *o = (const struct neo4j_bytes *)other;
-    if (v->length != o->length)
-    {
-        return false;
-    }
-    return memcmp(v->bytes, o->bytes, v->length) == 0;
-}
-
-
-unsigned int neo4j_bytes_length(neo4j_value_t value)
-{
-    REQUIRE(neo4j_type(value) == NEO4J_BYTES, 0);
-    return ((const struct neo4j_bytes *)&value)->length;
-}
-
-
-const char *neo4j_bytes_value(neo4j_value_t value)
-{
-    REQUIRE(neo4j_type(value) == NEO4J_BYTES, NULL);
-    return ((const struct neo4j_bytes *)&value)->bytes;
-}
-
-
 // list
 
 neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n)
@@ -531,6 +542,25 @@ neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n)
         { ._type = NEO4J_LIST, ._vt_off = LIST_VT_OFF,
           .items = items, .length = n };
     return *((neo4j_value_t *)(&v));
+}
+
+
+bool list_issupported(const neo4j_value_t *value, uint32_t version)
+{
+    if (version >= 2)
+    {
+        return true;
+    }
+
+    const struct neo4j_list *v = (const struct neo4j_list *)value;
+    for (unsigned int i = 0; i < v->length; ++i)
+    {
+        if (!neo4j_issupported(v->items[i], version))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -598,6 +628,27 @@ neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n)
         { ._type = NEO4J_MAP, ._vt_off = MAP_VT_OFF,
           .entries = entries, .nentries = n };
     return *((neo4j_value_t *)(&v));
+}
+
+
+bool map_issupported(const neo4j_value_t *value, uint32_t version)
+{
+    if (version >= 2)
+    {
+        return true;
+    }
+
+    const struct neo4j_map *v = (const struct neo4j_map *)value;
+    for (unsigned int i = 0; i < v->nentries; ++i)
+    {
+        const neo4j_map_entry_t *entry = &(v->entries[i]);
+        if (!neo4j_issupported(entry->key, version) ||
+                !neo4j_issupported(entry->value, version))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -1038,6 +1089,25 @@ neo4j_value_t neo4j_struct(uint8_t signature,
 }
 
 
+bool struct_issupported(const neo4j_value_t *value, uint32_t version)
+{
+    if (version >= 2)
+    {
+        return true;
+    }
+
+    const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+    for (unsigned int i = 0; i < v->nfields; ++i)
+    {
+        if (!neo4j_issupported(v->fields[i], version))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 {
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
@@ -1060,4 +1130,47 @@ bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other)
         }
     }
     return true;
+}
+
+
+// bytes
+
+neo4j_value_t neo4j_bytes(const char *u, unsigned int n)
+{
+#if UINT_MAX != UINT32_MAX
+    if (n > UINT32_MAX)
+    {
+        n = UINT32_MAX;
+    }
+#endif
+    struct neo4j_bytes v =
+        { ._type = NEO4J_BYTES, ._vt_off = BYTES_VT_OFF,
+          .bytes = u, .length = n };
+    return *((neo4j_value_t *)(&v));
+}
+
+
+bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other)
+{
+    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
+    const struct neo4j_bytes *o = (const struct neo4j_bytes *)other;
+    if (v->length != o->length)
+    {
+        return false;
+    }
+    return memcmp(v->bytes, o->bytes, v->length) == 0;
+}
+
+
+unsigned int neo4j_bytes_length(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_BYTES, 0);
+    return ((const struct neo4j_bytes *)&value)->length;
+}
+
+
+const char *neo4j_bytes_value(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_BYTES, NULL);
+    return ((const struct neo4j_bytes *)&value)->bytes;
 }

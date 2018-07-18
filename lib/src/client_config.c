@@ -99,6 +99,7 @@ neo4j_config_t *neo4j_new_config()
     config->allocator = &neo4j_std_memory_allocator;
     config->mpool_block_size = NEO4J_DEFAULT_MPOOL_BLOCK_SIZE;
     config->client_id = libneo4j_client_id();
+    config->protocol_version = NEO4J_ANY_PROTOCOL_VERSION;
     config->io_rcvbuf_size = NEO4J_DEFAULT_RCVBUF_SIZE;
     config->io_sndbuf_size = NEO4J_DEFAULT_SNDBUF_SIZE;
     config->snd_min_chunk_size = 1024;
@@ -193,6 +194,24 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id)
 const char *neo4j_config_get_client_id(const neo4j_config_t *config)
 {
     return config->client_id;
+}
+
+
+int neo4j_config_set_required_protocol_version(neo4j_config_t *config,
+        unsigned int version)
+{
+    if (version < 1 || version > 2) {
+        errno = NEO4J_PROTOCOL_VERSION_NOT_SUPPORTED;
+        return -1;
+    }
+    config->protocol_version = version;
+    return 0;
+}
+
+
+unsigned int neo4j_config_get_required_protocol_version(neo4j_config_t *config)
+{
+    return config->protocol_version;
 }
 
 

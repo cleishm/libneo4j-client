@@ -29,6 +29,7 @@
 #include "posix_iostream.h"
 #include "serialization.h"
 #include "util.h"
+#include "values.h"
 #include <assert.h>
 #include <unistd.h>
 
@@ -42,7 +43,7 @@ static neo4j_iostream_t *std_tcp_connect(
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags,
         struct neo4j_logger *logger);
 static int negotiate_protocol_version(neo4j_iostream_t *iostream,
-        uint32_t *protocol_version);
+        const neo4j_config_t *config, uint32_t *protocol_version);
 
 static bool interrupted(neo4j_connection_t *connection);
 static int session_reset(neo4j_connection_t *connection);
@@ -277,12 +278,12 @@ neo4j_connection_t *establish_connection(const char *hostname,
     }
 
     uint32_t protocol_version;
-    if (negotiate_protocol_version(iostream, &protocol_version))
+    if (negotiate_protocol_version(iostream, config, &protocol_version))
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
-    if (protocol_version != 1)
+    if (protocol_version < 1 || protocol_version > 2)
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
@@ -408,7 +409,7 @@ failure:
 
 
 int negotiate_protocol_version(neo4j_iostream_t *iostream,
-        uint32_t *protocol_version)
+        const neo4j_config_t *config, uint32_t *protocol_version)
 {
     uint8_t hello[] = { 0x60, 0x60, 0xB0, 0x17 };
     if (neo4j_ios_write_all(iostream, hello,
@@ -417,7 +418,17 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
         return -1;
     }
 
-    uint32_t supported_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t supported_versions[4] = { 0, 0, 0, 0 };
+    if (config->protocol_version <= 0)
+    {
+        supported_versions[0] = htonl(2);
+        supported_versions[1] = htonl(1);
+    }
+    else
+    {
+        supported_versions[0] = htonl(config->protocol_version);
+    }
+
     if (neo4j_ios_write_all(iostream, supported_versions,
                 sizeof(supported_versions), NULL) < 0)
     {
@@ -534,6 +545,13 @@ const char *neo4j_connection_username(const neo4j_connection_t *connection)
 bool neo4j_connection_is_secure(const neo4j_connection_t *connection)
 {
     return !(connection->insecure);
+}
+
+
+unsigned int neo4j_connection_protocol_version(
+        const neo4j_connection_t *connection)
+{
+    return connection->version;
 }
 
 

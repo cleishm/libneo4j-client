@@ -436,6 +436,7 @@ struct neo4j_connection_factory
 #define NEO4J_TLS_MALFORMED_CERTIFICATE -37
 #define NEO4J_SESSION_RESET -38
 #define NEO4J_SESSION_BUSY -39
+#define NEO4J_PROTOCOL_VERSION_NOT_SUPPORTED -40
 
 /**
  * Print the error message corresponding to an error number.
@@ -608,6 +609,15 @@ __neo4j_const
 bool neo4j_instanceof(neo4j_value_t value, neo4j_type_t type);
 
 /**
+ * Get the minimum protocol version that supports the neo4j type.
+ *
+ * @param [t] The neo4j type.
+ * @return The minimum supported protocol version.
+ */
+__neo4j_pure
+unsigned int neo4j_typeversion(neo4j_type_t t);
+
+/**
  * Get a string description of the neo4j type.
  *
  * @param [t] The neo4j type.
@@ -671,6 +681,19 @@ bool neo4j_eq(neo4j_value_t value1, neo4j_value_t value2);
  * @return `true` if the value is the null value.
  */
 #define neo4j_is_null(v) (neo4j_type(v) == NEO4J_NULL)
+
+/**
+ * Check if a neo4j value is supported at the specified protocol version.
+ *
+ * Performs a deep check of nested values, and returns false if any are of
+ * an unsupported type.
+ *
+ * @param [value] A neo4j value to be checked.
+ * @param [version] The protocol version to check against.
+ * @return `true` if the value is supported and `false` otherwise.
+ */
+__neo4j_must_check
+bool neo4j_issupported(neo4j_value_t value, unsigned int version);
 
 
 /**
@@ -1161,6 +1184,31 @@ void neo4j_config_set_client_id(neo4j_config_t *config, const char *client_id);
  */
 __neo4j_pure
 const char *neo4j_config_get_client_id(const neo4j_config_t *config);
+
+#define NEO4J_ANY_PROTOCOL_VERSION 0
+
+/**
+ * Set the required protocol version.
+ *
+ * Setting this will limit connections to only those that support the
+ * specified protocol version.
+ *
+ * @param [config] The neo4j client configuration to update.
+ * @param [version] The protocol version to use, or NEO4J_ANY_PROTOCOL_VERSION
+ *         to negotiate the best version supported by both this library and
+ *         the server.
+ * @return 0 on success, or -1 on error (errno will be set).
+ */
+int neo4j_config_set_required_protocol_version(neo4j_config_t *config,
+        unsigned int version);
+
+/**
+ * Get the required protocol version.
+ *
+ * @param [config] The neo4j client configuration.
+ * @return The required protocol version, or 0 for automatic.
+ */
+unsigned int neo4j_config_get_required_protocol_version(neo4j_config_t *config);
 
 #define NEO4J_MAXUSERNAMELEN 1023
 
@@ -1697,6 +1745,20 @@ const char *neo4j_connection_username(const neo4j_connection_t *connection);
  */
 __neo4j_pure
 bool neo4j_connection_is_secure(const neo4j_connection_t *connection);
+
+
+/**
+ * Get the protocol version in use for a connection.
+ *
+ * A specific protocol version can be requested by setting
+ * neo4j_config_set_required_protocol_version().
+ *
+ * @param [connection] The neo4j connection.
+ * @return The protocol version.
+ */
+__neo4j_pure
+unsigned int neo4j_connection_protocol_version(
+        const neo4j_connection_t *connection);
 
 
 /*

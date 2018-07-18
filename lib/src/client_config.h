@@ -34,6 +34,7 @@ struct neo4j_config
     void *basic_auth_callback_userdata;
 
     const char *client_id;
+    unsigned int protocol_version;
 
     unsigned int so_rcvbuf_size;
     unsigned int so_sndbuf_size;

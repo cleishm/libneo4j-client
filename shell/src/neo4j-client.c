@@ -61,6 +61,7 @@ const char *shortopts = "e:hi:o:p:Pu:v";
 #define COLORIZE_OPT 1011
 #define NO_COLORIZE_OPT 1012
 #define EXPORT_OPT 1013
+#define PROTO_VERSION_OPT 1014
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -73,6 +74,7 @@ static struct option longopts[] =
       { "no-colorize", no_argument, NULL, NO_COLORIZE_OPT },
       { "no-colourise", no_argument, NULL, NO_COLORIZE_OPT },
       { "insecure", no_argument, NULL, INSECURE_OPT },
+      { "protocol-version", required_argument, NULL, PROTO_VERSION_OPT },
       { "non-interactive", no_argument, NULL, NON_INTERACTIVE_OPT },
       { "username", required_argument, NULL, 'u' },
       { "password", required_argument, NULL, 'p' },
@@ -284,6 +286,18 @@ int main(int argc, char *argv[])
             break;
         case INSECURE_OPT:
             state.connect_flags |= NEO4J_INSECURE;
+            break;
+        case PROTO_VERSION_OPT:
+            {
+                int arg = atoi(optarg);
+                if (arg < 1 || neo4j_config_set_required_protocol_version(
+                        state.config, arg))
+                {
+                    fprintf(state.err, "Invalid protocol-version '%s'\n",
+                            optarg);
+                    goto cleanup;
+                }
+            }
             break;
         case NON_INTERACTIVE_OPT:
             state.interactive = false;

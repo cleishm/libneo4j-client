@@ -71,8 +71,8 @@ struct neo4j_connection
     unsigned int port;
 
     neo4j_iostream_t *iostream;
-    uint32_t version;
     bool insecure;
+    uint32_t version;
 
     uint8_t *snd_buffer;
 
