@@ -41,6 +41,7 @@ static bool list_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool map_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 static bool bytes_eq(const neo4j_value_t *value, const neo4j_value_t *other);
+static bool point_eq(const neo4j_value_t *value, const neo4j_value_t *other);
 
 
 /////////////////////////////
@@ -65,6 +66,7 @@ static const struct neo4j_type path_type = { .name = "Path" };
 static const struct neo4j_type identity_type = { .name = "Identity" };
 static const struct neo4j_type struct_type = { .name = "Struct" };
 static const struct neo4j_type bytes_type = { .name = "Bytes" };
+static const struct neo4j_type point_type = { .name = "Point" };
 
 struct neo4j_types
 {
@@ -99,7 +101,8 @@ static const struct neo4j_types neo4j_types =
     .identity_type = &identity_type,
     .struct_type = &struct_type,
     // protocol V2 types
-    .bytes_type = &bytes_type
+    .bytes_type = &bytes_type,
+    .point_type = &point_type
 };
 
 #define TYPE_OFFSET(name) \
@@ -120,6 +123,7 @@ const uint8_t NEO4J_PATH = TYPE_OFFSET(path_type);
 const uint8_t NEO4J_IDENTITY = TYPE_OFFSET(identity_type);
 const uint8_t NEO4J_STRUCT = TYPE_OFFSET(struct_type);
 const uint8_t NEO4J_BYTES = TYPE_OFFSET(bytes_type);
+const uint8_t NEO4J_POINT = TYPE_OFFSET(point_type);
 static const uint8_t _MAX_TYPE =
     (sizeof(struct neo4j_types) / sizeof(struct neo4j_type *));
 
@@ -239,6 +243,12 @@ static struct neo4j_value_vt bytes_vt =
       .issupported = supported_v2,
       .serialize = neo4j_bytes_serialize,
       .eq = bytes_eq };
+static struct neo4j_value_vt point_vt =
+    { .str = neo4j_point_str,
+      .fprint = neo4j_point_fprint,
+      .issupported = supported_v2,
+      .serialize = neo4j_point_serialize,
+      .eq = point_eq };
 
 struct neo4j_value_vts
 {
@@ -255,6 +265,7 @@ struct neo4j_value_vts
     const struct neo4j_value_vt *identity_vt;
     const struct neo4j_value_vt *struct_vt;
     const struct neo4j_value_vt *bytes_vt;
+    const struct neo4j_value_vt *point_vt;
 };
 static const struct neo4j_value_vts neo4j_value_vts =
 {
@@ -270,7 +281,8 @@ static const struct neo4j_value_vts neo4j_value_vts =
     .path_vt = &path_vt,
     .identity_vt = &identity_vt,
     .struct_vt = &struct_vt,
-    .bytes_vt = &bytes_vt
+    .bytes_vt = &bytes_vt,
+    .point_vt = &point_vt
 };
 
 #define VT_OFFSET(name) \
@@ -291,6 +303,7 @@ static const struct neo4j_value_vts neo4j_value_vts =
 #define IDENTITY_VT_OFF VT_OFFSET(identity_vt)
 #define STRUCT_VT_OFF VT_OFFSET(struct_vt)
 #define BYTES_VT_OFF VT_OFFSET(bytes_vt)
+#define POINT_VT_OFF VT_OFFSET(point_vt)
 static const uint8_t _MAX_VT_OFF =
     (sizeof(struct neo4j_value_vts) / sizeof(struct neo4j_value_vt *));
 
@@ -1182,4 +1195,96 @@ const char *neo4j_bytes_value(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_BYTES, NULL);
     return ((const struct neo4j_bytes *)&value)->bytes;
+}
+
+
+// point
+
+neo4j_value_t neo4j_2d_point(neo4j_point_data_t *data, unsigned int srid,
+        double x, double y)
+{
+    REQUIRE(data != NULL, neo4j_null);
+    data->x = x;
+    data->y = y;
+    data->z = 0;
+    struct neo4j_point v =
+            { ._type = NEO4J_POINT, ._vt_off = POINT_VT_OFF,
+              .dimensions = 2, .srid = srid, .data = data };
+    return *((neo4j_value_t *)(&v));
+}
+
+
+neo4j_value_t neo4j_3d_point(neo4j_point_data_t *data, unsigned int srid,
+        double x, double y, double z)
+{
+    REQUIRE(data != NULL, neo4j_null);
+    data->x = x;
+    data->y = y;
+    data->z = z;
+    struct neo4j_point v =
+            { ._type = NEO4J_POINT, ._vt_off = POINT_VT_OFF,
+              .dimensions = 3, .srid = srid, .data = data };
+    return *((neo4j_value_t *)(&v));
+}
+
+
+bool point_eq(const neo4j_value_t *value, const neo4j_value_t *other)
+{
+    const struct neo4j_point *v = (const struct neo4j_point *)value;
+    const struct neo4j_point *o = (const struct neo4j_point *)other;
+    if (v->dimensions != o->dimensions ||
+            v->data->x != o->data->x || v->data->y != o->data->y)
+    {
+        return false;
+    }
+    if (v->dimensions == 3 && v->data->z != o->data->z)
+    {
+        return false;
+    }
+    return true;
+}
+
+
+unsigned int neo4j_point_srid(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT, 0);
+    return ((const struct neo4j_point *)&value)->srid;
+}
+
+
+unsigned int neo4j_point_dimensions(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT, 0);
+    return ((const struct neo4j_point *)&value)->dimensions;
+}
+
+
+double neo4j_point_x(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT, 0);
+    const struct neo4j_point *v = (const struct neo4j_point *)&value;
+    assert(v->data != NULL);
+    return v->data->x;
+}
+
+
+double neo4j_point_y(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT, 0);
+    const struct neo4j_point *v = (const struct neo4j_point *)&value;
+    assert(v->data != NULL);
+    return v->data->y;
+}
+
+
+double neo4j_point_z(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT, 0);
+    const struct neo4j_point *v = (const struct neo4j_point *)&value;
+    assert(v->data != NULL);
+    if (v->dimensions < 3)
+    {
+        return 0;
+    }
+    return v->data->z;
 }

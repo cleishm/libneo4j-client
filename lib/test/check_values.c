@@ -1049,6 +1049,33 @@ START_TEST (identity_value)
 END_TEST
 
 
+START_TEST (point_value)
+{
+    neo4j_point_data_t data;
+    neo4j_value_t gps_point = neo4j_point(&data, -37.034825, 144.3167543);
+    ck_assert(neo4j_type(gps_point) == NEO4J_POINT);
+
+    char *str = neo4j_tostring(gps_point, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "point({latitude:-37.034825,longitude:144.316754})");
+
+    ck_assert_int_eq(neo4j_ntostring(gps_point, NULL, 0), 49);
+    ck_assert_int_eq(neo4j_ntostring(gps_point, buf, sizeof(buf)), 49);
+    ck_assert_str_eq(buf, "point({latitude:-37.034825,longitude:144.316754})");
+
+    neo4j_value_t c3_point = neo4j_3d_point(&data, NEO4J_CARTESIAN_3D,
+            10, 15, -5);
+    str = neo4j_tostring(c3_point, buf, sizeof(buf));
+    ck_assert_str_eq(buf, "point({x:10,y:15,z:-5})");
+
+    neo4j_value_t point_2d = neo4j_2d_point(&data, 1234, -5, 6.34);
+    ck_assert_int_eq(neo4j_fprint(point_2d, memstream), 30);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "point({x:6.34,y:-5,srid:1234})");
+}
+END_TEST
+
+
 TCase* values_tcase(void)
 {
     TCase *tc = tcase_create("values");
@@ -1086,5 +1113,6 @@ TCase* values_tcase(void)
     tcase_add_test(tc, identity_value);
     tcase_add_test(tc, struct_value);
     tcase_add_test(tc, struct_eq);
+    tcase_add_test(tc, point_value);
     return tc;
 }

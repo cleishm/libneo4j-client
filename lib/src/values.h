@@ -133,10 +133,12 @@ struct neo4j_map
 ASSERT_VALUE_ALIGNMENT(struct neo4j_map);
 
 
-#define NEO4J_NODE_SIGNATURE 0x4E
-#define NEO4J_REL_SIGNATURE 0x52
-#define NEO4J_PATH_SIGNATURE 0x50
-#define NEO4J_UNBOUND_REL_SIGNATURE 0x72
+#define NEO4J_NODE_SIGNATURE 0x4E // 'N'
+#define NEO4J_REL_SIGNATURE 0x52 // 'R'
+#define NEO4J_UNBOUND_REL_SIGNATURE 0x72 // 'r'
+#define NEO4J_PATH_SIGNATURE 0x50 // 'P'
+#define NEO4J_2DPOINT_SIGNATURE 0x58 // 'X'
+#define NEO4J_3DPOINT_SIGNATURE 0x59 // 'Y'
 
 struct neo4j_struct
 {
@@ -152,6 +154,20 @@ struct neo4j_struct
     };
 };
 ASSERT_VALUE_ALIGNMENT(struct neo4j_struct);
+
+
+struct neo4j_point
+{
+    uint8_t _vt_off;
+    uint8_t _type;
+    uint16_t dimensions;
+    uint32_t srid;
+    union {
+        const neo4j_point_data_t *data;
+        union _neo4j_value_data _pad1;
+    };
+};
+ASSERT_VALUE_ALIGNMENT(struct neo4j_point);
 
 
 /**

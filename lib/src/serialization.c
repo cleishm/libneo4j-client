@@ -300,6 +300,40 @@ int neo4j_bytes_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 }
 
 
+/* point */
+
+int neo4j_point_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_POINT);
+    const struct neo4j_point *v = (const struct neo4j_point *)value;
+    REQUIRE(v->data != NULL, -1);
+
+    uint8_t signature;
+    switch (v->dimensions)
+    {
+    case 2:
+        signature = NEO4J_2DPOINT_SIGNATURE;
+        break;
+    case 3:
+        signature = NEO4J_3DPOINT_SIGNATURE;
+        break;
+    default:
+        return -1;
+    }
+
+    neo4j_value_t fields[4] = {
+        neo4j_int(v->srid),
+        neo4j_float(v->data->x),
+        neo4j_float(v->data->y),
+        neo4j_float(v->data->z)
+    };
+
+    return write_struct(signature, v->dimensions + 1, fields, stream);
+}
+
+
 int write_struct(uint8_t signature, uint16_t nfields,
         const neo4j_value_t *fields, neo4j_iostream_t *stream)
 {

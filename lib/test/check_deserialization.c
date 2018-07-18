@@ -1031,6 +1031,53 @@ START_TEST (deserialize_unbound_relationship)
 END_TEST
 
 
+START_TEST (deserialize_point2d)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x03, 0x58, 0x2A, 0xC1, 0xBF, 0xF1, 0x99,
+              0x99, 0x99, 0x99, 0x99, 0x9A, 0xC1, 0x3F, 0xF1,
+              0x99, 0x99, 0x99, 0x99, 0x99, 0x9A };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, 0);
+    ck_assert_int_eq(neo4j_type(value), NEO4J_POINT);
+
+    ck_assert_int_eq(neo4j_point_srid(value), 42);
+    ck_assert_int_eq(neo4j_point_dimensions(value), 2);
+    ck_assert(neo4j_point_x(value) == -1.1);
+    ck_assert(neo4j_point_y(value) == 1.1);
+    ck_assert(neo4j_point_z(value) == 0);
+}
+END_TEST
+
+
+START_TEST (deserialize_point3d)
+{
+    uint8_t bytes[] =
+            { 0xDC, 0x04, 0x59, 0x2A, 0xC1, 0x3F, 0xF1, 0x99,
+              0x99, 0x99, 0x99, 0x99, 0x9A, 0xC1, 0xBF, 0xF1,
+              0x99, 0x99, 0x99, 0x99, 0x99, 0x9A, 0xC1, 0xBF,
+              0xF1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9A };
+
+    rb_append(rb, bytes, sizeof(bytes));
+
+    neo4j_value_t value;
+    int n = neo4j_deserialize(ios, &mpool, &value);
+    ck_assert_int_eq(n, 0);
+    ck_assert_int_eq(neo4j_type(value), NEO4J_POINT);
+
+    ck_assert_int_eq(neo4j_point_srid(value), 42);
+    ck_assert_int_eq(neo4j_point_dimensions(value), 3);
+    ck_assert(neo4j_point_x(value) == 1.1);
+    ck_assert(neo4j_point_y(value) == -1.1);
+    ck_assert(neo4j_point_z(value) == -1.1);
+}
+END_TEST
+
+
 TCase* deserialization_tcase(void)
 {
     TCase *tc = tcase_create("deserialization");
@@ -1066,5 +1113,7 @@ TCase* deserialization_tcase(void)
     tcase_add_test(tc, deserialize_relationship);
     tcase_add_test(tc, deserialize_path);
     tcase_add_test(tc, deserialize_unbound_relationship);
+    tcase_add_test(tc, deserialize_point2d);
+    tcase_add_test(tc, deserialize_point3d);
     return tc;
 }

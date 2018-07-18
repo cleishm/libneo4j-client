@@ -19,7 +19,9 @@
 #include "util.h"
 #include "values.h"
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
+#include <float.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -34,6 +36,7 @@ static size_t list_str(char *buf, size_t n, const neo4j_value_t *values,
         unsigned int nvalues);
 static ssize_t list_fprint(const neo4j_value_t *values, unsigned int nvalues,
         FILE *stream);
+static size_t format_double(char *buf, size_t n, double dbl);
 
 
 /* null */
@@ -999,4 +1002,129 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
         return -1;
     }
     return ++l;
+}
+
+
+/* point */
+
+size_t neo4j_point_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_POINT);
+    const struct neo4j_point *v = (const struct neo4j_point *)value;
+
+    char x[DBL_MAX_10_EXP];
+    char y[DBL_MAX_10_EXP];
+    format_double(x, sizeof(x), v->data->x);
+    format_double(y, sizeof(y), v->data->y);
+
+    if (v->dimensions == 3)
+    {
+        char z[DBL_MAX_10_EXP];
+        format_double(z, sizeof(z), v->data->z);
+
+        if (v->srid == NEO4J_WGS84_3D)
+        {
+            return snprintf(buf, n,
+                    "point({latitude:%s,longitude:%s,height:%s})", y, x, z);
+        }
+        else if (v->srid == NEO4J_CARTESIAN_3D)
+        {
+            return snprintf(buf, n, "point({x:%s,y:%s,z:%s})", x, y, z);
+        }
+        else
+        {
+            return snprintf(buf, n, "point({x:%s,y:%s,z:%s,srid:%d})", x, y, z,
+                    v->srid);
+        }
+    }
+    else
+    {
+        assert(v->dimensions == 2);
+        if (v->srid == NEO4J_WGS84)
+        {
+            return snprintf(buf, n, "point({latitude:%s,longitude:%s})", y, x);
+        }
+        else if (v->srid == NEO4J_CARTESIAN)
+        {
+            return snprintf(buf, n, "point({x:%s,y:%s})", x, y);
+        }
+        else
+        {
+            return snprintf(buf, n, "point({x:%s,y:%s,srid:%d})", x, y,
+                    v->srid);
+        }
+    }
+}
+
+
+ssize_t neo4j_point_fprint(const neo4j_value_t *value, FILE *stream)
+{
+    REQUIRE(value != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_POINT);
+    const struct neo4j_point *v = (const struct neo4j_point *)value;
+
+    char x[DBL_MAX_10_EXP];
+    char y[DBL_MAX_10_EXP];
+    format_double(x, sizeof(x), v->data->x);
+    format_double(y, sizeof(y), v->data->y);
+
+    if (v->dimensions == 3)
+    {
+        char z[DBL_MAX_10_EXP];
+        format_double(z, sizeof(z), v->data->z);
+
+        if (v->srid == NEO4J_WGS84_3D)
+        {
+            return fprintf(stream,
+                    "point({latitude:%s,longitude:%s,height:%s})", y, x, z);
+        }
+        else if (v->srid == NEO4J_CARTESIAN_3D)
+        {
+            return fprintf(stream, "point({x:%s,y:%s,z:%s})", y, x, z);
+        }
+        else
+        {
+            return fprintf(stream, "point({x:%s,y:%s,z:%s,srid:%d})",
+                    y, x, z, v->srid);
+        }
+    }
+    else
+    {
+        assert(v->dimensions == 2);
+        if (v->srid == NEO4J_WGS84)
+        {
+            return fprintf(stream, "point({latitude:%s,longitude:%s})", y, x);
+        }
+        else if (v->srid == NEO4J_CARTESIAN)
+        {
+            return fprintf(stream, "point({x:%s,y:%s})", y, x);
+        }
+        else
+        {
+            return fprintf(stream, "point({x:%s,y:%s,srid:%d})", y, x, v->srid);
+        }
+    }
+}
+
+
+size_t format_double(char *buf, size_t n, double dbl)
+{
+    size_t l = snprintf(buf, n, "%f", dbl);
+    if (l >= n)
+    {
+        l = strlen(buf);
+    }
+    while (l > 0 && buf[l-1] == '0')
+    {
+        buf[l-1] = '\0';
+        --l;
+    }
+    if (l > 0 && !isdigit(buf[l-1]))
+    {
+        buf[l-1] = '\0';
+        --l;
+    }
+    return l;
 }

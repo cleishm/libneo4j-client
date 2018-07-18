@@ -43,5 +43,6 @@ int neo4j_map_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 int neo4j_struct_serialize(const neo4j_value_t *value,
         neo4j_iostream_t *stream);
 int neo4j_bytes_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
+int neo4j_point_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream);
 
 #endif/*NEO4J_SERIALIZATION_H*/

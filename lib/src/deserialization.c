@@ -338,6 +338,8 @@ STRUCT_DESERIALIZER_FUNC_DEF(node_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(rel_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(path_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(unbound_rel_deserialize);
+STRUCT_DESERIALIZER_FUNC_DEF(point2d_deserialize);
+STRUCT_DESERIALIZER_FUNC_DEF(point3d_deserialize);
 
 static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
     { NULL,                              // 0x00
@@ -428,8 +430,8 @@ static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
       NULL,                              // 0x55
       NULL,                              // 0x56
       NULL,                              // 0x57
-      NULL,                              // 0x58
-      NULL,                              // 0x59
+      point2d_deserialize,               // 0x58
+      point3d_deserialize,               // 0x59
       NULL,                              // 0x5a
       NULL,                              // 0x5b
       NULL,                              // 0x5c
@@ -1169,5 +1171,57 @@ int unbound_rel_deserialize(uint16_t nfields, neo4j_value_t *fields,
         return -1;
     }
     *value = neo4j_unbound_relationship(fields);
+    return 0;
+}
+
+
+// rather than allocate point data, re-use the fields buffer after
+// deserialization
+static_assert(2*sizeof(neo4j_value_t) > sizeof(neo4j_point_data_t),
+        "point data should be smaller than 2 values");
+int point2d_deserialize(uint16_t nfields, neo4j_value_t *fields,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_FLOAT ||
+            neo4j_type(fields[2]) != NEO4J_FLOAT)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long srid = neo4j_int_value(fields[0]);
+    if (srid < 0 || srid > UINT_MAX)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    double x = neo4j_float_value(fields[1]);
+    double y = neo4j_float_value(fields[2]);
+    *value = neo4j_2d_point((neo4j_point_data_t *)fields, srid, x, y);
+    return 0;
+}
+
+
+int point3d_deserialize(uint16_t nfields, neo4j_value_t *fields,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    if (nfields != 4 || neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_FLOAT ||
+            neo4j_type(fields[2]) != NEO4J_FLOAT ||
+            neo4j_type(fields[3]) != NEO4J_FLOAT)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long srid = neo4j_int_value(fields[0]);
+    if (srid < 0 || srid > UINT_MAX)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    double x = neo4j_float_value(fields[1]);
+    double y = neo4j_float_value(fields[2]);
+    double z = neo4j_float_value(fields[3]);
+    *value = neo4j_3d_point((neo4j_point_data_t *)fields, srid, x, y, z);
     return 0;
 }

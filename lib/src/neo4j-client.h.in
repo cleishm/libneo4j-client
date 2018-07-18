@@ -558,6 +558,8 @@ extern const neo4j_type_t NEO4J_PATH;
 /** The neo4j identity value type. */
 extern const neo4j_type_t NEO4J_IDENTITY;
 extern const neo4j_type_t NEO4J_STRUCT;
+/** The neo4j point value type. */
+extern const neo4j_type_t NEO4J_POINT;
 
 union _neo4j_value_data
 {
@@ -575,17 +577,6 @@ struct neo4j_value
     uint16_t _pad1;
     uint32_t _pad2;
     union _neo4j_value_data _vdata;
-};
-
-
-/**
- * An entry in a neo4j map.
- */
-typedef struct neo4j_map_entry neo4j_map_entry_t;
-struct neo4j_map_entry
-{
-    neo4j_value_t key;
-    neo4j_value_t value;
 };
 
 
@@ -913,6 +904,16 @@ neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index);
 
 
 /**
+ * An entry in a neo4j map.
+ */
+typedef struct neo4j_map_entry neo4j_map_entry_t;
+struct neo4j_map_entry
+{
+    neo4j_value_t key;
+    neo4j_value_t value;
+};
+
+/**
  * Construct a neo4j value encoding a map.
  *
  * @param [entries] An array of neo4j map entries. This pointer must remain
@@ -1124,6 +1125,274 @@ neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
 __neo4j_pure
 neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
         unsigned int hops, bool *forward);
+
+
+#define NEO4J_WGS84 4326
+#define NEO4J_WGS84_3D 4979
+#define NEO4J_CARTESIAN 7203
+#define NEO4J_CARTESIAN_3D 9157
+
+/**
+ * Storage data for a neo4j point.
+ */
+typedef struct neo4j_point_data neo4j_point_data_t;
+struct neo4j_point_data
+{
+    double x;
+    double y;
+    double z;
+};
+
+/**
+ * @fn neo4j_value_t neo4j_point(double latitude, double longitude)
+ * @brief Construct a neo4j value encoding a 2D point in the WGS-84
+ *         coordinate system.
+ *
+ * Equivalent to neo4j_wgs84_2d_point().
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [latitude] The latitude coordinate.
+ * @param [longitude] The longitude coordinate.
+ * @return A neo4j value encoding the point.
+ */
+#define neo4j_point(data, latitude, longitude) \
+        (neo4j_2d_point(data, NEO4J_WGS84, longitude, latitude))
+
+/**
+ * @fn neo4j_value_t neo4j_wgs84_2d_point(neo4j_point_data_t *data,
+ *         double latitude, double longitude)
+ * @brief Construct a neo4j value encoding a 2D point in the WGS-84 coordinate
+ *         system.
+ *
+ * Equivalent to neo4j_2d_point() using the NEO4J_WGS84 srid, the longitude
+ * for the `x` coordinate, and the latitude for the `y` coordinate.
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [latitude] The latitude coordinate.
+ * @param [longitude] The longitude coordinate.
+ * @return A neo4j value encoding the point.
+ */
+#define neo4j_wgs84_2d_point(data, latitude, longitude) \
+        (neo4j_2d_point(data, NEO4J_WGS84, longitude, latitude))
+
+/**
+ * @fn neo4j_value_t neo4j_cartesian_2d_point(neo4j_point_data_t *data,
+ *         double x, double y)
+ * @brief Construct a neo4j value encoding a 2D point using a cartesian
+ *         coordinate system.
+ *
+ * Equivalent to neo4j_2d_point() using the NEO4J_CARTESIAN srid.
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [x] The x coordinate.
+ * @param [y] The y coordinate.
+ * @return A neo4j value encoding the point.
+ */
+#define neo4j_cartesian_2d_point(data, x, y) \
+        (neo4j_2d_point(data, NEO4J_CARTESIAN, x, y))
+
+/**
+ * Construct a neo4j value encoding a 2D point.
+ *
+ * The coordinate system for the point can be specified using a
+ * spatial reference system identifier. Neo4j server only supports
+ * WGS-84 and Generic Cartesian, which have SRIDs defined by NEO4J_WGS84
+ * and NEO4J_CARTESIAN respectively.
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [srid] The spatial reference system ID for the desired coordinate
+ *         system.
+ * @param [x] The x coordinate.
+ * @param [y] The y coordinate.
+ * @return A neo4j value encoding the point.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_2d_point(neo4j_point_data_t *data, unsigned int srid,
+        double x, double y);
+
+
+/**
+ * @fn neo4j_value_t neo4j_wgs84_3d_point(neo4j_point_data_t *data,
+ *         double latitude, double longitude, double height)
+ * @brief Construct a neo4j value encoding a 3D point in the WGS-84 coordinate
+ *         system.
+ *
+ * Equivalent to neo4j_3d_point() using the NEO4J_WGS84_3D srid, the longitude
+ * for the `x` coordinate, and the latitude for the `y` coordinate.
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [latitude] The latitude coordinate.
+ * @param [longitude] The longitude coordinate.
+ * @return A neo4j value encoding the point.
+ */
+#define neo4j_wgs84_3d_point(data, latitude, longitude, height) \
+        (neo4j_ld_point(data, NEO4J_WGS84_3D, longitude, latitude, height))
+
+/**
+ * @fn neo4j_value_t neo4j_cartesian_3d_point(neo4j_point_data_t *data,
+ *         double x, double y, double z)
+ * @brief Construct a neo4j value encoding a kD point using a cartesian
+ *         coordinate system.
+ *
+ * Equivalent to neo4j_3d_point() using the NEO4J_CARTESIAN_3D srid.
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [x] The x coordinate.
+ * @param [y] The y coordinate.
+ * @return A neo4j value encoding the point.
+ */
+#define neo4j_cartesian_3d_point(data, x, y, z) \
+        (neo4j_3d_point(data, NEO4J_CARTESIAN_3D, x, y, z))
+
+/**
+ * Construct a neo4j value encoding a 3D point.
+ *
+ * The coordinate system for the point can be specified using a
+ * spatial reference system identifier. Neo4j server only supports
+ * WGS-84 and Generic Cartesian, which have SRIDs defined by NEO4J_WGS84_3D
+ * and NEO4J_CARTESIAN_3D respectively.
+ *
+ * @attention Point values can only be used in statement arguments sent over
+ *         connections established using protocol version 2 or greater. See
+ *         neo4j_connection_protocol_version().
+ *
+ * @param [data] Storage data for the point value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [srid] The spatial reference system ID for the desired coordinate
+ *         system.
+ * @param [x] The x coordinate.
+ * @param [y] The y coordinate.
+ * @param [z] The z coordinate.
+ * @return A neo4j value encoding the point.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_3d_point(neo4j_point_data_t *data, unsigned int srid,
+        double x, double y, double z);
+
+
+/**
+ * Get the spatial reference system identifier (SRID) of a point.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The spatial reference system identifier (SRID).
+ */
+__neo4j_const
+unsigned int neo4j_point_srid(neo4j_value_t value);
+
+/**
+ * Get the number of dimensions for a point.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of dimensions (either 2 or 3).
+ */
+__neo4j_const
+unsigned int neo4j_point_dimensions(neo4j_value_t value);
+
+/**
+ * @fn double neo4j_point_longitude(neo4j_value_t value)
+ * @brief Get the longitude (x coordinate) of a point.
+ *
+ * Equivalent to neo4j_point_x().
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The longitude.
+ */
+#define neo4j_point_longitude(value) neo4j_point_x(value)
+
+/**
+ * Get the x coordinate of a point.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The x coordinate.
+ */
+__neo4j_pure
+double neo4j_point_x(neo4j_value_t value);
+
+/**
+ * @fn double neo4j_point_latitude(neo4j_value_t value)
+ * @brief Get the latitude (y coordinate) of a point.
+ *
+ * Equivalent to neo4j_point_y().
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The latitude.
+ */
+#define neo4j_point_latitude(value) neo4j_point_y(value)
+
+/**
+ * Get the y coordinate of a point.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The y coordinate.
+ */
+__neo4j_pure
+double neo4j_point_y(neo4j_value_t value);
+
+/**
+ * @fn double neo4j_point_height(neo4j_value_t value)
+ * @brief Get the height (z coordinate) of a point.
+ *
+ * Equivalent to neo4j_point_z().
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The height (0 if the value is a 2D point).
+ */
+#define neo4j_point_height(value) neo4j_point_z(value)
+
+/**
+ * Get the z coordinate of a point.
+ *
+ * Note that the result is undefined if the value is not of type NEO4J_POINT.
+ *
+ * @param [value] The neo4j value.
+ * @return The z coordinate (0 if the value is a 2D point)..
+ */
+__neo4j_pure
+double neo4j_point_z(neo4j_value_t value);
 
 
 /*
