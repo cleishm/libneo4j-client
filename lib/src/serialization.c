@@ -56,6 +56,8 @@ struct length_header
 };
 
 
+static int write_struct(uint8_t signature, uint16_t nfields,
+        const neo4j_value_t *fields, neo4j_iostream_t *stream);
 static int build_header(struct iovec *iov, struct length_header *header,
         size_t length, struct markers *markers);
 
@@ -194,26 +196,6 @@ int neo4j_string_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 }
 
 
-/* bytes */
-
-int neo4j_bytes_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
-{
-    REQUIRE(value, -1);
-    REQUIRE(stream, -1);
-    assert(neo4j_type(*value) == NEO4J_BYTES);
-    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
-
-    struct iovec iov[3];
-    struct length_header header;
-    int iovcnt = build_header(iov, &header, v->length, &bytes_markers);
-    iov[iovcnt].iov_base = (void *)(uintptr_t)(v->bytes);
-    iov[iovcnt].iov_len = v->length;
-    iovcnt++;
-
-    return neo4j_ios_writev_all(stream, iov, iovcnt, NULL);
-}
-
-
 /* list */
 
 int neo4j_list_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
@@ -289,18 +271,45 @@ int neo4j_map_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 int neo4j_struct_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 {
     REQUIRE(value != NULL, -1);
-    REQUIRE(stream != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_STRUCT ||
             neo4j_type(*value) == NEO4J_NODE ||
             neo4j_type(*value) == NEO4J_RELATIONSHIP ||
             neo4j_type(*value) == NEO4J_PATH);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    REQUIRE(v->nfields == 0 || v->fields != NULL, -1);
+    return write_struct(v->signature, v->nfields, v->fields, stream);
+}
+
+
+/* bytes */
+
+int neo4j_bytes_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
+{
+    REQUIRE(value, -1);
+    REQUIRE(stream, -1);
+    assert(neo4j_type(*value) == NEO4J_BYTES);
+    const struct neo4j_bytes *v = (const struct neo4j_bytes *)value;
 
     struct iovec iov[3];
     struct length_header header;
-    int iovcnt = build_header(iov, &header, v->nfields, &structure_markers);
-    iov[iovcnt].iov_base = (void *)(uintptr_t)(&(v->signature));
+    int iovcnt = build_header(iov, &header, v->length, &bytes_markers);
+    iov[iovcnt].iov_base = (void *)(uintptr_t)(v->bytes);
+    iov[iovcnt].iov_len = v->length;
+    iovcnt++;
+
+    return neo4j_ios_writev_all(stream, iov, iovcnt, NULL);
+}
+
+
+int write_struct(uint8_t signature, uint16_t nfields,
+        const neo4j_value_t *fields, neo4j_iostream_t *stream)
+{
+    REQUIRE(nfields == 0 || fields != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+
+    struct iovec iov[3];
+    struct length_header header;
+    int iovcnt = build_header(iov, &header, nfields, &structure_markers);
+    iov[iovcnt].iov_base = (void *)(uintptr_t)(&signature);
     iov[iovcnt].iov_len = 1;
     iovcnt++;
 
@@ -309,9 +318,9 @@ int neo4j_struct_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
         return -1;
     }
 
-    for (int i = 0; i < v->nfields; ++i)
+    for (int i = 0; i < nfields; ++i)
     {
-        if (neo4j_serialize(v->fields[i], stream))
+        if (neo4j_serialize(fields[i], stream))
         {
             return -1;
         }

@@ -478,6 +478,8 @@ double neo4j_float_value(neo4j_value_t value)
 
 neo4j_value_t neo4j_ustring(const char *u, unsigned int n)
 {
+    REQUIRE(n == 0 || u != NULL, neo4j_null);
+
 #if UINT_MAX != UINT32_MAX
     if (n > UINT32_MAX)
     {
@@ -532,6 +534,8 @@ char *neo4j_string_value(neo4j_value_t value, char *buffer, size_t length)
 
 neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n)
 {
+    REQUIRE(n == 0 || items != NULL, neo4j_null);
+
 #if UINT_MAX != UINT32_MAX
     if (n > UINT32_MAX)
     {
@@ -609,6 +613,8 @@ neo4j_value_t neo4j_list_get(neo4j_value_t value, unsigned int index)
 
 neo4j_value_t neo4j_map(const neo4j_map_entry_t *entries, unsigned int n)
 {
+    REQUIRE(n == 0 || entries != NULL, neo4j_null);
+
 #if UINT_MAX != UINT32_MAX
     if (n > UINT32_MAX)
     {
@@ -1082,6 +1088,7 @@ neo4j_value_t neo4j_identity(long long value)
 neo4j_value_t neo4j_struct(uint8_t signature,
         const neo4j_value_t *fields, uint16_t n)
 {
+    REQUIRE(n == 0 || fields != NULL, neo4j_null);
     struct neo4j_struct v =
             { ._type = NEO4J_STRUCT, ._vt_off = STRUCT_VT_OFF,
               .signature = signature, .fields = fields, .nfields = n };
@@ -1137,6 +1144,8 @@ bool struct_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 
 neo4j_value_t neo4j_bytes(const char *u, unsigned int n)
 {
+    REQUIRE(n == 0 || u != NULL, neo4j_null);
+
 #if UINT_MAX != UINT32_MAX
     if (n > UINT32_MAX)
     {
