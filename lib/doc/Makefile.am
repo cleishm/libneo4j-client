@@ -13,4 +13,4 @@ libneo4j-client.tag: .deps/neo4j-client.h
 EXTRA_DIST = doxygen.cfg
 
 clean-local:
-	rm -rf .deps
+	rm -rf .deps html latex libneo4j-client.tag libneo4j-client.pdf
