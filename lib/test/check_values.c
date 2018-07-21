@@ -1076,6 +1076,39 @@ START_TEST (point_value)
 END_TEST
 
 
+START_TEST (local_datetime_value)
+{
+    neo4j_value_t value = neo4j_local_datetime(1929, 1, 15, 10, 15, 45,
+            -2000009870);
+    ck_assert(neo4j_type(value) == NEO4J_LOCAL_DATETIME);
+
+    ck_assert_int_eq(neo4j_local_datetime_get_epoch_seconds(value),
+            -1292593458);
+    ck_assert_int_eq(neo4j_local_datetime_get_nanoseconds(value), 999990130);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "1929-01-15T10:15:42.99999013");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 28);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 28);
+    ck_assert_str_eq(buf, "1929-01-15T10:15:42.99999013");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 28);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "1929-01-15T10:15:42.99999013");
+
+    value = neo4j_local_datetime_from_epoch(10, 567);
+    ck_assert_int_eq(neo4j_local_datetime_get_epoch_seconds(value), 10);
+    ck_assert_int_eq(neo4j_local_datetime_get_nanoseconds(value), 567);
+
+    str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "1970-01-01T00:00:10.000000567");
+}
+END_TEST
+
+
 TCase* values_tcase(void)
 {
     TCase *tc = tcase_create("values");
@@ -1114,5 +1147,6 @@ TCase* values_tcase(void)
     tcase_add_test(tc, struct_value);
     tcase_add_test(tc, struct_eq);
     tcase_add_test(tc, point_value);
+    tcase_add_test(tc, local_datetime_value);
     return tc;
 }

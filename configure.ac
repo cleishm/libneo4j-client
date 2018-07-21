@@ -152,6 +152,9 @@ AC_CHECK_DECL([MSG_NOSIGNAL],[AC_DEFINE([HAVE_MSG_NOSIGNAL],[1],
   ])
 
 
+AC_CHECK_FUNCS([timegm gmtime_r clock_gettime],[],[])
+
+
 dnl Threading
 AX_THREAD_LOCAL()
 AX_PTHREAD([has_pthreads=yes])

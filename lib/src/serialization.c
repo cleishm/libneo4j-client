@@ -334,6 +334,25 @@ int neo4j_point_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 }
 
 
+/* local datetime */
+
+int neo4j_local_datetime_serialize(const neo4j_value_t *value,
+        neo4j_iostream_t *stream)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_LOCAL_DATETIME);
+    const struct neo4j_local_datetime *v =
+            (const struct neo4j_local_datetime *)value;
+
+    neo4j_value_t fields[2] = {
+        neo4j_int(v->epoch_seconds),
+        neo4j_int(v->nanoseconds)
+    };
+    return write_struct(NEO4J_LOCAL_DATETIME_SIGNATURE, 2, fields, stream);
+}
+
+
 int write_struct(uint8_t signature, uint16_t nfields,
         const neo4j_value_t *fields, neo4j_iostream_t *stream)
 {

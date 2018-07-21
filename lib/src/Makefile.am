@@ -45,6 +45,8 @@ libneo4j_client_la_SOURCES = \
 	serialization.h \
 	thread.c \
 	thread.h \
+	timegm.c \
+	timegm.h \
 	tofu.c \
 	tofu.h \
 	u8.c \
