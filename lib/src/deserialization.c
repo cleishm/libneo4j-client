@@ -342,6 +342,7 @@ STRUCT_DESERIALIZER_FUNC_DEF(point2d_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(point3d_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(local_datetime_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(offset_datetime_deserialize);
+STRUCT_DESERIALIZER_FUNC_DEF(zoned_datetime_deserialize);
 
 static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
     { NULL,                              // 0x00
@@ -446,7 +447,7 @@ static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
       NULL,                              // 0x63
       local_datetime_deserialize,        // 0x64
       NULL,                              // 0x65
-      NULL,                              // 0x66
+      zoned_datetime_deserialize,        // 0x66
       NULL,                              // 0x67
       NULL,                              // 0x68
       NULL,                              // 0x69
@@ -1275,5 +1276,40 @@ int offset_datetime_deserialize(uint16_t nfields, neo4j_value_t *fields,
     }
     *value = neo4j_offset_datetime_from_epoch(epoch_seconds, nanoseconds,
             offset_seconds);
+    return 0;
+}
+
+
+// rather than allocate zone data, re-use the fields buffer after
+// deserialization
+static_assert(3*sizeof(neo4j_value_t) > sizeof(neo4j_point_data_t),
+        "zone data should be smaller than 3 values");
+int zoned_datetime_deserialize(uint16_t nfields, neo4j_value_t *fields,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_INT ||
+            neo4j_type(fields[2]) != NEO4J_STRING)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long epoch_seconds = neo4j_int_value(fields[0]);
+    long long nanoseconds = neo4j_int_value(fields[1]);
+    if (nanoseconds < INT_MIN || nanoseconds > INT_MAX)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+
+    size_t zoneid_length = neo4j_string_length(fields[2]);
+    char *zoneid = neo4j_mpool_alloc(pool, zoneid_length + 1);
+    if (zoneid == NULL)
+    {
+        return -1;
+    }
+    neo4j_string_value(fields[2], zoneid, zoneid_length + 1);
+    *value = neo4j_zoned_datetime_from_epoch((neo4j_zone_data_t *)fields,
+            epoch_seconds, nanoseconds, zoneid);
     return 0;
 }

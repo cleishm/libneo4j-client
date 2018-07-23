@@ -565,6 +565,8 @@ extern const neo4j_type_t NEO4J_POINT;
 extern const neo4j_type_t NEO4J_LOCAL_DATETIME;
 /** The neo4j offset datetime value type. */
 extern const neo4j_type_t NEO4J_OFFSET_DATETIME;
+/** The neo4j zoned datetime value type. */
+extern const neo4j_type_t NEO4J_ZONED_DATETIME;
 
 union _neo4j_value_data
 {
@@ -1601,6 +1603,139 @@ int neo4j_offset_datetime_get_nanoseconds(neo4j_value_t value);
  */
 __neo4j_const
 int neo4j_offset_datetime_get_offset_seconds(neo4j_value_t value);
+
+
+/**
+ * Storage data for a neo4j datetime zone.
+ */
+typedef struct neo4j_zone_data neo4j_zone_data_t;
+struct neo4j_zone_data
+{
+    // When using a zone id for the timezone, the value storage will be a
+    // pointer to this structure and the epoch seconds will be stored here
+    // instead.
+    int64_t epoch_seconds;
+    const char *zoneid;
+};
+
+/**
+ * Construct a neo4j value encoding a zoned datetime (with a named zone).
+ *
+ * @param [data] Storage data for the datetime value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [year] The year.
+ * @param [month] The month (1 to 12).
+ * @param [day_of_month] The day of the month (1 to 31).
+ * @param [hour] The hour (0 to 23).
+ * @param [minute] The minute (0 to 59).
+ * @param [seconds] The seconds of the minute (0 to 59).
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [zoneid] The string zone_id (e.g. "Australia/Melbourne"). The pointer
+ *         must remain valid for the lifetime of the neo4j value.
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_zoned_datetime(neo4j_zone_data_t * restrict data, int year,
+        int month, int day_of_month, int hour, int minute, int seconds,
+        int nanoseconds, const char * restrict zoneid);
+
+/**
+ * Convert a `struct tm` to an zoned datetime (with a named zone).
+ *
+ * @param [data] Storage data for the datetime value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [tm] A pointer to a `struct tm`.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [zoneid] The string zone_id (e.g. "Australia/Melbourne"). The pointer
+ *         must remain valid for the lifetime of the neo4j value.
+ * @return The neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_tm_to_zoned_datetime(neo4j_zone_data_t * restrict data,
+        const struct tm * restrict tm, int nanoseconds,
+        const char * restrict zoneid);
+
+/**
+ * Construct a neo4j value encoding a zoned datetime (with a named zone).
+ *
+ * Uses the system clock to determine the current time.
+ *
+ * @param [data] Storage data for the datetime value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [zoneid] The string zone_id (e.g. "Australia/Melbourne"). The pointer
+ *         must remain valid for the lifetime of the neo4j value.
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_zoned_datetime_now(neo4j_zone_data_t * restrict data,
+        const char * restrict zoneid);
+
+/**
+ * Construct a neo4j value encoding a zoned datetime (with a named zone).
+ *
+ * @param [data] Storage data for the datetime value. The pointer must remain
+ *         valid for the lifetime of the neo4j value.
+ * @param [epoch_seconds] The seconds since 1970-01-01T00:00:00.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [zoneid] The string zone_id (e.g. "Australia/Melbourne"). The pointer
+ *         must remain valid for the lifetime of the neo4j value.
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_zoned_datetime_from_epoch(neo4j_zone_data_t * restrict data,
+        long long epoch_seconds, int nanoseconds, const char * restrict zoneid);
+
+/**
+ * Get the number of seconds since the epoch for a zoned datetime.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_ZONED_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of seconds since 1970-01-01T00:00:00.
+ */
+__neo4j_pure
+long long neo4j_zoned_datetime_get_epoch_seconds(neo4j_value_t value);
+
+/**
+ * Convert an zoned datetime to a `struct tm`.
+ *
+ * The fields `tm_year`, `tm_mon`, `tm_mday`, `tm_wday`, `tm_yday`, `tm_hour`,
+ * `tm_min` and `tm_sec` of the `struct tm` are guaranteed to be set.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_ZONED_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @param [tm] A pointer to a `struct tm`.
+ * @return A pointer to the provided `struct tm`.
+ */
+__neo4j_pure
+struct tm *neo4j_zoned_datetime_to_tm(neo4j_value_t value, struct tm *tm);
+
+/**
+ * Get the number of nanoseconds for an zoned datetime.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_ZONED_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of nanoseconds.
+ */
+__neo4j_const
+int neo4j_zoned_datetime_get_nanoseconds(neo4j_value_t value);
+
+/**
+ * Get the zoneid for a zoned datetime.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_ZONED_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The zoneid.
+ */
+__neo4j_pure
+const char *neo4j_zoned_datetime_get_zoneid(neo4j_value_t value);
 
 
 /*

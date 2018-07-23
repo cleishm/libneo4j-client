@@ -1313,6 +1313,84 @@ ssize_t neo4j_offset_datetime_fprint(const neo4j_value_t *value, FILE *stream)
 }
 
 
+/* zoned datetime */
+
+size_t neo4j_zoned_datetime_str(const neo4j_value_t * restrict value,
+        char * restrict buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_ZONED_DATETIME);
+    const struct neo4j_zoned_datetime *v =
+            (const struct neo4j_zoned_datetime *)value;
+    assert(v->data != NULL);
+
+    if (v->nanoseconds > 999999999)
+    {
+        return snprintf(buf, n, "<invalid date nsec %d>", v->nanoseconds);
+    }
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->data->epoch_seconds, &tm))
+    {
+        return snprintf(buf, n, "<invalid date sec %lld>",
+                (const long long) v->data->epoch_seconds);
+    }
+
+    static const char format[] = "%m-%dT%H:%M:%S";
+    char mdHMS_part[sizeof(format) + 1];
+    if (strftime(mdHMS_part, sizeof(mdHMS_part), format, &tm) == 0)
+    {
+        return snprintf(buf, n, "<invalid date sec %lld>",
+                (const long long) v->data->epoch_seconds);
+    }
+
+    char nano_part[11];
+    format_nanoseconds(nano_part, sizeof(nano_part), v->nanoseconds);
+
+    return snprintf(buf, n, "%d-%s%s[%s]", tm.tm_year+1900, mdHMS_part,
+            nano_part, v->data->zoneid);
+}
+
+
+ssize_t neo4j_zoned_datetime_fprint(const neo4j_value_t *value, FILE *stream)
+{
+    REQUIRE(value != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_ZONED_DATETIME);
+    const struct neo4j_zoned_datetime *v =
+            (const struct neo4j_zoned_datetime *)value;
+    assert(v->data != NULL);
+
+    if (v->nanoseconds > 999999999)
+    {
+        return fprintf(stream, "<invalid date nsec %d>", v->nanoseconds);
+    }
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->data->epoch_seconds, &tm))
+    {
+        return fprintf(stream, "<invalid date sec %lld>",
+                (const long long) v->data->epoch_seconds);
+    }
+
+    static const char format[] = "%m-%dT%H:%M:%S";
+    char mdHMS_part[sizeof(format) + 1];
+    if (strftime(mdHMS_part, sizeof(mdHMS_part), format, &tm) == 0)
+    {
+        return fprintf(stream, "<invalid date sec %lld>",
+                (const long long) v->data->epoch_seconds);
+    }
+
+    char nano_part[11];
+    format_nanoseconds(nano_part, sizeof(nano_part), v->nanoseconds);
+
+    return fprintf(stream, "%d-%s%s[%s]", tm.tm_year+1900, mdHMS_part,
+            nano_part, v->data->zoneid);
+}
+
+
 size_t format_nanoseconds(char *buf, size_t n, int nanoseconds)
 {
     assert(n >= 11);
