@@ -140,6 +140,7 @@ ASSERT_VALUE_ALIGNMENT(struct neo4j_map);
 #define NEO4J_2DPOINT_SIGNATURE 0x58 // 'X'
 #define NEO4J_3DPOINT_SIGNATURE 0x59 // 'Y'
 #define NEO4J_LOCAL_DATETIME_SIGNATURE 0x64 // 'd'
+#define NEO4J_OFFSET_DATETIME_SIGNATURE 0x46 // 'F'
 
 struct neo4j_struct
 {
@@ -183,6 +184,20 @@ struct neo4j_local_datetime
     };
 };
 ASSERT_VALUE_ALIGNMENT(struct neo4j_local_datetime);
+
+
+struct neo4j_offset_datetime
+{
+    uint8_t _vt_off;
+    uint8_t _type;
+    uint16_t offset;
+    int32_t nanoseconds; // msb is the sign of the offset
+    union {
+        int64_t epoch_seconds;
+        union _neo4j_value_data _pad1;
+    };
+};
+ASSERT_VALUE_ALIGNMENT(struct neo4j_offset_datetime);
 
 
 /**

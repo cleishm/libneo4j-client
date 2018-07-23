@@ -353,6 +353,35 @@ int neo4j_local_datetime_serialize(const neo4j_value_t *value,
 }
 
 
+/* offset datetime */
+
+int neo4j_offset_datetime_serialize(const neo4j_value_t *value,
+        neo4j_iostream_t *stream)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_OFFSET_DATETIME);
+    const struct neo4j_offset_datetime *v =
+            (const struct neo4j_offset_datetime *)value;
+
+    int nanoseconds = v->nanoseconds;
+    int offset = v->offset;
+
+    if (nanoseconds & (1<<31))
+    {
+        nanoseconds &= ~(1<<31);
+        offset = -offset;
+    }
+
+    neo4j_value_t fields[3] = {
+        neo4j_int(v->epoch_seconds),
+        neo4j_int(nanoseconds),
+        neo4j_int(offset)
+    };
+    return write_struct(NEO4J_OFFSET_DATETIME_SIGNATURE, 3, fields, stream);
+}
+
+
 int write_struct(uint8_t signature, uint16_t nfields,
         const neo4j_value_t *fields, neo4j_iostream_t *stream)
 {

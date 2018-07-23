@@ -341,6 +341,7 @@ STRUCT_DESERIALIZER_FUNC_DEF(unbound_rel_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(point2d_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(point3d_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(local_datetime_deserialize);
+STRUCT_DESERIALIZER_FUNC_DEF(offset_datetime_deserialize);
 
 static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
     { NULL,                              // 0x00
@@ -413,7 +414,7 @@ static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
       NULL,                              // 0x43
       NULL,                              // 0x44
       NULL,                              // 0x45
-      NULL,                              // 0x46
+      offset_datetime_deserialize,       // 0x46
       NULL,                              // 0x47
       NULL,                              // 0x48
       NULL,                              // 0x49
@@ -1245,5 +1246,34 @@ int local_datetime_deserialize(uint16_t nfields, neo4j_value_t *fields,
         return -1;
     }
     *value = neo4j_local_datetime_from_epoch(epoch_seconds, nanoseconds);
+    return 0;
+}
+
+
+int offset_datetime_deserialize(uint16_t nfields, neo4j_value_t *fields,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT ||
+            neo4j_type(fields[1]) != NEO4J_INT ||
+            neo4j_type(fields[2]) != NEO4J_INT)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long epoch_seconds = neo4j_int_value(fields[0]);
+    long long nanoseconds = neo4j_int_value(fields[1]);
+    if (nanoseconds < INT_MIN || nanoseconds > INT_MAX)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long offset_seconds = neo4j_int_value(fields[2]);
+    if (offset_seconds < -64800 || offset_seconds > 64800)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    *value = neo4j_offset_datetime_from_epoch(epoch_seconds, nanoseconds,
+            offset_seconds);
     return 0;
 }

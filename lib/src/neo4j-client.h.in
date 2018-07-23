@@ -563,6 +563,8 @@ extern const neo4j_type_t NEO4J_STRUCT;
 extern const neo4j_type_t NEO4J_POINT;
 /** The neo4j local datetime value type. */
 extern const neo4j_type_t NEO4J_LOCAL_DATETIME;
+/** The neo4j offset datetime value type. */
+extern const neo4j_type_t NEO4J_OFFSET_DATETIME;
 
 union _neo4j_value_data
 {
@@ -1484,6 +1486,121 @@ struct tm *neo4j_local_datetime_to_tm(neo4j_value_t value, struct tm *tm);
  */
 __neo4j_const
 int neo4j_local_datetime_get_nanoseconds(neo4j_value_t value);
+
+
+/**
+ * Construct a neo4j value encoding an offset datetime (with a zone offset).
+ *
+ * @param [year] The year.
+ * @param [month] The month (1 to 12).
+ * @param [day_of_month] The day of the month (1 to 31).
+ * @param [hour] The hour (0 to 23).
+ * @param [minute] The minute (0 to 59).
+ * @param [seconds] The seconds of the minute (0 to 59).
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_datetime(int year, int month, int day_of_month,
+        int hour, int minute, int seconds, int nanoseconds, int offset_seconds);
+
+/**
+ * Convert a `struct tm` to an offset datetime (with a zone offset).
+ *
+ * @param [tm] A pointer to a `struct tm`.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return The neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_tm_to_offset_datetime(const struct tm *tm, int nanoseconds,
+        int offset_seconds);
+
+/**
+ * Construct a neo4j value encoding an offset datetime (with a zone offset).
+ *
+ * Uses the system clock to determine the current time.
+ *
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_datetime_now(int offset_seconds);
+
+/**
+ * Construct a neo4j value encoding an offset datetime (with a zone offset).
+ *
+ * Uses the system clock to determine the current time and timezone offset.
+ *
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_datetime_localtime(void);
+
+/**
+ * Construct a neo4j value encoding an offset datetime (with a zone offset).
+ *
+ * @param [epoch_seconds] The seconds since 1970-01-01T00:00:00.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return A neo4j value encoding the datetime.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_datetime_from_epoch(long long epoch_seconds,
+        int nanoseconds, int offset_seconds);
+
+/**
+ * Get the number of seconds since the epoch for a offset datetime.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of seconds since 1970-01-01T00:00:00.
+ */
+__neo4j_const
+long long neo4j_offset_datetime_get_epoch_seconds(neo4j_value_t value);
+
+/**
+ * Convert an offset datetime to a `struct tm`.
+ *
+ * The fields `tm_year`, `tm_mon`, `tm_mday`, `tm_wday`, `tm_yday`, `tm_hour`,
+ * `tm_min` and `tm_sec` of the `struct tm` are guaranteed to be set.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @param [tm] A pointer to a `struct tm`.
+ * @return A pointer to the provided `struct tm`.
+ */
+__neo4j_pure
+struct tm *neo4j_offset_datetime_to_tm(neo4j_value_t value, struct tm *tm);
+
+/**
+ * Get the number of nanoseconds for an offset datetime.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of nanoseconds.
+ */
+__neo4j_const
+int neo4j_offset_datetime_get_nanoseconds(neo4j_value_t value);
+
+/**
+ * Get the timezone offset for an offset datetime.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_DATETIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The offset in seconds.
+ */
+__neo4j_const
+int neo4j_offset_datetime_get_offset_seconds(neo4j_value_t value);
 
 
 /*

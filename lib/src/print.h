@@ -60,5 +60,9 @@ size_t neo4j_local_datetime_str(const neo4j_value_t *value, char *buf,
         size_t n);
 ssize_t neo4j_local_datetime_fprint(const neo4j_value_t *value, FILE *stream);
 
+size_t neo4j_offset_datetime_str(const neo4j_value_t *value, char *buf,
+        size_t n);
+ssize_t neo4j_offset_datetime_fprint(const neo4j_value_t *value, FILE *stream);
+
 
 #endif/*NEO4J_PRINT_H*/

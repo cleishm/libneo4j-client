@@ -39,6 +39,7 @@ static ssize_t list_fprint(const neo4j_value_t *values, unsigned int nvalues,
         FILE *stream);
 static size_t format_double(char *buf, size_t n, double dbl);
 static size_t format_nanoseconds(char *buf, size_t n, int nanoseconds);
+static ssize_t format_offset(char *buf, size_t n, int offset);
 
 
 /* null */
@@ -1206,6 +1207,112 @@ ssize_t neo4j_local_datetime_fprint(const neo4j_value_t *value, FILE *stream)
 }
 
 
+/* offset datetime */
+
+size_t neo4j_offset_datetime_str(const neo4j_value_t * restrict value,
+        char * restrict buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_OFFSET_DATETIME);
+    const struct neo4j_offset_datetime *v =
+            (const struct neo4j_offset_datetime *)value;
+
+    int nanoseconds = v->nanoseconds;
+    int offset = v->offset;
+
+    if (nanoseconds & (1<<31))
+    {
+        nanoseconds &= ~(1<<31);
+        offset = -offset;
+    }
+
+    if (nanoseconds > 999999999)
+    {
+        return snprintf(buf, n, "<invalid date nsec %d>", nanoseconds);
+    }
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->epoch_seconds, &tm))
+    {
+        return snprintf(buf, n, "<invalid date sec %lld>",
+                (const long long) v->epoch_seconds);
+    }
+
+    static const char format[] = "%m-%dT%H:%M:%S";
+    char mdHMS_part[sizeof(format) + 1];
+    if (strftime(mdHMS_part, sizeof(mdHMS_part), format, &tm) == 0)
+    {
+        return snprintf(buf, n, "<invalid date sec %lld>",
+                (const long long) v->epoch_seconds);
+    }
+
+    char nano_part[11];
+    format_nanoseconds(nano_part, sizeof(nano_part), nanoseconds);
+
+    char offset_part[10];
+    if (format_offset(offset_part, sizeof(offset_part), offset) < 0)
+    {
+        return snprintf(buf, n, "<invalid date offset %d>", offset);
+    }
+
+    return snprintf(buf, n, "%d-%s%s%s", tm.tm_year+1900, mdHMS_part,
+            nano_part, offset_part);
+}
+
+
+ssize_t neo4j_offset_datetime_fprint(const neo4j_value_t *value, FILE *stream)
+{
+    REQUIRE(value != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_OFFSET_DATETIME);
+    const struct neo4j_offset_datetime *v =
+            (const struct neo4j_offset_datetime *)value;
+
+    int nanoseconds = v->nanoseconds;
+    int offset = v->offset;
+
+    if (nanoseconds & (1<<31))
+    {
+        nanoseconds &= ~(1<<31);
+        offset = -offset;
+    }
+
+    if (nanoseconds > 999999999)
+    {
+        return fprintf(stream, "<invalid date nsec %d>", nanoseconds);
+    }
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->epoch_seconds, &tm))
+    {
+        return fprintf(stream, "<invalid date sec %lld>",
+                (const long long) v->epoch_seconds);
+    }
+
+    static const char format[] = "%m-%dT%H:%M:%S";
+    char mdHMS_part[sizeof(format) + 1];
+    if (strftime(mdHMS_part, sizeof(mdHMS_part), format, &tm) == 0)
+    {
+        return fprintf(stream, "<invalid date sec %lld>",
+                (const long long) v->epoch_seconds);
+    }
+
+    char nano_part[11];
+    format_nanoseconds(nano_part, sizeof(nano_part), nanoseconds);
+
+    char offset_part[10];
+    if (format_offset(offset_part, sizeof(offset_part), offset) < 0)
+    {
+        return fprintf(stream, "<invalid date offset %d>", offset);
+    }
+
+    return fprintf(stream, "%d-%s%s%s", tm.tm_year+1900, mdHMS_part, nano_part,
+            offset_part);
+}
+
+
 size_t format_nanoseconds(char *buf, size_t n, int nanoseconds)
 {
     assert(n >= 11);
@@ -1225,4 +1332,30 @@ size_t format_nanoseconds(char *buf, size_t n, int nanoseconds)
         return 0;
     }
     return l;
+}
+
+
+ssize_t format_offset(char *buf, size_t n, int offset)
+{
+    int sec = (offset < 0)? -offset : offset;
+    int min = sec / 60;
+    sec = sec % 60;
+    int hour = min / 60;
+    min = min % 60;
+
+    if (hour > 18)
+    {
+        return -1;
+    }
+
+    if (sec != 0)
+    {
+        return snprintf(buf, n, "%c%02d:%02d:%02d", (offset < 0)? '-' : '+',
+                hour, min, sec);
+    }
+    else
+    {
+        return snprintf(buf, n, "%c%02d:%02d", (offset < 0)? '-' : '+',
+                hour, min);
+    }
 }
