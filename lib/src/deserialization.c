@@ -343,6 +343,7 @@ STRUCT_DESERIALIZER_FUNC_DEF(point3d_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(local_datetime_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(offset_datetime_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(zoned_datetime_deserialize);
+STRUCT_DESERIALIZER_FUNC_DEF(local_date_deserialize);
 
 static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
     { NULL,                              // 0x00
@@ -413,7 +414,7 @@ static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
       NULL,                              // 0x41
       NULL,                              // 0x42
       NULL,                              // 0x43
-      NULL,                              // 0x44
+      local_date_deserialize,            // 0x44
       NULL,                              // 0x45
       offset_datetime_deserialize,       // 0x46
       NULL,                              // 0x47
@@ -1311,5 +1312,19 @@ int zoned_datetime_deserialize(uint16_t nfields, neo4j_value_t *fields,
     neo4j_string_value(fields[2], zoneid, zoneid_length + 1);
     *value = neo4j_zoned_datetime_from_epoch((neo4j_zone_data_t *)fields,
             epoch_seconds, nanoseconds, zoneid);
+    return 0;
+}
+
+
+int local_date_deserialize(uint16_t nfields, neo4j_value_t *fields,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    if (nfields != 1 || neo4j_type(fields[0]) != NEO4J_INT)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long epoch_days = neo4j_int_value(fields[0]);
+    *value = neo4j_local_date_from_epoch(epoch_days);
     return 0;
 }

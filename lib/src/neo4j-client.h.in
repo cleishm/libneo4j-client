@@ -567,6 +567,8 @@ extern const neo4j_type_t NEO4J_LOCAL_DATETIME;
 extern const neo4j_type_t NEO4J_OFFSET_DATETIME;
 /** The neo4j zoned datetime value type. */
 extern const neo4j_type_t NEO4J_ZONED_DATETIME;
+/** The neo4j local date value type. */
+extern const neo4j_type_t NEO4J_LOCAL_DATE;
 
 union _neo4j_value_data
 {
@@ -1736,6 +1738,76 @@ int neo4j_zoned_datetime_get_nanoseconds(neo4j_value_t value);
  */
 __neo4j_pure
 const char *neo4j_zoned_datetime_get_zoneid(neo4j_value_t value);
+
+
+/**
+ * Construct a neo4j value encoding a local date (without a zone).
+ *
+ * @param [year] The year.
+ * @param [month] The month (1 to 12).
+ * @param [day_of_month] The day of the month (1 to 31).
+ * @return A neo4j value encoding the date.
+ */
+__neo4j_const
+neo4j_value_t neo4j_local_date(int year, int month, int day_of_month);
+
+/**
+ * Convert a `struct tm` to a local date (without a zone).
+ *
+ * Truncates the hour, minutes and seconds from the `struct tm`.
+ *
+ * @param [tm] A pointer to a `struct tm`.
+ * @return The neo4j value encoding the date.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_tm_to_local_date(const struct tm* tm);
+
+/**
+ * Construct a neo4j value encoding a local date (without a zone).
+ *
+ * Uses the system clock to determine the current date.
+ *
+ * @return A neo4j value encoding the date.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_local_date_today(void);
+
+/**
+ * Construct a neo4j value encoding a local date (without a zone).
+ *
+ * @param [epoch_days] The days since 1970-01-01.
+ * @return A neo4j value encoding the date.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_local_date_from_epoch(long long epoch_days);
+
+/**
+ * Get the number of days since the epoch for a local date.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_LOCAL_DATE.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of days since 1970-01-01T00:00:00.
+ */
+__neo4j_const
+long long neo4j_local_date_get_epoch_days(neo4j_value_t value);
+
+/**
+ * Convert a local date to a `struct tm`.
+ *
+ * The fields `tm_year`, `tm_mon`, `tm_mday`, `tm_wday`, and `tm_yday` of the
+ * `struct tm` are guaranteed to be set.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_LOCAL_DATE.
+ *
+ * @param [value] The neo4j value.
+ * @param [tm] A pointer to a `struct tm`.
+ * @return A pointer to the provided `struct tm`.
+ */
+__neo4j_pure
+struct tm *neo4j_local_date_to_tm(neo4j_value_t value, struct tm *tm);
 
 
 /*

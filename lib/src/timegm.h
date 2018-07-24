@@ -19,6 +19,8 @@
 
 #include <time.h>
 
+#define SEC_IN_DAY 86400
+
 long long neo4j_tm_to_epoch_secs(const struct tm *tm);
 
 int neo4j_epoch_secs_to_tm(long long epoch_seconds, struct tm *tm);

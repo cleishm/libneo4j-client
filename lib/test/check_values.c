@@ -1181,6 +1181,35 @@ START_TEST (zoned_datetime_value)
 END_TEST
 
 
+START_TEST (local_date_value)
+{
+    neo4j_value_t value = neo4j_local_date(1929, 1, 15);
+    ck_assert(neo4j_type(value) == NEO4J_LOCAL_DATE);
+
+    ck_assert_int_eq(neo4j_local_date_get_epoch_days(value), -14961);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "1929-01-15");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 10);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 10);
+    ck_assert_str_eq(buf, "1929-01-15");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 10);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "1929-01-15");
+
+    value = neo4j_local_date_from_epoch(576);
+    ck_assert_int_eq(neo4j_local_date_get_epoch_days(value), 576);
+
+    str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "1971-07-31");
+}
+END_TEST
+
+
 TCase* values_tcase(void)
 {
     TCase *tc = tcase_create("values");
@@ -1222,5 +1251,6 @@ TCase* values_tcase(void)
     tcase_add_test(tc, local_datetime_value);
     tcase_add_test(tc, offset_datetime_value);
     tcase_add_test(tc, zoned_datetime_value);
+    tcase_add_test(tc, local_date_value);
     return tc;
 }

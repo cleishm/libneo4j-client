@@ -142,6 +142,7 @@ ASSERT_VALUE_ALIGNMENT(struct neo4j_map);
 #define NEO4J_LOCAL_DATETIME_SIGNATURE 0x64 // 'd'
 #define NEO4J_OFFSET_DATETIME_SIGNATURE 0x46 // 'F'
 #define NEO4J_ZONED_DATETIME_SIGNATURE 0x66 // 'f'
+#define NEO4J_LOCAL_DATE_SIGNATURE 0x44 // 'D'
 
 struct neo4j_struct
 {
@@ -213,6 +214,20 @@ struct neo4j_zoned_datetime
     };
 };
 ASSERT_VALUE_ALIGNMENT(struct neo4j_zoned_datetime);
+
+
+struct neo4j_local_date
+{
+    uint8_t _vt_off;
+    uint8_t _type;
+    uint16_t _pad1;
+    uint32_t _pad2;
+    union {
+        int64_t epoch_days;
+        union _neo4j_value_data _pad3;
+    };
+};
+ASSERT_VALUE_ALIGNMENT(struct neo4j_local_date);
 
 
 /**

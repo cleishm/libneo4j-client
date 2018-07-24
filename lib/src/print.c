@@ -1391,6 +1391,62 @@ ssize_t neo4j_zoned_datetime_fprint(const neo4j_value_t *value, FILE *stream)
 }
 
 
+/* local date */
+
+size_t neo4j_local_date_str(const neo4j_value_t * restrict value,
+        char * restrict buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_LOCAL_DATE);
+    const struct neo4j_local_date *v = (const struct neo4j_local_date *)value;
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->epoch_days * SEC_IN_DAY, &tm))
+    {
+        return snprintf(buf, n, "<invalid date days %lld>",
+                (const long long) v->epoch_days);
+    }
+
+    static const char format[] = "%m-%d";
+    char md_part[sizeof(format) + 1];
+    if (strftime(md_part, sizeof(md_part), format, &tm) == 0)
+    {
+        return snprintf(buf, n, "<invalid date days %lld>",
+                (const long long) v->epoch_days);
+    }
+
+    return snprintf(buf, n, "%d-%s", tm.tm_year+1900, md_part);
+}
+
+
+ssize_t neo4j_local_date_fprint(const neo4j_value_t *value, FILE *stream)
+{
+    REQUIRE(value != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_LOCAL_DATE);
+    const struct neo4j_local_date *v = (const struct neo4j_local_date *)value;
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->epoch_days * SEC_IN_DAY, &tm))
+    {
+        return fprintf(stream, "<invalid date days %lld>",
+                (const long long) v->epoch_days);
+    }
+
+    static const char format[] = "%m-%d";
+    char md_part[sizeof(format) + 1];
+    if (strftime(md_part, sizeof(md_part), format, &tm) == 0)
+    {
+        return fprintf(stream, "<invalid date days %lld>",
+                (const long long) v->epoch_days);
+    }
+
+    return fprintf(stream, "%d-%s", tm.tm_year+1900, md_part);
+}
+
+
 size_t format_nanoseconds(char *buf, size_t n, int nanoseconds)
 {
     assert(n >= 11);

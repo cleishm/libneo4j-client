@@ -50,6 +50,8 @@ static bool offset_datetime_eq(const neo4j_value_t *value,
         const neo4j_value_t *other);
 static bool zoned_datetime_eq(const neo4j_value_t *value,
         const neo4j_value_t *other);
+static bool local_date_eq(const neo4j_value_t *value,
+        const neo4j_value_t *other);
 
 
 /////////////////////////////
@@ -81,6 +83,7 @@ static const struct neo4j_type offset_datetime_type =
         { .name = "OffsetDateTime" };
 static const struct neo4j_type zoned_datetime_type =
         { .name = "ZonedDateTime" };
+static const struct neo4j_type local_date_type = { .name = "LocalDate" };
 
 struct neo4j_types
 {
@@ -101,6 +104,7 @@ struct neo4j_types
     const struct neo4j_type *local_datetime_type;
     const struct neo4j_type *offset_datetime_type;
     const struct neo4j_type *zoned_datetime_type;
+    const struct neo4j_type *local_date_type;
 };
 static const struct neo4j_types neo4j_types =
 {
@@ -122,7 +126,8 @@ static const struct neo4j_types neo4j_types =
     .point_type = &point_type,
     .local_datetime_type = &local_datetime_type,
     .offset_datetime_type = &offset_datetime_type,
-    .zoned_datetime_type = &zoned_datetime_type
+    .zoned_datetime_type = &zoned_datetime_type,
+    .local_date_type = &local_date_type
 };
 
 #define TYPE_OFFSET(name) \
@@ -147,6 +152,7 @@ const uint8_t NEO4J_POINT = TYPE_OFFSET(point_type);
 const uint8_t NEO4J_LOCAL_DATETIME = TYPE_OFFSET(local_datetime_type);
 const uint8_t NEO4J_OFFSET_DATETIME = TYPE_OFFSET(offset_datetime_type);
 const uint8_t NEO4J_ZONED_DATETIME = TYPE_OFFSET(zoned_datetime_type);
+const uint8_t NEO4J_LOCAL_DATE = TYPE_OFFSET(local_date_type);
 static const uint8_t _MAX_TYPE =
     (sizeof(struct neo4j_types) / sizeof(struct neo4j_type *));
 
@@ -290,6 +296,12 @@ static struct neo4j_value_vt zoned_datetime_vt =
       .issupported = supported_v2,
       .serialize = neo4j_zoned_datetime_serialize,
       .eq = zoned_datetime_eq };
+static struct neo4j_value_vt local_date_vt =
+    { .str = neo4j_local_date_str,
+      .fprint = neo4j_local_date_fprint,
+      .issupported = supported_v2,
+      .serialize = neo4j_local_date_serialize,
+      .eq = local_date_eq };
 
 struct neo4j_value_vts
 {
@@ -310,6 +322,7 @@ struct neo4j_value_vts
     const struct neo4j_value_vt *local_datetime_vt;
     const struct neo4j_value_vt *offset_datetime_vt;
     const struct neo4j_value_vt *zoned_datetime_vt;
+    const struct neo4j_value_vt *local_date_vt;
 };
 static const struct neo4j_value_vts neo4j_value_vts =
 {
@@ -329,7 +342,8 @@ static const struct neo4j_value_vts neo4j_value_vts =
     .point_vt = &point_vt,
     .local_datetime_vt = &local_datetime_vt,
     .offset_datetime_vt = &offset_datetime_vt,
-    .zoned_datetime_vt = &zoned_datetime_vt
+    .zoned_datetime_vt = &zoned_datetime_vt,
+    .local_date_vt = &local_date_vt
 };
 
 #define VT_OFFSET(name) \
@@ -354,6 +368,7 @@ static const struct neo4j_value_vts neo4j_value_vts =
 #define LOCAL_DATETIME_VT_OFF VT_OFFSET(local_datetime_vt)
 #define OFFSET_DATETIME_VT_OFF VT_OFFSET(offset_datetime_vt)
 #define ZONED_DATETIME_VT_OFF VT_OFFSET(zoned_datetime_vt)
+#define LOCAL_DATE_VT_OFF VT_OFFSET(local_date_vt)
 static const uint8_t _MAX_VT_OFF =
     (sizeof(struct neo4j_value_vts) / sizeof(struct neo4j_value_vt *));
 
@@ -1703,4 +1718,85 @@ const char *neo4j_zoned_datetime_get_zoneid(neo4j_value_t value)
             (const struct neo4j_zoned_datetime *)&value;
     assert(v->data != NULL);
     return v->data->zoneid;
+}
+
+
+// local date
+
+neo4j_value_t neo4j_local_date(int year, int month, int day_of_month)
+{
+    struct tm tm =
+        { .tm_year = year - 1900, .tm_mon = month - 1, .tm_mday = day_of_month,
+          .tm_hour = 0, .tm_min = 0, .tm_sec = 0 };
+    long long epoch_seconds = neo4j_tm_to_epoch_secs(&tm);
+    return neo4j_local_date_from_epoch(epoch_seconds / SEC_IN_DAY);
+}
+
+
+neo4j_value_t neo4j_tm_to_local_date(const struct tm* tm)
+{
+    REQUIRE(tm != NULL, neo4j_null);
+    long long epoch_seconds = neo4j_tm_to_epoch_secs(tm);
+    return neo4j_local_date_from_epoch(epoch_seconds / SEC_IN_DAY);
+}
+
+
+neo4j_value_t neo4j_local_date_today(void)
+{
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec tspec;
+    clock_gettime(CLOCK_REALTIME, &tspec);
+    return neo4j_local_date_from_epoch(tspec.tv_sec / SEC_IN_DAY);
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return neo4j_local_date_from_epoch(tv.tv_sec / SEC_IN_DAY);
+#endif
+}
+
+
+neo4j_value_t neo4j_local_date_from_epoch(long long epoch_days)
+{
+    if (epoch_days < -(INT64_MAX / SEC_IN_DAY) ||
+            epoch_days > (INT64_MAX / SEC_IN_DAY))
+    {
+        return neo4j_null;
+    }
+    struct neo4j_local_date v =
+            { ._type = NEO4J_LOCAL_DATE, ._vt_off = LOCAL_DATE_VT_OFF,
+              .epoch_days = epoch_days };
+    return *((neo4j_value_t *)(&v));
+}
+
+
+bool local_date_eq(const neo4j_value_t *value, const neo4j_value_t *other)
+{
+    const struct neo4j_local_date *v = (const struct neo4j_local_date *)value;
+    const struct neo4j_local_date *o = (const struct neo4j_local_date *)other;
+    if (v->epoch_days != o->epoch_days)
+    {
+        return false;
+    }
+    return true;
+}
+
+
+long long neo4j_local_date_get_epoch_days(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCAL_DATE, 0);
+    return ((const struct neo4j_local_date *)&value)->epoch_days;
+}
+
+
+struct tm *neo4j_local_date_to_tm(neo4j_value_t value, struct tm *tm)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCAL_DATE, 0);
+    REQUIRE(tm != NULL, NULL);
+    long long epoch_days =
+            ((const struct neo4j_local_date *)&value)->epoch_days;
+    if (neo4j_epoch_secs_to_tm(epoch_days * SEC_IN_DAY, tm))
+    {
+        return NULL;
+    }
+    return tm;
 }

@@ -402,6 +402,23 @@ int neo4j_zoned_datetime_serialize(const neo4j_value_t *value,
 }
 
 
+/* local date */
+
+int neo4j_local_date_serialize(const neo4j_value_t *value,
+        neo4j_iostream_t *stream)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_LOCAL_DATE);
+    const struct neo4j_local_date *v = (const struct neo4j_local_date *)value;
+
+    neo4j_value_t fields[1] = {
+        neo4j_int(v->epoch_days)
+    };
+    return write_struct(NEO4J_LOCAL_DATE_SIGNATURE, 1, fields, stream);
+}
+
+
 int write_struct(uint8_t signature, uint16_t nfields,
         const neo4j_value_t *fields, neo4j_iostream_t *stream)
 {
