@@ -143,6 +143,7 @@ ASSERT_VALUE_ALIGNMENT(struct neo4j_map);
 #define NEO4J_OFFSET_DATETIME_SIGNATURE 0x46 // 'F'
 #define NEO4J_ZONED_DATETIME_SIGNATURE 0x66 // 'f'
 #define NEO4J_LOCAL_DATE_SIGNATURE 0x44 // 'D'
+#define NEO4J_LOCAL_TIME_SIGNATURE 0x74 // 't'
 
 struct neo4j_struct
 {
@@ -228,6 +229,20 @@ struct neo4j_local_date
     };
 };
 ASSERT_VALUE_ALIGNMENT(struct neo4j_local_date);
+
+
+struct neo4j_local_time
+{
+    uint8_t _vt_off;
+    uint8_t _type;
+    uint16_t _pad1;
+    uint32_t nanoseconds;
+    union {
+        int32_t seconds;
+        union _neo4j_value_data _pad2;
+    };
+};
+ASSERT_VALUE_ALIGNMENT(struct neo4j_local_time);
 
 
 /**

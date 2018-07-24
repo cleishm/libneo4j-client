@@ -344,6 +344,7 @@ STRUCT_DESERIALIZER_FUNC_DEF(local_datetime_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(offset_datetime_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(zoned_datetime_deserialize);
 STRUCT_DESERIALIZER_FUNC_DEF(local_date_deserialize);
+STRUCT_DESERIALIZER_FUNC_DEF(local_time_deserialize);
 
 static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
     { NULL,                              // 0x00
@@ -462,7 +463,7 @@ static const struct_deserializer_t struct_deserializers[UINT8_MAX+1] =
       NULL,                              // 0x71
       unbound_rel_deserialize,           // 0x72
       NULL,                              // 0x73
-      NULL,                              // 0x74
+      local_time_deserialize,            // 0x74
       NULL,                              // 0x75
       NULL,                              // 0x76
       NULL,                              // 0x77
@@ -1326,5 +1327,20 @@ int local_date_deserialize(uint16_t nfields, neo4j_value_t *fields,
     }
     long long epoch_days = neo4j_int_value(fields[0]);
     *value = neo4j_local_date_from_epoch(epoch_days);
+    return 0;
+}
+
+
+int local_time_deserialize(uint16_t nfields, neo4j_value_t *fields,
+        neo4j_mpool_t *pool, neo4j_value_t *value)
+{
+    if (nfields != 1 || neo4j_type(fields[0]) != NEO4J_INT)
+    {
+        errno = EPROTO;
+        return -1;
+    }
+    long long nanos = neo4j_int_value(fields[0]);
+    *value = neo4j_local_time_from_midnight(nanos / 1000000000,
+            nanos % 1000000000);
     return 0;
 }

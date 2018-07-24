@@ -569,6 +569,8 @@ extern const neo4j_type_t NEO4J_OFFSET_DATETIME;
 extern const neo4j_type_t NEO4J_ZONED_DATETIME;
 /** The neo4j local date value type. */
 extern const neo4j_type_t NEO4J_LOCAL_DATE;
+/** The neo4j local time value type. */
+extern const neo4j_type_t NEO4J_LOCAL_TIME;
 
 union _neo4j_value_data
 {
@@ -1808,6 +1810,90 @@ long long neo4j_local_date_get_epoch_days(neo4j_value_t value);
  */
 __neo4j_pure
 struct tm *neo4j_local_date_to_tm(neo4j_value_t value, struct tm *tm);
+
+
+/**
+ * Construct a neo4j value encoding a local time (without a zone).
+ *
+ * @param [hour] The hour (0 to 23).
+ * @param [minute] The minute (0 to 59).
+ * @param [seconds] The seconds of the minute (0 to 59).
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_local_time(int hour, int minute, int seconds,
+        int nanoseconds);
+
+/**
+ * Convert a `struct tm` to a local time (without a zone).
+ *
+ * @param [tm] A pointer to a `struct tm`.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @return The neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_tm_to_local_time(const struct tm *tm, int nanoseconds);
+
+/**
+ * Construct a neo4j value encoding a local time (without a zone).
+ *
+ * Uses the system clock to determine the current time.
+ *
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_local_time_now(void);
+
+/**
+ * Construct a neo4j value encoding a local time (without a zone).
+ *
+ * @param [seconds] The seconds since midnight.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_local_time_from_midnight(int seconds, int nanoseconds);
+
+/**
+ * Get the number of seconds since midnight for a local time.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_LOCAL_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of seconds after midnight.
+ */
+__neo4j_const
+long long neo4j_local_time_get_seconds_of_day(neo4j_value_t value);
+
+/**
+ * Convert a local time to a `struct tm`.
+ *
+ * The fields `tm_hour`, `tm_min` and `tm_sec` of the `struct tm` are
+ * guaranteed to be set.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_LOCAL_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @param [tm] A pointer to a `struct tm`.
+ * @return A pointer to the provided `struct tm`.
+ */
+__neo4j_pure
+struct tm *neo4j_local_time_to_tm(neo4j_value_t value, struct tm *tm);
+
+/**
+ * Get the number of nanoseconds for a local time.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_LOCAL_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of nanoseconds.
+ */
+__neo4j_const
+int neo4j_local_time_get_nanoseconds(neo4j_value_t value);
 
 
 /*
