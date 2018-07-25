@@ -571,6 +571,8 @@ extern const neo4j_type_t NEO4J_ZONED_DATETIME;
 extern const neo4j_type_t NEO4J_LOCAL_DATE;
 /** The neo4j local time value type. */
 extern const neo4j_type_t NEO4J_LOCAL_TIME;
+/** The neo4j offset time value type. */
+extern const neo4j_type_t NEO4J_OFFSET_TIME;
 
 union _neo4j_value_data
 {
@@ -1894,6 +1896,118 @@ struct tm *neo4j_local_time_to_tm(neo4j_value_t value, struct tm *tm);
  */
 __neo4j_const
 int neo4j_local_time_get_nanoseconds(neo4j_value_t value);
+
+
+/**
+ * Construct a neo4j value encoding an offset time (with a zone offset).
+ *
+ * @param [hour] The hour (0 to 23).
+ * @param [minute] The minute (0 to 59).
+ * @param [seconds] The seconds of the minute (0 to 59).
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_time(int hour, int minute, int seconds,
+        int nanoseconds, int offset_seconds);
+
+/**
+ * Convert a `struct tm` to an offset time (with a zone offset).
+ *
+ * @param [tm] A pointer to a `struct tm`.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return The neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_tm_to_offset_time(const struct tm *tm, int nanoseconds,
+        int offset_seconds);
+
+/**
+ * Construct a neo4j value encoding an offset time (with a zone offset).
+ *
+ * Uses the system clock to determine the current time.
+ *
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_time_now(int offset_seconds);
+
+/**
+ * Construct a neo4j value encoding an offset time (with a zone offset).
+ *
+ * Uses the system clock to determine the current time and timezone offset.
+ *
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_time_localtime(void);
+
+/**
+ * Construct a neo4j value encoding an offset time (with a zone offset).
+ *
+ * @param [seconds] The seconds since midnight.
+ * @param [nanoseconds] The nanoseconds of the second (0 to 999,999,999).
+ * @param [offset_seconds] The timezone offset in seconds (-64800 to +64800).
+ * @return A neo4j value encoding the time.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_offset_time_from_midnight(int seconds, int nanoseconds,
+        int offset_seconds);
+
+/**
+ * Get the number of seconds since midnight for an offset time.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of seconds after midnight.
+ */
+__neo4j_const
+long long neo4j_offset_time_get_seconds_of_day(neo4j_value_t value);
+
+/**
+ * Convert an offset time to a `struct tm`.
+ *
+ * The fields `tm_hour`, `tm_min` and `tm_sec` of the `struct tm` are
+ * guaranteed to be set.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @param [tm] A pointer to a `struct tm`.
+ * @return A pointer to the provided `struct tm`.
+ */
+__neo4j_pure
+struct tm *neo4j_offset_time_to_tm(neo4j_value_t value, struct tm *tm);
+
+/**
+ * Get the number of nanoseconds for an offset time.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The number of nanoseconds.
+ */
+__neo4j_const
+int neo4j_offset_time_get_nanoseconds(neo4j_value_t value);
+
+/**
+ * Get the timezone offset for an offset time.
+ *
+ * Note that the result is undefined if the value is not of type
+ * NEO4J_OFFSET_TIME.
+ *
+ * @param [value] The neo4j value.
+ * @return The offset in seconds.
+ */
+__neo4j_const
+int neo4j_offset_time_get_offset_seconds(neo4j_value_t value);
 
 
 /*

@@ -1515,6 +1515,86 @@ ssize_t neo4j_local_time_fprint(const neo4j_value_t *value, FILE *stream)
 }
 
 
+/* offset time */
+
+size_t neo4j_offset_time_str(const neo4j_value_t * restrict value,
+        char * restrict buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_OFFSET_TIME);
+    const struct neo4j_offset_time *v = (const struct neo4j_offset_time *)value;
+
+    if (v->nanoseconds > 999999999)
+    {
+        return snprintf(buf, n, "<invalid date nsec %d>", v->nanoseconds);
+    }
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->seconds, &tm))
+    {
+        return snprintf(buf, n, "<invalid date sec %d>", v->seconds);
+    }
+
+    static const char format[] = "%H:%M:%S";
+    char hms_part[sizeof(format) + 1];
+    if (strftime(hms_part, sizeof(hms_part), format, &tm) == 0)
+    {
+        return snprintf(buf, n, "<invalid date sec %d>", v->seconds);
+    }
+
+    char nano_part[11];
+    format_nanoseconds(nano_part, sizeof(nano_part), v->nanoseconds);
+
+    char offset_part[10];
+    if (format_offset(offset_part, sizeof(offset_part), v->offset) < 0)
+    {
+        return snprintf(buf, n, "<invalid date offset %d>", v->offset);
+    }
+
+    return snprintf(buf, n, "%s%s%s", hms_part, nano_part, offset_part);
+}
+
+
+ssize_t neo4j_offset_time_fprint(const neo4j_value_t *value, FILE *stream)
+{
+    REQUIRE(value != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_OFFSET_TIME);
+    const struct neo4j_offset_time *v = (const struct neo4j_offset_time *)value;
+
+    if (v->nanoseconds > 999999999)
+    {
+        return fprintf(stream, "<invalid date nsec %d>", v->nanoseconds);
+    }
+
+    struct tm tm;
+    memset(&tm, 0, sizeof(tm));
+    if (neo4j_epoch_secs_to_tm(v->seconds, &tm))
+    {
+        return fprintf(stream, "<invalid date sec %d>", v->seconds);
+    }
+
+    static const char format[] = "%H:%M:%S";
+    char hms_part[sizeof(format) + 1];
+    if (strftime(hms_part, sizeof(hms_part), format, &tm) == 0)
+    {
+        return fprintf(stream, "<invalid date sec %d>", v->seconds);
+    }
+
+    char nano_part[11];
+    format_nanoseconds(nano_part, sizeof(nano_part), v->nanoseconds);
+
+    char offset_part[10];
+    if (format_offset(offset_part, sizeof(offset_part), v->offset) < 0)
+    {
+        return fprintf(stream, "<invalid date offset %d>", v->offset);
+    }
+
+    return fprintf(stream, "%s%s%s", hms_part, nano_part, offset_part);
+}
+
+
 size_t format_nanoseconds(char *buf, size_t n, int nanoseconds)
 {
     assert(n >= 11);

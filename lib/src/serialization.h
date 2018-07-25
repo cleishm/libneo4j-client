@@ -54,5 +54,7 @@ int neo4j_local_date_serialize(const neo4j_value_t *value,
         neo4j_iostream_t *stream);
 int neo4j_local_time_serialize(const neo4j_value_t *value,
         neo4j_iostream_t *stream);
+int neo4j_offset_time_serialize(const neo4j_value_t *value,
+        neo4j_iostream_t *stream);
 
 #endif/*NEO4J_SERIALIZATION_H*/

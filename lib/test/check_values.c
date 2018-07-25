@@ -1241,6 +1241,38 @@ START_TEST (local_time_value)
 END_TEST
 
 
+START_TEST (offset_time_value)
+{
+    neo4j_value_t value = neo4j_offset_time(10, 15, 45, -2000009870, 36000);
+    ck_assert(neo4j_type(value) == NEO4J_OFFSET_TIME);
+
+    ck_assert_int_eq(neo4j_offset_time_get_seconds_of_day(value), 36942);
+    ck_assert_int_eq(neo4j_offset_time_get_nanoseconds(value), 999990130);
+    ck_assert_int_eq(neo4j_offset_time_get_offset_seconds(value), 36000);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "10:15:42.99999013+10:00");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
+    ck_assert_str_eq(buf, "10:15:42.99999013+10:00");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 23);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "10:15:42.99999013+10:00");
+
+    value = neo4j_offset_time_from_midnight(10, 567, -14490);
+    ck_assert_int_eq(neo4j_offset_time_get_seconds_of_day(value), 10);
+    ck_assert_int_eq(neo4j_offset_time_get_nanoseconds(value), 567);
+
+    str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "00:00:10.000000567-04:01:30");
+}
+END_TEST
+
+
 TCase* values_tcase(void)
 {
     TCase *tc = tcase_create("values");
@@ -1284,5 +1316,6 @@ TCase* values_tcase(void)
     tcase_add_test(tc, zoned_datetime_value);
     tcase_add_test(tc, local_date_value);
     tcase_add_test(tc, local_time_value);
+    tcase_add_test(tc, offset_time_value);
     return tc;
 }

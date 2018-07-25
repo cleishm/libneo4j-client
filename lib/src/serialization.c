@@ -436,6 +436,24 @@ int neo4j_local_time_serialize(const neo4j_value_t *value,
 }
 
 
+/* offset time */
+
+int neo4j_offset_time_serialize(const neo4j_value_t *value,
+        neo4j_iostream_t *stream)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(stream != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_OFFSET_TIME);
+    const struct neo4j_offset_time *v = (const struct neo4j_offset_time *)value;
+
+    neo4j_value_t fields[2] = {
+        neo4j_int(((long long)v->seconds) * 1000000000 + v->nanoseconds),
+        neo4j_int(v->offset)
+    };
+    return write_struct(NEO4J_OFFSET_TIME_SIGNATURE, 2, fields, stream);
+}
+
+
 int write_struct(uint8_t signature, uint16_t nfields,
         const neo4j_value_t *fields, neo4j_iostream_t *stream)
 {
