@@ -49,7 +49,7 @@ size_t neo4j_null_str(const neo4j_value_t *value, char *buf, size_t n)
         {
             n = 5;
         }
-        strncpy(buf, "null", n);
+        strncpy(buf, "null", n-1);
         buf[n-1] = '\0';
     }
     return 4;
