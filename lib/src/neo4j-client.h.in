@@ -560,6 +560,7 @@ extern const neo4j_type_t NEO4J_STRUCT;
 
 union _neo4j_value_data
 {
+    /* These are all private fields and shouldn't be accessed directly. */
     uint64_t _int;
     uintptr_t _ptr;
     double _dbl;
@@ -567,6 +568,7 @@ union _neo4j_value_data
 
 struct neo4j_value
 {
+    /* These are all private fields and shouldn't be accessed directly. */
     uint8_t _vt_off;
     uint8_t _type; /*TODO: combine with _vt_off? (both always have same value)*/
     uint16_t _pad1;
