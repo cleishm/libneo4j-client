@@ -453,6 +453,37 @@ START_TEST (serialize_string16)
 END_TEST
 
 
+START_TEST (serialize_string32)
+{
+    int r;
+    char str[65536];
+    uint8_t buf[65541];
+    uint8_t expected[65541];
+    ring_buffer_t *large_rb = rb_alloc(66000);
+    neo4j_iostream_t *ios = neo4j_loopback_iostream(large_rb);
+
+    memset(str, 'x', sizeof(str));
+    memset(expected, 'x', sizeof(expected));
+    expected[0] = 0xD2;
+    expected[1] = 0x00;
+    expected[2] = 0x01;
+    expected[3] = 0x00;
+    expected[4] = 0x00;
+
+    neo4j_value_t string32 = neo4j_ustring(str, sizeof(str));
+
+    r = neo4j_serialize(string32, ios);
+    ck_assert_int_eq(r, 0);
+    ck_assert_int_eq(rb_used(large_rb), 5 + sizeof(str));
+    rb_extract(large_rb, &buf, sizeof(expected));
+    ck_assert(memcmp(buf, expected, sizeof(expected)) == 0);
+
+    neo4j_ios_close(ios);
+    rb_free(large_rb);
+}
+END_TEST
+
+
 START_TEST (serialize_tiny_list)
 {
     int r;
@@ -738,6 +769,7 @@ TCase* serialization_tcase(void)
     tcase_add_test(tc, serialize_tiny_string);
     tcase_add_test(tc, serialize_string8);
     tcase_add_test(tc, serialize_string16);
+    tcase_add_test(tc, serialize_string32);
     tcase_add_test(tc, serialize_tiny_list);
     tcase_add_test(tc, serialize_list8);
     tcase_add_test(tc, serialize_list16);

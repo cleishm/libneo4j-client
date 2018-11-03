@@ -50,7 +50,7 @@ struct length_header
     {
         int8_t l8;
         int16_t l16;
-        int16_t l32;
+        int32_t l32;
     } length;
 };
 
