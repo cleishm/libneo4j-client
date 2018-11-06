@@ -283,6 +283,10 @@ $ make clean check
 $ sudo make install
 ```
 
+If you encounter warnings or errors during the build, please report them at
+https://github.com/cleishm/libneo4j-client/issues. If you wish to proceed
+dispite warnings, please invoke configure with the `--disable-werror`.
+
 NOTE: Recent versions of Mac OS X ship without the OpenSSL header files, and
 autoconf doesn't pick this up (yet). If you used the homebrew install method,
 this will resolve the issue. If you're using Mac OS X, want to build manually
