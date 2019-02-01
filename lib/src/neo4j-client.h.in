@@ -1220,9 +1220,8 @@ int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
  *
  * @param [config] The neo4j client configuration to update.
  * @param [path] The path to the PEM file containing the private key
- *         and certificate chain. This string should remain allocated whilst
- *         the config is allocated _or if any connections opened with the
- *         config remain active_.
+ *         and certificate chain. The string will be
+ *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
@@ -1274,8 +1273,7 @@ int neo4j_config_set_TLS_private_key_password(neo4j_config_t *config,
  *
  * @param [config] The neo4j client configuration to update.
  * @param [path] The path to the PEM file containing the trusted CAs and CRLs.
- *         This string should remain allocated whilst the config is allocated
- *         _or if any connections opened with the config remain active_.
+ *         The string will be duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
@@ -1296,9 +1294,8 @@ const char *neo4j_config_get_TLS_ca_file(const neo4j_config_t *config);
  * and CRLs, named by hash according to the `c_rehash` tool.
  *
  * @param [config] The neo4j client configuration to update.
- * @param [path] The path to the directory of CAs and CRLs. This string should
- *         remain allocated whilst the config is allocated _or if any
- *         connections opened with the config remain active_.
+ * @param [path] The path to the directory of CAs and CRLs.  The string will be
+ *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
@@ -1346,9 +1343,8 @@ bool neo4j_config_get_trust_known_hosts(const neo4j_config_t *config);
  * will be used for storing trust information when using "Trust On First Use".
  *
  * @param [config] The neo4j client configuration to update.
- * @param [path] The path to known hosts file. This string should
- *         remain allocated whilst the config is allocated _or if any
- *         connections opened with the config remain active_.
+ * @param [path] The path to known hosts file. The string will be
+ *         duplicated, and thus may point to temporary memory.
  * @return 0 on success, or -1 on error (errno will be set).
  */
 __neo4j_must_check
@@ -1499,7 +1495,7 @@ void neo4j_config_set_connection_factory(neo4j_config_t *config,
  */
 extern struct neo4j_connection_factory neo4j_std_connection_factory;
 
-/*
+/**
  * The standard memory allocator.
  *
  * This memory allocator delegates to the system malloc/free functions.
@@ -1983,7 +1979,7 @@ struct neo4j_failure_details
 const struct neo4j_failure_details *neo4j_failure_details(
         neo4j_result_stream_t *results);
 
-/*
+/**
  * Return the number of records received in a result stream.
  *
  * This value will continue to increase until all results have been fetched.
@@ -1994,7 +1990,7 @@ const struct neo4j_failure_details *neo4j_failure_details(
 unsigned long long neo4j_result_count(
         neo4j_result_stream_t *results);
 
-/*
+/**
  * Return the reported time until the first record was available.
  *
  * @param [results] The result stream.
@@ -2003,7 +1999,7 @@ unsigned long long neo4j_result_count(
 unsigned long long neo4j_results_available_after(
         neo4j_result_stream_t *results);
 
-/*
+/**
  * Return the reported time until all records were consumed.
  *
  * @attention As the consumption time is only available at the end of the result
