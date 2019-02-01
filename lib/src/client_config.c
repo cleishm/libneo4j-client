@@ -394,6 +394,13 @@ int neo4j_config_set_sndbuf_size(neo4j_config_t *config, size_t size)
 }
 
 
+size_t neo4j_config_get_sndbuf_size(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, 0);
+    return config->io_sndbuf_size;
+}
+
+
 int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size)
 {
     REQUIRE(config != NULL, -1);
@@ -401,6 +408,12 @@ int neo4j_config_set_rcvbuf_size(neo4j_config_t *config, size_t size)
     return 0;
 }
 
+
+size_t neo4j_config_get_rcvbuf_size(const neo4j_config_t *config)
+{
+    REQUIRE(config != NULL, 0);
+    return config->io_rcvbuf_size;
+}
 
 void neo4j_config_set_logger_provider(neo4j_config_t *config,
         struct neo4j_logger_provider *logger_provider)
