@@ -158,10 +158,18 @@ int main(int argc, char *argv[])
     setlocale(LC_ALL,"");
 
     FILE *tty = fopen(_PATH_TTY, "r+");
-    if (tty == NULL && errno != ENOENT)
+    if (tty == NULL)
     {
-        perror("Can't open " _PATH_TTY);
-        exit(EXIT_FAILURE);
+        switch (errno)
+        {
+        case ENOENT:
+        case ENXIO:
+            // ignore
+            break;
+        default:
+            perror("Can't open " _PATH_TTY);
+            exit(EXIT_FAILURE);
+        }
     }
 
     char prog_name[256];
