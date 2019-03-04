@@ -14,7 +14,7 @@
 #
 dnl Process this file with autoconf to produce a configure script
 AC_PREREQ([2.69])
-AC_INIT([libneo4j-client],[2.2.1~devel])
+AC_INIT([libneo4j-client],[2.3.0])
 AC_CONFIG_SRCDIR([lib/src/neo4j-client.h.in])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
