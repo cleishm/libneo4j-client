@@ -23,6 +23,7 @@
 #include "render.h"
 #include "state.h"
 #include "verification.h"
+#include <ctype.h>
 #include <cypher-parser.h>
 #include <errno.h>
 #include <getopt.h>
@@ -59,6 +60,7 @@ const char *shortopts = "e:hi:o:p:Pu:v";
 #define SOURCE_MAX_DEPTH_OPT 1010
 #define COLORIZE_OPT 1011
 #define NO_COLORIZE_OPT 1012
+#define EXPORT_OPT 1013
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -80,6 +82,7 @@ static struct option longopts[] =
       { "source", required_argument, NULL, 'i' },
       { "source-max-depth", required_argument, NULL, SOURCE_MAX_DEPTH_OPT },
       { "eval", required_argument, NULL, 'e' },
+      { "export", required_argument, NULL, EXPORT_OPT },
       { "output", required_argument, NULL, 'o' },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
@@ -121,6 +124,8 @@ static void usage(FILE *s, const char *prog_name)
 " --eval script, -e script\n"
 "                     Evaluate the argument string. May be specified multiple\n"
 "                     times.\n"
+" --export name=val   Export a parameter, which will be available in all\n"
+"                     queries.\n"
 " --verbose, -v       Increase logging verbosity.\n"
 " --version           Output the version of neo4j-client and dependencies.\n"
 "\n"
@@ -368,6 +373,35 @@ int main(int argc, char *argv[])
                         optarg, true, redirect_output))
             {
                 goto cleanup;
+            }
+            break;
+        case EXPORT_OPT:
+            {
+                char *export = strdup(optarg);
+                if (export == NULL)
+                {
+                    neo4j_perror(state.err, errno, "Unexpected error");
+                    goto cleanup;
+                }
+                const char *eq = strchr(export, '=');
+                if (eq == NULL)
+                {
+                    free(export);
+                    fprintf(state.err, "Invalid source-max-depth '%s'\n",
+                            optarg);
+                    goto cleanup;
+                }
+                size_t elen = eq - export;
+                for (; elen > 0 && isspace(export[elen-1]); --elen)
+                    ;
+                neo4j_value_t name = neo4j_ustring(export, elen);
+                neo4j_value_t value = neo4j_string(eq + 1);
+                if (shell_state_add_export(&state, name, value, export))
+                {
+                    free(export);
+                    neo4j_perror(state.err, errno, "Unexpected error");
+                    goto cleanup;
+                }
             }
             break;
         case VERSION_OPT:
