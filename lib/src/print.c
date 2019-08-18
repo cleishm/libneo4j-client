@@ -49,7 +49,7 @@ size_t neo4j_null_str(const neo4j_value_t *value, char *buf, size_t n)
         {
             n = 5;
         }
-        strncpy(buf, "null", n-1);
+        memcpy(buf, "null", n-1);
         buf[n-1] = '\0';
     }
     return 4;
@@ -72,16 +72,32 @@ size_t neo4j_bool_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_BOOL);
     const struct neo4j_bool *v = (const struct neo4j_bool *)value;
-    if (n > 0)
+    if (v->value > 0)
     {
-        if (n > 6)
+        if (n > 0)
         {
-            n = 6;
+            if (n > 5)
+            {
+                n = 5;
+            }
+            memcpy(buf, "true", n-1);
+            buf[n-1] = '\0';
         }
-        strncpy(buf, (v->value > 0)? "true" : "false", n);
-        buf[n-1] = '\0';
+        return 4;
     }
-    return (v->value > 0)? 4 : 5;
+    else
+    {
+        if (n > 0)
+        {
+            if (n > 6)
+            {
+                n = 6;
+            }
+            memcpy(buf, "false", n-1);
+            buf[n-1] = '\0';
+        }
+        return 5;
+    }
 }
 
 
