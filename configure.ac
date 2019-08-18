@@ -28,7 +28,8 @@ WITH_LIBS
 GCC_CFLAGS="-fvisibility=hidden -pipe -Wall -W -Wno-unused-parameter \
     -Wno-missing-field-initializers -Wpointer-arith -Wstrict-prototypes \
     -Wcast-qual -Wcast-align -Wno-error=unused-function \
-    -Wno-error=unused-variable -Wno-error=deprecated-declarations"
+    -Wno-error=unused-variable -Wno-error=deprecated-declarations \
+    -Wno-error=stringop-truncation -Wno-unknown-warning-option"
 
 AC_ARG_ENABLE([werror],
   AS_HELP_STRING([--disable-werror],
