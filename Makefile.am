@@ -21,7 +21,7 @@ docker-valgrind:
 	$(MAKE) dist
 	@echo "Building docker image..."
 	@docker run -t --rm -v $(abs_builddir):/$(PACKAGE) \
-		`docker build . -q -f build-aux/build-ubuntu.dockerfile` \
+		`docker build . -q -f build-aux/build-debian.dockerfile` \
 		sh /$(PACKAGE)/build-aux/valgrind-package.sh /$(PACKAGE)/$(DIST_ARCHIVES) $(distdir)
 
 MAINTAINERCLEANFILES = \
