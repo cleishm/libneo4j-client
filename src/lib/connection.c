@@ -282,7 +282,9 @@ neo4j_connection_t *establish_connection(const char *hostname,
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
-    if (protocol_version != 1)
+    if (protocol_version != 1 ||
+        protocol_version != 2 ||
+        protocol_version != 3)
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
@@ -417,7 +419,8 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
         return -1;
     }
 
-    uint32_t supported_versions[4] = { htonl(1), 0, 0, 0 };
+    // Here, add 3 as a supported version, and also 2 (identical to 1)
+    uint32_t supported_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
     if (neo4j_ios_write_all(iostream, supported_versions,
                 sizeof(supported_versions), NULL) < 0)
     {

@@ -26,6 +26,8 @@
     static const struct neo4j_message_type type_name##_MESSAGE = \
         { .name = #type_name, .struct_signature = signature }
 
+// Bolt v1, v2
+
 DECLARE_MESSAGE_TYPE(INIT, 0x01);
 DECLARE_MESSAGE_TYPE(RUN, 0x10);
 DECLARE_MESSAGE_TYPE(DISCARD_ALL, 0X2F);
@@ -37,6 +39,16 @@ DECLARE_MESSAGE_TYPE(SUCCESS, 0X70);
 DECLARE_MESSAGE_TYPE(FAILURE, 0X7F);
 DECLARE_MESSAGE_TYPE(IGNORED, 0X7E);
 
+// Bolt v3
+DECLARE_MESSAGE_TYPE(HELLO, 0x01);
+DECLARE_MESSAGE_TYPE(GOODBYE, 0x02);
+DECLARE_MESSAGE_TYPE(BEGIN, 0x11);
+DECLARE_MESSAGE_TYPE(COMMIT, 0x12);
+DECLARE_MESSAGE_TYPE(ROLLBACK, 0x13);
+
+// this is one big bag of messages. Need to separate out into protocol version sets?
+// Maybe not...
+
 static const neo4j_message_type_t neo4j_message_types[] =
     { &INIT_MESSAGE,
       &RUN_MESSAGE,
@@ -47,7 +59,14 @@ static const neo4j_message_type_t neo4j_message_types[] =
       &RECORD_MESSAGE,
       &SUCCESS_MESSAGE,
       &FAILURE_MESSAGE,
-      &IGNORED_MESSAGE };
+      &IGNORED_MESSAGE,
+      &HELLO_MESSAGE,
+      &GOODBYE_MESSAGE,
+      &BEGIN_MESSAGE,
+      &COMMIT_MESSAGE,
+      &ROLLBACK_MESSAGE
+    };
+
 static const int _max_message_type =
     (sizeof(neo4j_message_types) / sizeof(neo4j_message_type_t));
 
