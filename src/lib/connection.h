@@ -219,4 +219,9 @@ int neo4j_session_discard_all(neo4j_connection_t *connection,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
 
 
+// bolt 3 stuff here for now
+__neo4j_must_check
+int neo4j_session_transact(neo4j_connection_t *connection, const char *msg_name, neo4j_value_t extra, neo4j_response_recv_t callback, void *cdata);
+
+
 #endif/*NEO4J_CONNECTION_H*/

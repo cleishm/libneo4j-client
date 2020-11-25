@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "connection.h"
+#include "messages.h"
 #include "buffering_iostream.h"
 #include "chunking_iostream.h"
 #include "client_config.h"
@@ -957,7 +958,7 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
         neo4j_log_debug(connection->logger, "rcvd %s in response to %s (%p)",
                 neo4j_message_type_str(type),
                 neo4j_message_type_str(request->type), (void *)request);
-
+        // request callback executed here
         int result = request->receive(request->cdata, type, argv, argc);
         int errsv = errno;
         if (result <= 0)
@@ -1287,7 +1288,8 @@ cleanup:
     return result;
 }
 
-
+// in Bolt 3, ACK_FAILURE is eschewed for RESET message as
+// a response to server FAILURE.
 int ack_failure(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
@@ -1456,4 +1458,44 @@ int neo4j_session_discard_all(neo4j_connection_t *connection,
 cleanup:
     neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
+}
+
+int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, neo4j_response_recv_t callback, void *cdata)
+{
+    REQUIRE(connection != NULL, -1);
+    REQUIRE(cdata != NULL, -1);
+
+    neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
+    if (neo4j_atomic_bool_set(&(connection->processing), true))
+    {
+        errno = NEO4J_SESSION_BUSY;
+        return -1;
+    }
+    int err = -1;
+    struct neo4j_request *req = new_request(connection);
+    if (req == NULL)
+    {
+        goto cleanup;
+    }
+
+    req->type = NEO4J_MESSAGE(msg_name);
+    req->_argv[0] = (tx->extra == NULL ? neo4j_map(NULL, 0) : tx->extra); // extra dictionary
+    req->argv = req->_argv;
+    req->argc = (tx->extra == NULL ? 0 : 1);
+    // req->mpool = mpool; - assume the mpool automatically attached to the req is ok
+    req->receive = callback; // callback specified in transaction.c
+    req->cdata = cdata; // this will be the neo4j_transaction_t object
+    neo4j_log_trace(connection->logger, "enqu BEGIN (%p) in %p",
+            (void *)req, (void *)connection);
+
+    err = 0;
+
+cleanup:
+    neo4j_atomic_bool_set(&(connection->processing), false);
+    return err;
+}
+
+int neo4j_session_goodbye(neo4j_connection_t *connection)
+{
+    REQUIRE(connection != NULL, -1);
 }

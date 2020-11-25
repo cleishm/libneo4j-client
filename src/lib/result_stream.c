@@ -336,7 +336,6 @@ failure:
     return NULL;
 }
 
-
 run_result_stream_t *run_rs_open(neo4j_connection_t *connection)
 {
     assert(connection != NULL);

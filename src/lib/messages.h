@@ -22,6 +22,8 @@
 #include "memory.h"
 #include <stdint.h>
 
+#define NEO4J_MESSAGE(msgname) (NEO4J_(msgname)_MESSAGE)
+
 typedef const struct neo4j_message_type *neo4j_message_type_t;
 struct neo4j_message_type
 {
