@@ -68,6 +68,11 @@ typedef struct neo4j_config neo4j_config_t;
 typedef struct neo4j_connection neo4j_connection_t;
 
 /**
+ * An explicit transaction with a neo4j server.
+ */
+typedef struct neo4j_transaction neo4j_transaction_t;
+
+/**
  * A stream of results from a job.
  */
 typedef struct neo4j_result_stream neo4j_result_stream_t;
@@ -432,6 +437,7 @@ struct neo4j_connection_factory
 #define NEO4J_TLS_MALFORMED_CERTIFICATE -37
 #define NEO4J_SESSION_RESET -38
 #define NEO4J_SESSION_BUSY -39
+#define NEO4J_TRANSACTION_FAILED -40
 
 /**
  * Print the error message corresponding to an error number.

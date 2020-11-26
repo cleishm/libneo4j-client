@@ -30,11 +30,19 @@
 
 #define DEFAULT_TX_TIMEOUT (60)
 
+// api level
+
+neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection, int tx_timeout, const char *tx_mode);
+neo4j_transaction_t *neo4j_commit_tx(neo4j_transaction_t *tx);
+neo4j_transaction_t *neo4j_rollback_tx(neo4j_transaction_t *tx);
+neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
+
 
 // tx accessors
 int neo4j_check_tx_failure(neo4j_transaction_t *tx);
 const char *neo4j_tx_error_code(neo4j_transaction_t *tx);
 const char *neo4j_tx_error_message(neo4j_transaction_t *tx);
+
 
 struct neo4j_transaction
 {
@@ -42,18 +50,24 @@ struct neo4j_transaction
   const char *(*error_code)(neo4j_transaction_t *self);
   const char *(*error_message)(neo4j_transaction_t *self);
 
-  // begin, run, commit, rollback from methods within this structure?
-  const char** bookmarks;
-  neo4j_result_stream_t *tx_results;
+  neo4j_value_t *bookmarks; // an array of neo4j_strings
+  int num_bookmarks; // len of bookmarks array
+  neo4j_value_t metadata; // a neo4j_map of transaction metadata (values are neo4j_strings)
+  neo4j_value_t commit_bookmark; // a neo4j_string returned on successful commit
+  neo4j_result_stream_t *results; // results of RUN within this transaction
+  neo4j_memory_allocator_t *allocator;
   neo4j_connection_t *connection;
   neo4j_logger_t *logger;
-  neo4j_value_t *metadata;
-  unsigned int is_open;
-  unsigned int is_expired;
-  neo4j_value_t *extra;
-  int timeout;
-  const char *mode;
+
+  unsigned int is_open; // this tx has begun and is active
+  unsigned int is_expired; // this tx has expired and is defunct
+  unsigned int failed; // this tx failed before successful commit or rollback
+  neo4j_value_t extra; // client-side message arguments
+  int timeout; // client-side timeout in sec requested
+  const char *mode; // client-side mode string : "w" write, "r" read
   int failure;
+  neo4j_value_t failure_code; // server-side failure code (neo4j_string)
+  neo4j_value_t failure_message; // server-side failure message (neo4j_string)
 }
 
 #endif/*NEO4J_TRANSACTION_H*/
