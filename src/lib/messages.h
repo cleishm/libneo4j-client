@@ -22,8 +22,6 @@
 #include "memory.h"
 #include <stdint.h>
 
-#define NEO4J_MESSAGE(msgname) (NEO4J_(msgname)_MESSAGE)
-
 typedef const struct neo4j_message_type *neo4j_message_type_t;
 struct neo4j_message_type
 {
@@ -51,6 +49,7 @@ extern const neo4j_message_type_t NEO4J_COMMIT_MESSAGE;
 extern const neo4j_message_type_t NEO4J_ROLLBACK_MESSAGE;
 
 neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature);
+neo4j_message_type_t neo4j_message_type_for_type(const char *mtype);
 
 static inline const char *neo4j_message_type_str(neo4j_message_type_t type)
 {

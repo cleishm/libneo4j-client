@@ -55,7 +55,7 @@ neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
     REQUIRE(connection != NULL, NULL);
 
     neo4j_config_t *config = connection->config;
-    neo4j_transaction_t *tx = new_transaction(config, timeout, mode);
+    neo4j_transaction_t *tx = new_transaction(config, tx_timeout, tx_mode);
 
     neo4j_session_transact(connection, "BEGIN", begin_callback, tx);
     return tx;
@@ -196,6 +196,7 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
     }
 
   // Bolt 3.0 spec sez SUCCESS argv "may contain metadata relating to the outcome". Pfft.
+  tx->is_open = 0;
   return 0;
 }
 
@@ -233,16 +234,6 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, int timeout, const 
   tx->bookmarks = &neo4j_null;
   tx->num_bookmarks = 0;
   return tx;
-}
-
-int set_tx_failure(neo4j_transaction_t *tx, int error) {
-  assert(tx != NULL);
-  assert(error != 0);
-  // begin_callback should have set failure info using response argv from server
-  if (tx->failure != 0)
-    {
-      return 0;
-    }
 }
 
 // tx getters

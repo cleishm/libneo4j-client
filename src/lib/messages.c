@@ -90,10 +90,24 @@ neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature)
         {
             return neo4j_message_types[i];
         }
+
     }
     return NULL;
 }
 
+neo4j_message_type_t neo4j_message_type_for_type(const char *mtype)
+{
+  int i;
+  neo4j_message_type_t found_mt = NULL;
+  for (i=0;i<_max_message_type;i++)
+    {
+      if (!strcmp(mtype,neo4j_message_types[i]->name)) {
+        found_mt = neo4j_message_types[i];
+        break;
+      }
+    }
+  return found_mt;
+}
 
 int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc, uint8_t *buffer,

@@ -29,6 +29,7 @@
 #endif
 #include "posix_iostream.h"
 #include "serialization.h"
+#include "transaction.h"
 #include "util.h"
 #include <assert.h>
 #include <unistd.h>
@@ -62,6 +63,9 @@ static int initialize_callback(void *cdata, neo4j_message_type_t type,
 static int ack_failure(neo4j_connection_t *connection  );
 static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
        const neo4j_value_t *argv, uint16_t argc);
+
+static int hello(neo4j_connection_t *connection);
+static int goodbye(neo4j_connection_t *connection);
 
 
 struct neo4j_connection_factory neo4j_std_connection_factory =
@@ -489,7 +493,10 @@ int neo4j_close(neo4j_connection_t *connection)
     assert(connection->request_queue_depth == 0);
 
     neo4j_atomic_bool_set(&(connection->processing), false);
-
+    if (connection->version > 2) {
+      // say GOODBYE to server
+      goodbye(connection);
+    }
     if (connection->iostream != NULL &&
         neo4j_ios_close(connection->iostream) && err == 0)
     {
@@ -1107,7 +1114,6 @@ struct init_cdata
     int error;
 };
 
-
 int initialize(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
@@ -1181,6 +1187,35 @@ cleanup:
     return err;
 }
 
+// hello - alias for initialize (Bolt 3.0)
+
+int hello(neo4j_connection_t *connection)
+{
+    return initialize(connection);
+}
+
+// Note (Bolt 3.0)
+// The GOODBYE message does not generate a server response. It signals a graceful
+// finish on the client-side. This functon is called in neo4j_close() when
+// Bolt 3+ is used
+
+int goodbye(neo4j_connection_t *connection)
+{
+    REQUIRE(connection != NULL, -1);
+    if (connection->failed)
+      {
+        errno = NEO4J_SESSION_FAILED;
+        return -1;
+      }
+
+    if (neo4j_connection_send(connection, NEO4J_GOODBYE_MESSAGE, NULL, 0))
+      {
+        connection->failed = true;
+        return -1;
+      }
+    neo4j_log_trace(connection->logger, "sent GOODBYE in %p", (void *)connection);
+    return 0;
+}
 
 int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
@@ -1460,7 +1495,7 @@ cleanup:
     return err;
 }
 
-int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, neo4j_response_recv_t callback, void *cdata)
+int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
     REQUIRE(cdata != NULL, -1);
@@ -1478,10 +1513,10 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, 
         goto cleanup;
     }
 
-    req->type = NEO4J_MESSAGE(msg_name);
-    req->_argv[0] = (tx->extra == NULL ? neo4j_map(NULL, 0) : tx->extra); // extra dictionary
+    req->type = neo4j_message_type_for_type(msg_type);
+    req->_argv[0] = (cdata == NULL ? neo4j_map(NULL, 0) : tx->extra); // extra dictionary
     req->argv = req->_argv;
-    req->argc = (tx->extra == NULL ? 0 : 1);
+    req->argc = (cdata == NULL ? 0 : 1);
     // req->mpool = mpool; - assume the mpool automatically attached to the req is ok
     req->receive = callback; // callback specified in transaction.c
     req->cdata = cdata; // this will be the neo4j_transaction_t object
@@ -1493,9 +1528,4 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, 
 cleanup:
     neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
-}
-
-int neo4j_session_goodbye(neo4j_connection_t *connection)
-{
-    REQUIRE(connection != NULL, -1);
 }

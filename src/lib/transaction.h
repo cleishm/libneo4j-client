@@ -68,6 +68,6 @@ struct neo4j_transaction
   int failure;
   neo4j_value_t failure_code; // server-side failure code (neo4j_string)
   neo4j_value_t failure_message; // server-side failure message (neo4j_string)
-}
+};
 
 #endif/*NEO4J_TRANSACTION_H*/
