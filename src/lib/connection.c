@@ -34,7 +34,6 @@
 #include <assert.h>
 #include <unistd.h>
 
-
 static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
         uint_fast32_t flags);
 static neo4j_connection_t *establish_connection(const char *hostname,
@@ -287,8 +286,8 @@ neo4j_connection_t *establish_connection(const char *hostname,
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
-    if (protocol_version != 1 ||
-        protocol_version != 2 ||
+    if (protocol_version != 1 &&
+        protocol_version != 2 &&
         protocol_version != 3)
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;

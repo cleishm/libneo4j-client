@@ -81,6 +81,12 @@ const neo4j_message_type_t NEO4J_SUCCESS_MESSAGE = &SUCCESS_MESSAGE;
 const neo4j_message_type_t NEO4J_FAILURE_MESSAGE = &FAILURE_MESSAGE;
 const neo4j_message_type_t NEO4J_IGNORED_MESSAGE = &IGNORED_MESSAGE;
 
+const neo4j_message_type_t NEO4J_HELLO_MESSAGE = &HELLO_MESSAGE;
+const neo4j_message_type_t NEO4J_GOODBYE_MESSAGE = &GOODBYE_MESSAGE;
+const neo4j_message_type_t NEO4J_BEGIN_MESSAGE = &BEGIN_MESSAGE;
+const neo4j_message_type_t NEO4J_COMMIT_MESSAGE = &COMMIT_MESSAGE;
+const neo4j_message_type_t NEO4J_ROLLBACK_MESSAGE = &ROLLBACK_MESSAGE;
+
 
 neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature)
 {

@@ -192,7 +192,7 @@ START_TEST (test_connects_URI_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -253,7 +253,7 @@ START_TEST (test_connects_URI_containing_credentials_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -312,7 +312,7 @@ START_TEST (test_connects_tcp_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
