@@ -33,24 +33,28 @@
 // api level
 
 neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection, int tx_timeout, const char *tx_mode);
-neo4j_transaction_t *neo4j_commit_tx(neo4j_transaction_t *tx);
-neo4j_transaction_t *neo4j_rollback_tx(neo4j_transaction_t *tx);
+int neo4j_commit(neo4j_transaction_t *tx);
+int neo4j_rollback(neo4j_transaction_t *tx);
 neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
-
-
-// tx accessors
-int neo4j_check_tx_failure(neo4j_transaction_t *tx);
-const char *neo4j_tx_error_code(neo4j_transaction_t *tx);
-const char *neo4j_tx_error_message(neo4j_transaction_t *tx);
-
+int neo4j_tx_is_open(neo4j_transaction_t *tx);
+int neo4j_tx_expired(neo4j_transaction_t *tx);
+int neo4j_tx_failure(neo4j_transaction_t *tx);
+int neo4j_tx_timeout(neo4j_transaction_t *tx);
+const char *neo4j_tx_mode(neo4j_transaction_t *tx);
+const char *neo4j_tx_failure_code(neo4j_transaction_t *tx);
+const char *neo4j_tx_failure_message(neo4j_transaction_t *tx);
+const char *neo4j_tx_commit_bookmark(neo4j_transaction_t *tx);
+void neo4j_destroy_transaction(neo4j_transaction_t *tx);
 
 struct neo4j_transaction
 {
   int (*check_failure)(neo4j_transaction_t *self);
   const char *(*error_code)(neo4j_transaction_t *self);
   const char *(*error_message)(neo4j_transaction_t *self);
-
-  neo4j_value_t *bookmarks; // an array of neo4j_strings
+  int (*commit)(neo4j_transaction_t *self);
+  int (*rollback)(neo4j_transaction_t *self);
+  neo4j_result_stream_t *(*run)(neo4j_transaction_t *self, const char *statement, neo4j_value_t params);
+  neo4j_value_t *bookmarks; // a C array of neo4j_strings
   int num_bookmarks; // len of bookmarks array
   neo4j_value_t metadata; // a neo4j_map of transaction metadata (values are neo4j_strings)
   neo4j_value_t commit_bookmark; // a neo4j_string returned on successful commit
@@ -62,10 +66,10 @@ struct neo4j_transaction
   unsigned int is_open; // this tx has begun and is active
   unsigned int is_expired; // this tx has expired and is defunct
   unsigned int failed; // this tx failed before successful commit or rollback
+  int failure; // errno
   neo4j_value_t extra; // client-side message arguments
   int timeout; // client-side timeout in sec requested
   const char *mode; // client-side mode string : "w" write, "r" read
-  int failure;
   neo4j_value_t failure_code; // server-side failure code (neo4j_string)
   neo4j_value_t failure_message; // server-side failure message (neo4j_string)
 };

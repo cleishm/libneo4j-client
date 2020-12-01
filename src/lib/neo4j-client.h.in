@@ -438,6 +438,7 @@ struct neo4j_connection_factory
 #define NEO4J_SESSION_RESET -38
 #define NEO4J_SESSION_BUSY -39
 #define NEO4J_TRANSACTION_FAILED -40
+#define NEO4J_FEATURE_UNAVAILABLE -41
 
 /**
  * Print the error message corresponding to an error number.
@@ -1763,6 +1764,74 @@ __neo4j_must_check
 neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
+/*
+ * =====================================
+ * transactions
+ * =====================================
+ */
+
+/**
+ * Begin an explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [connection] The connection.
+ * @param [tx_timeout] Transaction timeout in seconds. If 0, set to DEFAULT_TX_TIMEOUT (60).
+ * @param [tx_mode] Transaction mode string: "r" - read, "w" - write. If NULL, defaults to "w".
+ * @return A `neo4j_transaction_t` tx. If tx->failed is set, the call failed; check tx->failure_code.
+ *
+ */
+__neo4j_must_check
+neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
+                                    int tx_timeout, const char *tx_mode);
+
+/**
+ * Commit an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @return int: 0 on success, 1 on failure. 
+ *
+ */
+__neo4j_must_check
+int neo4j_commit(neo4j_transaction_t *tx);
+
+/**
+ * Rollback an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @return int: 0 on success, 1 on failure. 
+ *
+ */
+__neo4j_must_check
+int neo4j_rollback(neo4j_transaction_t *tx);
+
+/**
+ * Run a query within an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @param [statement] The statement to be evaluated. This must be a `NULL`
+ *         terminated string and may contain UTF-8 multi-byte characters.
+ * @param [params] The parameters for the statement, which must be a value of
+ *         type NEO4J_MAP or #neo4j_null.
+ * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
+ *
+ */
+
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx,
+                                       const char *statement, neo4j_value_t params);
+
+int neo4j_tx_is_open(neo4j_transaction_t *tx);
+int neo4j_tx_expired(neo4j_transaction_t *tx);
+int neo4j_tx_failure(neo4j_transaction_t *tx);
+int neo4j_tx_timeout(neo4j_transaction_t *tx);
+const char *neo4j_tx_mode(neo4j_transaction_t *tx);
+const char *neo4j_tx_failure_code(neo4j_transaction_t *tx);
+const char *neo4j_tx_failure_message(neo4j_transaction_t *tx);
+const char *neo4j_tx_commit_bookmark(neo4j_transaction_t *tx);
+void neo4j_destroy_transaction(neo4j_transaction_t *tx);
 
 /*
  * =====================================

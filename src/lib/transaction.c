@@ -20,17 +20,20 @@
 #include "neo4j-client.h"
 #include "memory.h"
 #include "result_stream.h"
+#include "util.h"
 #include "values.h"
 #include <assert.h>
 #include <stddef.h>
 #include <unistd.h>
 
-neo4j_transaction_t *new_transaction(neo4j_config_t *config, int timeout, const char *mode);
+neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode);
 void destroy_transaction(neo4j_transaction_t *tx);
 int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
-
+int tx_commit(neo4j_transaction_t *tx);
+int tx_rollback(neo4j_transaction_t *tx);
+neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
 
 
 // rough out the transaction based calls
@@ -48,16 +51,33 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
 // stores info like success responses, failure responses, bookmarks.
 
 // begin_tx - specify timeout and mode, but ignore bookmarks and metadata ATM
-// must check tx->failed to see if tx is all right
+// if NULL returned, check tx failure
 neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
                                       int tx_timeout, const char *tx_mode)
 {
     REQUIRE(connection != NULL, NULL);
 
     neo4j_config_t *config = connection->config;
-    neo4j_transaction_t *tx = new_transaction(config, tx_timeout, tx_mode);
+    // check version
 
-    neo4j_session_transact(connection, "BEGIN", begin_callback, tx);
+    if (connection->version < 3)
+      {
+        errno = NEO4J_FEATURE_UNAVAILABLE;
+        char ebuf[256];
+        neo4j_log_error(connection->logger,
+                "Cannot create transaction on %p: %s\n", (void *)connection,
+                        neo4j_strerror(errno, ebuf, sizeof(ebuf)));
+        return NULL;
+      }
+    neo4j_transaction_t *tx = new_transaction(config, connection, tx_timeout, tx_mode);
+
+    if (neo4j_session_transact(connection, "BEGIN", begin_callback, tx))
+      {
+        neo4j_log_error_errno(tx->logger, "tx begin failed");
+        tx->failed = 1;
+        tx->failure = errno;
+        return NULL;
+      }
     return tx;
 }
 
@@ -69,13 +89,14 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
 
   if (type == NEO4J_FAILURE_MESSAGE)
     {
-      // but should put failure message in log?
-      neo4j_log_error_errno(tx->logger, "tx begin failed", NEO4J_TRANSACTION_FAILED);
       // get FAILURE argv and set tx failure info here
       tx->failed = 1;
       tx->failure = NEO4J_TRANSACTION_FAILED;
       tx->failure_code = neo4j_map_get(argv[0],"code");
       tx->failure_message = neo4j_map_get(argv[0],"message");
+      errno = tx->failure;
+      neo4j_log_error_errno(tx->logger, "tx begin failed");
+
       return -1;
     }
   if (type == NEO4J_IGNORED_MESSAGE)
@@ -85,13 +106,14 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
     }
   char description[128];
   snprintf(description, sizeof(description), "%s in %p (response to BEGIN)",
-           neo4j_message_type_str(type), (void *)connection);
+           neo4j_message_type_str(type), (void *)tx->connection);
 
   if (type != NEO4J_SUCCESS_MESSAGE)
     {
       neo4j_log_error(tx->logger, "Unexpected %s", description);
       tx->failed = 1;
       tx->failure = EPROTO;
+      errno = tx->failure;
       return -1;
     }
   tx->is_open = 1;
@@ -99,12 +121,16 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
 }
 
 // commit_tx
-// must check tx->is_failed upon return
-neo4j_transaction_t *neo4j_commit_tx(neo4j_transaction_t *tx)
+int tx_commit(neo4j_transaction_t *tx)
 {
-    REQUIRE(tx != NULL, NULL);
-    neo4j_session_transact(tx->connection, "COMMIT", commit_callback, tx);
-    return tx;
+    REQUIRE(tx != NULL, -1);
+    if (neo4j_session_transact(tx->connection, "COMMIT", commit_callback, tx))
+      {
+        neo4j_log_error_errno(tx->logger, "tx commit failed");
+        tx->failed = 1;
+        tx->failure = errno;
+      }
+    return -tx->failed;
 }
 
 int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc)
@@ -115,14 +141,14 @@ int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t 
 
   if (type == NEO4J_FAILURE_MESSAGE)
     {
-      // but should put failure message in log?
-      neo4j_log_error_errno(tx->logger, "tx commit failed", NEO4J_TRANSACTION_FAILED);
       // get FAILURE argv and set tx failure info here
       tx->failed = 1;
       tx->failure = NEO4J_TRANSACTION_FAILED;
       tx->failure_code = neo4j_map_get(argv[0],"code");
       tx->failure_message = neo4j_map_get(argv[0],"message");
       // check here if transaction timed out; if so, set tx->is_expired
+      errno = tx->failure;
+      neo4j_log_error_errno(tx->logger, "tx commit failed");
       return -1;
     }
   if (type == NEO4J_IGNORED_MESSAGE)
@@ -137,16 +163,18 @@ int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t 
   if (type != NEO4J_SUCCESS_MESSAGE)
     {
       neo4j_log_error(tx->logger, "Unexpected %s", description);
-      tx->failed = 1;
+      tx->failed = -1;
       tx->failure = EPROTO;
+      errno = tx->failure;
       return -1;
     }
   if (argc) {
     neo4j_value_t svr_extra = argv[0];
     neo4j_value_t bookmark = neo4j_map_get(svr_extra,"bookmark");
-    if (bookmark != NULL) {
-      tx->commit_bookmark = bookmark;
-    }
+    if (!neo4j_is_null(bookmark))
+      {
+        tx->commit_bookmark = bookmark;
+      }
   }
   tx->is_open = 0;
   return 0;
@@ -154,11 +182,16 @@ int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t 
 
 // rollback_tx
 // must check tx->failed after call
-neo4j_transaction_t *neo4j_rollback_tx(neo4j_transaction_t *tx)
+int tx_rollback(neo4j_transaction_t *tx)
 {
-  REQUIRE(tx != NULL, NULL);
-  neo4j_session_transact(tx->connection, "ROLLBACK", rollback_callback, tx);
-  return tx;
+  REQUIRE(tx != NULL, -1);
+  if (neo4j_session_transact(tx->connection, "ROLLBACK", rollback_callback, tx))
+    {
+      neo4j_log_error_errno(tx->logger, "tx rollback failed");
+      tx->failed = 1;
+      tx->failure = errno;
+    }
+  return -tx->failed;
 }
 
 int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc)
@@ -168,14 +201,14 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
   neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
   if (type == NEO4J_FAILURE_MESSAGE)
     {
-      // but should put failure message in log?
-      neo4j_log_error_errno(tx->logger, "tx rollback failed", NEO4J_TRANSACTION_FAILED);
       // get FAILURE argv and set tx failure info here
       tx->failed = 1;
       tx->failure = NEO4J_TRANSACTION_FAILED;
       tx->failure_code = neo4j_map_get(argv[0],"code");
       tx->failure_message = neo4j_map_get(argv[0],"message");
       // check here if transaction timed out; if so, set tx->is_expired
+      errno = tx->failure;
+      neo4j_log_error_errno(tx->logger, "tx rollback failed");
       return -1;
     }
   if (type == NEO4J_IGNORED_MESSAGE)
@@ -192,6 +225,7 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
       neo4j_log_error(tx->logger, "Unexpected %s", description);
       tx->failed = 1;
       tx->failure = EPROTO;
+      errno = tx->failure;
       return -1;
     }
 
@@ -204,45 +238,138 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
 // returns a result stream, namely, tx->results
 // if it borks...
 
-neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx,
-                                     const char *statement, neo4j_value_t params)
+neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
+                              const char *statement, neo4j_value_t params)
 {
   REQUIRE(tx != NULL, NULL);
-  neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
   tx->results = neo4j_run( tx->connection, statement, params );
-  return tx->results
+  return tx->results;
 }
 
 // constructor
 
-neo4j_transaction_t *new_transaction(neo4j_config_t *config, int timeout, const char *mode) {
+neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode) {
   neo4j_transaction_t *tx = neo4j_calloc(config->allocator,
                                          NULL, 1, sizeof(neo4j_transaction_t));
   tx->allocator = config->allocator;
   tx->logger = neo4j_get_logger(config, "transactions");
   tx->connection = connection;
+
+  tx->commit = tx_commit;
+  tx->rollback = tx_rollback;
+  tx->run = tx_run;
+
   tx->timeout = (timeout == 0 ? DEFAULT_TX_TIMEOUT : timeout);
   tx->mode = ( mode == NULL ? "w" : mode );
   neo4j_map_entry_t ent[2] = { neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout)),
                                neo4j_map_entry("mode",neo4j_string(tx->mode)) };
-  tx->extra = &(neo4j_map(ent,2));
+  tx->extra = neo4j_map(ent,2);
   tx->is_open = 0;
   tx->is_expired = 0;
   tx->failed = 0;
   tx->failure_code = neo4j_null;
   tx->failure_message = neo4j_null;
-  tx->bookmarks = &neo4j_null;
+  tx->bookmarks = NULL;
   tx->num_bookmarks = 0;
   return tx;
 }
 
-// tx getters
-void tx_bookmarks(neo4j_transaction_t *tx) {
+// methods
+
+int neo4j_commit(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, -1);
+  return tx->commit(tx);
+}
+
+int neo4j_rollback(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, -1);
+  return tx->rollback(tx);
+}
+
+neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *statement,
+                                       neo4j_value_t params)
+{
+  REQUIRE(tx != NULL, NULL);
+  REQUIRE(statement != NULL, NULL);
+  REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
+
+  return tx->run(tx, statement, params);
+}
+
+// getters
+
+int neo4j_tx_is_open(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, -1);
+  return tx->is_open;
+}
+
+int neo4j_tx_expired(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, -1);
+  return tx->is_expired;
+}
+
+int neo4j_tx_failure(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, -1);
+  return tx->failure;
+}
+
+int neo4j_tx_timeout(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, -1);
+  return tx->timeout;
+}
+
+const char *neo4j_tx_mode(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, NULL);
+  return tx->mode;
+}
+
+const char *neo4j_tx_failure_code(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, NULL);
+  if (neo4j_is_null(tx->failure_code)) {
+    return NULL;
+  }
+  char buf[128];
+  size_t n = neo4j_string_length(tx->failure_code);
+  n = (n > sizeof(buf)-1 ? sizeof(buf)-1 : n);
+  return neo4j_string_value(tx->failure_code, buf, n);
+}
+
+const char *neo4j_tx_failure_message(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, NULL);
+  if (neo4j_is_null(tx->failure_message)) {
+    return NULL;
+  }
+  char buf[128];
+  size_t n = neo4j_string_length(tx->failure_message);
+  n = (n > sizeof(buf)-1 ? sizeof(buf)-1 : n);
+  return neo4j_string_value(tx->failure_message, buf, n);
+}
+
+const char *neo4j_tx_commit_bookmark(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, NULL);
+  if (neo4j_is_null(tx->commit_bookmark)) {
+    return NULL;
+  }
+  char buf[128];
+  size_t n = neo4j_string_length(tx->commit_bookmark);
+  n = (n > sizeof(buf)-1 ? sizeof(buf)-1 : n);
+  return neo4j_string_value(tx->commit_bookmark, buf, n);
 }
 
 // destructor
 
-void destroy_transaction(neo4j_transaction_t *tx) {
+void neo4j_destroy_transaction(neo4j_transaction_t *tx)
+{
   // free bookmarks array space
   // free tx space
   if (tx->num_bookmarks > 0) {

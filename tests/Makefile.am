@@ -61,8 +61,8 @@ check_libneo4j-client_suite.c: ${check_libneo4j_client_CHECKS}
 	echo "    return s;"; \
 	echo "}") > $@
 
-check_libneo4j_client_CFLAGS = @CHECK_CFLAGS@
-check_libneo4j_client_LDFLAGS = -static
+check_libneo4j_client_CFLAGS = @CHECK_CFLAGS@ -g
+check_libneo4j_client_LDFLAGS = -static -lcheck
 check_libneo4j_client_LDADD = \
 	$(top_builddir)/src/lib/libneo4j-client.la @CHECK_LIBS@
 
