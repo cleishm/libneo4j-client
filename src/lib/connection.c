@@ -1501,11 +1501,6 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
     REQUIRE(callback != NULL, -1);
 
     neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
-    //    if (neo4j_atomic_bool_set(&(connection->processing), true))
-    // {
-    //    errno = NEO4J_SESSION_BUSY;
-    //    return -1;
-    // }
     int err = -1;
     struct neo4j_request *req = new_request(connection);
     if (req == NULL)
@@ -1542,6 +1537,5 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
     err = 0;
 
 cleanup:
-    // neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
 }
