@@ -117,7 +117,7 @@ static void teardown(void)
 
     for (unsigned int i = 0; i < TEST_BUFFER_SIZE; ++i)
     {
-        ck_assert(test_buffer[i] == '\0');
+      ck_assert(test_buffer[i] == '\0');
     }
 }
 
@@ -264,7 +264,7 @@ START_TEST (fill_and_drain)
 
     for (int i = additions; i > 0; --i)
     {
-        ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
+      ck_assert_int_gt(neo4j_mpool_add(&pool, test_buffer_next()), 0);
     }
     int expected_blocks = (additions / (block_size - 1)) + 1;
 

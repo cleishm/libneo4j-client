@@ -1498,13 +1498,14 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
 {
     REQUIRE(connection != NULL, -1);
     REQUIRE(cdata != NULL, -1);
+    REQUIRE(callback != NULL, -1);
 
     neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
-    if (neo4j_atomic_bool_set(&(connection->processing), true))
-    {
-        errno = NEO4J_SESSION_BUSY;
-        return -1;
-    }
+    //    if (neo4j_atomic_bool_set(&(connection->processing), true))
+    // {
+    //    errno = NEO4J_SESSION_BUSY;
+    //    return -1;
+    // }
     int err = -1;
     struct neo4j_request *req = new_request(connection);
     if (req == NULL)
@@ -1513,18 +1514,34 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
     }
 
     req->type = neo4j_message_type_for_type(msg_type);
-    req->_argv[0] = (cdata == NULL ? neo4j_map(NULL, 0) : tx->extra); // extra dictionary
-    req->argv = req->_argv;
-    req->argc = (cdata == NULL ? 0 : 1);
-    // req->mpool = mpool; - assume the mpool automatically attached to the req is ok
+    if (strcmp(msg_type,"BEGIN") == 0) {
+      const neo4j_map_entry_t ent[2] = { neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout)),
+                                         neo4j_map_entry("mode",neo4j_string(tx->mode)) };
+      req->_argv[0] = neo4j_map(ent,2); // extra dictionary
+      req->argv = req->_argv;
+      req->argc = 1;
+    }
+    else {
+      req->argv = NULL;
+      req->argc = 0;
+    }
+    req->mpool = &(tx->mpool);
     req->receive = callback; // callback specified in transaction.c
     req->cdata = cdata; // this will be the neo4j_transaction_t object
-    neo4j_log_trace(connection->logger, "enqu BEGIN (%p) in %p",
-            (void *)req, (void *)connection);
+    if (neo4j_log_is_enabled(connection->logger,NEO4J_LOG_TRACE)) {
+        neo4j_log_trace(connection->logger, "enqu %s (%p) in %p",
+                        msg_type, (void *)req, (void *)connection);
+    }
+    if (neo4j_session_sync(connection,NULL)) {
+      if (tx->failed != 0) {
+        errno = tx->failure;
+      }
+      goto cleanup;
+    }
 
     err = 0;
 
 cleanup:
-    neo4j_atomic_bool_set(&(connection->processing), false);
+    // neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
 }

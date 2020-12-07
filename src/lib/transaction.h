@@ -44,7 +44,7 @@ const char *neo4j_tx_mode(neo4j_transaction_t *tx);
 const char *neo4j_tx_failure_code(neo4j_transaction_t *tx);
 const char *neo4j_tx_failure_message(neo4j_transaction_t *tx);
 const char *neo4j_tx_commit_bookmark(neo4j_transaction_t *tx);
-void neo4j_destroy_transaction(neo4j_transaction_t *tx);
+void neo4j_free_tx(neo4j_transaction_t *tx);
 
 struct neo4j_transaction
 {
@@ -62,6 +62,7 @@ struct neo4j_transaction
   neo4j_memory_allocator_t *allocator;
   neo4j_connection_t *connection;
   neo4j_logger_t *logger;
+  neo4j_mpool_t mpool;
 
   unsigned int is_open; // this tx has begun and is active
   unsigned int is_expired; // this tx has expired and is defunct

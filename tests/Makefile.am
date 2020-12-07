@@ -5,6 +5,7 @@ check_libneo4j_client_SOURCES = \
 	check_libneo4j-client.c \
 	check_libneo4j-client_suite.c \
 	canned_result_stream.c \
+	check_memory.c \
 	canned_result_stream.h \
 	memiostream.c \
 	memiostream.h \
@@ -22,13 +23,13 @@ check_libneo4j_client_CHECKS = \
 	check_dotdir.c \
 	check_error_handling.c \
 	check_logging.c \
-	check_memory.c \
 	check_fit_column_widths.c \
 	check_render_plan.c \
 	check_render_results.c \
 	check_result_stream.c \
 	check_ring_buffer.c \
 	check_serialization.c \
+	check_transaction.c \
 	check_tofu.c \
 	check_u8.c \
 	check_uri.c \
@@ -62,7 +63,7 @@ check_libneo4j-client_suite.c: ${check_libneo4j_client_CHECKS}
 	echo "}") > $@
 
 check_libneo4j_client_CFLAGS = @CHECK_CFLAGS@ -g
-check_libneo4j_client_LDFLAGS = -static -lcheck
+check_libneo4j_client_LDFLAGS = -static -lcheck # -lrt -lsubunit
 check_libneo4j_client_LDADD = \
 	$(top_builddir)/src/lib/libneo4j-client.la @CHECK_LIBS@
 
