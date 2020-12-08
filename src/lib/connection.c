@@ -1141,20 +1141,37 @@ int initialize(neo4j_connection_t *connection)
     struct init_cdata cdata = { .connection = connection, .error = 0 };
 
     req->type = NEO4J_INIT_MESSAGE;
-    req->_argv[0] = neo4j_string(config->client_id);
-    neo4j_map_entry_t auth_token[3] =
+    if (connection->version < 3)
+      {
+      req->_argv[0] = neo4j_string(config->client_id);
+      neo4j_map_entry_t auth_token[3] =
         { neo4j_map_entry("scheme", neo4j_string("basic")),
           neo4j_map_entry("principal", neo4j_string(config->username)),
           neo4j_map_entry("credentials", neo4j_string(config->password)) };
-    req->_argv[1] = neo4j_map(auth_token, 3);
-    req->argv = req->_argv;
-    req->argc = 2;
+      req->_argv[1] = neo4j_map(auth_token, 3);
+      req->argv = req->_argv;
+      req->argc = 2;
+      }
+    else
+      {
+        neo4j_map_entry_t auth_token[4] =
+          { neo4j_map_entry("user_agent", neo4j_string(config->client_id)),
+            neo4j_map_entry("scheme", neo4j_string("basic")),
+            neo4j_map_entry("principal", neo4j_string(config->username)),
+            neo4j_map_entry("credentials", neo4j_string(config->password)) };
+        req->_argv[0] = neo4j_map(auth_token, 4);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->receive = initialize_callback;
     req->cdata = &cdata;
 
     neo4j_log_trace(connection->logger,
+                    (connection->version < 3)?
             "enqu INIT{\"%s\", {scheme: basic, principal: \"%s\", "
-            "credentials: ****}} (%p) in %p",
+                    "credentials: ****}} (%p) in %p" :
+            "enqu INIT{user_agent: \"%s\", scheme: basic, principal: \"%s\", "
+                    "credentials: ****}} (%p) in %p",
             config->client_id, config->username,
             (void *)req, (void *)connection);
 
