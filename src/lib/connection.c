@@ -1414,8 +1414,12 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
     req->_argv[1] = neo4j_is_null(params)? neo4j_map(NULL, 0) : params;
+    if (connection->version > 2)
+      { //extra dict
+        req->_argv[2] = neo4j_map(NULL,0);
+      }
     req->argv = req->_argv;
-    req->argc = 2;
+    req->argc = (connection->version > 2)? 3 : 2;
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;

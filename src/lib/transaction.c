@@ -31,6 +31,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
 int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
+int tx_expired(neo4j_transaction_t *tx);
 int tx_commit(neo4j_transaction_t *tx);
 int tx_rollback(neo4j_transaction_t *tx);
 neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
@@ -259,6 +260,25 @@ neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
   return tx->results;
 }
 
+int tx_expired(neo4j_transaction_t *tx)
+{
+  if (tx->failed == 0) {
+    tx->is_expired = 0;
+  }
+  else {
+    if (strcmp(neo4j_tx_failure_code(tx),
+               "Neo.ClientError.Transaction.TransactionTimedOut") == 0)
+      {
+        tx->is_expired = 1;
+      }
+    else
+      {
+        tx->is_expired = 0;
+      }
+  }
+  return tx->is_expired;
+}
+
 // constructor
 
 neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode) {
@@ -269,6 +289,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
   tx->connection = connection;
   tx->mpool = neo4j_std_mpool(config);
 
+  tx->check_expired = tx_expired;
   tx->commit = tx_commit;
   tx->rollback = tx_rollback;
   tx->run = tx_run;
@@ -320,7 +341,7 @@ int neo4j_tx_is_open(neo4j_transaction_t *tx)
 int neo4j_tx_expired(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  return tx->is_expired;
+  return tx->check_expired(tx);
 }
 
 int neo4j_tx_failure(neo4j_transaction_t *tx)

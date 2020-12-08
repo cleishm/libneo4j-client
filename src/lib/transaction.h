@@ -48,7 +48,7 @@ void neo4j_free_tx(neo4j_transaction_t *tx);
 
 struct neo4j_transaction
 {
-  int (*check_failure)(neo4j_transaction_t *self);
+  int (*check_expired)(neo4j_transaction_t *self);
   const char *(*error_code)(neo4j_transaction_t *self);
   const char *(*error_message)(neo4j_transaction_t *self);
   int (*commit)(neo4j_transaction_t *self);
