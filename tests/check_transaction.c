@@ -314,6 +314,36 @@ START_TEST (test_transaction)
     ck_assert_int_eq( tx->failed, 1 );
     ck_assert_str_eq( neo4j_tx_failure_code(tx), "Neo.ClientError.Sample");
     ck_assert_str_eq( neo4j_tx_failure_message(tx), "Sample error");
+
+    // check run in tx - using the result_stream machinery
+    connection->failed = false; // kludge and reuse
+    queue_begin_success(server_ios);
+    tx = neo4j_begin_tx(connection, 0, NULL);
+    ck_assert_int_eq(tx->failed, 0);
+
+    queue_run_success(server_ios);
+    queue_record(server_ios); // PULL_ALL
+    queue_record(server_ios); // PULL_ALL
+    queue_stream_end_success_with_counts(server_ios); // PULL_ALL
+    queue_commit_success(server_ios);
+
+    neo4j_result_stream_t *tx_results = neo4j_run_in_tx(tx, "RETURN 1", neo4j_null);
+    ck_assert_ptr_ne(tx_results, NULL);
+    ck_assert_ptr_ne(neo4j_fetch_next(tx_results), NULL);
+    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert_ptr_ne(neo4j_fetch_next(tx_results), NULL);
+    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert_ptr_eq(neo4j_fetch_next(tx_results),NULL);
+    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert_int_eq(errno, 0);
+    ck_assert_int_eq(neo4j_check_failure(tx_results), 0);
+    ck_assert_int_eq(neo4j_close_results(tx_results),0);
+    ck_assert_int_eq(neo4j_commit(tx), 0);
+    ck_assert_int_eq(tx->failed, 0);
+    ck_assert_int_eq(neo4j_tx_is_open(tx), 0);
+    neo4j_free_tx(tx);
+    assert(rb_is_empty(in_rb));
+
 }
 END_TEST
 
