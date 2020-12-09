@@ -438,7 +438,8 @@ struct neo4j_connection_factory
 #define NEO4J_SESSION_RESET -38
 #define NEO4J_SESSION_BUSY -39
 #define NEO4J_TRANSACTION_FAILED -40
-#define NEO4J_FEATURE_UNAVAILABLE -41
+#define NEO4J_TRANSACTION_DEFUNCT -41
+#define NEO4J_FEATURE_UNAVAILABLE -42
 
 /**
  * Print the error message corresponding to an error number.

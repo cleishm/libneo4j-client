@@ -250,18 +250,36 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
 
 // run_in_tx
 // returns a result stream, namely, tx->results
-// if it borks...
+// returns NULL and expires tx if tx has timed out
 
 neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
                               const char *statement, neo4j_value_t params)
 {
   REQUIRE(tx != NULL, NULL);
   tx->results = neo4j_run( tx->connection, statement, params );
+  if (tx->results == NULL)
+    {
+      tx->failed = 1;
+      tx->failure = errno;
+      return NULL;
+    }
+  if (neo4j_check_failure(tx->results))
+    {
+      if (strcmp(neo4j_error_code(tx->results),
+                 "Neo.ClientError.Transaction.TransactionTimedOut") == 0) {
+        tx->failed = 1;
+        tx->is_expired = 1;
+        return NULL;
+      }
+    }
   return tx->results;
 }
 
 int tx_expired(neo4j_transaction_t *tx)
 {
+  if (tx->is_expired == 1) { // if set elsewhere (in tx_run)
+    return 1;
+  }
   if (tx->failed == 0) {
     tx->is_expired = 0;
   }
@@ -326,7 +344,14 @@ neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *stat
   REQUIRE(tx != NULL, NULL);
   REQUIRE(statement != NULL, NULL);
   REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
-
+  if (neo4j_tx_expired(tx) == 1) {
+    errno = NEO4J_TRANSACTION_DEFUNCT;
+    neo4j_log_error(tx->logger,
+                    "Attempt to run query in defunct transaction on %p\n",
+                    (void *)tx->connection);
+    tx->results = NULL;
+    return NULL;
+  }
   return tx->run(tx, statement, params);
 }
 
