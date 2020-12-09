@@ -1350,12 +1350,14 @@ int ack_failure(neo4j_connection_t *connection)
     {
         return -1;
     }
-    req->type = NEO4J_ACK_FAILURE_MESSAGE;
+    req->type = (connection->version < 3)? NEO4J_ACK_FAILURE_MESSAGE :
+      NEO4J_RESET_MESSAGE;
     req->argc = 0;
     req->receive = ack_failure_callback;
     req->cdata = connection;
 
-    neo4j_log_trace(connection->logger, "enqu ACK_FAILURE (%p) in %p",
+    neo4j_log_trace(connection->logger, "enqu %s (%p) in %p",
+            (connection->version < 3)? "ACK_FAILURE" : "RESET",
             (void *)req, (void *)connection);
 
     return neo4j_session_sync(connection, NULL);
@@ -1368,6 +1370,8 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     assert(cdata != NULL);
     neo4j_connection_t *connection = (neo4j_connection_t *)cdata;
 
+    char buf[12];
+    strcpy(buf, (connection->version < 3)? "ACK_FAILURE" : "RESET");
     if (type == NEO4J_IGNORED_MESSAGE)
     {
         // only when draining after connection close
@@ -1377,13 +1381,13 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
-                " (expected SUCCESS in response to ACK_FAILURE)",
-                neo4j_message_type_str(type), (void *)connection);
+                " (expected SUCCESS in response to %s)",
+                 neo4j_message_type_str(type), (void *)connection, buf);
         errno = EPROTO;
         return -1;
     }
 
-    neo4j_log_trace(connection->logger, "ACK_FAILURE complete in %p",
+    neo4j_log_trace(connection->logger, "%s complete in %p", buf,
             (void *)connection);
     return 0;
 }
