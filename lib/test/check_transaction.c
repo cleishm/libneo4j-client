@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../config.h"
-#include "../src/lib/neo4j-client.h"
-#include "../src/lib/chunking_iostream.h"
-#include "../src/lib/connection.h"
-#include "../src/lib/deserialization.h"
-#include "../src/lib/messages.h"
-#include "../src/lib/serialization.h"
-#include "../src/lib/util.h"
-#include "../src/lib/transaction.h"
+#include "../../config.h"
+#include "../src/neo4j-client.h"
+#include "../src/chunking_iostream.h"
+#include "../src/connection.h"
+#include "../src/deserialization.h"
+#include "../src/messages.h"
+#include "../src/serialization.h"
+#include "../src/util.h"
+#include "../src/transaction.h"
 #include "memiostream.h"
 #include <check.h>
 #include <assert.h>
