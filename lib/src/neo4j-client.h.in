@@ -72,6 +72,11 @@ typedef struct neo4j_config neo4j_config_t;
 typedef struct neo4j_connection neo4j_connection_t;
 
 /**
+ * An explicit transaction with a neo4j server.
+ */
+typedef struct neo4j_transaction neo4j_transaction_t;
+
+/**
  * A stream of results from a job.
  */
 typedef struct neo4j_result_stream neo4j_result_stream_t;
@@ -436,6 +441,9 @@ struct neo4j_connection_factory
 #define NEO4J_TLS_MALFORMED_CERTIFICATE -37
 #define NEO4J_SESSION_RESET -38
 #define NEO4J_SESSION_BUSY -39
+#define NEO4J_TRANSACTION_FAILED -40
+#define NEO4J_TRANSACTION_DEFUNCT -41
+#define NEO4J_FEATURE_UNAVAILABLE -42
 
 /**
  * Print the error message corresponding to an error number.
@@ -1778,6 +1786,159 @@ __neo4j_must_check
 neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
+/*
+ * =====================================
+ * transactions
+ * =====================================
+ */
+
+/**
+ * Begin an explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [connection] The connection.
+ * @param [tx_timeout] Transaction timeout in seconds. If 0, set to DEFAULT_TX_TIMEOUT (60).
+ * @param [tx_mode] Transaction mode string: "r" - read, "w" - write. If NULL, defaults to "w".
+ * @return A `neo4j_transaction_t` tx. If tx->failed is set, the call failed; check tx->failure_code.
+ *
+ */
+__neo4j_must_check
+neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
+                                    int tx_timeout, const char *tx_mode);
+
+/**
+ * Commit an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @return int: 0 on success, 1 on failure.
+ *
+ */
+__neo4j_must_check
+int neo4j_commit(neo4j_transaction_t *tx);
+
+/**
+ * Rollback an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @return int: 0 on success, 1 on failure.
+ *
+ */
+__neo4j_must_check
+int neo4j_rollback(neo4j_transaction_t *tx);
+
+/**
+ * Run a query within an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @param [statement] The statement to be evaluated. This must be a `NULL`
+ *         terminated string and may contain UTF-8 multi-byte characters.
+ * @param [params] The parameters for the statement, which must be a value of
+ *         type NEO4J_MAP or #neo4j_null.
+ * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
+ *
+ */
+
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx,
+                                       const char *statement, neo4j_value_t params);
+
+/**
+ * Check if a transaction is open.
+ *
+ * Note: if the error is `NEO4J_STATEMENT_EVALUATION_FAILED`, then additional
+ * error information will be available via neo4j_error_message().
+ *
+ * @param [tx] The transaction.
+ * @return 1 if transaction is open; 0 if closed.
+ */
+
+__neo4j_must_check
+int neo4j_tx_is_open(neo4j_transaction_t *tx);
+
+/**
+ * Check if a transaction has expired.
+ *
+ * This flag is set when the server fails a transaction operation
+ * due to the transaction having exceeded its timeout. Easier to
+ * check than examining neo4j_tx_failure_code().
+ *
+ * @param [tx] The transaction.
+ * @return 1 if transaction has expired; 0 if not.
+ */
+__neo4j_must_check
+int neo4j_tx_expired(neo4j_transaction_t *tx);
+
+/**
+ * Check if a transaction has failed.
+ *
+ * This flag is set when the server fails a transaction operation.
+ * Examine the failure information with neo4j_tx_failure_code()
+ * and neo4j_tx_failure_message().
+ *
+ * @param [tx] The transaction.
+ * @return 1 if transaction has failed; 0 if not.
+ */
+__neo4j_must_check
+int neo4j_tx_failure(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the timeout (in sec) of a transaction.
+ *
+ * @param [tx] The transaction.
+ * @return integer (number of seconds)
+ */
+__neo4j_must_check
+int neo4j_tx_timeout(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the mode (read or write) of a transaction.
+ *
+ * @param [tx] The transaction.
+ * @return const char* ("r" or "w")
+ */
+__neo4j_must_check
+const char *neo4j_tx_mode(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the failure code of a failed transaction as a string.
+ *
+ * @param [tx] The transaction.
+ * @return string (the failure code)
+ */
+__neo4j_must_check
+const char *neo4j_tx_failure_code(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the failure message of a failed transaction as a string.
+ *
+ * @param [tx] The transaction.
+ * @return string (the failure message)
+ */
+__neo4j_must_check
+const char *neo4j_tx_failure_message(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the server's bookmark of a committed transaction as a string.
+ *
+ * @param [tx] The transaction.
+ * @return string (the bookmark token)
+ */
+__neo4j_must_check
+const char *neo4j_tx_commit_bookmark(neo4j_transaction_t *tx);
+
+/**
+ * Free a transaction object
+ *
+ * Use to clean up after transaction has failed, been committed, or
+ * been rolled back.
+ *
+ * @param [tx] The transaction.
+ * @return none
+ */
+void neo4j_free_tx(neo4j_transaction_t *tx);
 
 /*
  * =====================================

@@ -19,7 +19,6 @@
 
 #include "neo4j-client.h"
 
-
 struct neo4j_result_stream
 {
     /**

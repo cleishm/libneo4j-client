@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "connection.h"
+#include "messages.h"
 #include "buffering_iostream.h"
 #include "chunking_iostream.h"
 #include "client_config.h"
@@ -28,10 +29,10 @@
 #endif
 #include "posix_iostream.h"
 #include "serialization.h"
+#include "transaction.h"
 #include "util.h"
 #include <assert.h>
 #include <unistd.h>
-
 
 static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
         uint_fast32_t flags);
@@ -61,6 +62,9 @@ static int initialize_callback(void *cdata, neo4j_message_type_t type,
 static int ack_failure(neo4j_connection_t *connection  );
 static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
        const neo4j_value_t *argv, uint16_t argc);
+
+static int hello(neo4j_connection_t *connection);
+static int goodbye(neo4j_connection_t *connection);
 
 
 struct neo4j_connection_factory neo4j_std_connection_factory =
@@ -282,7 +286,9 @@ neo4j_connection_t *establish_connection(const char *hostname,
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
-    if (protocol_version != 1)
+    if (protocol_version != 1 &&
+        protocol_version != 2 &&
+        protocol_version != 3)
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
@@ -417,7 +423,8 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
         return -1;
     }
 
-    uint32_t supported_versions[4] = { htonl(1), 0, 0, 0 };
+    // Here, add 3 as a supported version, and also 2 (identical to 1)
+    uint32_t supported_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
     if (neo4j_ios_write_all(iostream, supported_versions,
                 sizeof(supported_versions), NULL) < 0)
     {
@@ -485,7 +492,10 @@ int neo4j_close(neo4j_connection_t *connection)
     assert(connection->request_queue_depth == 0);
 
     neo4j_atomic_bool_set(&(connection->processing), false);
-
+    if (connection->version > 2) {
+      // say GOODBYE to server
+      goodbye(connection);
+    }
     if (connection->iostream != NULL &&
         neo4j_ios_close(connection->iostream) && err == 0)
     {
@@ -954,7 +964,7 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
         neo4j_log_debug(connection->logger, "rcvd %s in response to %s (%p)",
                 neo4j_message_type_str(type),
                 neo4j_message_type_str(request->type), (void *)request);
-
+        // request callback executed here
         int result = request->receive(request->cdata, type, argv, argc);
         int errsv = errno;
         if (result <= 0)
@@ -1102,7 +1112,6 @@ struct init_cdata
     int error;
 };
 
-
 int initialize(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
@@ -1131,20 +1140,37 @@ int initialize(neo4j_connection_t *connection)
     struct init_cdata cdata = { .connection = connection, .error = 0 };
 
     req->type = NEO4J_INIT_MESSAGE;
-    req->_argv[0] = neo4j_string(config->client_id);
-    neo4j_map_entry_t auth_token[3] =
+    if (connection->version < 3)
+      {
+      req->_argv[0] = neo4j_string(config->client_id);
+      neo4j_map_entry_t auth_token[3] =
         { neo4j_map_entry("scheme", neo4j_string("basic")),
           neo4j_map_entry("principal", neo4j_string(config->username)),
           neo4j_map_entry("credentials", neo4j_string(config->password)) };
-    req->_argv[1] = neo4j_map(auth_token, 3);
-    req->argv = req->_argv;
-    req->argc = 2;
+      req->_argv[1] = neo4j_map(auth_token, 3);
+      req->argv = req->_argv;
+      req->argc = 2;
+      }
+    else
+      {
+        neo4j_map_entry_t auth_token[4] =
+          { neo4j_map_entry("user_agent", neo4j_string(config->client_id)),
+            neo4j_map_entry("scheme", neo4j_string("basic")),
+            neo4j_map_entry("principal", neo4j_string(config->username)),
+            neo4j_map_entry("credentials", neo4j_string(config->password)) };
+        req->_argv[0] = neo4j_map(auth_token, 4);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->receive = initialize_callback;
     req->cdata = &cdata;
 
     neo4j_log_trace(connection->logger,
+                    (connection->version < 3)?
             "enqu INIT{\"%s\", {scheme: basic, principal: \"%s\", "
-            "credentials: ****}} (%p) in %p",
+                    "credentials: ****}} (%p) in %p" :
+            "enqu INIT{user_agent: \"%s\", scheme: basic, principal: \"%s\", "
+                    "credentials: ****}} (%p) in %p",
             config->client_id, config->username,
             (void *)req, (void *)connection);
 
@@ -1176,6 +1202,35 @@ cleanup:
     return err;
 }
 
+// hello - alias for initialize (Bolt 3.0)
+
+int hello(neo4j_connection_t *connection)
+{
+    return initialize(connection);
+}
+
+// Note (Bolt 3.0)
+// The GOODBYE message does not generate a server response. It signals a graceful
+// finish on the client-side. This functon is called in neo4j_close() when
+// Bolt 3+ is used
+
+int goodbye(neo4j_connection_t *connection)
+{
+    REQUIRE(connection != NULL, -1);
+    if (connection->failed)
+      {
+        errno = NEO4J_SESSION_FAILED;
+        return -1;
+      }
+
+    if (neo4j_connection_send(connection, NEO4J_GOODBYE_MESSAGE, NULL, 0))
+      {
+        connection->failed = true;
+        return -1;
+      }
+    neo4j_log_trace(connection->logger, "sent GOODBYE in %p", (void *)connection);
+    return 0;
+}
 
 int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
@@ -1288,7 +1343,8 @@ cleanup:
     return result;
 }
 
-
+// in Bolt 3, ACK_FAILURE is eschewed for RESET message as
+// a response to server FAILURE.
 int ack_failure(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
@@ -1298,12 +1354,14 @@ int ack_failure(neo4j_connection_t *connection)
     {
         return -1;
     }
-    req->type = NEO4J_ACK_FAILURE_MESSAGE;
+    req->type = (connection->version < 3)? NEO4J_ACK_FAILURE_MESSAGE :
+      NEO4J_RESET_MESSAGE;
     req->argc = 0;
     req->receive = ack_failure_callback;
     req->cdata = connection;
 
-    neo4j_log_trace(connection->logger, "enqu ACK_FAILURE (%p) in %p",
+    neo4j_log_trace(connection->logger, "enqu %s (%p) in %p",
+            (connection->version < 3)? "ACK_FAILURE" : "RESET",
             (void *)req, (void *)connection);
 
     return neo4j_session_sync(connection, NULL);
@@ -1316,7 +1374,9 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     assert(cdata != NULL);
     neo4j_connection_t *connection = (neo4j_connection_t *)cdata;
 
-    if (type == NULL)
+    char buf[12];
+    strcpy(buf, (connection->version < 3)? "ACK_FAILURE" : "RESET");
+    if (type == NEO4J_IGNORED_MESSAGE || type == NULL)
     {
         // only when draining after connection close
         return 0;
@@ -1325,13 +1385,13 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
-                " (expected SUCCESS in response to ACK_FAILURE)",
-                neo4j_message_type_str(type), (void *)connection);
+                " (expected SUCCESS in response to %s)",
+                 neo4j_message_type_str(type), (void *)connection, buf);
         errno = EPROTO;
         return -1;
     }
 
-    neo4j_log_trace(connection->logger, "ACK_FAILURE complete in %p",
+    neo4j_log_trace(connection->logger, "%s complete in %p", buf,
             (void *)connection);
     return 0;
 }
@@ -1362,8 +1422,12 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
     req->_argv[1] = neo4j_is_null(params)? neo4j_map(NULL, 0) : params;
+    if (connection->version > 2)
+      { //extra dict
+        req->_argv[2] = neo4j_map(NULL,0);
+      }
     req->argv = req->_argv;
-    req->argc = 2;
+    req->argc = (connection->version > 2)? 3 : 2;
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;
@@ -1456,5 +1520,51 @@ int neo4j_session_discard_all(neo4j_connection_t *connection,
 
 cleanup:
     neo4j_atomic_bool_set(&(connection->processing), false);
+    return err;
+}
+
+int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, neo4j_response_recv_t callback, void *cdata)
+{
+    REQUIRE(connection != NULL, -1);
+    REQUIRE(cdata != NULL, -1);
+    REQUIRE(callback != NULL, -1);
+
+    neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
+    int err = -1;
+    struct neo4j_request *req = new_request(connection);
+    if (req == NULL)
+    {
+        goto cleanup;
+    }
+
+    req->type = neo4j_message_type_for_type(msg_type);
+    if (strcmp(msg_type,"BEGIN") == 0) {
+      const neo4j_map_entry_t ent[2] = { neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout)),
+                                         neo4j_map_entry("mode",neo4j_string(tx->mode)) };
+      req->_argv[0] = neo4j_map(ent,2); // extra dictionary
+      req->argv = req->_argv;
+      req->argc = 1;
+    }
+    else {
+      req->argv = NULL;
+      req->argc = 0;
+    }
+    req->mpool = &(tx->mpool);
+    req->receive = callback; // callback specified in transaction.c
+    req->cdata = cdata; // this will be the neo4j_transaction_t object
+    if (neo4j_log_is_enabled(connection->logger,NEO4J_LOG_TRACE)) {
+        neo4j_log_trace(connection->logger, "enqu %s (%p) in %p",
+                        msg_type, (void *)req, (void *)connection);
+    }
+    if (neo4j_session_sync(connection,NULL)) {
+      if (tx->failed != 0) {
+        errno = tx->failure;
+      }
+      goto cleanup;
+    }
+
+    err = 0;
+
+cleanup:
     return err;
 }
