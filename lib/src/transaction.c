@@ -31,6 +31,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
 int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
+int tx_failure(neo4j_transaction_t *tx);
 int tx_expired(neo4j_transaction_t *tx);
 int tx_commit(neo4j_transaction_t *tx);
 int tx_rollback(neo4j_transaction_t *tx);
@@ -317,6 +318,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
   tx->is_open = 0;
   tx->is_expired = 0;
   tx->failed = 0;
+  tx->failure = 0;
   tx->failure_code = neo4j_null;
   tx->failure_message = neo4j_null;
   tx->bookmarks = NULL;

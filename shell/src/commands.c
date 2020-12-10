@@ -124,20 +124,13 @@ int run_command(shell_state_t *state, const cypher_astnode_t *command,
 int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos)
 {
+    // TODO: allow timeout and mode for arguments
     if (cypher_ast_command_narguments(command) != 0)
     {
         print_error(state, pos, ":begin does not take any arguments");
         return -1;
     }
-
-    bool echo = state->echo;
-    state->echo = false;
-    unsigned int nexports = state->nexports;
-    state->nexports = 0;
-    int err = evaluate_statement(state, "begin", 5, pos);
-    state->echo = echo;
-    state->nexports = nexports;
-    return err;
+    return db_begin_tx(state, pos);
 }
 
 
@@ -150,14 +143,7 @@ int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
         return -1;
     }
 
-    bool echo = state->echo;
-    state->echo = false;
-    unsigned int nexports = state->nexports;
-    state->nexports = 0;
-    int err = evaluate_statement(state, "commit", 6, pos);
-    state->echo = echo;
-    state->nexports = nexports;
-    return err;
+    return db_commit_tx(state,pos);
 }
 
 
@@ -367,14 +353,7 @@ int eval_rollback(shell_state_t *state, const cypher_astnode_t *command,
         return -1;
     }
 
-    bool echo = state->echo;
-    state->echo = false;
-    unsigned int nexports = state->nexports;
-    state->nexports = 0;
-    int err = evaluate_statement(state, "rollback", 8, pos);
-    state->echo = echo;
-    state->nexports = nexports;
-    return err;
+    return db_rollback_tx(state,pos);
 }
 
 
@@ -404,6 +383,9 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 "%1$s:export%2$s                %5$sDisplay currently exported parameters%6$s\n"
 "%1$s:export%2$s %3$sname=val ...%4$s   %5$sExport parameters for queries%6$s\n"
 "%1$s:unexport%2$s %3$sname ...%4$s     %5$sUnexport parameters for queries%6$s\n"
+"%1$s:begin%2$s %3$sname ...%4$s     %5$sBegin an explicit transaction%6$s\n"
+"%1$s:commit%2$s %3$sname ...%4$s     %5$sCommit an open transaction%6$s\n"
+"%1$s:rollback%2$s %3$sname ...%4$s     %5$sRollback an open transaction%6$s\n"
 "%1$s:reset%2$s                 %5$sReset the session with the server%6$s\n"
 "%1$s:set%2$s                   %5$sDisplay current option values%6$s\n"
 "%1$s:set%2$s %3$soption=value ...%4$s  %5$sSet shell options%6$s\n"

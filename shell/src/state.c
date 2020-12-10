@@ -35,6 +35,7 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->err = err;
     state->tty = tty;
     state->output = out;
+    state->tx = NULL;
     state->config = neo4j_new_config();
     if (state->config == NULL)
     {
