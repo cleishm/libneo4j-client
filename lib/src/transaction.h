@@ -28,7 +28,7 @@
 #include "messages.h"
 #include "uri.h"
 
-#define DEFAULT_TX_TIMEOUT (60)
+#define DEFAULT_TX_TIMEOUT (60000) // 60s timeout
 
 // api level
 
@@ -69,7 +69,7 @@ struct neo4j_transaction
   unsigned int failed; // this tx failed before successful commit or rollback
   int failure; // errno
   neo4j_value_t extra; // client-side message arguments
-  int timeout; // client-side timeout in sec requested
+  int timeout; // client-side timeout in ms requested
   const char *mode; // client-side mode string : "w" write, "r" read
   neo4j_value_t failure_code; // server-side failure code (neo4j_string)
   neo4j_value_t failure_message; // server-side failure message (neo4j_string)

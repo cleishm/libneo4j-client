@@ -22,7 +22,7 @@
 int db_connect(shell_state_t *state, struct cypher_input_position pos,
         const char *connect_string, const char *port_string);
 int db_disconnect(shell_state_t *state, struct cypher_input_position pos);
-int db_begin_tx(shell_state_t *state, struct cypher_input_position pos);
+int db_begin_tx(shell_state_t *state, struct cypher_input_position pos, int timeout, const char *mode);
 int db_commit_tx(shell_state_t *state, struct cypher_input_position pos);
 int db_rollback_tx(shell_state_t *state, struct cypher_input_position pos);
 

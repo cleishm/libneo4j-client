@@ -280,7 +280,8 @@ int db_disconnect(shell_state_t *state, struct cypher_input_position pos)
     return 0;
 }
 
-int db_begin_tx(shell_state_t *state, struct cypher_input_position pos)
+int db_begin_tx(shell_state_t *state, struct cypher_input_position pos,
+                int timeout, const char *mode)
 {
   if (state->connection == NULL)
     {
@@ -299,7 +300,7 @@ int db_begin_tx(shell_state_t *state, struct cypher_input_position pos)
       }
   }
   // TODO: add parameters to :begin - timeout and mode
-  neo4j_transaction_t *new_tx = neo4j_begin_tx(state->connection, 60, NULL);
+  neo4j_transaction_t *new_tx = neo4j_begin_tx(state->connection, timeout, mode);
   if (new_tx == NULL)
     {
       print_error_errno(state, pos, errno, "Cannot create transaction");

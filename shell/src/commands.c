@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include "../../config.h"
+#include "../../lib/src/connection.h"
 #include "commands.h"
 #include "batch.h"
 #include "connect.h"
@@ -24,6 +25,7 @@
 #include <ctype.h>
 #include <errno.h>
 
+#define DEFAULT_TIMEOUT 60000
 
 struct shell_command
 {
@@ -124,19 +126,34 @@ int run_command(shell_state_t *state, const cypher_astnode_t *command,
 int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos)
 {
-    // TODO: allow timeout and mode for arguments
+    if (state->connection->version < 3)
+      {
+        print_error(state, pos, ":begin requires protocol version 3+");
+        return -1;
+      }
+    int timeout = DEFAULT_TIMEOUT;
+    char mode[2] = "w";
     if (cypher_ast_command_narguments(command) != 0)
     {
-        print_error(state, pos, ":begin does not take any arguments");
-        return -1;
+      const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
+      timeout = atoi(cypher_ast_string_get_value(arg));
+      const cypher_astnode_t *arg2 = cypher_ast_command_get_argument(command, 1);
+      if (arg2 != NULL) {
+        strncpy(mode, cypher_ast_string_get_value(arg2), 1);
+      }
     }
-    return db_begin_tx(state, pos);
+    return db_begin_tx(state, pos, timeout, (const char *)mode);
 }
 
 
 int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos)
 {
+    if (state->connection->version < 3)
+      {
+        print_error(state, pos, ":commit requires protocol version 3+");
+        return -1;
+      }
     if (cypher_ast_command_narguments(command) != 0)
     {
         print_error(state, pos, ":commit does not take any arguments");
@@ -347,6 +364,11 @@ int eval_reset(shell_state_t *state, const cypher_astnode_t *command,
 int eval_rollback(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos)
 {
+     if (state->connection->version < 3)
+       {
+         print_error(state, pos, ":rollback requires protocol version 3+");
+         return -1;
+       }
     if (cypher_ast_command_narguments(command) != 0)
     {
         print_error(state, pos, ":rollback does not take any arguments");
@@ -383,9 +405,9 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 "%1$s:export%2$s                %5$sDisplay currently exported parameters%6$s\n"
 "%1$s:export%2$s %3$sname=val ...%4$s   %5$sExport parameters for queries%6$s\n"
 "%1$s:unexport%2$s %3$sname ...%4$s     %5$sUnexport parameters for queries%6$s\n"
-"%1$s:begin%2$s %3$sname ...%4$s     %5$sBegin an explicit transaction%6$s\n"
-"%1$s:commit%2$s %3$sname ...%4$s     %5$sCommit an open transaction%6$s\n"
-"%1$s:rollback%2$s %3$sname ...%4$s     %5$sRollback an open transaction%6$s\n"
+"%1$s:begin%2$s %3$s[timeout(ms)] [mode(r|w)]%4$s     %5$sBegin an explicit transaction%6$s\n"
+"%1$s:commit%2$s                %5$sCommit an open transaction%6$s\n"
+"%1$s:rollback%2$s              %5$sRollback an open transaction%6$s\n"
 "%1$s:reset%2$s                 %5$sReset the session with the server%6$s\n"
 "%1$s:set%2$s                   %5$sDisplay current option values%6$s\n"
 "%1$s:set%2$s %3$soption=value ...%4$s  %5$sSet shell options%6$s\n"

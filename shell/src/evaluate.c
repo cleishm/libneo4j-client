@@ -107,6 +107,7 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
 
     if (state->tx == NULL)
       {
+        printf("hey plain run\n");
         continuation->results = neo4j_run(state->connection,
                 continuation->statement, shell_state_get_exports(state));
       }
@@ -114,6 +115,7 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
       {
         if (neo4j_tx_is_open(state->tx) > 0)
           {
+            printf("dude transaction run\n");
             continuation->results = neo4j_run_in_tx(state->tx,
                     continuation->statement, shell_state_get_exports(state));
           }

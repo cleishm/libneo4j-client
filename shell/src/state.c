@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdio.h>
 
 #define NEO4J_DEFAULT_MAX_SOURCE_DEPTH 10
 
