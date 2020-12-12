@@ -35,6 +35,8 @@ struct neo4j_config
 
     const char *client_id;
 
+    char *dbname;
+
     unsigned int so_rcvbuf_size;
     unsigned int so_sndbuf_size;
     time_t connect_timeout;
@@ -112,6 +114,7 @@ static inline neo4j_mpool_t neo4j_std_mpool(const neo4j_config_t *config)
  * @param 0 on success, -1 on error (errno will be set).
  */
 int ensure_basic_auth_credentials(neo4j_config_t *config, const char *host);
+
 
 
 #endif/*NEO4J_CLIENT_CONFIG_H*/

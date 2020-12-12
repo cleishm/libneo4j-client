@@ -43,7 +43,7 @@ static neo4j_iostream_t *std_tcp_connect(
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags,
         struct neo4j_logger *logger);
 static int negotiate_protocol_version(neo4j_iostream_t *iostream,
-        uint32_t *protocol_version);
+        uint32_t *protocol_version, uint32_t *protocol_minor_version);
 
 static bool interrupted(neo4j_connection_t *connection);
 static int session_reset(neo4j_connection_t *connection);
@@ -280,15 +280,13 @@ neo4j_connection_t *establish_connection(const char *hostname,
         goto failure;
     }
 
-    uint32_t protocol_version;
-    if (negotiate_protocol_version(iostream, &protocol_version))
+    uint32_t protocol_version, protocol_minor_version;
+    if (negotiate_protocol_version(iostream, &protocol_version, &protocol_minor_version))
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
-    if (protocol_version != 1 &&
-        protocol_version != 2 &&
-        protocol_version != 3)
+    if ((protocol_version < 1) || (protocol_version > 4))
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
@@ -414,7 +412,7 @@ failure:
 
 
 int negotiate_protocol_version(neo4j_iostream_t *iostream,
-        uint32_t *protocol_version)
+                               uint32_t *protocol_version, uint32_t *protocol_minor_version)
 {
     uint8_t hello[] = { 0x60, 0x60, 0xB0, 0x17 };
     if (neo4j_ios_write_all(iostream, hello,
@@ -424,7 +422,7 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
     }
 
     // Here, add 3 as a supported version, and also 2 (identical to 1)
-    uint32_t supported_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
+    uint32_t supported_versions[4] = { htonl(4), htonl(3), htonl(2), htonl(1) };
     if (neo4j_ios_write_all(iostream, supported_versions,
                 sizeof(supported_versions), NULL) < 0)
     {
@@ -443,8 +441,9 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
     {
         return -1;
     }
-
-    *protocol_version = ntohl(agreed_version);
+    agreed_version = ntohl(agreed_version);
+    *protocol_version = agreed_version & 0007;
+    *protocol_minor_version = (agreed_version & 0700) >> 8;
     return 0;
 }
 
