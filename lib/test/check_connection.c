@@ -192,7 +192,7 @@ START_TEST (test_connects_URI_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
+    uint32_t expected_versions[4] = { htonl(4), htonl(3), htonl(2), htonl(1)};
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -253,7 +253,7 @@ START_TEST (test_connects_URI_containing_credentials_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
+    uint32_t expected_versions[4] = { htonl(4),htonl(3), htonl(2), htonl(1)};
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -312,7 +312,7 @@ START_TEST (test_connects_tcp_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(3), htonl(2), htonl(1), 0 };
+    uint32_t expected_versions[4] = { htonl(4), htonl(3), htonl(2), htonl(1)};
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -500,7 +500,7 @@ START_TEST (test_drains_outstanding_requests_on_close)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp);
     ck_assert_int_eq(result, 0);
 
@@ -521,7 +521,7 @@ START_TEST (test_awaits_inflight_requests_on_close)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -588,7 +588,7 @@ START_TEST (test_drains_outstanding_requests_on_reset)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp);
     ck_assert_int_eq(result, 0);
 
@@ -611,7 +611,7 @@ START_TEST (test_awaits_inflight_requests_on_reset)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -647,7 +647,7 @@ START_TEST (test_drains_requests_and_acks_after_failure)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -657,7 +657,7 @@ START_TEST (test_drains_requests_and_acks_after_failure)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp3 = { 1, NULL };
-    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
+    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null, neo4j_null,
             response_recv_callback, &resp3);
     ck_assert_int_eq(result, 0);
 
@@ -689,7 +689,7 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -706,7 +706,7 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
     ck_assert(resp1.type == NEO4J_FAILURE_MESSAGE);
     ck_assert(resp2.type == NULL);
 
-    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
+    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, NEO4J_SESSION_FAILED);
@@ -729,7 +729,7 @@ START_TEST (test_cant_continue_after_eproto_in_ack_failure)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
@@ -747,7 +747,7 @@ START_TEST (test_cant_continue_after_eproto_in_ack_failure)
     ck_assert(resp1.type == NEO4J_FAILURE_MESSAGE);
     ck_assert(resp2.type == NEO4J_IGNORED_MESSAGE);
 
-    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
+    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, NEO4J_SESSION_FAILED);
@@ -768,7 +768,7 @@ START_TEST (test_drains_acks_when_closed)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 

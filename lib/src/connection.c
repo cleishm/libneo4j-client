@@ -30,6 +30,7 @@
 #include "posix_iostream.h"
 #include "serialization.h"
 #include "transaction.h"
+#include "map_util.h"
 #include "util.h"
 #include <assert.h>
 #include <unistd.h>
@@ -568,6 +569,7 @@ int neo4j_connection_send(neo4j_connection_t *connection,
         return -1;
     }
 
+
     const neo4j_config_t *config = connection->config;
     int res = neo4j_message_send(connection->iostream, type, argv, argc,
             connection->snd_buffer, config->snd_min_chunk_size,
@@ -886,7 +888,6 @@ int send_requests(neo4j_connection_t *connection)
         int offset = (connection->request_queue_head + i) %
                 connection->request_queue_size;
         struct neo4j_request *request = &(connection->request_queue[offset]);
-
         if (neo4j_connection_send(connection, request->type,
                     request->argv, request->argc))
         {
@@ -1397,13 +1398,14 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
 
 
 int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
-        const char *statement, neo4j_value_t params,
+        const char *statement, neo4j_value_t params, neo4j_value_t extra,
         neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
     REQUIRE(mpool != NULL, -1);
     REQUIRE(statement != NULL, -1);
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), -1);
+    REQUIRE(neo4j_type(extra) == NEO4J_MAP || neo4j_is_null(extra), -1);
     REQUIRE(callback != NULL, -1);
 
     if (neo4j_atomic_bool_set(&(connection->processing), true))
@@ -1421,10 +1423,7 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
     req->_argv[1] = neo4j_is_null(params)? neo4j_map(NULL, 0) : params;
-    if (connection->version > 2)
-      { //extra dict
-        req->_argv[2] = neo4j_map(NULL,0);
-      }
+    req->_argv[2] = neo4j_is_null(extra)? neo4j_map(NULL,0) : extra;
     req->argv = req->_argv;
     req->argc = (connection->version > 2)? 3 : 2;
     req->mpool = mpool;
@@ -1434,9 +1433,20 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     if (neo4j_log_is_enabled(connection->logger, NEO4J_LOG_TRACE))
     {
         char buf[1024];
-        neo4j_log_trace(connection->logger, "enqu RUN{\"%s\", %s} (%p) in %p",
-                statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
-                (void *)req, (void *)connection);
+        if (connection->version < 3)
+          {
+            neo4j_log_trace(connection->logger, "enqu RUN{\"%s\", %s} (%p) in %p",
+                            statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
+                            (void *)req, (void *)connection);
+          }
+        else
+          {
+            char buf2[1024];
+            neo4j_log_trace(connection->logger, "enqu RUN{\"%s\", %s, %s} (%p) in %p",
+                            statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
+                            neo4j_tostring(req->argv[2], buf2, sizeof(buf2)),
+                            (void *)req, (void *)connection);
+          }
     }
 
     err = 0;
@@ -1445,7 +1455,6 @@ cleanup:
     neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
 }
-
 
 int neo4j_session_pull_all(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
         neo4j_response_recv_t callback, void *cdata)

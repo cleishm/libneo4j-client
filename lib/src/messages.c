@@ -125,7 +125,6 @@ int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
     struct neo4j_chunking_iostream chunking_ios;
     neo4j_iostream_t *cios = neo4j_chunking_iostream_init(&chunking_ios,
             ios, buffer, bsize, max_chunk);
-
     neo4j_value_t structure = neo4j_struct(type->struct_signature, argv, argc);
     if (neo4j_serialize(structure, cios))
     {

@@ -40,6 +40,8 @@ static int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
+static int eval_dbname(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
 static int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_export(shell_state_t *state, const cypher_astnode_t *command,
@@ -79,6 +81,7 @@ static struct shell_command shell_commands[] =
     { { "begin", eval_begin },
       { "commit", eval_commit },
       { "connect", eval_connect },
+      { "dbname", eval_dbname },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
       { "param", eval_param },
@@ -191,6 +194,30 @@ int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
     return db_connect(state, pos, connect_string, port_string);
 }
 
+
+int eval_dbname(shell_state_t *state, const cypher_astnode_t *command,
+                struct cypher_input_position pos)
+{
+  if (cypher_ast_command_narguments(command) == 0)
+    {
+      fprintf(state->out, "current db is '%s'\n", neo4j_config_get_dbname(state->config));
+      return 0;
+    }
+  if (cypher_ast_command_narguments(command) == 1)
+    {
+      const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
+      neo4j_config_set_dbname(state->config,cypher_ast_string_get_value(arg));
+      neo4j_map_entry_t db[1] = { neo4j_map_entry("db",neo4j_string(cypher_ast_string_get_value(arg))) };
+      assert(neo4j_set_extra(neo4j_map(db,1)) == 0);
+      fprintf(state->out, "db set\n");
+      return 0;
+    }
+  else
+    {
+      print_error(state,pos, ":dbname takes 0 or 1 argument");
+      return -1;
+    }
+}
 
 int eval_disconnect(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos)
@@ -405,9 +432,10 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 "%1$s:export%2$s                %5$sDisplay currently exported parameters%6$s\n"
 "%1$s:export%2$s %3$sname=val ...%4$s   %5$sExport parameters for queries%6$s\n"
 "%1$s:unexport%2$s %3$sname ...%4$s     %5$sUnexport parameters for queries%6$s\n"
-"%1$s:begin%2$s %3$s[timeout(ms)] [mode(r|w)]%4$s     %5$sBegin an explicit transaction%6$s\n"
-"%1$s:commit%2$s                %5$sCommit an open transaction%6$s\n"
-"%1$s:rollback%2$s              %5$sRollback an open transaction%6$s\n"
+"%1$s:begin%2$s %3$s[timeout(ms)] [mode(r|w)]%4$s     \n"
+"                       %5$sBegin an explicit transaction (v3.0+)%6$s\n"
+"%1$s:commit%2$s                %5$sCommit an open transaction (v3.0+)%6$s\n"
+"%1$s:rollback%2$s              %5$sRollback an open transaction (v3.0+)%6$s\n"
 "%1$s:reset%2$s                 %5$sReset the session with the server%6$s\n"
 "%1$s:set%2$s                   %5$sDisplay current option values%6$s\n"
 "%1$s:set%2$s %3$soption=value ...%4$s  %5$sSet shell options%6$s\n"
@@ -415,6 +443,7 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 "%1$s:source%2$s %3$sfile%4$s           %5$sEvaluate statements from the specified input file%6$s\n"
 "%1$s:status%2$s                %5$sShow the client connection status%6$s\n"
 "%1$s:schema%2$s                %5$sShow database schema indexes and constraints%6$s\n"
+"%1$s:dbname%2$s %3$s[name]%4$s         %5$sView or set database for queries (v4.0+)%6$s\n"
 "%1$s:help%2$s                  %5$sShow usage information%6$s\n"
 "\n"
 "For more information, see the neo4j-client(1) manpage.\n",

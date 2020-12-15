@@ -179,13 +179,14 @@ int neo4j_session_sync(neo4j_connection_t *connection,
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [statement] The statement to send.
  * @param [params] The parameters to send.
+ * @param [extra] The 'extra' map containing bolt metadata (Neo4j 3+)
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
 int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
-        const char *statement, neo4j_value_t params,
+        const char *statement, neo4j_value_t params, neo4j_value_t extra,
         neo4j_response_recv_t callback, void *cdata);
 
 /**
@@ -222,5 +223,7 @@ int neo4j_session_discard_all(neo4j_connection_t *connection,
 // bolt 3 stuff here for now
 __neo4j_must_check
 int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, neo4j_response_recv_t callback, void *cdata);
+
+neo4j_value_t extract_extra( neo4j_value_t *params);
 
 #endif/*NEO4J_CONNECTION_H*/
