@@ -195,13 +195,15 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
  * @internal
  *
  * @param [connection] The connection to send the message in.
+ * @param [n] Number of records to pull; set to -1 to pull all (Bolt 4+)
+ * @param [qid] ID of query to pull from; set to -1 for most recent (Bolt 4+)
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
-int neo4j_session_pull_all(neo4j_connection_t *connection,
+int neo4j_session_pull_all(neo4j_connection_t *connection, int n, int qid,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
 
 /**
@@ -210,13 +212,15 @@ int neo4j_session_pull_all(neo4j_connection_t *connection,
  * @internal
  *
  * @param [connection] The connection to send the message in.
+ * @param [n] Number of records to discard; set to -1 to discard all (Bolt 4+)
+ * @param [qid] ID of query to discard from; set to -1 for most recent (Bolt 4+)
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
-int neo4j_session_discard_all(neo4j_connection_t *connection,
+int neo4j_session_discard_all(neo4j_connection_t *connection, int n, int qid,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
 
 

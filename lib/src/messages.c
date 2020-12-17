@@ -46,6 +46,10 @@ DECLARE_MESSAGE_TYPE(BEGIN, 0x11);
 DECLARE_MESSAGE_TYPE(COMMIT, 0x12);
 DECLARE_MESSAGE_TYPE(ROLLBACK, 0x13);
 
+// Bolt v4
+DECLARE_MESSAGE_TYPE(DISCARD, 0X2F);
+DECLARE_MESSAGE_TYPE(PULL, 0X3F);
+
 // this is one big bag of messages. Need to separate out into protocol version sets?
 // Maybe not...
 
@@ -53,7 +57,9 @@ static const neo4j_message_type_t neo4j_message_types[] =
     { &INIT_MESSAGE,
       &RUN_MESSAGE,
       &DISCARD_ALL_MESSAGE,
+      &DISCARD_MESSAGE,
       &PULL_ALL_MESSAGE,
+      &PULL_MESSAGE,      
       &ACK_FAILURE_MESSAGE,
       &RESET_MESSAGE,
       &RECORD_MESSAGE,
@@ -73,7 +79,9 @@ static const int _max_message_type =
 const neo4j_message_type_t NEO4J_INIT_MESSAGE = &INIT_MESSAGE;
 const neo4j_message_type_t NEO4J_RUN_MESSAGE = &RUN_MESSAGE;
 const neo4j_message_type_t NEO4J_DISCARD_ALL_MESSAGE = &DISCARD_ALL_MESSAGE;
+const neo4j_message_type_t NEO4J_DISCARD_MESSAGE = &DISCARD_MESSAGE;
 const neo4j_message_type_t NEO4J_PULL_ALL_MESSAGE = &PULL_ALL_MESSAGE;
+const neo4j_message_type_t NEO4J_PULL_MESSAGE = &PULL_MESSAGE;
 const neo4j_message_type_t NEO4J_ACK_FAILURE_MESSAGE = &ACK_FAILURE_MESSAGE;
 const neo4j_message_type_t NEO4J_RESET_MESSAGE = &RESET_MESSAGE;
 const neo4j_message_type_t NEO4J_RECORD_MESSAGE = &RECORD_MESSAGE;

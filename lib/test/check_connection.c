@@ -526,7 +526,7 @@ START_TEST (test_awaits_inflight_requests_on_close)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -616,7 +616,7 @@ START_TEST (test_awaits_inflight_requests_on_reset)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -652,7 +652,7 @@ START_TEST (test_drains_requests_and_acks_after_failure)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -694,7 +694,7 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -734,7 +734,7 @@ START_TEST (test_cant_continue_after_eproto_in_ack_failure)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -773,7 +773,7 @@ START_TEST (test_drains_acks_when_closed)
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 

@@ -306,8 +306,8 @@ neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
     }
     (results->refcount)++;
 
-    if (neo4j_session_pull_all(results->connection, &(results->record_mpool),
-            pull_all_callback, results))
+    if (neo4j_session_pull_all(results->connection, -1, -1,
+            &(results->record_mpool), pull_all_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_pull_all failed");
         goto failure;
@@ -371,8 +371,8 @@ neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
     }
     (results->refcount)++;
 
-    if (neo4j_session_discard_all(results->connection, &(results->mpool),
-            discard_all_callback, results))
+    if (neo4j_session_discard_all(results->connection, -1, -1,
+            &(results->mpool), discard_all_callback, results))
     {
         neo4j_log_debug_errno(results->logger,
                 "neo4j_connection_discard_all failed");

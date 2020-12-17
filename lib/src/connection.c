@@ -888,6 +888,11 @@ int send_requests(neo4j_connection_t *connection)
         int offset = (connection->request_queue_head + i) %
                 connection->request_queue_size;
         struct neo4j_request *request = &(connection->request_queue[offset]);
+        if (request->type == NEO4J_PULL_ALL_MESSAGE) {
+          char buf[128];
+          fprintf(stderr, "%s\n",neo4j_tostring(request->argv[0],buf,sizeof(buf)));
+        }
+
         if (neo4j_connection_send(connection, request->type,
                     request->argv, request->argc))
         {
@@ -1456,8 +1461,8 @@ cleanup:
     return err;
 }
 
-int neo4j_session_pull_all(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
-        neo4j_response_recv_t callback, void *cdata)
+int neo4j_session_pull_all(neo4j_connection_t *connection, int n, int qid, 
+        neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
     REQUIRE(mpool != NULL, -1);
@@ -1477,14 +1482,34 @@ int neo4j_session_pull_all(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     }
 
     req->type = NEO4J_PULL_ALL_MESSAGE;
-    req->argv = NULL;
-    req->argc = 0;
+    if (connection->version < 4)
+      {
+        req->argv = NULL;
+        req->argc = 0;
+      }
+    else
+      {
+        neo4j_map_entry_t flds[2] =
+          { neo4j_map_entry("n",neo4j_int( n)),
+            neo4j_map_entry("qid",neo4j_int( qid))};
+        req->_argv[0] = neo4j_map(flds, 2);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;
-
-    neo4j_log_trace(connection->logger, "enqu PULL_ALL (%p) in %p",
-            (void *)req, (void *)connection);
+    if (connection->version < 4)
+      {
+        neo4j_log_trace(connection->logger, "enqu PULL_ALL (%p) in %p",
+		        (void *)req, (void *)connection);
+      }
+    else
+      {
+        char buf[128];
+        neo4j_log_trace(connection->logger, "enqu PULL %s (%p) in %p",
+                neo4j_tostring(req->argv[0],buf, sizeof(buf)), (void *)req, (void *)connection);
+      }
 
     err = 0;
 
@@ -1494,7 +1519,7 @@ cleanup:
 }
 
 
-int neo4j_session_discard_all(neo4j_connection_t *connection,
+int neo4j_session_discard_all(neo4j_connection_t *connection, int n, int qid,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
@@ -1515,14 +1540,35 @@ int neo4j_session_discard_all(neo4j_connection_t *connection,
     }
 
     req->type = NEO4J_DISCARD_ALL_MESSAGE;
-    req->argv = NULL;
-    req->argc = 0;
+    if (connection->version < 4)
+      {
+        req->argv = NULL;
+        req->argc = 0;
+      }
+    else
+      {
+        neo4j_map_entry_t flds[2] =
+          { neo4j_map_entry("n",neo4j_int((long long) n)),
+            neo4j_map_entry("qid",neo4j_int((long long) qid))};
+        req->_argv[0] = neo4j_map(flds, 2);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;
 
-    neo4j_log_trace(connection->logger, "enqu DISCARD_ALL (%p) in %p",
-            (void *)req, (void *)connection);
+    if (connection->version < 4)
+      {
+        neo4j_log_trace(connection->logger, "enqu DISCARD_ALL (%p) in %p",
+                        (void *)req, (void *)connection);
+      }
+    else
+      {
+        char buf[128];
+        neo4j_log_trace(connection->logger, "enqu DISCARD %s (%p) in %p",
+                        neo4j_tostring(req->argv[0],buf, sizeof(buf)), (void *)req, (void *)connection);
+      }
 
     err = 0;
 
