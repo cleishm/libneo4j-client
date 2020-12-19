@@ -70,7 +70,6 @@ neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
         return NULL;
       }
     neo4j_transaction_t *tx = new_transaction(config, connection, tx_timeout, tx_mode, dbname);
-    fprintf(stderr,"Dude I'm here\n");
     if (neo4j_session_transact(connection, "BEGIN", begin_callback, tx))
       {
         neo4j_log_error_errno(tx->logger, "tx begin failed");

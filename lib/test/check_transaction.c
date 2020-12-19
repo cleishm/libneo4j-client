@@ -272,8 +272,6 @@ START_TEST (test_transaction)
 {
     queue_begin_success(server_ios); // BEGIN
     neo4j_transaction_t *tx = neo4j_begin_tx(connection, 10000, "w", "neo4j"); // sends BEGIN
-    fprintf(stderr,"HEY DUDE\n");
-
 
     ck_assert_ptr_ne(tx, NULL);
     ck_assert_int_eq(neo4j_tx_failure(tx), 0);
