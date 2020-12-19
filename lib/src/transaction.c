@@ -313,7 +313,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
   tx->rollback = tx_rollback;
   tx->run = tx_run;
 
-  tx->timeout = (timeout == 0 ? DEFAULT_TX_TIMEOUT : timeout);
+  tx->timeout = timeout;
   tx->mode = ( mode == NULL ? "w" : mode );
   tx->is_open = 0;
   tx->is_expired = 0;
