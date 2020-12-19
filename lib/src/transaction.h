@@ -28,8 +28,6 @@
 #include "messages.h"
 #include "uri.h"
 
-#define DEFAULT_TX_TIMEOUT (60000) // 60s timeout
-
 // api level
 
 neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection, int tx_timeout, const char *tx_mode);

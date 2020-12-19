@@ -1797,7 +1797,7 @@ neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
  * @attention This function is available when server protocol is Bolt 3 or higher.
  *
  * @param [connection] The connection.
- * @param [tx_timeout] Transaction timeout in milliseconds. If 0, set to DEFAULT_TX_TIMEOUT (60000).
+ * @param [tx_timeout] Transaction timeout in milliseconds. If -1, default to server-side setting (dbms.transaction.timeout)
  * @param [tx_mode] Transaction mode string: "r" - read, "w" - write. If NULL, defaults to "w".
  * @return A `neo4j_transaction_t` tx. If tx->failed is set, the call failed; check tx->failure_code.
  *

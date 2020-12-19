@@ -271,7 +271,7 @@ void queue_failure(neo4j_iostream_t *ios)
 START_TEST (test_transaction)
 {
     queue_begin_success(server_ios); // BEGIN
-    neo4j_transaction_t *tx = neo4j_begin_tx(connection, 10, "w"); // sends BEGIN
+    neo4j_transaction_t *tx = neo4j_begin_tx(connection, 10000, "w"); // sends BEGIN
     ck_assert_ptr_ne(tx, NULL);
     ck_assert_int_eq(neo4j_tx_failure(tx), 0);
     ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
@@ -283,9 +283,8 @@ START_TEST (test_transaction)
     ck_assert_int_eq(argc, 1);
     ck_assert(neo4j_type(argv[0]) == NEO4J_MAP);
     char buf[128];
-    ck_assert_str_eq(neo4j_string_value(neo4j_map_get(argv[0],"mode"),buf,127),"w");
-    ck_assert_int_eq( neo4j_int_value( neo4j_map_get(argv[0],"tx_timeout") ), 10 );
-
+    ck_assert( neo4j_eq(neo4j_map_get(argv[0],"mode"),neo4j_string("w")));
+    ck_assert( neo4j_eq(neo4j_map_get(argv[0],"tx_timeout"),neo4j_int(10000)) );
     queue_commit_success(server_ios);
     int result = neo4j_commit(tx);
     ck_assert_int_eq(result, 0);
@@ -296,12 +295,12 @@ START_TEST (test_transaction)
     neo4j_free_tx(tx);
     queue_begin_success(server_ios);
     queue_rollback_success(server_ios);
-    tx = neo4j_begin_tx(connection, 0, NULL);
+    tx = neo4j_begin_tx(connection, -1, NULL);
     ck_assert_ptr_ne(tx, NULL);
-    ck_assert( neo4j_tx_timeout(tx) == DEFAULT_TX_TIMEOUT );
     ck_assert_str_eq( neo4j_tx_mode(tx),"w" );
     type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_BEGIN_MESSAGE);
+    ck_assert( neo4j_is_null(neo4j_map_get(argv[0],"tx_timeout")) );
     ck_assert_int_eq( neo4j_rollback(tx), 0 );
     type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_ROLLBACK_MESSAGE);

@@ -1539,9 +1539,10 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
 
     req->type = neo4j_message_type_for_type(msg_type);
     if (strcmp(msg_type,"BEGIN") == 0) {
-      const neo4j_map_entry_t ent[2] = { neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout)),
-                                         neo4j_map_entry("mode",neo4j_string(tx->mode)) };
-      req->_argv[0] = neo4j_map(ent,2); // extra dictionary
+      const neo4j_map_entry_t ent[2] = { neo4j_map_entry("mode",neo4j_string(tx->mode)),
+                                         neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout))};
+      int nent = (tx->timeout >= 0)?2:1;
+      req->_argv[0] = neo4j_map(ent,nent); // extra dictionary
       req->argv = req->_argv;
       req->argc = 1;
     }
