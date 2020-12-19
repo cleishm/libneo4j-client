@@ -22,11 +22,14 @@
 #include "metadata.h"
 #include "util.h"
 #include "map_util.h"
+#include "values.h"
 #include <assert.h>
 #include <stddef.h>
 
+#define NUM_XTRA_MAP_ENTS 6
 // making global to avoid disrupting the neo4j_run() signature
 static neo4j_value_t g_extra_map;
+static neo4j_map_entry_t g_extra_ents[NUM_XTRA_MAP_ENTS];
 
 int neo4j_check_failure(neo4j_result_stream_t *results)
 {
@@ -256,7 +259,13 @@ static void set_failure(run_result_stream_t *results, int error);
 int neo4j_set_extra(neo4j_value_t map)
 {
   REQUIRE(neo4j_type(map) == NEO4J_MAP || neo4j_is_null(map), -1);
-  g_extra_map = map;
+  unsigned int i;
+  const struct neo4j_map *p = (const struct neo4j_map *)&map;
+  for (i=0;i<neo4j_map_size(map);i++)
+    {
+      g_extra_ents[i] = p->entries[i];
+    }
+  g_extra_map = neo4j_map(g_extra_ents,i);
   return 0;
 }
 
@@ -276,11 +285,9 @@ neo4j_result_stream_t *neo4j_run_in_db(neo4j_connection_t *connection,
        neo4j_log_error_errno(connection->logger, (const char*) buf);
        return NULL;
      }
-   neo4j_map_entry_t *db = calloc(1,sizeof(neo4j_map_entry_t));
-   *db = neo4j_map_entry("db", neo4j_string(dbname));
-   g_extra_map = neo4j_map(db,1);
+   g_extra_ents[0] = neo4j_map_entry("db", neo4j_string(dbname));
+   g_extra_map = neo4j_map(g_extra_ents,1);
    neo4j_result_stream_t *rs = neo4j_run(connection, statement, params);
-   free(db);
    g_extra_map = neo4j_null;
    return rs;
 }
@@ -343,8 +350,8 @@ neo4j_result_stream_t *neo4j_send_to_db(neo4j_connection_t *connection,
       neo4j_log_error_errno(connection->logger, (const char*) buf);
       return NULL;
     }
-  const neo4j_map_entry_t db[1] = { neo4j_map_entry("db", neo4j_string(dbname)) };
-  g_extra_map = neo4j_map(db,1);
+  g_extra_ents[0] = neo4j_map_entry("db", neo4j_string(dbname));
+  g_extra_map = neo4j_map(g_extra_ents,1);
   neo4j_result_stream_t *rs = neo4j_send(connection, statement, params);
   g_extra_map = neo4j_null;
   return rs;

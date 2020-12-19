@@ -67,6 +67,7 @@ static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
 static int hello(neo4j_connection_t *connection);
 static int goodbye(neo4j_connection_t *connection);
 
+static neo4j_map_entry_t xtra[2];
 
 struct neo4j_connection_factory neo4j_std_connection_factory =
 {
@@ -888,10 +889,10 @@ int send_requests(neo4j_connection_t *connection)
         int offset = (connection->request_queue_head + i) %
                 connection->request_queue_size;
         struct neo4j_request *request = &(connection->request_queue[offset]);
-        if (request->type == NEO4J_PULL_ALL_MESSAGE) {
-          char buf[128];
-          fprintf(stderr, "%s\n",neo4j_tostring(request->argv[0],buf,sizeof(buf)));
-        }
+        /* if (request->type == NEO4J_PULL_ALL_MESSAGE) { */
+        /*   char buf[128]; */
+        /*   fprintf(stderr, "%s\n",neo4j_tostring(request->argv[0],buf,sizeof(buf))); */
+        /* } */
 
         if (neo4j_connection_send(connection, request->type,
                     request->argv, request->argc))
@@ -1489,10 +1490,9 @@ int neo4j_session_pull_all(neo4j_connection_t *connection, int n, int qid,
       }
     else
       {
-        neo4j_map_entry_t flds[2] =
-          { neo4j_map_entry("n",neo4j_int( n)),
-            neo4j_map_entry("qid",neo4j_int( qid))};
-        req->_argv[0] = neo4j_map(flds, 2);
+        xtra[0] = neo4j_map_entry("n",neo4j_int( n));
+        xtra[1] = neo4j_map_entry("qid",neo4j_int( qid));
+        req->_argv[0] = neo4j_map(xtra, 2);
         req->argv = req->_argv;
         req->argc = 1;
       }
@@ -1547,10 +1547,9 @@ int neo4j_session_discard_all(neo4j_connection_t *connection, int n, int qid,
       }
     else
       {
-        neo4j_map_entry_t flds[2] =
-          { neo4j_map_entry("n",neo4j_int((long long) n)),
-            neo4j_map_entry("qid",neo4j_int((long long) qid))};
-        req->_argv[0] = neo4j_map(flds, 2);
+        xtra[0] = neo4j_map_entry("n",neo4j_int(n));
+        xtra[1] = neo4j_map_entry("qid",neo4j_int(qid));
+        req->_argv[0] = neo4j_map(xtra, 2);
         req->argv = req->_argv;
         req->argc = 1;
       }
