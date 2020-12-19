@@ -110,7 +110,6 @@ neo4j_config_t *neo4j_new_config()
     config->render_inspect_rows = NEO4J_DEFAULT_RENDER_INSPECT_ROWS;
     config->results_table_colors = neo4j_results_table_no_colors;
     config->plan_table_colors = neo4j_plan_table_no_colors;
-    neo4j_config_set_dbname(config, "neo4j");
     return config;
 }
 
@@ -136,10 +135,6 @@ neo4j_config_t *neo4j_config_dup(const neo4j_config_t *config)
     {
         goto failure;
     }
-    if (strdup_null(&(dup->dbname), config->dbname))
-      {
-        goto failure;
-      }
 
 #ifdef HAVE_TLS
     if (strdup_null(&(dup->tls_private_key_file), config->tls_private_key_file))
@@ -179,7 +174,6 @@ void neo4j_config_free(neo4j_config_t *config)
     }
     ignore_unused_result(neo4j_config_set_username(config, NULL));
     ignore_unused_result(neo4j_config_set_password(config, NULL));
-    ignore_unused_result(neo4j_config_set_dbname(config, NULL));
 #ifdef HAVE_TLS
     ignore_unused_result(neo4j_config_set_TLS_private_key(config, NULL));
     ignore_unused_result(neo4j_config_set_TLS_ca_file(config, NULL));
@@ -233,21 +227,6 @@ int neo4j_config_set_password(neo4j_config_t *config, const char *password)
     return replace_strptr_dup(&(config->password), password);
 }
 
-int neo4j_config_set_dbname(neo4j_config_t *config, const char *dbname)
-{
-   REQUIRE(config != NULL, -1);
-   if (config->dbname != NULL)
-   {
-     size_t plen = strlen(config->dbname);
-     memset_s(config->dbname, plen, 0, plen);
-   }
-   return replace_strptr_dup(&(config->dbname), dbname);
-}
-
-const char *neo4j_config_get_dbname(const neo4j_config_t *config)
-{
-  return config->dbname;
-}
 
 int neo4j_config_set_basic_auth_callback(neo4j_config_t *config,
         neo4j_basic_auth_callback_t callback, void *userdata)

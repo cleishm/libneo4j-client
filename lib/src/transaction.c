@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode);
+neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode, const char *dbname);
 int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
@@ -55,7 +55,7 @@ neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx, const char *statement, ne
 // begin_tx - specify timeout and mode, but ignore bookmarks and metadata ATM
 // must check neo4j_tx_failure(tx)
 neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
-                                      int tx_timeout, const char *tx_mode)
+        int tx_timeout, const char *tx_mode, const char *dbname)
 {
     REQUIRE(connection != NULL, NULL);
 
@@ -69,8 +69,8 @@ neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
                         neo4j_strerror(errno, ebuf, sizeof(ebuf)));
         return NULL;
       }
-    neo4j_transaction_t *tx = new_transaction(config, connection, tx_timeout, tx_mode);
-
+    neo4j_transaction_t *tx = new_transaction(config, connection, tx_timeout, tx_mode, dbname);
+    fprintf(stderr,"Dude I'm here\n");
     if (neo4j_session_transact(connection, "BEGIN", begin_callback, tx))
       {
         neo4j_log_error_errno(tx->logger, "tx begin failed");
@@ -257,7 +257,15 @@ neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
                               const char *statement, neo4j_value_t params)
 {
   REQUIRE(tx != NULL, NULL);
-  tx->results = neo4j_run( tx->connection, statement, params );
+  // short circuit dbname if version isn't high enough
+  if (tx->connection->version < 4 || neo4j_tx_dbname(tx) == NULL)
+    {
+      tx->results = neo4j_run( tx->connection, statement, params );
+    }
+  else
+    {
+      tx->results = neo4j_run_in_db( tx->connection, statement, params, neo4j_tx_dbname(tx) );
+    }
   if (tx->results == NULL)
     {
       tx->failed = 1;
@@ -300,7 +308,7 @@ int tx_expired(neo4j_transaction_t *tx)
 
 // constructor
 
-neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode) {
+neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t *connection, int timeout, const char *mode, const char *dbname) {
   neo4j_transaction_t *tx = neo4j_calloc(config->allocator,
                                          NULL, 1, sizeof(neo4j_transaction_t));
   tx->allocator = config->allocator;
@@ -315,6 +323,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
 
   tx->timeout = timeout;
   tx->mode = ( mode == NULL ? "w" : mode );
+  tx->dbname = dbname;
   tx->is_open = 0;
   tx->is_expired = 0;
   tx->failed = 0;
@@ -387,6 +396,12 @@ const char *neo4j_tx_mode(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, NULL);
   return tx->mode;
+}
+
+const char *neo4j_tx_dbname(neo4j_transaction_t *tx)
+{
+  REQUIRE(tx != NULL, NULL);
+  return tx->dbname;
 }
 
 const char *neo4j_tx_failure_code(neo4j_transaction_t *tx)

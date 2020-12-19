@@ -200,14 +200,14 @@ int eval_dbname(shell_state_t *state, const cypher_astnode_t *command,
 {
   if (cypher_ast_command_narguments(command) == 0)
     {
-      fprintf(state->out, "current db is '%s'\n", neo4j_config_get_dbname(state->config));
+      fprintf(state->out, "current db is '%s'\n", state->dbname);
       return 0;
     }
   if (cypher_ast_command_narguments(command) == 1)
     {
       const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
-      neo4j_config_set_dbname(state->config,cypher_ast_string_get_value(arg));
-      neo4j_map_entry_t db[1] = { neo4j_map_entry("db",neo4j_string(cypher_ast_string_get_value(arg))) };
+      state->dbname = cypher_ast_string_get_value(arg);
+      neo4j_map_entry_t db[1] = { neo4j_map_entry("db", neo4j_string(state->dbname)) };
       assert(neo4j_set_extra(neo4j_map(db,1)) == 0);
       fprintf(state->out, "db set\n");
       return 0;

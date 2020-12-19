@@ -35,8 +35,6 @@ struct neo4j_config
 
     const char *client_id;
 
-    char *dbname;
-
     unsigned int so_rcvbuf_size;
     unsigned int so_sndbuf_size;
     time_t connect_timeout;

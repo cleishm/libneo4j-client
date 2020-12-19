@@ -271,11 +271,15 @@ void queue_failure(neo4j_iostream_t *ios)
 START_TEST (test_transaction)
 {
     queue_begin_success(server_ios); // BEGIN
-    neo4j_transaction_t *tx = neo4j_begin_tx(connection, 10000, "w"); // sends BEGIN
+    neo4j_transaction_t *tx = neo4j_begin_tx(connection, 10000, "w", "neo4j"); // sends BEGIN
+    fprintf(stderr,"HEY DUDE\n");
+
+
     ck_assert_ptr_ne(tx, NULL);
     ck_assert_int_eq(neo4j_tx_failure(tx), 0);
     ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
     ck_assert_int_eq(neo4j_tx_expired(tx), 0);
+    ck_assert_str_eq(neo4j_tx_dbname(tx), "neo4j");
     const neo4j_value_t *argv;
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
@@ -285,6 +289,7 @@ START_TEST (test_transaction)
     char buf[128];
     ck_assert( neo4j_eq(neo4j_map_get(argv[0],"mode"),neo4j_string("w")));
     ck_assert( neo4j_eq(neo4j_map_get(argv[0],"tx_timeout"),neo4j_int(10000)) );
+    ck_assert( neo4j_eq(neo4j_map_get(argv[0],"db"),neo4j_string("neo4j")) );
     queue_commit_success(server_ios);
     int result = neo4j_commit(tx);
     ck_assert_int_eq(result, 0);
@@ -295,7 +300,7 @@ START_TEST (test_transaction)
     neo4j_free_tx(tx);
     queue_begin_success(server_ios);
     queue_rollback_success(server_ios);
-    tx = neo4j_begin_tx(connection, -1, NULL);
+    tx = neo4j_begin_tx(connection, -1, NULL, "neo4j");
     ck_assert_ptr_ne(tx, NULL);
     ck_assert_str_eq( neo4j_tx_mode(tx),"w" );
     type = recv_message(server_ios, &mpool, &argv, &argc);
@@ -307,7 +312,7 @@ START_TEST (test_transaction)
     ck_assert_int_eq( neo4j_commit(tx), -1 ); // can't commit closed tx
     neo4j_free_tx(tx);
     queue_failure(server_ios); // test failure
-    tx = neo4j_begin_tx(connection, 0, NULL);
+    tx = neo4j_begin_tx(connection, 0, NULL, "neo4j");
     ck_assert_int_eq(tx->failure, NEO4J_TRANSACTION_FAILED);
     ck_assert_int_eq(neo4j_tx_failure(tx), NEO4J_TRANSACTION_FAILED);
     ck_assert_int_eq( tx->failed, 1 );
@@ -317,7 +322,7 @@ START_TEST (test_transaction)
     // check run in tx - using the result_stream machinery
     connection->failed = false; // kludge and reuse
     queue_begin_success(server_ios);
-    tx = neo4j_begin_tx(connection, 0, NULL);
+    tx = neo4j_begin_tx(connection, 0, NULL,"neo4j");
     ck_assert_int_eq(tx->failed, 0);
 
     queue_run_success(server_ios);

@@ -49,6 +49,7 @@ struct shell_state
     uint_fast32_t connect_flags;
     neo4j_connection_t *connection;
     neo4j_transaction_t *tx;
+    const char *dbname;
     char *temp_buffer;
     size_t temp_buffer_capacity;
     const struct shell_colorization *colorize;

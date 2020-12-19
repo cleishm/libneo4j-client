@@ -1209,25 +1209,6 @@ __neo4j_must_check
 int neo4j_config_set_password(neo4j_config_t *config, const char *password);
 
 /**
- * Set database name for query runs (Neo4j 4+)
- *
- * This selects the database on which to run queries.
- *
- * @param [config] The client configuration
- * @param [dbname] The database name
- * @return 0 on success, -1 on error (errno will be set).
- */
-int neo4j_config_set_dbname(neo4j_config_t *config, const char *dbname);
-
-/**
- * Get the database name currently used for query runs (Neo4j 4+)
- *
- * @param [config] The client configuration
- * @return The current database name
- */
-const char *neo4j_config_get_dbname(const neo4j_config_t *config);
-
-/**
  * Set the basic authentication callback.
  *
  * If a username and/or password is required for basic authentication and
@@ -1837,12 +1818,13 @@ int neo4j_set_extra(neo4j_value_t map);
  * @param [connection] The connection.
  * @param [tx_timeout] Transaction timeout in milliseconds. If -1, default to server-side setting (dbms.transaction.timeout)
  * @param [tx_mode] Transaction mode string: "r" - read, "w" - write. If NULL, defaults to "w".
+ * @param [dbname] Name of database in which to exec txn (no effect unless Neo4j 4+)
  * @return A `neo4j_transaction_t` tx. If tx->failed is set, the call failed; check tx->failure_code.
  *
  */
 __neo4j_must_check
 neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
-                                    int tx_timeout, const char *tx_mode);
+                                    int tx_timeout, const char *tx_mode, const char *dbname);
 
 /**
  * Commit an open explicit transaction.
@@ -1939,6 +1921,15 @@ int neo4j_tx_timeout(neo4j_transaction_t *tx);
  */
 __neo4j_must_check
 const char *neo4j_tx_mode(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the database to which a transaction is sent (Neo4j 4+)
+ *
+ * @param [tx] The transaction.
+ * @return const char* database name
+ */
+__neo4j_must_check
+const char *neo4j_tx_dbname(neo4j_transaction_t *tx);
 
 /**
  * Retrieve the failure code of a failed transaction as a string.
