@@ -30,7 +30,6 @@
 #include "posix_iostream.h"
 #include "serialization.h"
 #include "transaction.h"
-#include "map_util.h"
 #include "util.h"
 #include <assert.h>
 #include <unistd.h>
@@ -304,6 +303,7 @@ neo4j_connection_t *establish_connection(const char *hostname,
     connection->port = port;
     connection->iostream = iostream;
     connection->version = protocol_version;
+    connection->minor_version = protocol_minor_version;
 #ifdef HAVE_TLS
     connection->insecure = flags & NEO4J_INSECURE;
 #else

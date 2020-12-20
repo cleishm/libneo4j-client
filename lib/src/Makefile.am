@@ -21,8 +21,6 @@ libneo4j_client_la_SOURCES = \
 	job.h \
 	logging.c \
 	logging.h \
-	map_util.c \
-	map_util.h \
 	memory.c \
 	memory.h \
 	messages.c \
