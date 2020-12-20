@@ -21,7 +21,6 @@
 #include "job.h"
 #include "metadata.h"
 #include "util.h"
-#include "map_util.h"
 #include "values.h"
 #include <assert.h>
 #include <stddef.h>
