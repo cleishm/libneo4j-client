@@ -305,7 +305,8 @@ int db_begin_tx(shell_state_t *state, struct cypher_input_position pos,
       return -1;
     }
   if (state->tx != NULL) {
-    if (neo4j_tx_is_open(state->tx) == 0)
+      if (neo4j_tx_defunct(state->tx) ||
+	  neo4j_tx_is_open(state->tx) == 0)
       {
         neo4j_free_tx(state->tx);
 	state->tx = NULL;
@@ -326,8 +327,15 @@ int db_begin_tx(shell_state_t *state, struct cypher_input_position pos,
   if (neo4j_tx_failure(new_tx) != 0)
     {
       char msg[256];
-      snprintf(msg, sizeof(msg), "Transaction failed with %s",
-               neo4j_tx_failure_code(new_tx));
+      if (neo4j_tx_failure_code(new_tx) != NULL)
+      {
+	  snprintf(msg, sizeof(msg), "Transaction failed with %s",
+		   neo4j_tx_failure_code(new_tx));
+      }
+      else
+      {
+	  snprintf(msg, sizeof(msg), "Transaction failed");
+      }
       print_error_errno(state, pos, errno, (const char *)msg);
       return -1;
     }
@@ -358,8 +366,8 @@ int db_commit_tx(shell_state_t *state, struct cypher_input_position pos)
     }
   if (neo4j_commit(state->tx) < 0)
     {
-      if (neo4j_tx_expired(state->tx) == 1) {
-        print_error(state, pos, "Transaction timed out");
+      if (neo4j_tx_defunct(state->tx)) {
+        print_error(state, pos, "Transaction timed out or connection reset");
       }
       else {
         char msg[256];
@@ -397,8 +405,8 @@ int db_rollback_tx(shell_state_t *state, struct cypher_input_position pos)
     }
   if (neo4j_rollback(state->tx) < 0)
     {
-      if (neo4j_tx_expired(state->tx) == 1) {
-        print_error(state, pos, "Transaction timed out");
+      if (neo4j_tx_defunct(state->tx)) {
+        print_error(state, pos, "Transaction timed out or connection reset");
       }
       else {
         char msg[256];

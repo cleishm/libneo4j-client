@@ -317,7 +317,7 @@ neo4j_connection_t *establish_connection(const char *hostname,
             hostname, port, connection->insecure? " (insecure)" : "");
     neo4j_log_debug(logger, "connection %p using protocol version %d",
             (void *)connection, protocol_version);
-
+    neo4j_atomic_bool_set(&(connection->poison_tx),false);
     return connection;
 
     int errsv;
@@ -481,6 +481,10 @@ int neo4j_close(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in receive_responses() (close) on %p",
+			(void *)connection);
+	
     }
 
     // drain any remaining requests
@@ -489,6 +493,9 @@ int neo4j_close(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in drain_queued_requests() (close) on %p",
+			(void *)connection);
     }
     assert(connection->request_queue_depth == 0);
 
@@ -503,6 +510,10 @@ int neo4j_close(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in neo4j_ios_close() (close) on %p",
+			(void *)connection);
+	
     }
     connection->iostream = NULL;
 
@@ -611,20 +622,32 @@ int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
 int neo4j_reset(neo4j_connection_t *connection)
 {
     REQUIRE(connection != NULL, -1);
-    if (connection->failed)
-    {
-        errno = NEO4J_SESSION_FAILED;
-        return -1;
-    }
 
-    // immediately send RESET request onto the connection
+    // this logic is incorrect - if a connection has failed then a
+    // reset is what can revive it. Allow the RESET message to be
+    // sent, and if that fails, then the connection has truly borked.
+    //
+    // if (connection->failed)
+    // {
+    //    errno = NEO4J_SESSION_FAILED;
+    //    return -1;
+    // }
+    
+    // Immediately send RESET request onto the connection
     if (neo4j_connection_send(connection, NEO4J_RESET_MESSAGE, NULL, 0))
     {
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in neo4j_connection_send() (reset) on %p",
+			(void *)connection);
         return -1;
     }
 
     neo4j_log_trace(connection->logger, "sent RESET in %p", (void *)connection);
+    // clear the failed flag if it came to us set,
+    // since reset call to server succeeded
+    
+    connection->failed = false;
 
     // Check and set the reset_requested sentinal and then check if processing
     // is already taking place.
@@ -637,6 +660,7 @@ int neo4j_reset(neo4j_connection_t *connection)
     int err = session_reset(connection);
     // clear reset_requested BEFORE ending processing, to ensure it is not
     // set if processing resumes
+    neo4j_atomic_bool_set(&(connection->poison_tx),true);
     neo4j_atomic_bool_set(&(connection->reset_requested), false);
     neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
@@ -676,6 +700,9 @@ int session_reset(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in receive_responses() (session_reset) on %p",
+			(void *)connection);
         goto cleanup;
     }
 
@@ -690,6 +717,9 @@ int session_reset(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed at neo4j_connection_recv() (session_reset) on %p",
+			(void *)connection);
         goto cleanup;
     }
 
@@ -705,6 +735,10 @@ int session_reset(neo4j_connection_t *connection)
         err = -1;
         errsv = EPROTO;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed with unexpected message on RESET (session_reset) on %p",
+			(void *)connection);
+	
         goto cleanup;
     }
 
@@ -715,6 +749,10 @@ cleanup:
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in drain_queued_requests() (session_reset) on %p",
+			(void *)connection);
+	
     }
 
     neo4j_mpool_drain(&mpool);
@@ -960,6 +998,10 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
                     neo4j_message_type_str(type), (void *)connection);
             errno = EPROTO;
             connection->failed = true;
+	    neo4j_log_trace(connection->logger,
+			    "Connection failed with unexpected message after failure (receive_responses) on %p",
+			    (void *)connection);
+	    
             return -1;
         }
         if (type == NEO4J_FAILURE_MESSAGE)
@@ -980,10 +1022,18 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
         }
         if (result < 0)
         {
-            connection->failed = true;
-            errno = errsv;
-            return -1;
-        }
+	    char code[128];
+	    neo4j_string_value(neo4j_map_get(argv[0],"code"),code,sizeof(code));
+	    char msg[256];
+	    neo4j_string_value(neo4j_map_get(argv[0],"message"),msg,sizeof(msg));
+	    connection->failed = true;
+	    neo4j_log_trace(connection->logger,
+			    "Connection failed in request->receive() (receive_responses) on %p\nFailure code was: %s\nMessage was: %s",
+			    (void *)connection, (const char *) code,
+			    (const char *)msg);
+	    errno = errsv;
+	    return -1;
+	}
     }
 
     if (interruptable && interrupted(connection))
@@ -1232,6 +1282,10 @@ int goodbye(neo4j_connection_t *connection)
     if (neo4j_connection_send(connection, NEO4J_GOODBYE_MESSAGE, NULL, 0))
       {
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in neo4j_connection_send() (goodbye) on %p",
+			(void *)connection);
+	
         return -1;
       }
     neo4j_log_trace(connection->logger, "sent GOODBYE in %p", (void *)connection);

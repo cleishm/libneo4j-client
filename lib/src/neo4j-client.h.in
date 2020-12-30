@@ -1882,14 +1882,15 @@ int neo4j_tx_is_open(neo4j_transaction_t *tx);
  * Check if a transaction has expired.
  *
  * This flag is set when the server fails a transaction operation
- * due to the transaction having exceeded its timeout. Easier to
- * check than examining neo4j_tx_failure_code().
+ * due to the transaction having exceeded its timeout, or if the 
+ * connection has been reset out from under it.
  *
  * @param [tx] The transaction.
- * @return 1 if transaction has expired; 0 if not.
+ * @return true if transaction has expired or connection has reset; 
+ *  false otherwise
  */
 __neo4j_must_check
-int neo4j_tx_expired(neo4j_transaction_t *tx);
+bool neo4j_tx_defunct(neo4j_transaction_t *tx);
 
 /**
  * Check if a transaction has failed.

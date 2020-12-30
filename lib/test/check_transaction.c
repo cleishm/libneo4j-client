@@ -276,7 +276,7 @@ START_TEST (test_transaction)
     ck_assert_ptr_ne(tx, NULL);
     ck_assert_int_eq(neo4j_tx_failure(tx), 0);
     ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
-    ck_assert_int_eq(neo4j_tx_expired(tx), 0);
+    ck_assert(!neo4j_tx_defunct(tx));
     ck_assert_str_eq(neo4j_tx_dbname(tx), "neo4j");
     const neo4j_value_t *argv;
     uint16_t argc;

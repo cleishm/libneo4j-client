@@ -81,6 +81,7 @@ struct neo4j_connection
     char *server_id;
     bool credentials_expired;
     bool failed;
+    neo4j_atomic_bool poison_tx;
     neo4j_atomic_bool reset_requested;
 
     struct neo4j_request *request_queue;

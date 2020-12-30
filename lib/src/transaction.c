@@ -22,6 +22,7 @@
 #include "result_stream.h"
 #include "util.h"
 #include "values.h"
+#include "atomic.h"
 #include <assert.h>
 #include <stddef.h>
 #include <unistd.h>
@@ -32,7 +33,7 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
 int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *argv, uint16_t argc);
 int tx_failure(neo4j_transaction_t *tx);
-int tx_expired(neo4j_transaction_t *tx);
+bool tx_defunct(neo4j_transaction_t *tx);
 int tx_commit(neo4j_transaction_t *tx);
 int tx_rollback(neo4j_transaction_t *tx);
 neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
@@ -122,12 +123,12 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
 int tx_commit(neo4j_transaction_t *tx)
 {
     REQUIRE(tx != NULL, -1);
-    if (tx->is_open == 0) {
-      neo4j_log_debug(tx->logger, "can't commit a closed tx");
+    if (neo4j_tx_defunct(tx)) {
+      neo4j_log_debug(tx->logger, "tx is defunct");
       return -1;
     }
-    if (tx->is_expired == 1) {
-      neo4j_log_debug(tx->logger, "tx is expired");
+    if (tx->is_open == 0) {
+      neo4j_log_debug(tx->logger, "can't commit a closed tx");
       return -1;
     }
     if (neo4j_session_transact(tx->connection, "COMMIT", commit_callback, tx))
@@ -191,12 +192,12 @@ int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t 
 int tx_rollback(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  if (tx->is_open == 0) {
-    neo4j_log_debug(tx->logger, "can't roll back a closed tx");
+  if (neo4j_tx_defunct(tx)) {
+    neo4j_log_debug(tx->logger, "tx is defunct");
     return -1;
   }
-  if (tx->is_expired == 1) {
-    neo4j_log_debug(tx->logger, "tx is expired");
+  if (tx->is_open == 0) {
+    neo4j_log_debug(tx->logger, "can't roll back a closed tx");
     return -1;
   }
   if (neo4j_session_transact(tx->connection, "ROLLBACK", rollback_callback, tx))
@@ -283,26 +284,32 @@ neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
   return tx->results;
 }
 
-int tx_expired(neo4j_transaction_t *tx)
+bool tx_defunct(neo4j_transaction_t *tx)
 {
-  if (tx->is_expired == 1) { // if set elsewhere (in tx_run)
-    return 1;
-  }
-  if (tx->failed == 0) {
-    tx->is_expired = 0;
-  }
-  else {
-    if (strcmp(neo4j_tx_failure_code(tx),
-               "Neo.ClientError.Transaction.TransactionTimedOut") == 0)
-      {
-        tx->is_expired = 1;
-      }
-    else
-      {
-        tx->is_expired = 0;
-      }
-  }
-  return tx->is_expired;
+    if (tx->is_expired == 1)
+    { // if set elsewhere (in tx_run)
+	return true;
+    }
+    if (tx->connection != NULL &&
+	neo4j_atomic_bool_get(&(tx->connection->poison_tx)))
+    { 
+	return true;
+    }
+    if (tx->failed == 0) {
+	tx->is_expired = 0;
+    }
+    else {
+	if (strcmp(neo4j_tx_failure_code(tx),
+		   "Neo.ClientError.Transaction.TransactionTimedOut") == 0)
+	{
+	    tx->is_expired = 1;
+	}
+	else
+	{
+	    tx->is_expired = 0;
+	}
+    }
+    return tx->is_expired == 1? true : false;
 }
 
 // constructor
@@ -315,7 +322,7 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
   tx->connection = connection;
   tx->mpool = neo4j_std_mpool(config);
 
-  tx->check_expired = tx_expired;
+  tx->check_defunct = tx_defunct;
   tx->commit = tx_commit;
   tx->rollback = tx_rollback;
   tx->run = tx_run;
@@ -331,6 +338,9 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
   tx->failure_message = neo4j_null;
   tx->bookmarks = NULL;
   tx->num_bookmarks = 0;
+
+  // clear the poisoner - this is a new transaction
+  neo4j_atomic_bool_set(&(connection->poison_tx),false);
   return tx;
 }
 
@@ -339,12 +349,26 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
 int neo4j_commit(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
+  if (neo4j_tx_defunct(tx))
+  {
+      errno = NEO4J_TRANSACTION_DEFUNCT;
+      neo4j_log_error(tx->logger,
+		      "Attempt to run query in defunct transaction on %p\n",
+		      (void *)tx->connection);
+  }
   return tx->commit(tx);
 }
 
 int neo4j_rollback(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
+  if (neo4j_tx_defunct(tx))
+  {
+      errno = NEO4J_TRANSACTION_DEFUNCT;
+      neo4j_log_error(tx->logger,
+		      "Attempt to run query in defunct transaction on %p\n",
+		      (void *)tx->connection);
+  }
   return tx->rollback(tx);
 }
 
@@ -354,13 +378,14 @@ neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *stat
   REQUIRE(tx != NULL, NULL);
   REQUIRE(statement != NULL, NULL);
   REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
-  if (neo4j_tx_expired(tx) == 1) {
-    errno = NEO4J_TRANSACTION_DEFUNCT;
-    neo4j_log_error(tx->logger,
-                    "Attempt to run query in defunct transaction on %p\n",
-                    (void *)tx->connection);
-    tx->results = NULL;
-    return NULL;
+  if (neo4j_tx_defunct(tx))
+  {
+      errno = NEO4J_TRANSACTION_DEFUNCT;
+      neo4j_log_error(tx->logger,
+		      "Attempt to run query in defunct transaction on %p\n",
+		      (void *)tx->connection);
+      tx->results = NULL;
+      return NULL;
   }
   return tx->run(tx, statement, params);
 }
@@ -373,10 +398,10 @@ int neo4j_tx_is_open(neo4j_transaction_t *tx)
   return tx->is_open;
 }
 
-int neo4j_tx_expired(neo4j_transaction_t *tx)
+bool neo4j_tx_defunct(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  return tx->check_expired(tx);
+  return tx->check_defunct(tx);
 }
 
 int neo4j_tx_failure(neo4j_transaction_t *tx)
