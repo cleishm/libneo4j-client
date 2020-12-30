@@ -24,8 +24,9 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <math.h>
 
-#define DEFAULT_TIMEOUT 60000
+#define DEFAULT_TIMEOUT -1
 
 struct shell_command
 {
@@ -39,6 +40,8 @@ static int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
 static int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
+        struct cypher_input_position pos);
+static int eval_reconnect(shell_state_t *stat, const cypher_astnode_t *command,
         struct cypher_input_position pos);
 static int eval_dbname(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos);
@@ -81,6 +84,7 @@ static struct shell_command shell_commands[] =
     { { "begin", eval_begin },
       { "commit", eval_commit },
       { "connect", eval_connect },
+      { "reconnect", eval_reconnect },
       { "dbname", eval_dbname },
       { "disconnect", eval_disconnect },
       { "exit", eval_quit },
@@ -139,7 +143,8 @@ int eval_begin(shell_state_t *state, const cypher_astnode_t *command,
     if (cypher_ast_command_narguments(command) != 0)
     {
       const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
-      timeout = atoi(cypher_ast_string_get_value(arg));
+      timeout = (int) ceil((double) atoi(cypher_ast_string_get_value(arg)) * 1000.0);
+      fprintf(stderr,"timeout (int) now %d\n",timeout);
       const cypher_astnode_t *arg2 = cypher_ast_command_get_argument(command, 1);
       if (arg2 != NULL) {
         strncpy(mode, cypher_ast_string_get_value(arg2), 1);
@@ -166,6 +171,29 @@ int eval_commit(shell_state_t *state, const cypher_astnode_t *command,
     return db_commit_tx(state,pos);
 }
 
+int eval_reconnect(shell_state_t *state, const cypher_astnode_t *command,
+		   struct cypher_input_position pos)
+{
+    if (cypher_ast_command_narguments(command) > 0)
+    {
+	print_error(state,pos,
+		    ":reconnect takes no arguments");
+	return -1;
+    }
+    if (state->connection == NULL)
+    {
+	print_error(state,pos,
+		    "Not connected yet; try :connect");
+	return -1;
+    }
+    if (strlen(state->connect_string) == 0)
+    {
+	print_error(state,pos,
+		    "Try :connect");
+	return -1;
+    }
+    return db_reconnect(state, pos);
+}
 
 int eval_connect(shell_state_t *state, const cypher_astnode_t *command,
         struct cypher_input_position pos)
@@ -206,7 +234,7 @@ int eval_dbname(shell_state_t *state, const cypher_astnode_t *command,
   if (cypher_ast_command_narguments(command) == 1)
     {
       const cypher_astnode_t *arg = cypher_ast_command_get_argument(command, 0);
-      state->dbname = cypher_ast_string_get_value(arg);
+      strncpy(state->dbname, cypher_ast_string_get_value(arg), BUFLEN);
       neo4j_map_entry_t db[1] = { neo4j_map_entry("db", neo4j_string(state->dbname)) };
       assert(neo4j_set_extra(neo4j_map(db,1)) == 0);
       fprintf(state->out, "db set\n");
@@ -428,11 +456,12 @@ int eval_help(shell_state_t *state, const cypher_astnode_t *command,
 "%1$s:quit%2$s                  %5$sExit the shell%6$s\n"
 "%1$s:connect%2$s %3$s'<url>'%4$s       %5$sConnect to the specified URL%6$s\n"
 "%1$s:connect%2$s %3$shost [port]%4$s   %5$sConnect to the specified host (and optional port)%6$s\n"
+"%1$s:reconnect%2$s             %5$sAttempt to reconnect to current host:port$6$s\n"	    
 "%1$s:disconnect%2$s            %5$sDisconnect the client from the server%6$s\n"
 "%1$s:export%2$s                %5$sDisplay currently exported parameters%6$s\n"
 "%1$s:export%2$s %3$sname=val ...%4$s   %5$sExport parameters for queries%6$s\n"
 "%1$s:unexport%2$s %3$sname ...%4$s     %5$sUnexport parameters for queries%6$s\n"
-"%1$s:begin%2$s %3$s[timeout(ms)] [mode(r|w)]%4$s     \n"
+"%1$s:begin%2$s %3$s[timeout (s)] [mode(r|w)]%4$s     \n"
 "                       %5$sBegin an explicit transaction (v3.0+)%6$s\n"
 "%1$s:commit%2$s                %5$sCommit an open transaction (v3.0+)%6$s\n"
 "%1$s:rollback%2$s              %5$sRollback an open transaction (v3.0+)%6$s\n"

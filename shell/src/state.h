@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define BUFLEN 256
 
 typedef struct shell_state shell_state_t;
 
@@ -49,7 +50,10 @@ struct shell_state
     uint_fast32_t connect_flags;
     neo4j_connection_t *connection;
     neo4j_transaction_t *tx;
-    const char *dbname;
+    int tx_timeout;
+    char dbname[BUFLEN];
+    char connect_string[BUFLEN];
+    char port_string[BUFLEN];
     char *temp_buffer;
     size_t temp_buffer_capacity;
     const struct shell_colorization *colorize;

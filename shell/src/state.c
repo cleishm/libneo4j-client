@@ -36,7 +36,9 @@ int shell_state_init(shell_state_t *state, const char *prog_name,
     state->tty = tty;
     state->output = out;
     state->tx = NULL;
-    state->dbname = "neo4j";
+    strcpy(state->dbname,"neo4j");
+    strcpy(state->connect_string,"");
+    strcpy(state->port_string,"");    
     state->config = neo4j_new_config();
     if (state->config == NULL)
     {

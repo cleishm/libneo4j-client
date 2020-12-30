@@ -17,9 +17,11 @@
 #include "../../config.h"
 #include "connect.h"
 #include "authentication.h"
+#include "state.h"
 #include <assert.h>
 #include <errno.h>
-
+#include <stdio.h>
+#include <stdlib.h>
 
 #define NEO4J_MAX_AUTHENTICATION_ATTEMPTS 3
 
@@ -35,6 +37,18 @@ static neo4j_connection_t *update_password_and_reconnect(shell_state_t *state,
         neo4j_connection_t *connection,
         struct cypher_input_position pos);
 
+int db_reconnect(shell_state_t *state, struct cypher_input_position pos) {
+    if (state->connection == NULL) {
+	return -1;
+    }
+    fprintf(stderr,"%s : %s\n", state->connect_string, state->port_string);
+    char cs[BUFLEN];
+    char ps[BUFLEN];
+    strncpy(cs, state->connect_string,BUFLEN-1);
+    strncpy(ps, state->port_string,BUFLEN-1);    
+    return db_connect(state, pos, cs, ps);
+}
+    
 
 int db_connect(shell_state_t *state, struct cypher_input_position pos,
         const char *connect_string, const char *port_string)
@@ -59,6 +73,8 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
         ignore_unused_result(neo4j_config_set_basic_auth_callback(
                 state->config, NULL, NULL));
     }
+    strncpy(state->connect_string, connect_string, BUFLEN-1);
+    strncpy(state->port_string, port_string, BUFLEN-1);    
     return result;
 }
 
@@ -115,7 +131,7 @@ int attempt_db_connect(struct auth_state *auth_state,
         {
         case NEO4J_NO_SERVER_TLS_SUPPORT:
             print_error(state, pos, "A secure connection could not"
-                    " be esablished (try --insecure)");
+                    " be established (try --insecure)");
             break;
         case NEO4J_INVALID_URI:
             print_error(state, pos, "Invalid URL '%s'", connect_string);
@@ -292,6 +308,7 @@ int db_begin_tx(shell_state_t *state, struct cypher_input_position pos,
     if (neo4j_tx_is_open(state->tx) == 0)
       {
         neo4j_free_tx(state->tx);
+	state->tx = NULL;
       }
     else
       {
