@@ -36,7 +36,7 @@ int tx_failure(neo4j_transaction_t *tx);
 bool tx_defunct(neo4j_transaction_t *tx);
 int tx_commit(neo4j_transaction_t *tx);
 int tx_rollback(neo4j_transaction_t *tx);
-neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
+neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params, int send);
 
 
 // rough out the transaction based calls
@@ -87,6 +87,7 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
   neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
 
   if (type == NEO4J_FAILURE_MESSAGE)
+
     {
       // get FAILURE argv and set tx failure info here
       tx->failed = 1;
@@ -123,20 +124,19 @@ int begin_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t *
 int tx_commit(neo4j_transaction_t *tx)
 {
     REQUIRE(tx != NULL, -1);
-    if (neo4j_tx_defunct(tx)) {
-      neo4j_log_debug(tx->logger, "tx is defunct");
-      return -1;
-    }
-    if (tx->is_open == 0) {
-      neo4j_log_debug(tx->logger, "can't commit a closed tx");
-      return -1;
-    }
     if (neo4j_session_transact(tx->connection, "COMMIT", commit_callback, tx))
       {
         neo4j_log_error_errno(tx->logger, "tx commit failed");
         tx->failed = 1;
         tx->failure = errno;
       }
+    else
+    {
+	tx->is_open = 0;
+	tx->failed = 0;
+	tx->failure_code = neo4j_null;
+	tx->failure_message = neo4j_null;	
+    }
     return -tx->failed;
 }
 
@@ -192,20 +192,18 @@ int commit_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_t 
 int tx_rollback(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  if (neo4j_tx_defunct(tx)) {
-    neo4j_log_debug(tx->logger, "tx is defunct");
-    return -1;
-  }
-  if (tx->is_open == 0) {
-    neo4j_log_debug(tx->logger, "can't roll back a closed tx");
-    return -1;
-  }
   if (neo4j_session_transact(tx->connection, "ROLLBACK", rollback_callback, tx))
     {
       neo4j_log_error_errno(tx->logger, "tx rollback failed");
       tx->failed = 1;
       tx->failure = errno;
     }
+  else {
+      tx->is_open = 0;
+      tx->failed = 0;
+      tx->failure_code = neo4j_null;
+      tx->failure_message = neo4j_null;
+  }
   return -tx->failed;
 }
 
@@ -239,6 +237,7 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
     {
       neo4j_log_error(tx->logger, "Unexpected %s", description);
       tx->failed = 1;
+      fprintf(stderr,"Unexpected %s", description);
       tx->failure = EPROTO;
       errno = tx->failure;
       return -1;
@@ -246,6 +245,7 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
 
   // Bolt 3.0 spec sez SUCCESS argv "may contain metadata relating to the outcome". Pfft.
   tx->is_open = 0;
+  tx->failed = 0;
   return 0;
 }
 
@@ -254,18 +254,27 @@ int rollback_callback(void *cdata, neo4j_message_type_t type, const neo4j_value_
 // returns NULL and expires tx if tx has timed out
 
 neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
-                              const char *statement, neo4j_value_t params)
+       const char *statement, neo4j_value_t params, int send)
 {
   REQUIRE(tx != NULL, NULL);
-  // short circuit dbname if version isn't high enough
-  if (tx->connection->version < 4 || neo4j_tx_dbname(tx) == NULL)
-    {
-      tx->results = neo4j_run( tx->connection, statement, params );
-    }
+
+  if (!neo4j_tx_is_open(tx) || neo4j_tx_defunct(tx)) {
+      errno = NEO4J_TRANSACTION_DEFUNCT;
+      tx->results = NULL;
+  }
   else
-    {
-      tx->results = neo4j_run_in_db( tx->connection, statement, params, neo4j_tx_dbname(tx) );
-    }
+  {
+      if (tx->connection->version < 4 || neo4j_tx_dbname(tx) == NULL)
+      {
+	  tx->results = (send == 0? neo4j_run_in_db( tx->connection, statement, params, neo4j_tx_dbname(tx) ) : neo4j_send_to_db(tx->connection, statement, params, neo4j_tx_dbname(tx)));
+      }
+      else
+      {
+	  // short circuit dbname if version isn't high enough
+	  tx->results = (send==0? neo4j_run( tx->connection, statement, params ): neo4j_send(tx->connection, statement, params));
+      }
+  }
+
   if (tx->results == NULL)
     {
       tx->failed = 1;
@@ -349,12 +358,13 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
 int neo4j_commit(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  if (neo4j_tx_defunct(tx))
+  if (!neo4j_tx_is_open(tx) || neo4j_tx_defunct(tx))
   {
       errno = NEO4J_TRANSACTION_DEFUNCT;
       neo4j_log_error(tx->logger,
 		      "Attempt to run query in defunct transaction on %p\n",
 		      (void *)tx->connection);
+      return -1;
   }
   return tx->commit(tx);
 }
@@ -362,23 +372,23 @@ int neo4j_commit(neo4j_transaction_t *tx)
 int neo4j_rollback(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  if (neo4j_tx_defunct(tx))
+  if (!neo4j_tx_is_open(tx) || neo4j_tx_defunct(tx))
   {
       errno = NEO4J_TRANSACTION_DEFUNCT;
       neo4j_log_error(tx->logger,
 		      "Attempt to run query in defunct transaction on %p\n",
 		      (void *)tx->connection);
+      return -1;
   }
   return tx->rollback(tx);
 }
 
-neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *statement,
-                                       neo4j_value_t params)
+neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params)
 {
   REQUIRE(tx != NULL, NULL);
   REQUIRE(statement != NULL, NULL);
   REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
-  if (neo4j_tx_defunct(tx))
+  if (!neo4j_tx_is_open(tx) || neo4j_tx_defunct(tx))
   {
       errno = NEO4J_TRANSACTION_DEFUNCT;
       neo4j_log_error(tx->logger,
@@ -387,15 +397,32 @@ neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *stat
       tx->results = NULL;
       return NULL;
   }
-  return tx->run(tx, statement, params);
+  return tx->run(tx, statement, params, 0);
+}
+
+neo4j_result_stream_t *neo4j_send_to_tx(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params)
+{
+  REQUIRE(tx != NULL, NULL);
+  REQUIRE(statement != NULL, NULL);
+  REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
+  if (!neo4j_tx_is_open(tx) || neo4j_tx_defunct(tx))
+  {
+      errno = NEO4J_TRANSACTION_DEFUNCT;
+      neo4j_log_error(tx->logger,
+		      "Attempt to run query in defunct transaction on %p\n",
+		      (void *)tx->connection);
+      tx->results = NULL;
+      return NULL;
+  }
+  return tx->run(tx, statement, params, 1);
 }
 
 // getters
 
-int neo4j_tx_is_open(neo4j_transaction_t *tx)
+bool neo4j_tx_is_open(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, -1);
-  return tx->is_open;
+  return (tx->is_open > 0 ? true : false);
 }
 
 bool neo4j_tx_defunct(neo4j_transaction_t *tx)
@@ -432,7 +459,7 @@ const char *neo4j_tx_failure_code(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, NULL);
   if (neo4j_is_null(tx->failure_code)) {
-    return NULL;
+    return "";
   }
   char buf[128];
   return neo4j_string_value(tx->failure_code, buf, 128);
@@ -442,7 +469,7 @@ const char *neo4j_tx_failure_message(neo4j_transaction_t *tx)
 {
   REQUIRE(tx != NULL, NULL);
   if (neo4j_is_null(tx->failure_message)) {
-    return NULL;
+    return "";
   }
   char buf[128];
   return neo4j_string_value(tx->failure_message, buf, 128);

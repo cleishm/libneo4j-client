@@ -1865,6 +1865,10 @@ __neo4j_must_check
 neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx,
                                        const char *statement, neo4j_value_t params);
 
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_send_to_tx(neo4j_transaction_t *tx,
+                                       const char *statement, neo4j_value_t params);
+
 /**
  * Check if a transaction is open.
  *
@@ -1876,7 +1880,7 @@ neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx,
  */
 
 __neo4j_must_check
-int neo4j_tx_is_open(neo4j_transaction_t *tx);
+bool neo4j_tx_is_open(neo4j_transaction_t *tx);
 
 /**
  * Check if a transaction has expired.

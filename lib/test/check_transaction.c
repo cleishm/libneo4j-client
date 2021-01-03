@@ -72,7 +72,7 @@ static void setup(void)
 
     mpool = neo4j_std_mpool(config);
 
-    uint32_t version = htonl(3);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version)); // server response version
 
     neo4j_value_t empty_map = neo4j_map(NULL, 0);
@@ -275,7 +275,7 @@ START_TEST (test_transaction)
 
     ck_assert_ptr_ne(tx, NULL);
     ck_assert_int_eq(neo4j_tx_failure(tx), 0);
-    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert(neo4j_tx_is_open(tx));
     ck_assert(!neo4j_tx_defunct(tx));
     ck_assert_str_eq(neo4j_tx_dbname(tx), "neo4j");
     const neo4j_value_t *argv;
@@ -293,7 +293,7 @@ START_TEST (test_transaction)
     ck_assert_int_eq(result, 0);
     type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_COMMIT_MESSAGE);
-    ck_assert_int_eq(neo4j_tx_is_open(tx), 0); // tx is closed
+    ck_assert(!neo4j_tx_is_open(tx)); // tx is closed
     ck_assert_int_eq( neo4j_rollback(tx), -1 ); // can't rollback closed tx
     neo4j_free_tx(tx);
     queue_begin_success(server_ios);
@@ -332,20 +332,19 @@ START_TEST (test_transaction)
     neo4j_result_stream_t *tx_results = neo4j_run_in_tx(tx, "RETURN 1", neo4j_null);
     ck_assert_ptr_ne(tx_results, NULL);
     ck_assert_ptr_ne(neo4j_fetch_next(tx_results), NULL);
-    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert(neo4j_tx_is_open(tx));
     ck_assert_ptr_ne(neo4j_fetch_next(tx_results), NULL);
-    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert(neo4j_tx_is_open(tx));
     ck_assert_ptr_eq(neo4j_fetch_next(tx_results),NULL);
-    ck_assert_int_eq(neo4j_tx_is_open(tx), 1);
+    ck_assert(neo4j_tx_is_open(tx));
     ck_assert_int_eq(errno, 0);
     ck_assert_int_eq(neo4j_check_failure(tx_results), 0);
     ck_assert_int_eq(neo4j_close_results(tx_results),0);
     ck_assert_int_eq(neo4j_commit(tx), 0);
     ck_assert_int_eq(tx->failed, 0);
-    ck_assert_int_eq(neo4j_tx_is_open(tx), 0);
+    ck_assert(!neo4j_tx_is_open(tx));
     neo4j_free_tx(tx);
     assert(rb_is_empty(in_rb));
-
 }
 END_TEST
 

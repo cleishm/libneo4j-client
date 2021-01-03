@@ -34,7 +34,7 @@ neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection, int tx_timeo
 int neo4j_commit(neo4j_transaction_t *tx);
 int neo4j_rollback(neo4j_transaction_t *tx);
 neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *statement, neo4j_value_t params);
-int neo4j_tx_is_open(neo4j_transaction_t *tx);
+bool neo4j_tx_is_open(neo4j_transaction_t *tx);
 int neo4j_tx_expired(neo4j_transaction_t *tx);
 int neo4j_tx_failure(neo4j_transaction_t *tx);
 int neo4j_tx_timeout(neo4j_transaction_t *tx);
@@ -51,7 +51,7 @@ struct neo4j_transaction
   const char *(*error_message)(neo4j_transaction_t *self);
   int (*commit)(neo4j_transaction_t *self);
   int (*rollback)(neo4j_transaction_t *self);
-  neo4j_result_stream_t *(*run)(neo4j_transaction_t *self, const char *statement, neo4j_value_t params);
+    neo4j_result_stream_t *(*run)(neo4j_transaction_t *self, const char *statement, neo4j_value_t params, int send);
   neo4j_value_t *bookmarks; // a C array of neo4j_strings
   int num_bookmarks; // len of bookmarks array
   neo4j_value_t metadata; // a neo4j_map of transaction metadata (values are neo4j_strings)
