@@ -266,12 +266,12 @@ neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
   {
       if (tx->connection->version < 4 || neo4j_tx_dbname(tx) == NULL)
       {
-	  tx->results = (send == 0? neo4j_run_in_db( tx->connection, statement, params, neo4j_tx_dbname(tx) ) : neo4j_send_to_db(tx->connection, statement, params, neo4j_tx_dbname(tx)));
+	  // short circuit dbname if version isn't high enough
+	  tx->results = (send==0? neo4j_run( tx->connection, statement, params ): neo4j_send(tx->connection, statement, params));
       }
       else
       {
-	  // short circuit dbname if version isn't high enough
-	  tx->results = (send==0? neo4j_run( tx->connection, statement, params ): neo4j_send(tx->connection, statement, params));
+	  tx->results = (send == 0? neo4j_run_in_db( tx->connection, statement, params, neo4j_tx_dbname(tx) ) : neo4j_send_to_db(tx->connection, statement, params, neo4j_tx_dbname(tx)));
       }
   }
 
