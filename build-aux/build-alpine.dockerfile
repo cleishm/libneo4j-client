@@ -1,7 +1,7 @@
 FROM alpine:latest
-RUN apk update
-RUN apk add alpine-sdk
-RUN apk add bash vim
+RUN apk update && \
+    apk add alpine-sdk && \
+    apk add bash vim
 
 RUN adduser -s /bin/bash -D apk && \
     addgroup apk abuild
