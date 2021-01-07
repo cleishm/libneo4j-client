@@ -835,11 +835,20 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         return 0;
     }
 
+#ifndef NEOCLIENT_BUILD    
     if (type == NEO4J_FAILURE_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif	
     {
         return set_eval_failure(results, "RUN", argv, argc);
     }
+    
+#ifndef NEOCLIENT_BUILD    
     if (type == NEO4J_IGNORED_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,IGNORED) )
+#endif
     {
         if (results->failure == 0)
         {
@@ -852,7 +861,11 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     snprintf(description, sizeof(description), "%s in %p (response to RUN)",
             neo4j_message_type_str(type), (void *)connection);
 
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(logger, "Unexpected %s", description);
         set_failure(results, errno = EPROTO);
@@ -899,7 +912,11 @@ int pull_all_callback(void *cdata, neo4j_message_type_t type,
     assert(argc == 0 || argv != NULL);
     run_result_stream_t *results = (run_result_stream_t *)cdata;
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_RECORD_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,RECORD) )
+#endif
     {
         if (append_result(results, argv, argc))
         {
@@ -952,7 +969,11 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     neo4j_config_t *config = connection->config;
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_IGNORED_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,IGNORED) )
+#endif
     {
         if (results->failure == 0)
         {
@@ -968,11 +989,20 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     assert(results->failure == 0);
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_FAILURE_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif
     {
         return set_eval_failure(results, src_message_type, argv, argc);
     }
+
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(logger,
                 "Unexpected %s message received in %p"

@@ -24,6 +24,7 @@
 #include "values.h"
 #include "atomic.h"
 #include <assert.h>
+#include <string.h>
 #include <stddef.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -264,6 +265,7 @@ neo4j_result_stream_t *tx_run(neo4j_transaction_t *tx,
   }
   else
   {
+      
       if (tx->connection->version < 4 || neo4j_tx_dbname(tx) == NULL)
       {
 	  // short circuit dbname if version isn't high enough
@@ -337,8 +339,8 @@ neo4j_transaction_t *new_transaction(neo4j_config_t *config, neo4j_connection_t 
   tx->run = tx_run;
 
   tx->timeout = timeout;
-  tx->mode = ( mode == NULL ? "w" : mode );
-  tx->dbname = dbname;
+  tx->mode = ( mode == NULL ? "w" : strdup(mode) );
+  tx->dbname = strdup(dbname);
   tx->is_open = 0;
   tx->is_expired = 0;
   tx->failed = 0;
@@ -397,6 +399,10 @@ neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx, const char *stat
       tx->results = NULL;
       return NULL;
   }
+  neo4j_log_trace(tx->logger,
+		  "Query on %p via transaction %p\n",
+		  (void *)tx->connection, (void *)tx);
+  
   return tx->run(tx, statement, params, 0);
 }
 

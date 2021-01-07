@@ -990,7 +990,11 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
             return -1;
         }
 
+#ifndef NEOCLIENT_BUILD
         if (failure && type != NEO4J_IGNORED_MESSAGE)
+#else
+	    if (failure && !MESSAGE_TYPE_IS(type,IGNORED))
+#endif
         {
             neo4j_log_error(connection->logger,
                     "Unexpected %s message received in %p"
@@ -1004,7 +1008,11 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
 	    
             return -1;
         }
+#ifndef NEOCLIENT_BUILD	
         if (type == NEO4J_FAILURE_MESSAGE)
+#else
+	if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif
         {
             failure = true;
         }
@@ -1305,7 +1313,11 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 
     char description[128];
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         snprintf(description, sizeof(description),
                 "SUCCESS in %p (response to INIT)", (void *)connection);
@@ -1336,7 +1348,11 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         return 0;
     }
 
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_FAILURE_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
@@ -1436,12 +1452,20 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
 
     char buf[12];
     strcpy(buf, (connection->version < 3)? "ACK_FAILURE" : "RESET");
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_IGNORED_MESSAGE || type == NULL)
+#else
+    if ( MESSAGE_TYPE_IS(type,IGNORED) || type == NULL )
+#endif
     {
         // only when draining after connection close
         return 0;
     }
+#ifndef NEOCLIENT_BUILD    
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
@@ -1645,20 +1669,22 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
     }
 
     req->type = neo4j_message_type_for_type(msg_type);
-    if (strcmp(msg_type,"BEGIN") == 0) {
-      const neo4j_map_entry_t ent[3] = {
-        neo4j_map_entry("mode",neo4j_string(tx->mode)),
-        neo4j_map_entry("db",neo4j_string(tx->dbname == NULL ? "" : tx->dbname)),
-        neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout))
-      };
-      int nent = (tx->timeout >= 0)?3:2;
-      req->_argv[0] = neo4j_map(ent,nent); // extra dictionary
-      req->argv = req->_argv;
-      req->argc = 1;
+    if (strcmp(msg_type,"BEGIN") == 0)
+    {
+	const neo4j_map_entry_t ent[3] = {
+	    neo4j_map_entry("mode",neo4j_string(tx->mode)),
+	    neo4j_map_entry("db",neo4j_string(tx->dbname == NULL ? "" : tx->dbname)),
+	    neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout))
+	};
+	int nent = (tx->timeout >= 0)?3:2;
+	req->_argv[0] = neo4j_map(ent,nent); // extra dictionary
+	req->argv = req->_argv;
+	req->argc = 1;
     }
-    else {
-      req->argv = NULL;
-      req->argc = 0;
+    else
+    {
+	req->argv = NULL;
+	req->argc = 0;
     }
     req->mpool = &(tx->mpool);
     req->receive = callback; // callback specified in transaction.c
