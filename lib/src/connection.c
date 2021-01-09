@@ -726,7 +726,11 @@ int session_reset(neo4j_connection_t *connection)
     neo4j_log_debug(connection->logger, "rcvd %s in response to RESET in %p",
             neo4j_message_type_str(type), (void *)connection);
 
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
@@ -993,7 +997,7 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
 #ifndef NEOCLIENT_BUILD
         if (failure && type != NEO4J_IGNORED_MESSAGE)
 #else
-	    if (failure && !MESSAGE_TYPE_IS(type,IGNORED))
+        if (failure && !MESSAGE_TYPE_IS(type,IGNORED))
 #endif
         {
             neo4j_log_error(connection->logger,
@@ -1351,7 +1355,7 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 #ifndef NEOCLIENT_BUILD
     if (type != NEO4J_FAILURE_MESSAGE)
 #else
-    if ( MESSAGE_TYPE_IS(type,FAILURE) )
+    if ( !MESSAGE_TYPE_IS(type,FAILURE) )
 #endif
     {
         neo4j_log_error(connection->logger,
@@ -1464,7 +1468,7 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
 #ifndef NEOCLIENT_BUILD    
     if (type != NEO4J_SUCCESS_MESSAGE)
 #else
-    if ( MESSAGE_TYPE_IS(type,SUCCESS) )
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
 #endif
     {
         neo4j_log_error(connection->logger,
