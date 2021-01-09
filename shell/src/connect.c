@@ -38,8 +38,8 @@ static neo4j_connection_t *update_password_and_reconnect(shell_state_t *state,
         struct cypher_input_position pos);
 
 int db_reconnect(shell_state_t *state, struct cypher_input_position pos) {
-    if (state->connection == NULL) {
-	return -1;
+    if (state->connection != NULL) {
+	db_disconnect(state,pos);
     }
     fprintf(stderr,"%s : %s\n", state->connect_string, state->port_string);
     char cs[BUFLEN];
@@ -73,8 +73,14 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
         ignore_unused_result(neo4j_config_set_basic_auth_callback(
                 state->config, NULL, NULL));
     }
-    strncpy(state->connect_string, connect_string, BUFLEN-1);
-    strncpy(state->port_string, port_string, BUFLEN-1);    
+    if (connect_string)
+    {
+	strncpy(state->connect_string, connect_string, BUFLEN-1);
+    }
+    if (port_string)
+    {
+	strncpy(state->port_string, port_string, BUFLEN-1);
+    }
     return result;
 }
 

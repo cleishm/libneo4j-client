@@ -180,12 +180,6 @@ int eval_reconnect(shell_state_t *state, const cypher_astnode_t *command,
 		    ":reconnect takes no arguments");
 	return -1;
     }
-    if (state->connection == NULL)
-    {
-	print_error(state,pos,
-		    "Not connected yet; try :connect");
-	return -1;
-    }
     if (strlen(state->connect_string) == 0)
     {
 	print_error(state,pos,
