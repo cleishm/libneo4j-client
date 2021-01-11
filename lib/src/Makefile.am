@@ -47,6 +47,8 @@ libneo4j_client_la_SOURCES = \
 	thread.h \
 	tofu.c \
 	tofu.h \
+	transaction.c \
+	transaction.h \
 	u8.c \
 	uri.c \
 	uri.h \

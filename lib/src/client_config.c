@@ -216,7 +216,6 @@ int neo4j_config_nset_username(neo4j_config_t *config,
     return replace_strptr_ndup(&(config->username), username, n);
 }
 
-
 int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 {
     REQUIRE(config != NULL, -1);

@@ -22,6 +22,9 @@
 #include "memory.h"
 #include <stdint.h>
 
+#define MESSAGE_TYPE_IS(type,msg_type) \
+    ( (type)==NULL? false : (strcmp(type->name,#msg_type) == 0? true : false) )
+
 typedef const struct neo4j_message_type *neo4j_message_type_t;
 struct neo4j_message_type
 {
@@ -29,6 +32,7 @@ struct neo4j_message_type
     uint8_t struct_signature;
 };
 
+// Bolt v1, v2
 extern const neo4j_message_type_t NEO4J_INIT_MESSAGE;
 extern const neo4j_message_type_t NEO4J_RUN_MESSAGE;
 extern const neo4j_message_type_t NEO4J_DISCARD_ALL_MESSAGE;
@@ -40,7 +44,15 @@ extern const neo4j_message_type_t NEO4J_SUCCESS_MESSAGE;
 extern const neo4j_message_type_t NEO4J_FAILURE_MESSAGE;
 extern const neo4j_message_type_t NEO4J_IGNORED_MESSAGE;
 
+// Bolt v3
+extern const neo4j_message_type_t NEO4J_HELLO_MESSAGE; // replaces INIT
+extern const neo4j_message_type_t NEO4J_GOODBYE_MESSAGE;
+extern const neo4j_message_type_t NEO4J_BEGIN_MESSAGE;
+extern const neo4j_message_type_t NEO4J_COMMIT_MESSAGE;
+extern const neo4j_message_type_t NEO4J_ROLLBACK_MESSAGE;
+
 neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature);
+neo4j_message_type_t neo4j_message_type_for_type(const char *mtype);
 
 static inline const char *neo4j_message_type_str(neo4j_message_type_t type)
 {

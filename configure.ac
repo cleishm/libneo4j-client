@@ -37,6 +37,7 @@ AC_ARG_ENABLE([werror],
   [werror_flag=$enableval], [werror_flag=yes])
 AS_IF([test "X$werror_flag" = "Xyes"], [GCC_CFLAGS="$GCC_CFLAGS -Werror"])
 
+
 LT_INIT
 AC_LANG([C])
 AC_PROG_CC

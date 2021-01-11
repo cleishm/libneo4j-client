@@ -92,6 +92,10 @@ const char *neo4j_strerror(int errnum, char *buf, size_t buflen)
         return "Session has been reset";
     case NEO4J_SESSION_BUSY:
         return "Session cannot be accessed concurrently";
+    case NEO4J_TRANSACTION_FAILED:
+        return "Attempted explicit transaction failed";
+    case NEO4J_FEATURE_UNAVAILABLE:
+        return "Feature is unavailable in server's protocol version";
     default:
 #ifdef STRERROR_R_CHAR_P
         return strerror_r(errnum, buf, buflen);

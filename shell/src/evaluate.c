@@ -105,8 +105,24 @@ evaluation_continuation_t *prepare_statement(shell_state_t *state,
         return continuation;
     }
 
-    continuation->results = neo4j_run(state->connection,
-            continuation->statement, shell_state_get_exports(state));
+    if (state->tx == NULL)
+      {
+        continuation->results = neo4j_run(state->connection,
+                continuation->statement, shell_state_get_exports(state));
+      }
+    else
+      {
+        if (neo4j_tx_is_open(state->tx) > 0)
+          {
+            continuation->results = neo4j_run_in_tx(state->tx,
+                    continuation->statement, shell_state_get_exports(state));
+          }
+        else
+          {
+            continuation->results = NULL;
+            errno = NEO4J_TRANSACTION_DEFUNCT;
+          }
+      }
     if (continuation->results == NULL)
     {
         continuation->complete = run_failure;
@@ -315,16 +331,48 @@ int display_schema(shell_state_t* state, struct cypher_input_position pos)
 
     neo4j_result_stream_t *indexes_result = NULL;
     neo4j_result_stream_t *constraints_result = NULL;
-
-    indexes_result = neo4j_run(state->connection,
-            "CALL db.indexes()", neo4j_null);
+    if (state->tx == NULL)
+      {
+        indexes_result = neo4j_run(state->connection,
+                "CALL db.indexes()", neo4j_null);
+      }
+    else
+      {
+        if (neo4j_tx_is_open(state->tx) > 0)
+          {
+            indexes_result = neo4j_run_in_tx(state->tx,
+                    "CALL db.indexes()", neo4j_null);
+          }
+        else
+          {
+            indexes_result = NULL;
+            errno = NEO4J_TRANSACTION_DEFUNCT;
+          }
+      }
     if (indexes_result == NULL)
     {
         print_error_errno(state, pos, errno, "db.indexes() failed");
         goto failure;
     }
-    constraints_result = neo4j_run(state->connection,
-            "CALL db.constraints()", neo4j_null);
+
+    if (state->tx == NULL)
+      {
+        constraints_result = neo4j_run(state->connection,
+                "CALL db.constraints()", neo4j_null);
+      }
+    else
+      {
+        if (neo4j_tx_is_open(state->tx) > 0)
+          {
+            constraints_result = neo4j_run_in_tx(state->tx,
+                    "CALL db.constraints()", neo4j_null);
+          }
+        else
+          {
+            constraints_result = NULL;
+            errno = NEO4J_TRANSACTION_DEFUNCT;
+          }
+      }
     if (constraints_result == NULL)
     {
         print_error_errno(state, pos, errno, "db.constraints() failed");

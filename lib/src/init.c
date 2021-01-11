@@ -39,6 +39,11 @@ int neo4j_client_init(void)
         errno = init_errno;
         return -1;
     }
+    if (neo4j_set_extra(neo4j_null) != 0)
+      {
+        errno = init_errno;
+        return -1;
+      }
     return 0;
 }
 

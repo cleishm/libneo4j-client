@@ -26,6 +26,8 @@
     static const struct neo4j_message_type type_name##_MESSAGE = \
         { .name = #type_name, .struct_signature = signature }
 
+// Bolt v1, v2
+
 DECLARE_MESSAGE_TYPE(INIT, 0x01);
 DECLARE_MESSAGE_TYPE(RUN, 0x10);
 DECLARE_MESSAGE_TYPE(DISCARD_ALL, 0X2F);
@@ -37,30 +39,61 @@ DECLARE_MESSAGE_TYPE(SUCCESS, 0X70);
 DECLARE_MESSAGE_TYPE(FAILURE, 0X7F);
 DECLARE_MESSAGE_TYPE(IGNORED, 0X7E);
 
+// Bolt v3
+DECLARE_MESSAGE_TYPE(HELLO, 0x01);
+DECLARE_MESSAGE_TYPE(GOODBYE, 0x02);
+DECLARE_MESSAGE_TYPE(BEGIN, 0x11);
+DECLARE_MESSAGE_TYPE(COMMIT, 0x12);
+DECLARE_MESSAGE_TYPE(ROLLBACK, 0x13);
+
+// Bolt v4
+DECLARE_MESSAGE_TYPE(DISCARD, 0X2F);
+DECLARE_MESSAGE_TYPE(PULL, 0X3F);
+
+// this is one big bag of messages. Need to separate out into protocol version sets?
+// Maybe not...
+
 static const neo4j_message_type_t neo4j_message_types[] =
     { &INIT_MESSAGE,
       &RUN_MESSAGE,
       &DISCARD_ALL_MESSAGE,
+      &DISCARD_MESSAGE,
       &PULL_ALL_MESSAGE,
+      &PULL_MESSAGE,      
       &ACK_FAILURE_MESSAGE,
       &RESET_MESSAGE,
       &RECORD_MESSAGE,
       &SUCCESS_MESSAGE,
       &FAILURE_MESSAGE,
-      &IGNORED_MESSAGE };
+      &IGNORED_MESSAGE,
+      &HELLO_MESSAGE,
+      &GOODBYE_MESSAGE,
+      &BEGIN_MESSAGE,
+      &COMMIT_MESSAGE,
+      &ROLLBACK_MESSAGE
+    };
+
 static const int _max_message_type =
     (sizeof(neo4j_message_types) / sizeof(neo4j_message_type_t));
 
 const neo4j_message_type_t NEO4J_INIT_MESSAGE = &INIT_MESSAGE;
 const neo4j_message_type_t NEO4J_RUN_MESSAGE = &RUN_MESSAGE;
 const neo4j_message_type_t NEO4J_DISCARD_ALL_MESSAGE = &DISCARD_ALL_MESSAGE;
+const neo4j_message_type_t NEO4J_DISCARD_MESSAGE = &DISCARD_MESSAGE;
 const neo4j_message_type_t NEO4J_PULL_ALL_MESSAGE = &PULL_ALL_MESSAGE;
+const neo4j_message_type_t NEO4J_PULL_MESSAGE = &PULL_MESSAGE;
 const neo4j_message_type_t NEO4J_ACK_FAILURE_MESSAGE = &ACK_FAILURE_MESSAGE;
 const neo4j_message_type_t NEO4J_RESET_MESSAGE = &RESET_MESSAGE;
 const neo4j_message_type_t NEO4J_RECORD_MESSAGE = &RECORD_MESSAGE;
 const neo4j_message_type_t NEO4J_SUCCESS_MESSAGE = &SUCCESS_MESSAGE;
 const neo4j_message_type_t NEO4J_FAILURE_MESSAGE = &FAILURE_MESSAGE;
 const neo4j_message_type_t NEO4J_IGNORED_MESSAGE = &IGNORED_MESSAGE;
+
+const neo4j_message_type_t NEO4J_HELLO_MESSAGE = &HELLO_MESSAGE;
+const neo4j_message_type_t NEO4J_GOODBYE_MESSAGE = &GOODBYE_MESSAGE;
+const neo4j_message_type_t NEO4J_BEGIN_MESSAGE = &BEGIN_MESSAGE;
+const neo4j_message_type_t NEO4J_COMMIT_MESSAGE = &COMMIT_MESSAGE;
+const neo4j_message_type_t NEO4J_ROLLBACK_MESSAGE = &ROLLBACK_MESSAGE;
 
 
 neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature)
@@ -71,10 +104,24 @@ neo4j_message_type_t neo4j_message_type_for_signature(uint8_t signature)
         {
             return neo4j_message_types[i];
         }
+
     }
     return NULL;
 }
 
+neo4j_message_type_t neo4j_message_type_for_type(const char *mtype)
+{
+  int i;
+  neo4j_message_type_t found_mt = NULL;
+  for (i=0;i<_max_message_type;i++)
+    {
+      if (!strcmp(mtype,neo4j_message_types[i]->name)) {
+        found_mt = neo4j_message_types[i];
+        break;
+      }
+    }
+  return found_mt;
+}
 
 int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc, uint8_t *buffer,
@@ -86,7 +133,6 @@ int neo4j_message_send(neo4j_iostream_t *ios, neo4j_message_type_t type,
     struct neo4j_chunking_iostream chunking_ios;
     neo4j_iostream_t *cios = neo4j_chunking_iostream_init(&chunking_ios,
             ios, buffer, bsize, max_chunk);
-
     neo4j_value_t structure = neo4j_struct(type->struct_signature, argv, argc);
     if (neo4j_serialize(structure, cios))
     {

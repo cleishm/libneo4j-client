@@ -17,9 +17,11 @@
 #include "../../config.h"
 #include "connect.h"
 #include "authentication.h"
+#include "state.h"
 #include <assert.h>
 #include <errno.h>
-
+#include <stdio.h>
+#include <stdlib.h>
 
 #define NEO4J_MAX_AUTHENTICATION_ATTEMPTS 3
 
@@ -35,6 +37,18 @@ static neo4j_connection_t *update_password_and_reconnect(shell_state_t *state,
         neo4j_connection_t *connection,
         struct cypher_input_position pos);
 
+int db_reconnect(shell_state_t *state, struct cypher_input_position pos) {
+    if (state->connection != NULL) {
+	db_disconnect(state,pos);
+    }
+    fprintf(stderr,"%s : %s\n", state->connect_string, state->port_string);
+    char cs[BUFLEN];
+    char ps[BUFLEN];
+    strncpy(cs, state->connect_string,BUFLEN-1);
+    strncpy(ps, state->port_string,BUFLEN-1);    
+    return db_connect(state, pos, cs, ps);
+}
+    
 
 int db_connect(shell_state_t *state, struct cypher_input_position pos,
         const char *connect_string, const char *port_string)
@@ -58,6 +72,14 @@ int db_connect(shell_state_t *state, struct cypher_input_position pos,
     {
         ignore_unused_result(neo4j_config_set_basic_auth_callback(
                 state->config, NULL, NULL));
+    }
+    if (connect_string)
+    {
+	strncpy(state->connect_string, connect_string, BUFLEN-1);
+    }
+    if (port_string)
+    {
+	strncpy(state->port_string, port_string, BUFLEN-1);
     }
     return result;
 }
@@ -115,7 +137,7 @@ int attempt_db_connect(struct auth_state *auth_state,
         {
         case NEO4J_NO_SERVER_TLS_SUPPORT:
             print_error(state, pos, "A secure connection could not"
-                    " be esablished (try --insecure)");
+                    " be established (try --insecure)");
             break;
         case NEO4J_INVALID_URI:
             print_error(state, pos, "Invalid URL '%s'", connect_string);
@@ -278,4 +300,129 @@ int db_disconnect(shell_state_t *state, struct cypher_input_position pos)
     neo4j_close(state->connection);
     state->connection = NULL;
     return 0;
+}
+
+int db_begin_tx(shell_state_t *state, struct cypher_input_position pos,
+                int timeout, const char *mode)
+{
+  if (state->connection == NULL)
+    {
+      print_error(state, pos, "Not connected");
+      return -1;
+    }
+  if (state->tx != NULL) {
+      if (neo4j_tx_defunct(state->tx) ||
+	  neo4j_tx_is_open(state->tx) == 0)
+      {
+        neo4j_free_tx(state->tx);
+	state->tx = NULL;
+      }
+    else
+      {
+        print_error(state, pos, "A transaction is already open");
+        return -1;
+      }
+  }
+
+  neo4j_transaction_t *new_tx = neo4j_begin_tx(state->connection, timeout, mode, state->dbname);
+  if (new_tx == NULL)
+    {
+      print_error_errno(state, pos, errno, "Cannot create transaction");
+      return -1;
+    }
+  if (neo4j_tx_failure(new_tx) != 0)
+    {
+      char msg[256];
+      if (neo4j_tx_failure_code(new_tx) != NULL)
+      {
+	  snprintf(msg, sizeof(msg), "Transaction failed with %s",
+		   neo4j_tx_failure_code(new_tx));
+      }
+      else
+      {
+	  snprintf(msg, sizeof(msg), "Transaction failed");
+      }
+      print_error_errno(state, pos, errno, (const char *)msg);
+      return -1;
+    }
+  state->tx = new_tx;
+  return 0;
+}
+
+int db_commit_tx(shell_state_t *state, struct cypher_input_position pos)
+{
+  if (state->connection == NULL)
+    {
+      print_error(state, pos, "Not connected");
+      return -1;
+    }
+  if (state->tx == NULL)
+    {
+      print_error(state, pos, "No transaction is open");
+      return -1;
+    }
+  int err = 0;
+  if (state->tx != NULL)
+    {
+      if (neo4j_tx_is_open(state->tx) == 0)
+        {
+          print_error(state, pos, "No transaction is open");
+          return -1;
+        }
+    }
+  if (neo4j_commit(state->tx) < 0)
+    {
+      if (neo4j_tx_defunct(state->tx)) {
+        print_error(state, pos, "Transaction timed out or connection reset");
+      }
+      else {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "Transaction failed on commit with %s",
+                 neo4j_tx_failure_code(state->tx));
+        print_error_errno(state, pos, errno, (const char *)msg);
+      }
+      err = -1;
+    }
+  neo4j_free_tx(state->tx);
+  state->tx = NULL;
+  return err;
+}
+
+int db_rollback_tx(shell_state_t *state, struct cypher_input_position pos)
+{
+  if (state->connection == NULL)
+    {
+      print_error(state, pos, "Not connected");
+      return -1;
+    }
+  if (state->tx == NULL)
+    {
+      print_error(state, pos, "No transaction is open");
+      return -1;
+    }
+  int err = 0;
+  if (state->tx != NULL)
+    {
+      if (neo4j_tx_is_open(state->tx) == 0)
+        {
+          print_error(state, pos, "No transaction is open");
+          err = -1;
+        }
+    }
+  if (neo4j_rollback(state->tx) < 0)
+    {
+      if (neo4j_tx_defunct(state->tx)) {
+        print_error(state, pos, "Transaction timed out or connection reset");
+      }
+      else {
+        char msg[256];
+        snprintf(msg, sizeof(msg), "Transaction failed on rollback with %s",
+                 neo4j_tx_failure_code(state->tx));
+        print_error_errno(state, pos, errno, (const char *)msg);
+      }
+      err = -1;
+    }
+  neo4j_free_tx(state->tx);
+  state->tx = NULL;
+  return err;
 }

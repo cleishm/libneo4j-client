@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include "../../config.h"
+#include "../src/neo4j-client.h"
 #include "../src/chunking_iostream.h"
 #include "../src/connection.h"
 #include "../src/deserialization.h"
@@ -55,7 +56,7 @@ neo4j_connection_t *connection;
 
 static void setup(void)
 {
-    logger_provider = neo4j_std_logger_provider(stderr, NEO4J_LOG_ERROR, 0);
+  logger_provider = neo4j_std_logger_provider(stderr, NEO4J_LOG_TRACE, 0);
     in_rb = rb_alloc(1024);
     out_rb = rb_alloc(1024);
     client_ios = neo4j_memiostream(in_rb, out_rb);
@@ -68,13 +69,14 @@ static void setup(void)
 
     mpool = neo4j_std_mpool(config);
 
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(3);
     rb_append(in_rb, &version, sizeof(version));
 
     neo4j_value_t empty_map = neo4j_map(NULL, 0);
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
     connection = neo4j_connect("neo4j://localhost:7687", config, 0);
+
     ck_assert_ptr_ne(connection, NULL);
 
     rb_clear(out_rb);
@@ -259,7 +261,7 @@ START_TEST (test_run_returns_results_and_completes)
     neo4j_message_type_t type = recv_message(server_ios, &mpool,
             &argv, &argc);
     ck_assert(type == NEO4J_RUN_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, 3);
     ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
     char buf[128];
     ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)), "RETURN 1");
@@ -577,7 +579,7 @@ START_TEST (test_send_completes)
     neo4j_message_type_t type = recv_message(server_ios, &mpool,
             &argv, &argc);
     ck_assert(type == NEO4J_RUN_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, 3);
     ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
     char buf[128];
     ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
@@ -756,7 +758,7 @@ START_TEST (test_run_with_long_statement)
     neo4j_message_type_t type = recv_message(server_ios, &mpool,
             &argv, &argc);
     ck_assert(type == NEO4J_RUN_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, 3);
     ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
     char buf[131072];
     ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)), statement);
@@ -768,7 +770,6 @@ START_TEST (test_run_with_long_statement)
     ck_assert(rb_is_empty(in_rb));
 }
 END_TEST
-
 
 TCase* result_stream_tcase(void)
 {
