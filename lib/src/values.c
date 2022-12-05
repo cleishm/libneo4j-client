@@ -338,9 +338,11 @@ static bool null_eq(const neo4j_value_t *value, const neo4j_value_t *other)
 
 neo4j_value_t neo4j_bool(bool value)
 {
-    struct neo4j_bool v =
-        { ._type = NEO4J_BOOL, ._vt_off = BOOL_VT_OFF,
-          .value = value? 1 : 0 };
+    struct neo4j_bool v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_BOOL;
+    v._vt_off = BOOL_VT_OFF;
+    v.value = value? 1 : 0;
     return *((neo4j_value_t *)(&v));
 }
 
@@ -374,8 +376,11 @@ neo4j_value_t neo4j_int(long long value)
         value = INT64_MAX;
     }
 #endif
-    struct neo4j_int v =
-        { ._type = NEO4J_INT, ._vt_off = INT_VT_OFF, .value = value };
+    struct neo4j_int v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_INT;
+    v._vt_off = INT_VT_OFF;
+    v.value = value;
     return *((neo4j_value_t *)(&v));
 }
 
@@ -399,8 +404,11 @@ long long neo4j_int_value(neo4j_value_t value)
 
 neo4j_value_t neo4j_float(double value)
 {
-    struct neo4j_float v =
-        { ._type = NEO4J_FLOAT, ._vt_off = FLOAT_VT_OFF, .value = value };
+    struct neo4j_float v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_FLOAT;
+    v._vt_off = FLOAT_VT_OFF;
+    v.value = value;
     return *((neo4j_value_t *)(&v));
 }
 
@@ -430,9 +438,12 @@ neo4j_value_t neo4j_ustring(const char *u, unsigned int n)
         n = UINT32_MAX;
     }
 #endif
-    struct neo4j_string v =
-        { ._type = NEO4J_STRING, ._vt_off = STRING_VT_OFF,
-          .ustring = u, .length = n };
+    struct neo4j_string v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_STRING;
+    v._vt_off = STRING_VT_OFF;
+    v.ustring = u;
+    v.length = n;
     return *((neo4j_value_t *)(&v));
 }
 
@@ -484,9 +495,12 @@ neo4j_value_t neo4j_bytes(const char *u, unsigned int n)
         n = UINT32_MAX;
     }
 #endif
-    struct neo4j_bytes v =
-        { ._type = NEO4J_BYTES, ._vt_off = BYTES_VT_OFF,
-          .bytes = u, .length = n };
+    struct neo4j_bytes v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_BYTES;
+    v._vt_off = BYTES_VT_OFF;
+    v.bytes = u;
+    v.length = n;
     return *((neo4j_value_t *)(&v));
 }
 
@@ -527,9 +541,12 @@ neo4j_value_t neo4j_list(const neo4j_value_t *items, unsigned int n)
         n = UINT32_MAX;
     }
 #endif
-    struct neo4j_list v =
-        { ._type = NEO4J_LIST, ._vt_off = LIST_VT_OFF,
-          .items = items, .length = n };
+    struct neo4j_list v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_LIST;
+    v._vt_off = LIST_VT_OFF;
+    v.items = items;
+    v.length = n;
     return *((neo4j_value_t *)(&v));
 }
 
@@ -1031,9 +1048,13 @@ neo4j_value_t neo4j_identity(long long value)
 neo4j_value_t neo4j_struct(uint8_t signature,
         const neo4j_value_t *fields, uint16_t n)
 {
-    struct neo4j_struct v =
-            { ._type = NEO4J_STRUCT, ._vt_off = STRUCT_VT_OFF,
-              .signature = signature, .fields = fields, .nfields = n };
+    struct neo4j_struct v;
+    memset(&v, 0, sizeof(v));
+    v._type = NEO4J_STRUCT;
+    v._vt_off = STRUCT_VT_OFF;
+    v.signature = signature;
+    v.fields = fields;
+    v.nfields = n;
     return *((neo4j_value_t *)(&v));
 }
 
