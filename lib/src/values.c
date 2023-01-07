@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <stddef.h>
+#include <time.h>
 
 
 static bool null_eq(const neo4j_value_t *value, const neo4j_value_t *other);
@@ -58,7 +59,15 @@ static const struct neo4j_type node_type = { .name = "Node" };
 static const struct neo4j_type relationship_type = { .name = "Relationship" };
 static const struct neo4j_type path_type = { .name = "Path" };
 static const struct neo4j_type identity_type = { .name = "Identity" };
-static const struct neo4j_type struct_type = { .name = "Struct" };
+static const struct neo4j_type date_type = { .name = "Date" };
+static const struct neo4j_type time_type = { .name = "Time" };
+static const struct neo4j_type struct_type = { .name = "" };
+static const struct neo4j_type localtime_type = { .name = "LocalTime" };
+static const struct neo4j_type datetime_type = { .name = "DateTime" };
+static const struct neo4j_type localdatetime_type = { .name = "LocalDateTime" };
+static const struct neo4j_type duration_type = { .name = "Duration" };
+static const struct neo4j_type point2d_type = { .name = "Point2D" };
+static const struct neo4j_type point3d_type = { .name = "Point3D" };
 
 struct neo4j_types
 {
@@ -75,7 +84,16 @@ struct neo4j_types
     const struct neo4j_type *identity_type;
     const struct neo4j_type *struct_type;
     const struct neo4j_type *bytes_type;
+    const struct neo4j_type *date_type;
+    const struct neo4j_type *time_type;
+    const struct neo4j_type *localtime_type;
+    const struct neo4j_type *datetime_type;
+    const struct neo4j_type *localdatetime_type;
+    const struct neo4j_type *duration_type;
+    const struct neo4j_type *point2d_type;
+    const struct neo4j_type *point3d_type;
 };
+
 static const struct neo4j_types neo4j_types =
 {
     .null_type = &null_type,
@@ -90,7 +108,15 @@ static const struct neo4j_types neo4j_types =
     .path_type = &path_type,
     .identity_type = &identity_type,
     .struct_type = &struct_type,
-    .bytes_type = &bytes_type
+    .bytes_type = &bytes_type,
+    .date_type = &date_type,
+    .time_type = &time_type,
+    .localtime_type = &localtime_type,
+    .datetime_type = &datetime_type,
+    .localdatetime_type = &localdatetime_type,
+    .duration_type = &duration_type,
+    .point2d_type = &point2d_type,
+    .point3d_type = &point3d_type
 };
 
 #define TYPE_OFFSET(name) \
@@ -111,6 +137,17 @@ const uint8_t NEO4J_PATH = TYPE_OFFSET(path_type);
 const uint8_t NEO4J_IDENTITY = TYPE_OFFSET(identity_type);
 const uint8_t NEO4J_STRUCT = TYPE_OFFSET(struct_type);
 const uint8_t NEO4J_BYTES = TYPE_OFFSET(bytes_type);
+const uint8_t NEO4J_DATE = TYPE_OFFSET(date_type);
+const uint8_t NEO4J_TIME = TYPE_OFFSET(time_type);
+const uint8_t NEO4J_LOCALTIME = TYPE_OFFSET(localtime_type);
+const uint8_t NEO4J_DATETIME = TYPE_OFFSET(datetime_type);
+const uint8_t NEO4J_LOCALDATETIME = TYPE_OFFSET(localdatetime_type);
+const uint8_t NEO4J_DURATION = TYPE_OFFSET(duration_type);
+const uint8_t NEO4J_POINT2D = TYPE_OFFSET(point2d_type);
+const uint8_t NEO4J_POINT3D = TYPE_OFFSET(point3d_type);
+
+
+
 static const uint8_t _MAX_TYPE =
     (sizeof(struct neo4j_types) / sizeof(struct neo4j_type *));
 
@@ -195,6 +232,48 @@ static struct neo4j_value_vt path_vt =
       .fprint = neo4j_path_fprint,
       .serialize = neo4j_struct_serialize,
       .eq = struct_eq };
+
+static struct neo4j_value_vt date_vt =
+    { .str = neo4j_date_str,
+      .fprint = neo4j_date_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt time_vt =
+    { .str = neo4j_time_str,
+      .fprint = neo4j_time_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt localtime_vt =
+    { .str = neo4j_localtime_str,
+      .fprint = neo4j_localtime_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt datetime_vt =
+    { .str = neo4j_datetime_str,
+      .fprint = neo4j_datetime_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt localdatetime_vt =
+    { .str = neo4j_localdatetime_str,
+      .fprint = neo4j_localdatetime_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt duration_vt =
+    { .str = neo4j_duration_str,
+      .fprint = neo4j_duration_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt point2d_vt =
+    { .str = neo4j_point2d_str,
+      .fprint = neo4j_point2d_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+static struct neo4j_value_vt point3d_vt =
+    { .str = neo4j_point3d_str,
+      .fprint = neo4j_point3d_fprint,
+      .serialize = neo4j_struct_serialize,
+      .eq = struct_eq };
+
 static struct neo4j_value_vt identity_vt =
     { .str = neo4j_int_str,
       .fprint = neo4j_int_fprint,
@@ -223,6 +302,14 @@ struct neo4j_value_vts
     const struct neo4j_value_vt *node_vt;
     const struct neo4j_value_vt *relationship_vt;
     const struct neo4j_value_vt *path_vt;
+    const struct neo4j_value_vt *date_vt;
+    const struct neo4j_value_vt *time_vt;
+    const struct neo4j_value_vt *localtime_vt;
+    const struct neo4j_value_vt *datetime_vt;
+    const struct neo4j_value_vt *localdatetime_vt;
+    const struct neo4j_value_vt *duration_vt;
+    const struct neo4j_value_vt *point2d_vt;
+    const struct neo4j_value_vt *point3d_vt;
     const struct neo4j_value_vt *identity_vt;
     const struct neo4j_value_vt *struct_vt;
     const struct neo4j_value_vt *bytes_vt;
@@ -239,6 +326,14 @@ static const struct neo4j_value_vts neo4j_value_vts =
     .node_vt = &node_vt,
     .relationship_vt = &relationship_vt,
     .path_vt = &path_vt,
+    .date_vt = &date_vt,
+    .time_vt = &time_vt,
+    .localtime_vt = &localtime_vt,
+    .datetime_vt = &datetime_vt,
+    .localdatetime_vt = &localdatetime_vt,
+    .duration_vt = &duration_vt,
+    .point2d_vt = &point2d_vt,
+    .point3d_vt = &point3d_vt,    
     .identity_vt = &identity_vt,
     .struct_vt = &struct_vt,
     .bytes_vt = &bytes_vt
@@ -259,6 +354,14 @@ static const struct neo4j_value_vts neo4j_value_vts =
 #define NODE_VT_OFF VT_OFFSET(node_vt)
 #define RELATIONSHIP_VT_OFF VT_OFFSET(relationship_vt)
 #define PATH_VT_OFF VT_OFFSET(path_vt)
+#define DATE_VT_OFF VT_OFFSET(date_vt)
+#define TIME_VT_OFF VT_OFFSET(time_vt)
+#define LOCALTIME_VT_OFF VT_OFFSET(localtime_vt)
+#define DATETIME_VT_OFF VT_OFFSET(datetime_vt)
+#define LOCALDATETIME_VT_OFF VT_OFFSET(localdatetime_vt)
+#define DURATION_VT_OFF VT_OFFSET(duration_vt)
+#define POINT2D_VT_OFF VT_OFFSET(point2d_vt)
+#define POINT3D_VT_OFF VT_OFFSET(point3d_vt)
 #define IDENTITY_VT_OFF VT_OFFSET(identity_vt)
 #define STRUCT_VT_OFF VT_OFFSET(struct_vt)
 #define BYTES_VT_OFF VT_OFFSET(bytes_vt)
@@ -1005,6 +1108,331 @@ neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
     return rels->items[idx];
 }
 
+// date
+
+neo4j_value_t neo4j_date(const neo4j_value_t fields[1])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_DATE, ._vt_off = DATE_VT_OFF,
+              .signature = NEO4J_DATE_SIGNATURE,
+              .fields = fields, .nfields = 1 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_date_days(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DATE, 0);
+    return neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]
+        );
+}
+
+time_t neo4j_date_time_t(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DATE, 0);
+    return (time_t) 24*60*60*neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]
+        );
+}
+// time
+
+neo4j_value_t neo4j_time(const neo4j_value_t fields[2])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_TIME, ._vt_off = TIME_VT_OFF,
+              .signature = NEO4J_TIME_SIGNATURE,
+              .fields = fields, .nfields = 2 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_time_nsecs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_TIME, 0);
+    return neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]
+        );
+}
+
+long long neo4j_time_secs_offset(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_TIME, 0);
+    return neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[1]
+        );
+}
+
+struct timespec *neo4j_time_timespec(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_TIME, 0);
+    struct timespec *ts = (struct timespec *) malloc(sizeof(struct timespec));
+    ts->tv_sec = (time_t) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]) / 1000000000;
+    ts->tv_nsec = (long int) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]) % 1000000000;
+    return ts;
+}
+
+// localtime
+
+neo4j_value_t neo4j_localtime(const neo4j_value_t fields[1])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+	neo4j_type(fields[0]) != NEO4J_INT)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_LOCALTIME, ._vt_off = LOCALTIME_VT_OFF,
+              .signature = NEO4J_LOCALTIME_SIGNATURE,
+              .fields = fields, .nfields = 1 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_localtime_nsecs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCALTIME, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
+}
+
+struct timespec *neo4j_localtime_timespec(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCALTIME, 0);
+    struct timespec *ts = (struct timespec *) malloc(sizeof(struct timespec));
+    ts->tv_sec = (time_t) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]) / 1000000000;
+    ts->tv_nsec = (long int) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]) % 1000000000;
+    return ts;
+}
+
+// datetime
+
+neo4j_value_t neo4j_datetime(const neo4j_value_t fields[3])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+	neo4j_type(fields[1]) != NEO4J_INT ||
+	neo4j_type(fields[2]) != NEO4J_INT)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_DATETIME, ._vt_off = DATETIME_VT_OFF,
+              .signature = NEO4J_DATETIME_SIGNATURE,
+              .fields = fields, .nfields = 3 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_datetime_secs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DATETIME, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
+}
+
+long long neo4j_datetime_nsecs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DATETIME, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[1]);
+}
+
+long long neo4j_datetime_secs_offset(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DATETIME, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[2]);
+}
+
+struct timespec *neo4j_datetime_timespec(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DATETIME, 0);
+    struct timespec *ts = (struct timespec *) malloc(sizeof(struct timespec));
+    ts->tv_sec = (time_t) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]);
+    ts->tv_nsec = (long int) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[1]);
+    return ts;
+}
+
+// localdatetime
+
+neo4j_value_t neo4j_localdatetime(const neo4j_value_t fields[2])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+	neo4j_type(fields[1]) != NEO4J_INT)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_LOCALDATETIME, ._vt_off = LOCALDATETIME_VT_OFF,
+              .signature = NEO4J_LOCALDATETIME_SIGNATURE,
+              .fields = fields, .nfields = 2 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_localdatetime_secs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCALDATETIME, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
+}
+
+long long neo4j_localdatetime_nsecs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCALDATETIME, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[1]);
+}
+
+struct timespec *neo4j_localdatetime_timespec(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_LOCALDATETIME, 0);
+    struct timespec *ts = (struct timespec *) malloc(sizeof(struct timespec));
+    ts->tv_sec = (time_t) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[0]);
+    ts->tv_nsec = (long int) neo4j_int_value(
+        ((const struct neo4j_struct *)&value)->fields[1]);
+    return ts;
+}
+
+// duration
+
+neo4j_value_t neo4j_duration(const neo4j_value_t fields[4])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+	neo4j_type(fields[1]) != NEO4J_INT ||
+	neo4j_type(fields[2]) != NEO4J_INT ||
+	neo4j_type(fields[3]) != NEO4J_INT)	
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_DURATION, ._vt_off = DURATION_VT_OFF,
+              .signature = NEO4J_DURATION_SIGNATURE,
+              .fields = fields, .nfields = 4 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_duration_months(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DURATION, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
+}
+
+long long neo4j_duration_days(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DURATION, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[1]);
+}
+
+long long neo4j_duration_secs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DURATION, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[2]);
+}
+
+long long neo4j_duration_nsecs(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_DURATION, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[3]);
+}
+
+// point2d
+
+neo4j_value_t neo4j_point2d(const neo4j_value_t fields[3])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+	neo4j_type(fields[1]) != NEO4J_FLOAT ||
+	neo4j_type(fields[2]) != NEO4J_FLOAT)
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_POINT2D, ._vt_off = POINT2D_VT_OFF,
+              .signature = NEO4J_POINT2D_SIGNATURE,
+              .fields = fields, .nfields = 3 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_point2d_srid(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT2D, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
+}
+
+double neo4j_point2d_x(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT2D, 0);
+    return neo4j_float_value(((const struct neo4j_struct *)&value)->fields[1]);
+}
+
+double neo4j_point2d_y(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT2D, 0);
+    return neo4j_float_value(((const struct neo4j_struct *)&value)->fields[2]);
+}
+
+
+// point3d
+
+neo4j_value_t neo4j_point3d(const neo4j_value_t fields[4])
+{
+    if (neo4j_type(fields[0]) != NEO4J_INT ||
+	neo4j_type(fields[1]) != NEO4J_FLOAT ||
+	neo4j_type(fields[2]) != NEO4J_FLOAT ||
+	neo4j_type(fields[3]) != NEO4J_FLOAT)	
+    {
+        errno = EINVAL;
+        return neo4j_null;
+    }
+
+    struct neo4j_struct v =
+            { ._type = NEO4J_POINT3D, ._vt_off = POINT3D_VT_OFF,
+              .signature = NEO4J_POINT3D_SIGNATURE,
+              .fields = fields, .nfields = 4 };
+    return *((neo4j_value_t *)(&v));
+}
+
+long long neo4j_point3d_srid(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT3D, 0);
+    return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
+}
+
+double neo4j_point3d_x(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT3D, 0);
+    return neo4j_float_value(((const struct neo4j_struct *)&value)->fields[1]);
+}
+
+double neo4j_point3d_y(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT3D, 0);
+    return neo4j_float_value(((const struct neo4j_struct *)&value)->fields[2]);
+}
+
+double neo4j_point3d_z(neo4j_value_t value)
+{
+    REQUIRE(neo4j_type(value) == NEO4J_POINT3D, 0);
+    return neo4j_float_value(((const struct neo4j_struct *)&value)->fields[3]);
+}
 
 // identity
 
