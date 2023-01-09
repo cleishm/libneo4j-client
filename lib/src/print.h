@@ -50,6 +50,26 @@ ssize_t neo4j_rel_fprint(const neo4j_value_t *value, FILE *stream);
 size_t neo4j_path_str(const neo4j_value_t *value, char *buf, size_t n);
 ssize_t neo4j_path_fprint(const neo4j_value_t *value, FILE *stream);
 
+size_t neo4j_date_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_date_fprint(const neo4j_value_t *value, FILE *stream);
+
+size_t neo4j_time_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_time_fprint(const neo4j_value_t *value, FILE *stream);
+size_t neo4j_localtime_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_localtime_fprint(const neo4j_value_t *value, FILE *stream);
+size_t neo4j_datetime_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_datetime_fprint(const neo4j_value_t *value, FILE *stream);
+size_t neo4j_localdatetime_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_localdatetime_fprint(const neo4j_value_t *value, FILE *stream);
+size_t neo4j_duration_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_duration_fprint(const neo4j_value_t *value, FILE *stream);
+size_t neo4j_point2d_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_point2d_fprint(const neo4j_value_t *value, FILE *stream);
+size_t neo4j_point3d_str(const neo4j_value_t *value, char *buf, size_t n);
+ssize_t neo4j_point3d_fprint(const neo4j_value_t *value, FILE *stream);
+
+
+
 size_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n);
 ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream);
 

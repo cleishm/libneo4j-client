@@ -22,7 +22,10 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <time.h>
 
+#define BUFLEN (100)
 
 static size_t identifier_str(char *buf, size_t n, const neo4j_value_t *value);
 static ssize_t identifier_fprint(const neo4j_value_t *value, FILE *stream);
@@ -999,4 +1002,300 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
         return -1;
     }
     return ++l;
+}
+
+/* date */
+
+size_t neo4j_date_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_DATE);
+    struct tm *bdt;
+    time_t ntmt = neo4j_date_time_t(*value);
+    bdt = localtime( &ntmt );
+    if (bdt == NULL) {
+	return -1;
+    }
+    size_t l = strftime(buf, n, "%Y-%m-%d", (const struct tm *)bdt);
+    if (l<0) {
+	return -1;
+    }
+    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
+    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntmt);
+    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
+    buf[minzu(n-1,l)] = '\0';
+    return l;
+}
+
+ssize_t neo4j_date_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_DATE);
+    char buf[BUFLEN];
+    if (neo4j_date_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* time : prints time of day and UTC offset string, with time_t value in parens;
+   ignores nanosec remainder */
+
+size_t neo4j_time_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_TIME);
+    struct tm *bdt;
+    struct timespec *ntsp = neo4j_time_timespec(*value);
+    long int offset = (long int) neo4j_time_secs_offset(*value);
+    bdt = localtime( &(ntsp->tv_sec) );
+    bdt->tm_gmtoff = offset;
+    if (bdt == NULL) {
+	free(ntsp);
+	return -1;
+    }
+    size_t l = strftime(buf, n, "%T%z", (const struct tm *)bdt);
+    if (l<0) {
+	free(ntsp);
+	return -1;
+    }
+    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
+    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
+    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
+    buf[minzu(n-1,l)] = '\0';
+    free(ntsp);
+    return l;
+}
+
+ssize_t neo4j_time_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_TIME);
+    char buf[BUFLEN];
+    if (neo4j_time_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* localtime */
+
+size_t neo4j_localtime_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_LOCALTIME);
+    struct tm *bdt;
+    struct timespec *ntsp = neo4j_localtime_timespec(*value);
+    bdt = localtime( &(ntsp->tv_sec) );
+    if (bdt == NULL) {
+	free(ntsp);
+	return -1;
+    }
+    size_t l = strftime(buf, n, "%T%z", (const struct tm *)bdt);
+    if (l<0) {
+	free(ntsp);
+	return -1;
+    }
+    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
+    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
+    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
+    buf[minzu(n-1,l)] = '\0';
+    free(ntsp);
+    return l;
+}
+
+ssize_t neo4j_localtime_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_LOCALTIME);
+    char buf[BUFLEN];
+    if (neo4j_localtime_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* datetime */
+
+size_t neo4j_datetime_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_DATETIME);
+    struct tm *bdt;
+    struct timespec *ntsp = neo4j_datetime_timespec(*value);
+    long int offset = (long int) neo4j_datetime_secs_offset(*value);
+    bdt = localtime( &(ntsp->tv_sec) );
+    bdt->tm_gmtoff = offset;
+    if (bdt == NULL) {
+	free(ntsp);
+	return -1;
+    }
+    size_t l = strftime(buf, n, "%Y-%m-%dT%T%z", (const struct tm *)bdt);
+    if (l<0) {
+	free(ntsp);
+	return -1;
+    }
+    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
+    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
+    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
+    buf[minzu(n-1,l)] = '\0';
+    free(ntsp);
+    return l;
+}
+
+ssize_t neo4j_datetime_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_DATETIME);
+    char buf[BUFLEN];
+    if (neo4j_datetime_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* localdatetime */
+
+size_t neo4j_localdatetime_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_LOCALDATETIME);
+    struct tm *bdt;
+    struct timespec *ntsp = neo4j_localdatetime_timespec(*value);
+    bdt = localtime( &(ntsp->tv_sec) );
+    if (bdt == NULL) {
+	free(ntsp);
+	return -1;
+    }
+    size_t l = strftime(buf, n, "%Y-%m-%dT%T%z", (const struct tm *)bdt);
+    if (l<0) {
+	free(ntsp);
+	return -1;
+    }
+    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
+    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
+    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
+    buf[minzu(n-1,l)] = '\0';
+    free(ntsp);
+    return l;
+}
+
+ssize_t neo4j_localdatetime_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_LOCALDATETIME);
+    char buf[BUFLEN];
+    if (neo4j_localdatetime_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* duration */
+
+size_t neo4j_duration_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_DURATION);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+    char intbuf[BUFLEN];
+    size_t l = sprintf(buf,"[");
+    if (l<=0) {
+	return -1;
+    }
+    for (unsigned i = 0; i < 4; ++i)
+    {
+	if (neo4j_int_str(v->fields+i, intbuf, BUFLEN-1)<0) {
+	    return -1;
+	}
+	l += snprintf(buf+l, (l<n)? n-l : 0, "%s", intbuf);
+	if (l<n && i<3)
+	{
+	    l += snprintf(buf+l, n-l, ",");
+	}
+    }
+    l += snprintf(buf, (l<n) ? n-l: 0, "]");
+    buf[minzu(n-1,l)] = '\0';
+    return l;
+}
+
+ssize_t neo4j_duration_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_DURATION);
+    char buf[BUFLEN];
+    if (neo4j_duration_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* point2d */
+size_t neo4j_point2d_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_POINT2D);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+    char numbuf[BUFLEN];
+    size_t l = sprintf(buf,"[");
+    if (l<=0) {
+	return -1;
+    }
+    for (unsigned i = 0; i < 3; ++i)
+    {
+	if (neo4j_ntostring(v->fields[i], numbuf, BUFLEN-1)<0) {
+	    return -1;
+	}
+	l += snprintf(buf+l, (l<n)? n-l : 0, "%s", numbuf);
+	if (l<n && i<2)
+	{
+	    l += snprintf(buf+l, n-l, ",");
+	}
+    }
+    l += snprintf(buf, (l<n) ? n-l: 0, "]");
+    buf[minzu(n-1,l)] = '\0';
+    return l;
+}
+
+
+ssize_t neo4j_point2d_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_POINT2D);
+    char buf[BUFLEN];
+    if (neo4j_point2d_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
+}
+
+/* point3d */
+
+size_t neo4j_point3d_str(const neo4j_value_t *value, char *buf, size_t n)
+{
+    REQUIRE(value != NULL, -1);
+    REQUIRE(n == 0 || buf != NULL, -1);
+    assert(neo4j_type(*value) == NEO4J_POINT3D);
+    const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+    char numbuf[BUFLEN];
+    size_t l = sprintf(buf,"[");
+    if (l<=0) {
+	return -1;
+    }
+    for (unsigned i = 0; i < 4; ++i)
+    {
+	if (neo4j_ntostring(v->fields[i], numbuf, BUFLEN-1)<0) {
+	    return -1;
+	}
+	l += snprintf(buf+l, (l<n)? n-l : 0, "%s", numbuf);
+	if (l<n && i<3)
+	{
+	    l += snprintf(buf+l, n-l, ",");
+	}
+    }
+    l += snprintf(buf, (l<n) ? n-l: 0, "]");
+    buf[minzu(n-1,l)] = '\0';
+    return l;
+}
+
+ssize_t neo4j_point3d_fprint(const neo4j_value_t *value, FILE *stream) {
+    assert(neo4j_type(*value) == NEO4J_POINT3D);
+    char buf[BUFLEN];
+    if (neo4j_point3d_str(value, buf, BUFLEN-1) < 0) {
+	return -1;
+    }
+    return fputs( (const char *)buf, stream );
 }
