@@ -20,13 +20,12 @@
 #include <check.h>
 #include <errno.h>
 #include <unistd.h>
-
+#include <stdio.h>
 
 static char buf[1024];
 static char *memstream_buffer;
 static size_t memstream_size;
 static FILE *memstream;
-
 
 static void setup(void)
 {
@@ -1048,6 +1047,57 @@ START_TEST (identity_value)
 }
 END_TEST
 
+START_TEST (date_value)
+{
+    neo4j_value_t field_values[] = { neo4j_int(18250) };
+    // Thu Dec 19 2019
+    neo4j_value_t value = neo4j_date(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_DATE);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "2019-12-19 (1576800000)");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
+    ck_assert_str_eq(buf, "2019-12-19 (1576800000)");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 23), 23);
+    ck_assert_str_eq(buf, "2019-12-19 (1576800000");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 22), 23);
+    ck_assert_str_eq(buf, "2019-12-19 (157680000");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 23);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "2019-12-19 (1576800000)");
+}
+END_TEST
+
+START_TEST (time_value)
+{
+    neo4j_value_t field_values[] = { neo4j_int(1576815004000001040) };
+    // Thu Dec 19 23:10:04 EST 2019 + 1040ns
+    neo4j_value_t value = neo4j_time(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_TIME);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    fprintf(stderr,"%s",str);
+    ck_assert_str_eq(str, "23:10:04-0500 (1576815004)");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 26);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 26);
+    ck_assert_str_eq(buf, "23:10:04-0500 (1576815004)");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 26), 26);
+    ck_assert_str_eq(buf, "23:10:04-0500 (1576815004");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 25), 26);
+    ck_assert_str_eq(buf, "23:10:04-0500 (157681500");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 26);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "23:10:04-0500 (1576815004)");
+
+}
+END_TEST
 
 TCase* values_tcase(void)
 {
@@ -1086,5 +1136,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, identity_value);
     tcase_add_test(tc, struct_value);
     tcase_add_test(tc, struct_eq);
+    tcase_add_test(tc, date_value);
+    tcase_add_test(tc, time_value);
     return tc;
 }

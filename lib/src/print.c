@@ -1018,13 +1018,15 @@ size_t neo4j_date_str(const neo4j_value_t *value, char *buf, size_t n)
 	return -1;
     }
     size_t l = strftime(buf, n, "%Y-%m-%d", (const struct tm *)bdt);
-    if (l<0) {
-	return -1;
+    if (l==0) {
+	l = 10;
     }
-    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
-    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntmt);
-    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntmt);
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     return l;
 }
 
@@ -1055,14 +1057,15 @@ size_t neo4j_time_str(const neo4j_value_t *value, char *buf, size_t n)
 	return -1;
     }
     size_t l = strftime(buf, n, "%T%z", (const struct tm *)bdt);
-    if (l<0) {
-	free(ntsp);
-	return -1;
+    if (l==0) {
+	l = 13;
     }
-    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
-    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
-    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     free(ntsp);
     return l;
 }
@@ -1092,13 +1095,14 @@ size_t neo4j_localtime_str(const neo4j_value_t *value, char *buf, size_t n)
     }
     size_t l = strftime(buf, n, "%T%z", (const struct tm *)bdt);
     if (l<0) {
-	free(ntsp);
-	return -1;
+	l = 13;
     }
-    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
-    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
-    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     free(ntsp);
     return l;
 }
@@ -1130,13 +1134,14 @@ size_t neo4j_datetime_str(const neo4j_value_t *value, char *buf, size_t n)
     }
     size_t l = strftime(buf, n, "%Y-%m-%dT%T%z", (const struct tm *)bdt);
     if (l<0) {
-	free(ntsp);
-	return -1;
+	l = 24;
     }
-    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
-    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
-    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     free(ntsp);
     return l;
 }
@@ -1166,13 +1171,14 @@ size_t neo4j_localdatetime_str(const neo4j_value_t *value, char *buf, size_t n)
     }
     size_t l = strftime(buf, n, "%Y-%m-%dT%T%z", (const struct tm *)bdt);
     if (l<0) {
-	free(ntsp);
-	return -1;
+	l = 24;
     }
-    l += snprintf(buf+l, (l<n)? n-l : 0, " (");
-    l += snprintf(buf+l, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
-    l += snprintf(buf+l, (l<n)? n-l : 0, ")");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     free(ntsp);
     return l;
 }
@@ -1204,14 +1210,16 @@ size_t neo4j_duration_str(const neo4j_value_t *value, char *buf, size_t n)
 	if (neo4j_int_str(v->fields+i, intbuf, BUFLEN-1)<0) {
 	    return -1;
 	}
-	l += snprintf(buf+l, (l<n)? n-l : 0, "%s", intbuf);
-	if (l<n && i<3)
+	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", intbuf);
+	if (i<3)
 	{
-	    l += snprintf(buf+l, n-l, ",");
+	    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ",");
 	}
     }
-    l += snprintf(buf, (l<n) ? n-l: 0, "]");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n) ? n-l: 0, "]");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     return l;
 }
 
@@ -1241,14 +1249,16 @@ size_t neo4j_point2d_str(const neo4j_value_t *value, char *buf, size_t n)
 	if (neo4j_ntostring(v->fields[i], numbuf, BUFLEN-1)<0) {
 	    return -1;
 	}
-	l += snprintf(buf+l, (l<n)? n-l : 0, "%s", numbuf);
-	if (l<n && i<2)
+	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", numbuf);
+	if (i<2)
 	{
-	    l += snprintf(buf+l, n-l, ",");
+	    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ",");
 	}
     }
-    l += snprintf(buf, (l<n) ? n-l: 0, "]");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n) ? n-l: 0, "]");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     return l;
 }
 
@@ -1280,14 +1290,16 @@ size_t neo4j_point3d_str(const neo4j_value_t *value, char *buf, size_t n)
 	if (neo4j_ntostring(v->fields[i], numbuf, BUFLEN-1)<0) {
 	    return -1;
 	}
-	l += snprintf(buf+l, (l<n)? n-l : 0, "%s", numbuf);
-	if (l<n && i<3)
+	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", numbuf);
+	if (i<3)
 	{
-	    l += snprintf(buf+l, n-l, ",");
+	    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ",");
 	}
     }
-    l += snprintf(buf, (l<n) ? n-l: 0, "]");
-    buf[minzu(n-1,l)] = '\0';
+    l += snprintf(buf? buf+l : buf, (l<n) ? n-l: 0, "]");
+    if (buf) {
+	buf[minzu(n-1,l)] = '\0';
+    }
     return l;
 }
 
