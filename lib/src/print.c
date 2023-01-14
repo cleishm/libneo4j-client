@@ -1050,18 +1050,18 @@ size_t neo4j_time_str(const neo4j_value_t *value, char *buf, size_t n)
     struct tm *bdt;
     struct timespec *ntsp = neo4j_time_timespec(*value);
     long int offset = (long int) neo4j_time_secs_offset(*value);
-    bdt = localtime( &(ntsp->tv_sec) );
-    bdt->tm_gmtoff = offset;
+    bdt = gmtime( &(ntsp->tv_sec) );
     if (bdt == NULL) {
 	free(ntsp);
 	return -1;
     }
-    size_t l = strftime(buf, n, "%T%z", (const struct tm *)bdt);
+    size_t l = strftime(buf, n, "%T", (const struct tm *)bdt);
     if (l==0) {
-	l = 13;
+	l = 8;
     }
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%+02ld00", offset/3600);
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
-    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
     if (buf) {
 	buf[minzu(n-1,l)] = '\0';

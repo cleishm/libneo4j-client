@@ -1177,8 +1177,7 @@ struct timespec *neo4j_time_timespec(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_TIME, 0);
     struct timespec *ts = (struct timespec *) malloc(sizeof(struct timespec));
-    ts->tv_sec = (time_t) neo4j_int_value(
-        ((const struct neo4j_struct *)&value)->fields[0]) / 1000000000;
+    ts->tv_sec = (time_t) neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]) / 1000000000;
     ts->tv_nsec = (long int) neo4j_int_value(
         ((const struct neo4j_struct *)&value)->fields[0]) % 1000000000;
     return ts;
