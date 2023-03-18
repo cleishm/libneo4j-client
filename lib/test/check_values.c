@@ -1198,6 +1198,33 @@ START_TEST (localdatetime_value)
 }
 END_TEST
 
+START_TEST (point_value)
+{
+    neo4j_value_t field_values[] =
+	{ neo4j_int(4326), neo4j_float(39.415601),
+	  neo4j_float(-77.408218), neo4j_float(13.83) };
+    neo4j_value_t value2 = neo4j_point2d(field_values);
+    neo4j_value_t value3 = neo4j_point3d(field_values);
+    ck_assert(neo4j_type(value2) == NEO4J_POINT2D);
+    ck_assert(neo4j_type(value3) == NEO4J_POINT3D);
+    ck_assert_int_eq(neo4j_point2d_srid(value2), 4326);
+    ck_assert_int_eq(neo4j_point3d_srid(value3), 4326);
+    ck_assert_float_eq(neo4j_point2d_x(value2), 39.415601);
+    ck_assert_float_eq(neo4j_point3d_x(value3), 39.415601);
+    ck_assert_float_eq(neo4j_point2d_y(value2), -77.408218);
+    ck_assert_float_eq(neo4j_point3d_y(value3), -77.408218);
+    ck_assert_float_eq(neo4j_point3d_z(value3), 13.83);
+    neo4j_tostring(value2, buf, 99);
+    fprintf(stderr, "2: %s\n", buf);
+    neo4j_tostring(value3, buf, 99);
+    fprintf(stderr, "3: %s\n", buf);
+    ck_assert_int_eq(neo4j_ntostring(value2, buf, 27), 27);
+    ck_assert_int_eq(neo4j_ntostring(value2, buf, 26), 27);    
+    ck_assert_int_eq(neo4j_ntostring(value3, buf, 37), 37);
+    ck_assert_int_eq(neo4j_ntostring(value3, buf, 36), 37);        
+}
+END_TEST
+
 
 TCase* values_tcase(void)
 {
@@ -1241,5 +1268,6 @@ TCase* values_tcase(void)
     tcase_add_test(tc, localtime_value);
     tcase_add_test(tc, datetime_value);
     tcase_add_test(tc, localdatetime_value);
+    tcase_add_test(tc, point_value);    
     return tc;
 }
