@@ -1136,33 +1136,32 @@ END_TEST
 START_TEST (datetime_value)
 {
     time_t tst_tm = (20*3600 + 1860)+15;
-    char tm_str[100], **outs;
+    char tm_str[100], *outs;
     struct tm *here_tm = gmtime( (const time_t *) &tst_tm );
     neo4j_value_t field_values[] =
-	{ neo4j_int(tst_tm*1000000000 + 1040), neo4j_int(15),
+	{ neo4j_int(tst_tm), neo4j_int(1040),
 	  neo4j_int(  here_tm->tm_gmtoff) };
-    return;
-    // 22:31:15 + 1040ns
+    // 20:31:15 + 1040ns
     neo4j_value_t value = neo4j_datetime(field_values);
     ck_assert(neo4j_type(value) == NEO4J_DATETIME);
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     fprintf(stderr,"%s",str);
-    strftime(tm_str, 99, "%T", (const struct tm *)here_tm);
-    asprintf(outs, "%s (%ld)", tm_str, tst_tm);
-    ck_assert_str_eq(str, *outs);
-    ck_assert_int_eq(neo4j_localtime_nsecs(value), (tst_tm*1000000000 + 1040));
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 26);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 26);
-    ck_assert_str_eq(buf, tm_str);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 26), 26);
-    ck_assert_str_eq(buf, tm_str);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 25), 26);
-    ck_assert_str_eq(buf, tm_str);
+    strftime(tm_str, 99, "%FT%T%z", (const struct tm *)here_tm);
+    asprintf(&outs, "%s (%ld)", tm_str, tst_tm);
+    ck_assert_str_eq(str, outs);
+    ck_assert_int_eq(neo4j_datetime_secs(value), tst_tm);
+    ck_assert_int_eq(neo4j_datetime_nsecs(value), 1040);
+    ck_assert_int_eq(neo4j_datetime_secs_offset(value), here_tm->tm_gmtoff);    
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 32);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 32);
+    ck_assert_str_eq(buf, outs);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 32), 32);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 31), 32);
 
-    ck_assert_int_eq(neo4j_fprint(value, memstream), 26);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 32);
     fflush(memstream);
-    ck_assert_str_eq(memstream_buffer, tm_str);
+    ck_assert_str_eq(memstream_buffer, outs);
 
 }
 END_TEST

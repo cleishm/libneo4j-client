@@ -1094,7 +1094,7 @@ size_t neo4j_localtime_str(const neo4j_value_t *value, char *buf, size_t n)
 	return -1;
     }
     size_t l = strftime(buf, n, "%T", (const struct tm *)bdt);
-    if (l<0) {
+    if (l<=0) {
 	l = 8;
     }
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
@@ -1126,14 +1126,14 @@ size_t neo4j_datetime_str(const neo4j_value_t *value, char *buf, size_t n)
     struct tm *bdt;
     struct timespec *ntsp = neo4j_datetime_timespec(*value);
     long int offset = (long int) neo4j_datetime_secs_offset(*value);
-    bdt = localtime( &(ntsp->tv_sec) );
+    bdt = gmtime( &(ntsp->tv_sec) );
     bdt->tm_gmtoff = offset;
     if (bdt == NULL) {
 	free(ntsp);
 	return -1;
     }
-    size_t l = strftime(buf, n, "%Y-%m-%dT%T%z", (const struct tm *)bdt);
-    if (l<0) {
+    size_t l = strftime(buf, n, "%FT%T%z", (const struct tm *)bdt);
+    if (l<=0) {
 	l = 24;
     }
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
