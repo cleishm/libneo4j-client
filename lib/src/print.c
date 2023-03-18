@@ -1169,9 +1169,9 @@ size_t neo4j_localdatetime_str(const neo4j_value_t *value, char *buf, size_t n)
 	free(ntsp);
 	return -1;
     }
-    size_t l = strftime(buf, n, "%Y-%m-%dT%T%z", (const struct tm *)bdt);
-    if (l<0) {
-	l = 24;
+    size_t l = strftime(buf, n, "%FT%T", (const struct tm *)bdt);
+    if (l<=0) {
+	l = 19;
     }
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
