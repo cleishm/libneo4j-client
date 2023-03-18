@@ -168,7 +168,7 @@ size_t neo4j_string_str(const neo4j_value_t *value, char *buf, size_t n)
 {
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
-    assert(neo4j_type(*value) == NEO4J_STRING);
+    assert(neo4j_type(*value) == NEO4J_STRING || neo4j_type(*value) == NEO4J_ELEMENTID);
     const struct neo4j_string *v = (const struct neo4j_string *)value;
     return string_str(buf, n, '"', (const char *)v->ustring, v->length);
 }
@@ -177,7 +177,7 @@ size_t neo4j_string_str(const neo4j_value_t *value, char *buf, size_t n)
 ssize_t neo4j_string_fprint(const neo4j_value_t *value, FILE *stream)
 {
     REQUIRE(value != NULL, -1);
-    assert(neo4j_type(*value) == NEO4J_STRING);
+    assert(neo4j_type(*value) == NEO4J_STRING || neo4j_type(*value) == NEO4J_ELEMENTID);
     const struct neo4j_string *v = (const struct neo4j_string *)value;
     return string_fprint(stream, '"', (const char *)v->ustring, v->length);
 }

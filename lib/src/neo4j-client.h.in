@@ -564,6 +564,7 @@ extern const neo4j_type_t NEO4J_RELATIONSHIP;
 extern const neo4j_type_t NEO4J_PATH;
 /** The neo4j identity value type. */
 extern const neo4j_type_t NEO4J_IDENTITY;
+extern const neo4j_type_t NEO4J_ELEMENTID;
 extern const neo4j_type_t NEO4J_STRUCT;
 extern const neo4j_type_t NEO4J_DATE;
 extern const neo4j_type_t NEO4J_TIME;

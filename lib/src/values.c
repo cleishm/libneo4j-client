@@ -59,6 +59,7 @@ static const struct neo4j_type node_type = { .name = "Node" };
 static const struct neo4j_type relationship_type = { .name = "Relationship" };
 static const struct neo4j_type path_type = { .name = "Path" };
 static const struct neo4j_type identity_type = { .name = "Identity" };
+static const struct neo4j_type elementid_type = { .name = "ElementID" };
 static const struct neo4j_type date_type = { .name = "Date" };
 static const struct neo4j_type time_type = { .name = "Time" };
 static const struct neo4j_type struct_type = { .name = "" };
@@ -82,6 +83,7 @@ struct neo4j_types
     const struct neo4j_type *relationship_type;
     const struct neo4j_type *path_type;
     const struct neo4j_type *identity_type;
+    const struct neo4j_type *elementid_type;
     const struct neo4j_type *struct_type;
     const struct neo4j_type *bytes_type;
     const struct neo4j_type *date_type;
@@ -107,6 +109,7 @@ static const struct neo4j_types neo4j_types =
     .relationship_type = &relationship_type,
     .path_type = &path_type,
     .identity_type = &identity_type,
+    .elementid_type = &elementid_type,
     .struct_type = &struct_type,
     .bytes_type = &bytes_type,
     .date_type = &date_type,
@@ -135,6 +138,7 @@ const uint8_t NEO4J_NODE = TYPE_OFFSET(node_type);
 const uint8_t NEO4J_RELATIONSHIP = TYPE_OFFSET(relationship_type);
 const uint8_t NEO4J_PATH = TYPE_OFFSET(path_type);
 const uint8_t NEO4J_IDENTITY = TYPE_OFFSET(identity_type);
+const uint8_t NEO4J_ELEMENTID = TYPE_OFFSET(elementid_type);
 const uint8_t NEO4J_STRUCT = TYPE_OFFSET(struct_type);
 const uint8_t NEO4J_BYTES = TYPE_OFFSET(bytes_type);
 const uint8_t NEO4J_DATE = TYPE_OFFSET(date_type);
@@ -279,6 +283,11 @@ static struct neo4j_value_vt identity_vt =
       .fprint = neo4j_int_fprint,
       .serialize = neo4j_int_serialize,
       .eq = int_eq };
+static struct neo4j_value_vt elementid_vt =
+    { .str = neo4j_string_str,
+      .fprint = neo4j_string_fprint,
+      .serialize = neo4j_string_serialize,
+      .eq = string_eq };
 static struct neo4j_value_vt struct_vt =
     { .str = neo4j_struct_str,
       .fprint = neo4j_struct_fprint,
@@ -311,6 +320,7 @@ struct neo4j_value_vts
     const struct neo4j_value_vt *point2d_vt;
     const struct neo4j_value_vt *point3d_vt;
     const struct neo4j_value_vt *identity_vt;
+    const struct neo4j_value_vt *elementid_vt;    
     const struct neo4j_value_vt *struct_vt;
     const struct neo4j_value_vt *bytes_vt;
 };
@@ -335,6 +345,7 @@ static const struct neo4j_value_vts neo4j_value_vts =
     .point2d_vt = &point2d_vt,
     .point3d_vt = &point3d_vt,    
     .identity_vt = &identity_vt,
+    .elementid_vt = &elementid_vt,
     .struct_vt = &struct_vt,
     .bytes_vt = &bytes_vt
 };
@@ -363,6 +374,7 @@ static const struct neo4j_value_vts neo4j_value_vts =
 #define POINT2D_VT_OFF VT_OFFSET(point2d_vt)
 #define POINT3D_VT_OFF VT_OFFSET(point3d_vt)
 #define IDENTITY_VT_OFF VT_OFFSET(identity_vt)
+#define ELEMENTID_VT_OFF VT_OFFSET(elementid_vt)    
 #define STRUCT_VT_OFF VT_OFFSET(struct_vt)
 #define BYTES_VT_OFF VT_OFFSET(bytes_vt)
 static const uint8_t _MAX_VT_OFF =
@@ -1450,6 +1462,20 @@ neo4j_value_t neo4j_identity(long long value)
     struct neo4j_int v =
         { ._type = NEO4J_IDENTITY, ._vt_off = IDENTITY_VT_OFF, .value = value };
     return *((neo4j_value_t *)(&v));
+}
+
+// element id
+
+neo4j_value_t neo4j_elementid(const char *value)
+{
+    if (!value)
+    {
+        return neo4j_null;
+    }
+    neo4j_value_t v = neo4j_ustring(value, strlen(value));
+    v._type = NEO4J_ELEMENTID;
+    v._vt_off = ELEMENTID_VT_OFF;
+    return v;
 }
 
 
