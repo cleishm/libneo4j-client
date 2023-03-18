@@ -183,11 +183,12 @@ neo4j_value_t neo4j_struct(uint8_t signature,
  * @internal
  *
  * @param [fields] The fields for the node, which must be the Identity of the
- *         node, a List of Strings for labels and a Map of properties.
+ *         node, a List of Strings for label, a Map of properties, and
+ *         a String ElementID (v5.0+)
  * @return The neo4j value encoding the node.
  */
 __neo4j_pure
-neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
+neo4j_value_t neo4j_node(const neo4j_value_t fields[4]);
 
 /**
  * Construct a neo4j value encoding a relationship.
@@ -196,11 +197,13 @@ neo4j_value_t neo4j_node(const neo4j_value_t fields[3]);
  *
  * @param [fields] The fields for the relationship, which must be the
  *         Identity of the relationship, the Identity of the start node, the
- *         Identity of the end node, a String reltype and a Map of properties.
+ *         Identity of the end node, a String reltype, a Map of properties,
+ *         and (v5.0+) Strings ElementID, start node ElementID, and end node
+ *         ElementID.
  * @return The neo4j value encoding the relationship.
  */
 __neo4j_pure
-neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
+neo4j_value_t neo4j_relationship(const neo4j_value_t fields[8]);
 
 /**
  * Construct a neo4j value encoding an unbound relationship.
@@ -208,11 +211,12 @@ neo4j_value_t neo4j_relationship(const neo4j_value_t fields[5]);
  * @internal
  *
  * @param [fields] The fields for the relationship, which must be an Int
- *         identity, a String reltype and a Map of properties.
+ *         identity, a String reltype, a Map of properties, and a String
+ *         ElementID (v5.0+)
  * @return The neo4j value encoding the relationship.
  */
 __neo4j_pure
-neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[3]);
+neo4j_value_t neo4j_unbound_relationship(const neo4j_value_t fields[4]);
 
 /**
  * Construct a neo4j value encoding a path.
@@ -344,6 +348,17 @@ neo4j_value_t neo4j_point3d(const neo4j_value_t fields[4]);
  */
 __neo4j_pure
 neo4j_value_t neo4j_identity(long long identity);
+
+/**
+ * Construct a neo4j element ID.
+ *
+ * @internal
+ *
+ * @param [id] The String identity value.
+ * @return The neo4j value encoding the identity.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_element_id(const char *eid);
 
 /**
  * Get the signature of a neo4j struct.
