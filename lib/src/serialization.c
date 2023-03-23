@@ -180,7 +180,8 @@ int neo4j_string_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 {
     REQUIRE(value, -1);
     REQUIRE(stream, -1);
-    assert(neo4j_type(*value) == NEO4J_STRING);
+    assert(neo4j_type(*value) == NEO4J_STRING ||
+	   neo4j_type(*value) == NEO4J_ELEMENTID);
     const struct neo4j_string *v = (const struct neo4j_string *)value;
 
     struct iovec iov[3];
