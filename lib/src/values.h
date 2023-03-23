@@ -358,7 +358,7 @@ neo4j_value_t neo4j_identity(long long identity);
  * @return The neo4j value encoding the identity.
  */
 __neo4j_pure
-neo4j_value_t neo4j_element_id(const char *eid);
+neo4j_value_t neo4j_elementid(const char *eid);
 
 /**
  * Get the signature of a neo4j struct.

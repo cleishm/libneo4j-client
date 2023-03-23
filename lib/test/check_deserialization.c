@@ -782,7 +782,6 @@ START_TEST (deserialize_node)
     int n = neo4j_deserialize(ios, &mpool, &value);
     ck_assert_int_eq(n, 0);
     ck_assert_int_eq(neo4j_type(value), NEO4J_NODE);
-
     neo4j_value_t labels = neo4j_node_labels(value);
     ck_assert_int_eq(neo4j_type(labels), NEO4J_LIST);
     ck_assert_int_eq(neo4j_list_length(labels), 1);

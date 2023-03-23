@@ -245,6 +245,15 @@ START_TEST (string_value)
 }
 END_TEST
 
+START_TEST (elementid_value)
+{
+    neo4j_value_t value = neo4j_elementid("ABCDEF");
+    ck_assert(neo4j_type(value) == NEO4J_ELEMENTID);
+    ck_assert_str_eq(neo4j_string_value(value, buf, 99), "ABCDEF");
+    ck_assert_str_eq(neo4j_tostring(value, buf, 99), "\"ABCDEF\"");
+    
+}
+END_TEST
 
 START_TEST (bytes_value)
 {
@@ -522,10 +531,11 @@ START_TEST (relationship_value)
 
     neo4j_value_t field_values[] =
         { neo4j_identity(1), neo4j_identity(8), neo4j_identity(9),
-          type, neo4j_map(props, 1) };
+          type, neo4j_map(props, 1), neo4j_elementid("this"),
+	  neo4j_elementid("that"), neo4j_elementid("other")};
     neo4j_value_t value = neo4j_relationship(field_values);
     ck_assert(neo4j_type(value) == NEO4J_RELATIONSHIP);
-
+    
     ck_assert(neo4j_eq(neo4j_relationship_identity(value),
                 neo4j_identity(1)));
     ck_assert(neo4j_eq(neo4j_relationship_start_node_identity(value),
@@ -533,7 +543,15 @@ START_TEST (relationship_value)
     ck_assert(neo4j_eq(neo4j_relationship_end_node_identity(value),
                 neo4j_identity(9)));
 
+    ck_assert(neo4j_type(neo4j_relationship_elementid(value)) == NEO4J_ELEMENTID);
+
+    char buf[100];
+    neo4j_string_value(neo4j_relationship_elementid(value),buf,99);
+    ck_assert_str_eq("this", buf);
+    ck_assert_str_eq("that", neo4j_string_value(neo4j_relationship_start_node_elementid(value),buf,99));
+    ck_assert_str_eq("other", neo4j_string_value(neo4j_relationship_end_node_elementid(value),buf,99));
     char *str = neo4j_tostring(value, buf, sizeof(buf));
+
     ck_assert(str == buf);
     ck_assert_str_eq(str, "-[:Candidate{year:2016}]-");
 
@@ -584,25 +602,30 @@ START_TEST (path_value)
     neo4j_value_t node3_labels[] = { neo4j_string("Campaign") };
 
     neo4j_value_t node1_fields[] =
-        { neo4j_identity(1), neo4j_list(node1_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(node1_labels, 1), neo4j_map(NULL, 0),
+	  neo4j_elementid("1")};
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
         { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
-          rel1_type, neo4j_map(NULL, 0) };
+          rel1_type, neo4j_map(NULL, 0),
+	  neo4j_elementid("8"), neo4j_elementid("2"), neo4j_elementid("1")};
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_identity(2), neo4j_list(node2_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(node2_labels, 1), neo4j_map(NULL, 0),
+	  neo4j_elementid("2")};
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
         { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
-          rel2_type, neo4j_map(NULL, 0) };
+          rel2_type, neo4j_map(NULL, 0),
+	  neo4j_elementid("9"), neo4j_elementid("2"), neo4j_elementid("3")};
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_identity(3), neo4j_list(node3_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(node3_labels, 1), neo4j_map(NULL, 0),
+	  neo4j_elementid("3")};
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -619,7 +642,6 @@ START_TEST (path_value)
     ck_assert(neo4j_type(value) == NEO4J_PATH);
 
     ck_assert_int_eq(neo4j_path_length(value), 2);
-
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     ck_assert_str_eq(str,
@@ -628,12 +650,14 @@ START_TEST (path_value)
 
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 56);
     ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 56);
+
     ck_assert_str_eq(buf,
             "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
 
     ck_assert_int_eq(neo4j_fprint(value, memstream), 56);
     fflush(memstream);
+
     ck_assert_str_eq(memstream_buffer,
             "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
@@ -1240,6 +1264,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, float_eq);
     tcase_add_test(tc, string_value);
     tcase_add_test(tc, string_eq);
+    tcase_add_test(tc, elementid_value);
     tcase_add_test(tc, bytes_value);
     tcase_add_test(tc, list_value);
     tcase_add_test(tc, list_eq);

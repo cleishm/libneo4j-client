@@ -1024,6 +1024,15 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value);
 __neo4j_pure
 neo4j_value_t neo4j_node_identity(neo4j_value_t value);
 
+/**
+ * Return the element ID of a neo4j node.
+ *
+ * @param [value] The neo4j node.
+ * @return A neo4j value encoding the element ID of the node.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_node_elementid(neo4j_value_t value);
+
 
 /**
  * Return the type of a neo4j relationship.
@@ -1075,6 +1084,35 @@ neo4j_value_t neo4j_relationship_start_node_identity(neo4j_value_t value);
  */
 __neo4j_pure
 neo4j_value_t neo4j_relationship_end_node_identity(neo4j_value_t value);
+
+// element ids
+
+/**
+ * Return the element ID of a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Element ID of the relationship.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_relationship_elementid(neo4j_value_t value);
+
+/**
+ * Return the start node element ID for a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Element ID of the start node.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_relationship_start_node_elementid(neo4j_value_t value);
+
+/**
+ * Return the end node element ID for a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Element ID of the end node.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_relationship_end_node_elementid(neo4j_value_t value);
 
 
 /**

@@ -765,6 +765,7 @@ int map_deserialize(uint32_t nentries, neo4j_iostream_t *stream,
     return 0;
 }
 
+// implement element ids here:
 
 int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         neo4j_mpool_t *pool, neo4j_value_t *value)
@@ -778,7 +779,22 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
     neo4j_value_t *fields = NULL;
     if (nfields > 0)
     {
-        fields = neo4j_mpool_calloc(pool, nfields, sizeof(neo4j_value_t));
+	switch (signature)
+	{
+	case NEO4J_NODE_SIGNATURE:
+	    fields = neo4j_mpool_calloc(pool, 4, sizeof(neo4j_value_t));
+	    break;
+	case NEO4J_REL_SIGNATURE:
+	    fields = neo4j_mpool_calloc(pool, 8, sizeof(neo4j_value_t));
+	    break;
+	case NEO4J_UNBOUND_REL_SIGNATURE:
+	    fields = neo4j_mpool_calloc(pool, 4, sizeof(neo4j_value_t));
+	    break;
+	default:
+	    fields = neo4j_mpool_calloc(pool, nfields, sizeof(neo4j_value_t));
+	    break;
+	}
+	
         if (fields == NULL)
         {
             return -1;
@@ -797,11 +813,21 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
     switch (signature)
     {
     case NEO4J_NODE_SIGNATURE:
-        if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT)
+        if (!(nfields == 3 || nfields == 4) ||
+	    neo4j_type(fields[0]) != NEO4J_INT)
         {
             errno = EPROTO;
             return -1;
         }
+	// update to v5.0 node if nec
+	if (nfields == 3) { // pre v5.0 node
+	    nfields = 4;
+	    // add string version of integer id as element id 
+	    char *eid;
+	    if (asprintf(&eid, "%lld", neo4j_int_value(fields[0])) < 0) { return -1; }
+	    fields[3] = neo4j_elementid( eid );
+
+	}
         fields[0] = neo4j_identity(neo4j_int_value(fields[0]));
         if (neo4j_is_null(fields[0]))
         {
@@ -811,7 +837,7 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         v = neo4j_node(fields);
         break;
     case NEO4J_REL_SIGNATURE:
-        if (nfields != 5 ||
+        if (!(nfields == 5 || nfields == 8) ||
                 neo4j_type(fields[0]) != NEO4J_INT ||
                 neo4j_type(fields[1]) != NEO4J_INT ||
                 neo4j_type(fields[2]) != NEO4J_INT)
@@ -819,6 +845,18 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
             errno = EPROTO;
             return -1;
         }
+	// update to v5.0 relationship if nec
+	if (nfields == 5) {
+	    nfields = 8;
+	    char *eid, *sneid, *eneid;
+	    if (asprintf(&eid, "%lld", neo4j_int_value(fields[0])) < 0) { return -1; }
+	    fields[5] = neo4j_elementid( eid );
+	    if (asprintf(&sneid, "%lld", neo4j_int_value(fields[1])) < 0) { return -1; }
+	    fields[6] = neo4j_elementid( sneid );
+	    if (asprintf(&eneid, "%lld", neo4j_int_value(fields[2])) < 0) { return -1; }
+	    fields[7] = neo4j_elementid( eneid );
+
+	}
         fields[0] = neo4j_identity(neo4j_int_value(fields[0]));
         fields[1] = neo4j_identity(neo4j_int_value(fields[1]));
         fields[2] = neo4j_identity(neo4j_int_value(fields[2]));
@@ -840,11 +878,21 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         v = neo4j_path(fields);
         break;
     case NEO4J_UNBOUND_REL_SIGNATURE:
-        if (nfields != 3 || neo4j_type(fields[0]) != NEO4J_INT)
+        if (!(nfields == 3 || nfields == 4) ||
+	    neo4j_type(fields[0]) != NEO4J_INT)
         {
             errno = EPROTO;
             return -1;
         }
+	// update to v5.0 unbd relationship if nec
+	if (nfields == 3) { // pre v5.0 node
+	    nfields = 4;
+	    // add string version of integer id as element id 
+	    char *eid;
+	    if (asprintf(&eid, "%lld", neo4j_int_value(fields[0])) < 0) { return -1; }
+	    fields[3] = neo4j_elementid( eid );
+
+	}
         fields[0] = neo4j_identity(neo4j_int_value(fields[0]));
         if (neo4j_is_null(fields[0]))
         {
@@ -864,5 +912,6 @@ int struct_deserialize(uint16_t nfields, neo4j_iostream_t *stream,
         return -1;
     }
     *value = v;
+
     return 0;
 }

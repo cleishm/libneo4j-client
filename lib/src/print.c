@@ -595,7 +595,7 @@ size_t neo4j_node_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_NODE);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    assert(v->nfields == 3);
+    assert(v->nfields == 3 || v->nfields == 4);
 
     if (n > 0)
     {
@@ -643,7 +643,7 @@ ssize_t neo4j_node_fprint(const neo4j_value_t *value, FILE *stream)
     REQUIRE(value != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_NODE);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    assert(v->nfields == 3);
+    assert(v->nfields == 3 || v->nfields == 4);
 
     if (fputc('(', stream) == EOF)
     {
@@ -699,7 +699,8 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_RELATIONSHIP);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    assert(v->nfields == 5 || v->nfields == 3);
+    assert(v->nfields == 5 || v->nfields == 3 ||
+	   v->nfields == 8 || v->nfields == 4);
 
     if (n > 0)
     {
@@ -711,9 +712,8 @@ size_t neo4j_rel_str(const neo4j_value_t *value, char *buf, size_t n)
     }
     size_t l = 2;
 
-    int idx = (v->nfields == 5)? 3 : 1;
+    int idx = (v->nfields == 5 || v->nfields == 8)? 3 : 1;
     assert(neo4j_type(v->fields[idx]) == NEO4J_STRING);
-
     if ((l+1) < n)
     {
         buf[l] = ':';
@@ -749,7 +749,8 @@ ssize_t neo4j_rel_fprint(const neo4j_value_t *value, FILE *stream)
     REQUIRE(value != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_RELATIONSHIP);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    assert(v->nfields == 5 || v->nfields == 3);
+    assert(v->nfields == 5 || v->nfields == 3 ||
+	   v->nfields == 8 || v->nfields == 4);
 
     if (fputs("-[:", stream) == EOF)
     {
@@ -757,7 +758,7 @@ ssize_t neo4j_rel_fprint(const neo4j_value_t *value, FILE *stream)
     }
     size_t l = 3;
 
-    int idx = (v->nfields == 5)? 3 : 1;
+    int idx = (v->nfields == 5 || v->nfields == 8)? 3 : 1;
     assert(neo4j_type(v->fields[idx]) == NEO4J_STRING);
 
     ssize_t ll = identifier_fprint(&(v->fields[idx]), stream);
@@ -876,6 +877,7 @@ ssize_t neo4j_path_fprint(const neo4j_value_t *value, FILE *stream)
     assert(neo4j_type(nodes->items[0]) == NEO4J_NODE);
 
     ssize_t ll = neo4j_node_fprint(&(nodes->items[0]), stream);
+    
     if (ll < 0)
     {
         return -1;
@@ -909,7 +911,6 @@ ssize_t neo4j_path_fprint(const neo4j_value_t *value, FILE *stream)
             }
             l++;
         }
-
         ll = neo4j_rel_fprint(&(rels->items[ridx]), stream);
         if (ll < 0)
         {
@@ -933,6 +934,7 @@ ssize_t neo4j_path_fprint(const neo4j_value_t *value, FILE *stream)
         }
         l += (size_t)ll;
     }
+
     return l;
 }
 
