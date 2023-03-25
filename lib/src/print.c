@@ -979,31 +979,52 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
     assert(neo4j_type(*value) == NEO4J_STRUCT);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
 
-    int hlen = fprintf(stream, "struct<0x%X>", v->signature);
-    if (hlen < 0)
+    switch (v->signature)
     {
-        return -1;
-    }
-    assert(hlen > 10);
+    case NEO4J_DATE_SIGNATURE:
+	break;
+    case NEO4J_TIME_SIGNATURE:
+	break;
+    case NEO4J_LOCALTIME_SIGNATURE:
+	break;
+    case NEO4J_DATETIME_SIGNATURE:
+	break;
+    case NEO4J_LOCALDATETIME_SIGNATURE:
+	break;
+    case NEO4J_DURATION_SIGNATURE:
+	break;
+    case NEO4J_POINT2D_SIGNATURE:
+	break;
+    case NEO4J_POINT3D_SIGNATURE:
+	break;
+    default:
+	int hlen = fprintf(stream, "struct<0x%X>", v->signature);
+	if (hlen < 0)
+	{
+	    return -1;
+	}
+	assert(hlen > 10);
 
-    if (fputc('(', stream) == EOF)
-    {
-        return -1;
-    }
-    size_t l = (size_t)hlen + 1;
+	if (fputc('(', stream) == EOF)
+	{
+	    return -1;
+	}
+	size_t l = (size_t)hlen + 1;
 
-    ssize_t ll =  list_fprint(v->fields, v->nfields, stream);
-    if (ll < 0)
-    {
-        return -1;
-    }
-    l += (size_t)ll;
+	ssize_t ll =  list_fprint(v->fields, v->nfields, stream);
+	if (ll < 0)
+	{
+	    return -1;
+	}
+	l += (size_t)ll;
 
-    if (fputc(')', stream) == EOF)
-    {
-        return -1;
+	if (fputc(')', stream) == EOF)
+	{
+	    return -1;
+	}
+	return ++l;
+	break;
     }
-    return ++l;
 }
 
 /* date */
