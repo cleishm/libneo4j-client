@@ -1558,9 +1558,70 @@ neo4j_value_t neo4j_struct(uint8_t signature,
         const neo4j_value_t *fields, uint16_t n)
 {
     struct neo4j_struct v =
-            { ._type = NEO4J_STRUCT, ._vt_off = STRUCT_VT_OFF,
-              .signature = signature, .fields = fields, .nfields = n };
-    return *((neo4j_value_t *)(&v));
+	{ ._type = NEO4J_STRUCT, ._vt_off = STRUCT_VT_OFF,
+	  .signature = signature, .fields = fields, .nfields = n };
+    switch (signature)
+    {
+    case NEO4J_DATE_SIGNATURE:
+	if (n != 1) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_date(fields);
+	break;
+    case NEO4J_TIME_SIGNATURE:
+	if (n != 2) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_time(fields);
+	break;
+    case NEO4J_LOCALTIME_SIGNATURE:
+	if (n != 1) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_localtime(fields);
+	break;
+    case NEO4J_DATETIME_SIGNATURE:
+	if (n != 3) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_datetime(fields);
+	break;
+    case NEO4J_LOCALDATETIME_SIGNATURE:
+	if (n != 2) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_localdatetime(fields);
+	break;
+    case NEO4J_DURATION_SIGNATURE:
+	if (n != 4) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_duration(fields);
+	break;
+    case NEO4J_POINT2D_SIGNATURE:
+	if (n != 3) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_point2d(fields);
+	break;
+    case NEO4J_POINT3D_SIGNATURE:
+	if (n != 4) {
+	    errno = EINVAL;
+	    return neo4j_null;
+	}
+	return neo4j_point3d(fields);
+	break;
+    default:
+	return *((neo4j_value_t *)(&v));
+	break;
+    }
 }
 
 

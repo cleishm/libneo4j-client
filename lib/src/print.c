@@ -947,29 +947,58 @@ size_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_STRUCT);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-
-    int hlen = snprintf(buf, n, "struct<0x%X>", v->signature);
-    assert(hlen > 10);
-
-    size_t l = (size_t)hlen;
-    if ((l+1) < n)
+    int hlen;
+    switch (v->signature)
     {
-        buf[l] = '(';
-    }
-    l++;
+    case NEO4J_DATE_SIGNATURE:
+	return neo4j_date_str(value, buf, n);
+	break;
+    case NEO4J_TIME_SIGNATURE:
+	return neo4j_time_str(value, buf, n);
+	break;
+    case NEO4J_LOCALTIME_SIGNATURE:
+	return neo4j_localtime_str(value, buf, n);
+	break;
+    case NEO4J_DATETIME_SIGNATURE:
+	return neo4j_datetime_str(value, buf, n);
+	break;
+    case NEO4J_LOCALDATETIME_SIGNATURE:
+	return neo4j_localdatetime_str(value, buf, n);
+	break;
+    case NEO4J_DURATION_SIGNATURE:
+	return neo4j_duration_str(value, buf, n);
+	break;
+    case NEO4J_POINT2D_SIGNATURE:
+	return neo4j_point2d_str(value, buf, n);
+	break;
+    case NEO4J_POINT3D_SIGNATURE:
+	return neo4j_point3d_str(value, buf, n);
+	break;
+    default:
+	hlen = snprintf(buf, n, "struct<0x%X>", v->signature);
+	assert(hlen > 10);
 
-    l += list_str(buf+l, (l < n)? n-l : 0, v->fields, v->nfields);
+	size_t l = (size_t)hlen;
+	if ((l+1) < n)
+	{
+	    buf[l] = '(';
+	}
+	l++;
 
-    if ((l+1) < n)
-    {
-        buf[l] = ')';
+	l += list_str(buf+l, (l < n)? n-l : 0, v->fields, v->nfields);
+	
+	if ((l+1) < n)
+	{
+	    buf[l] = ')';
+	}
+	l++;
+	if (n > 0)
+	{
+	    buf[minzu(n - 1, l)] = '\0';
+	}
+	return l;
+	break;
     }
-    l++;
-    if (n > 0)
-    {
-        buf[minzu(n - 1, l)] = '\0';
-    }
-    return l;
 }
 
 
@@ -978,27 +1007,35 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
     REQUIRE(value != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_STRUCT);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-
+    int hlen;
     switch (v->signature)
     {
     case NEO4J_DATE_SIGNATURE:
+	return neo4j_date_fprint(value, stream);
 	break;
     case NEO4J_TIME_SIGNATURE:
+	return neo4j_time_fprint(value, stream);
 	break;
     case NEO4J_LOCALTIME_SIGNATURE:
+	return neo4j_localtime_fprint(value, stream);
 	break;
     case NEO4J_DATETIME_SIGNATURE:
+	return neo4j_datetime_fprint(value, stream);
 	break;
     case NEO4J_LOCALDATETIME_SIGNATURE:
+	return neo4j_localdatetime_fprint(value, stream);
 	break;
     case NEO4J_DURATION_SIGNATURE:
+	return neo4j_duration_fprint(value, stream);
 	break;
     case NEO4J_POINT2D_SIGNATURE:
+	return neo4j_point2d_fprint(value, stream);
 	break;
     case NEO4J_POINT3D_SIGNATURE:
+	return neo4j_point3d_fprint(value, stream);
 	break;
     default:
-	int hlen = fprintf(stream, "struct<0x%X>", v->signature);
+	hlen = fprintf(stream, "struct<0x%X>", v->signature);
 	if (hlen < 0)
 	{
 	    return -1;
