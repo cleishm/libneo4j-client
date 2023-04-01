@@ -960,14 +960,15 @@ size_t neo4j_struct_str(const neo4j_value_t *value, char *buf, size_t n)
 	return neo4j_localtime_str(value, buf, n);
 	break;
     case NEO4J_DATETIME_SIGNATURE:
+    case NEO4J_LEGACY_DATETIME_SIGNATURE:
 	return neo4j_datetime_str(value, buf, n);
 	break;
     case NEO4J_LOCALDATETIME_SIGNATURE:
 	return neo4j_localdatetime_str(value, buf, n);
 	break;
-    case NEO4J_DURATION_SIGNATURE:
-	return neo4j_duration_str(value, buf, n);
-	break;
+//    case NEO4J_DURATION_SIGNATURE:
+//	return neo4j_duration_str(value, buf, n);
+//	break;
     case NEO4J_POINT2D_SIGNATURE:
 	return neo4j_point2d_str(value, buf, n);
 	break;
@@ -1020,6 +1021,7 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
 	return neo4j_localtime_fprint(value, stream);
 	break;
     case NEO4J_DATETIME_SIGNATURE:
+    case NEO4J_LEGACY_DATETIME_SIGNATURE:
 	return neo4j_datetime_fprint(value, stream);
 	break;
     case NEO4J_LOCALDATETIME_SIGNATURE:
@@ -1260,23 +1262,76 @@ size_t neo4j_duration_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_DURATION);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
-    char intbuf[BUFLEN];
-    size_t l = sprintf(buf,"[");
+    long long months = neo4j_int_value(v->fields[0]);
+    long long days = neo4j_int_value(v->fields[1]);
+    long long secs = neo4j_int_value(v->fields[2]);
+    long long nsecs = neo4j_int_value(v->fields[3]);
+    long long years;
+    long long hours;
+    long long minutes = secs / 60;
+    secs = secs % 60;
+    hours = minutes / 60;
+    minutes = minutes % 60;
+    days = days + hours / 24;
+    hours = hours % 24;
+    months = months + days / 30;
+    days = days % 30;
+    years = months / 12;
+    months = months % 12;
+
+    size_t l = snprintf(buf, n, "P");
     if (l<=0) {
 	return -1;
+    }    
+    if (years > 0) {
+	l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%lldY", years);
     }
-    for (unsigned i = 0; i < 4; ++i)
-    {
-	if (neo4j_int_str(v->fields+i, intbuf, BUFLEN-1)<0) {
-	    return -1;
+    if (months > 0) {
+	l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%lldM", months);
+    }
+    if (days > 0) {
+	l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%lldD", days);
+    }
+    if (hours > 0) {
+    	l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "T%lldH", hours);
+	if (minutes > 0) {
+	    l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%lldM", minutes);
 	}
-	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", intbuf);
-	if (i<3)
-	{
-	    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ",");
+	if (nsecs > 0) {
+	    double S = (double) secs + 1.0e-09*(double)nsecs;
+	    l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%.9fS", S);
+	}
+	else {
+	    if (secs > 0) {
+		l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%lldS", secs);
+	    }
 	}
     }
-    l += snprintf(buf? buf+l : buf, (l<n) ? n-l: 0, "]");
+    else {
+	if (minutes > 0) {
+	    l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "T%lldM", minutes);
+	    if (nsecs > 0) {
+		double S = (double) secs + 1.0e-09*(double)nsecs;
+		l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%.9fS", S);
+	    }
+	    else {
+		if (secs > 0) {
+		    l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "%lldS", secs);
+		}
+	    }
+	}
+	else {
+	    if (nsecs > 0) {
+		double S = (double) secs + 1.0e-09*(double)nsecs;
+		l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "T%.9fS", S);
+	    }
+	    else {
+		if (secs > 0) {
+		    l += snprintf(buf ? buf+l : buf, (l<n)? n-l : 0, "T%lldS", secs);
+		}
+	    }
+	}
+    }
     if (buf) {
 	buf[minzu(n-1,l)] = '\0';
     }
@@ -1300,7 +1355,7 @@ size_t neo4j_point2d_str(const neo4j_value_t *value, char *buf, size_t n)
     assert(neo4j_type(*value) == NEO4J_POINT2D);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     char numbuf[BUFLEN];
-    size_t l = sprintf(buf,"[");
+    size_t l = snprintf(buf, n, "[");
     if (l<=0) {
 	return -1;
     }
@@ -1341,7 +1396,7 @@ size_t neo4j_point3d_str(const neo4j_value_t *value, char *buf, size_t n)
     assert(neo4j_type(*value) == NEO4J_POINT3D);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     char numbuf[BUFLEN];
-    size_t l = sprintf(buf,"[");
+    size_t l = snprintf(buf, n, "[");
     if (l<=0) {
 	return -1;
     }

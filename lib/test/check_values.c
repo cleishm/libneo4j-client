@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "../src/values.h"
+#include "../src/print.h"
 #include "memstream.h"
 #include <check.h>
 #include <errno.h>
@@ -1222,6 +1223,33 @@ START_TEST (localdatetime_value)
 }
 END_TEST
 
+START_TEST (duration_value)
+{
+    neo4j_value_t field_values[] =
+	{ neo4j_int(11), neo4j_int(29),
+	  neo4j_int(180), neo4j_int(300000004) };
+    neo4j_value_t value = neo4j_duration(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_DURATION);
+    ck_assert_int_eq(neo4j_duration_months(value), 11);
+    ck_assert_int_eq(neo4j_duration_days(value), 29);
+    ck_assert_int_eq(neo4j_duration_secs(value), 180);
+    ck_assert_int_eq(neo4j_duration_nsecs(value), 300000004);
+    neo4j_ntostring(value, buf, 99);
+    fprintf(stderr, "%s\n", buf);
+    ck_assert_str_eq(buf, "P11M29DT3M0.300000004S");
+    neo4j_value_t field_values2[] =
+	{ neo4j_int(25), neo4j_int(40), neo4j_int(3783), neo4j_int(300000000) };
+    value = neo4j_duration(field_values2);
+    neo4j_ntostring(value, buf, 99);    
+    fprintf(stderr, "%s\n", buf);
+    ck_assert_str_eq(buf, "P2Y2M10DT1H3M3.300000000S");
+    neo4j_duration_fprint(&value, stderr);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 25);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "P2Y2M10DT1H3M3.300000000S");
+}
+END_TEST
+
 START_TEST (point_value)
 {
     neo4j_value_t field_values[] =
@@ -1293,6 +1321,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, localtime_value);
     tcase_add_test(tc, datetime_value);
     tcase_add_test(tc, localdatetime_value);
-    tcase_add_test(tc, point_value);    
+    tcase_add_test(tc, duration_value);
+    tcase_add_test(tc, point_value);
     return tc;
 }
