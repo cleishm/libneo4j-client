@@ -1100,31 +1100,27 @@ END_TEST
 
 START_TEST (time_value)
 {
-    time_t tst_tm = 1576815004;
-    char tm_str[100];
-    struct tm *here_tm = localtime( (const time_t *) &tst_tm );
-    neo4j_value_t field_values[] = { neo4j_int(1576815004000001040), neo4j_int(  here_tm->tm_gmtoff)};
-    // Thu Dec 19 23:10:04 EST 2019 + 1040ns
+    neo4j_value_t field_values[] = { neo4j_int(83404000001040),
+				     neo4j_int(-5*3600)};
+    // 23:10:04.000001040-0500
     neo4j_value_t value = neo4j_time(field_values);
     ck_assert(neo4j_type(value) == NEO4J_TIME);
 
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     fprintf(stderr,"%s",str);
-    ck_assert_int_eq(neo4j_time_secs_offset(value), here_tm->tm_gmtoff);
-    strftime(tm_str, 99, "%T%z", (const struct tm *)here_tm);
-    strncat(tm_str, " (1576815004)", 99-strlen(tm_str));
-    ck_assert_str_eq(str, tm_str);
-    ck_assert_int_eq(neo4j_time_nsecs(value), 1576815004000001040);
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 26);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 26);
-    ck_assert_str_eq(buf, tm_str);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 26), 26);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 25), 26);
+    ck_assert_str_eq(str, "23:10:04.000001040-0500 (83404)");
+    ck_assert_int_eq(neo4j_time_secs_offset(value), -5*3600);
+    ck_assert_int_eq(neo4j_time_nsecs(value), 83404000001040);
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 31);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 31);
+    ck_assert_str_eq(buf, "23:10:04.000001040-0500 (83404)");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 31), 31);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 30), 31);
 
-    ck_assert_int_eq(neo4j_fprint(value, memstream), 26);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 31);
     fflush(memstream);
-    ck_assert_str_eq(memstream_buffer, tm_str);
+    ck_assert_str_eq(memstream_buffer, "23:10:04.000001040-0500 (83404)");
     
 }
 END_TEST
@@ -1132,28 +1128,23 @@ END_TEST
 START_TEST (localtime_value)
 {
     time_t tst_tm = (20*3600 + 1860)+15;
-    char tm_str[100], *outs;
-    struct tm *here_tm = localtime( (const time_t *) &tst_tm );
     neo4j_value_t field_values[] = { neo4j_int(tst_tm*1000000000 + 1040) };
-    // 22:31:15 + 1040ns
+    // 20:31:15 + 1040ns
     neo4j_value_t value = neo4j_localtime(field_values);
     ck_assert(neo4j_type(value) == NEO4J_LOCALTIME);
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     fprintf(stderr,"%s",str);
-    strftime(tm_str, 99, "%T", (const struct tm *)here_tm);
-    asprintf(&outs, "%s (%ld)", tm_str, tst_tm);
-    ck_assert_str_eq(str, outs);
+    ck_assert_str_eq(str, "20:31:15.000001040 (73875)");
     ck_assert_int_eq(neo4j_localtime_nsecs(value), (tst_tm*1000000000 + 1040));
     // ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 16);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 16);
-    ck_assert_str_eq(buf, outs);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 16), 16);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 15), 16);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 26);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 26), 26);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 25), 26);
 
-    ck_assert_int_eq(neo4j_fprint(value, memstream), 16);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 26);
     fflush(memstream);
-    ck_assert_str_eq(memstream_buffer, outs);
+    ck_assert_str_eq(memstream_buffer, "20:31:15.000001040 (73875)");
 
 }
 END_TEST
@@ -1161,30 +1152,28 @@ END_TEST
 START_TEST (datetime_value)
 {
     time_t tst_tm = (20*3600 + 1860)+15;
-    char tm_str[100], *outs;
-    struct tm *here_tm = gmtime( (const time_t *) &tst_tm );
+    char *outs;
     neo4j_value_t field_values[] =
 	{ neo4j_int(tst_tm), neo4j_int(1040),
-	  neo4j_int(  here_tm->tm_gmtoff) };
+	  neo4j_int( -5*3600  ) };
     // 20:31:15 + 1040ns
     neo4j_value_t value = neo4j_datetime(field_values);
     ck_assert(neo4j_type(value) == NEO4J_DATETIME);
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     fprintf(stderr,"%s",str);
-    strftime(tm_str, 99, "%FT%T%z", (const struct tm *)here_tm);
-    asprintf(&outs, "%s (%ld)", tm_str, tst_tm);
+    asprintf(&outs, "1970-01-01T15:31:15.000001040-0500 (%ld)", tst_tm);
     ck_assert_str_eq(str, outs);
     ck_assert_int_eq(neo4j_datetime_secs(value), tst_tm);
     ck_assert_int_eq(neo4j_datetime_nsecs(value), 1040);
-    ck_assert_int_eq(neo4j_datetime_secs_offset(value), here_tm->tm_gmtoff);    
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 32);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 32);
+    ck_assert_int_eq(neo4j_datetime_secs_offset(value), -5*3600);    
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 42);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 42);
     ck_assert_str_eq(buf, outs);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 32), 32);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 31), 32);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 42), 42);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 42), 42);
 
-    ck_assert_int_eq(neo4j_fprint(value, memstream), 32);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 42);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, outs);
 
@@ -1194,8 +1183,7 @@ END_TEST
 START_TEST (localdatetime_value)
 {
     time_t tst_tm = (20*3600 + 1860)+15;
-    char tm_str[100], *outs;
-    struct tm *here_tm = localtime( (const time_t *) &tst_tm );
+    char *outs;
     neo4j_value_t field_values[] =
 	{ neo4j_int(tst_tm), neo4j_int(1040) };
     // 20:31:15 + 1040ns
@@ -1204,19 +1192,18 @@ START_TEST (localdatetime_value)
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     fprintf(stderr,"%s\n",str);
-    strftime(tm_str, 99, "%FT%T", (const struct tm *)here_tm);
-    asprintf(&outs, "%s (%ld)", tm_str, tst_tm);
+    asprintf(&outs, "1970-01-01T20:31:15.000001040 (%ld)", tst_tm);
     ck_assert_str_eq(str, outs);
     ck_assert_int_eq(neo4j_localdatetime_secs(value), tst_tm);
     ck_assert_int_eq(neo4j_localdatetime_nsecs(value), 1040);
 
-    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 27);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 27);
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 37);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 37);
     ck_assert_str_eq(buf, outs);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 27), 27);
-    ck_assert_int_eq(neo4j_ntostring(value, buf, 26), 27);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 37), 37);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 36), 37);
 
-    ck_assert_int_eq(neo4j_fprint(value, memstream), 27);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 37);
     fflush(memstream);
     ck_assert_str_eq(memstream_buffer, outs);
 

@@ -1261,7 +1261,9 @@ struct timespec *neo4j_time_timespec(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_TIME, 0);
     struct timespec *ts = (struct timespec *) malloc(sizeof(struct timespec));
-    ts->tv_sec = (time_t) neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]) / 1000000000;
+    ts->tv_sec = (time_t) (
+	neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]) / 1000000000 
+	);
     ts->tv_nsec = (long int) neo4j_int_value(
         ((const struct neo4j_struct *)&value)->fields[0]) % 1000000000;
     return ts;
@@ -1291,6 +1293,7 @@ long long neo4j_localtime_nsecs(neo4j_value_t value)
     return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[0]);
 }
 
+// the following returns the un-offset seconds (not sec since epoch)
 struct timespec *neo4j_localtime_timespec(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_LOCALTIME, 0);
@@ -1339,6 +1342,7 @@ long long neo4j_datetime_secs_offset(neo4j_value_t value)
     return neo4j_int_value(((const struct neo4j_struct *)&value)->fields[2]);
 }
 
+// the following returns seconds since the epoch ("UTC")
 struct timespec *neo4j_datetime_timespec(neo4j_value_t value)
 {
     REQUIRE(neo4j_type(value) == NEO4J_DATETIME, 0);
