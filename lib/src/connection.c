@@ -425,8 +425,8 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
 
     // Here, add 5, 4, 3 as supported versions, remove 2 (identical to 1)
     // (exactly 4 supported versions allowed by Bolt)
-    uint32_t supported_versions[4] = { htonl(0x050605), htonl(0x030404), htonl(3),
-				       htonl(1) };
+    uint32_t supported_versions[4] = { htonl(0x050605), htonl(0x030404),
+				       htonl(3), htonl(1) };
     if (neo4j_ios_write_all(iostream, supported_versions,
                 sizeof(supported_versions), NULL) < 0)
     {
