@@ -28,7 +28,7 @@
 static ring_buffer_t *rb;
 static neo4j_iostream_t *ios;
 static neo4j_mpool_t mpool;
-
+char buf[100];
 
 static void setup(void)
 {
@@ -782,7 +782,10 @@ START_TEST (deserialize_node)
     int n = neo4j_deserialize(ios, &mpool, &value);
     ck_assert_int_eq(n, 0);
     ck_assert_int_eq(neo4j_type(value), NEO4J_NODE);
-
+    neo4j_value_t eltid = neo4j_node_elementid(value);
+    ck_assert_int_eq(neo4j_type(eltid), NEO4J_ELEMENTID);
+    neo4j_string_value(eltid, buf, 99);
+    ck_assert_str_eq(buf, "1");
     neo4j_value_t labels = neo4j_node_labels(value);
     ck_assert_int_eq(neo4j_type(labels), NEO4J_LIST);
     ck_assert_int_eq(neo4j_list_length(labels), 1);
@@ -898,7 +901,7 @@ END_TEST
 START_TEST (deserialize_relationship)
 {
     uint8_t bytes[] =
-            { 0xDC, 0x05, 0x52, 0x01, 0x01, 0x02, 0x8A, 0x4A,
+            { 0xDC, 0x05, 0x52, 0x01, 0x03, 0x02, 0x8A, 0x4A,
               0x6f, 0x75, 0x72, 0x6E, 0x61, 0x6C, 0x69, 0x73,
               0x74, 0xA1, 0x84, 0x74, 0x79, 0x70, 0x65, 0x85,
               0x47, 0x6F, 0x6E, 0x7A, 0x6F };
@@ -915,7 +918,18 @@ START_TEST (deserialize_relationship)
     char buf[16];
     ck_assert_str_eq(neo4j_string_value(reltype, buf, sizeof(buf)),
             "Journalist");
-
+    neo4j_value_t eltid = neo4j_relationship_elementid(value);
+    ck_assert_int_eq(neo4j_type(eltid), NEO4J_ELEMENTID);
+    neo4j_string_value(eltid, buf, 99);
+    ck_assert_str_eq(buf, "1");
+    eltid = neo4j_relationship_start_node_elementid(value);
+    ck_assert_int_eq(neo4j_type(eltid), NEO4J_ELEMENTID);
+    neo4j_string_value(eltid, buf, 99);
+    ck_assert_str_eq(buf, "3");
+    eltid = neo4j_relationship_end_node_elementid(value);
+    ck_assert_int_eq(neo4j_type(eltid), NEO4J_ELEMENTID);
+    neo4j_string_value(eltid, buf, 99);
+    ck_assert_str_eq(buf, "2");
     neo4j_value_t props = neo4j_relationship_properties(value);
     ck_assert_int_eq(neo4j_type(props), NEO4J_MAP);
     ck_assert_int_eq(neo4j_map_size(props), 1);
@@ -1007,6 +1021,10 @@ START_TEST (deserialize_unbound_relationship)
     int n = neo4j_deserialize(ios, &mpool, &value);
     ck_assert_int_eq(n, 0);
     ck_assert_int_eq(neo4j_type(value), NEO4J_RELATIONSHIP);
+    neo4j_value_t eltid = neo4j_relationship_elementid(value);
+    ck_assert_int_eq(neo4j_type(eltid), NEO4J_ELEMENTID);
+    neo4j_string_value(eltid, buf, 99);
+    ck_assert_str_eq(buf, "1");
 
     neo4j_value_t reltype = neo4j_relationship_type(value);
     ck_assert_int_eq(neo4j_type(reltype), NEO4J_STRING);
