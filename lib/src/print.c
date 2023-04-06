@@ -1008,6 +1008,7 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
     REQUIRE(value != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_STRUCT);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+<<<<<<< HEAD
     int hlen;
     switch (v->signature)
     {
@@ -1038,6 +1039,29 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
 	break;
     default:
 	hlen = fprintf(stream, "struct<0x%X>", v->signature);
+=======
+
+    switch (v->signature)
+    {
+    case NEO4J_DATE_SIGNATURE:
+	break;
+    case NEO4J_TIME_SIGNATURE:
+	break;
+    case NEO4J_LOCALTIME_SIGNATURE:
+	break;
+    case NEO4J_DATETIME_SIGNATURE:
+	break;
+    case NEO4J_LOCALDATETIME_SIGNATURE:
+	break;
+    case NEO4J_DURATION_SIGNATURE:
+	break;
+    case NEO4J_POINT2D_SIGNATURE:
+	break;
+    case NEO4J_POINT3D_SIGNATURE:
+	break;
+    default:
+	int hlen = fprintf(stream, "struct<0x%X>", v->signature);
+>>>>>>> master
 	if (hlen < 0)
 	{
 	    return -1;
@@ -1109,11 +1133,18 @@ size_t neo4j_time_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_TIME);
+<<<<<<< HEAD
     char frac[15];
     struct tm *bdt;
     struct timespec *ntsp = neo4j_time_timespec(*value);
     long int offset = (long int) neo4j_time_secs_offset(*value);
     bdt = gmtime( &(ntsp->tv_sec) );
+=======
+    struct tm *bdt;
+    struct timespec *ntsp = neo4j_time_timespec(*value);
+    long int offset = (long int) neo4j_time_secs_offset(*value);
+    bdt = localtime( &(ntsp->tv_sec) );
+>>>>>>> master
     if (bdt == NULL) {
 	free(ntsp);
 	return -1;
@@ -1122,10 +1153,13 @@ size_t neo4j_time_str(const neo4j_value_t *value, char *buf, size_t n)
     if (l==0) {
 	l = 8;
     }
+<<<<<<< HEAD
     if (ntsp->tv_nsec > 0) {
 	snprintf(frac, 15, "%.9f", 1.0e-09*(double) ntsp->tv_nsec);
 	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", frac+1);
     }
+=======
+>>>>>>> master
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%+03ld00", offset/3600);
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
@@ -1153,10 +1187,16 @@ size_t neo4j_localtime_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(value != NULL, -1);
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_LOCALTIME);
+<<<<<<< HEAD
     char frac[15];
     struct tm *bdt;
     struct timespec *ntsp = neo4j_localtime_timespec(*value);
     bdt = gmtime( (const time_t *) &(ntsp->tv_sec) );
+=======
+    struct tm *bdt;
+    struct timespec *ntsp = neo4j_localtime_timespec(*value);
+    bdt = localtime( (const time_t *) &(ntsp->tv_sec) );
+>>>>>>> master
     if (bdt == NULL) {
 	free(ntsp);
 	return -1;
@@ -1165,10 +1205,13 @@ size_t neo4j_localtime_str(const neo4j_value_t *value, char *buf, size_t n)
     if (l<=0) {
 	l = 8;
     }
+<<<<<<< HEAD
     if (ntsp->tv_nsec > 0) {
 	snprintf(frac, 15, "%.9f", 1.0e-09*(double) ntsp->tv_nsec);
 	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", frac+1);
     }
+=======
+>>>>>>> master
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
@@ -1198,13 +1241,19 @@ size_t neo4j_datetime_str(const neo4j_value_t *value, char *buf, size_t n)
     struct tm *bdt;
     struct timespec *ntsp = neo4j_datetime_timespec(*value);
     long int offset = (long int) neo4j_datetime_secs_offset(*value);
+<<<<<<< HEAD
     char frac[15];
     ntsp->tv_sec += offset;
     bdt = gmtime( &(ntsp->tv_sec) );
+=======
+    bdt = gmtime( &(ntsp->tv_sec) );
+    bdt->tm_gmtoff = offset;
+>>>>>>> master
     if (bdt == NULL) {
 	free(ntsp);
 	return -1;
     }
+<<<<<<< HEAD
     size_t l = strftime(buf, n, "%FT%T", (const struct tm *)bdt);
     if (l<=0) {
 	l = 19;
@@ -1216,6 +1265,14 @@ size_t neo4j_datetime_str(const neo4j_value_t *value, char *buf, size_t n)
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%+03ld00", offset/3600);
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec-offset);
+=======
+    size_t l = strftime(buf, n, "%FT%T%z", (const struct tm *)bdt);
+    if (l<=0) {
+	l = 24;
+    }
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
+    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec + (time_t) offset);
+>>>>>>> master
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
     if (buf) {
 	buf[minzu(n-1,l)] = '\0';
@@ -1242,8 +1299,12 @@ size_t neo4j_localdatetime_str(const neo4j_value_t *value, char *buf, size_t n)
     assert(neo4j_type(*value) == NEO4J_LOCALDATETIME);
     struct tm *bdt;
     struct timespec *ntsp = neo4j_localdatetime_timespec(*value);
+<<<<<<< HEAD
     char frac[15];
     bdt = gmtime( &(ntsp->tv_sec) );
+=======
+    bdt = localtime( &(ntsp->tv_sec) );
+>>>>>>> master
     if (bdt == NULL) {
 	free(ntsp);
 	return -1;
@@ -1252,10 +1313,13 @@ size_t neo4j_localdatetime_str(const neo4j_value_t *value, char *buf, size_t n)
     if (l<=0) {
 	l = 19;
     }
+<<<<<<< HEAD
     if (ntsp->tv_nsec > 0) {
 	snprintf(frac, 15, "%.9f", 1.0e-09*(double) ntsp->tv_nsec);
 	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", frac+1);
     }
+=======
+>>>>>>> master
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, " (");
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%ld", ntsp->tv_sec);
     l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ")");
@@ -1283,6 +1347,7 @@ size_t neo4j_duration_str(const neo4j_value_t *value, char *buf, size_t n)
     REQUIRE(n == 0 || buf != NULL, -1);
     assert(neo4j_type(*value) == NEO4J_DURATION);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
+<<<<<<< HEAD
     long long months = neo4j_int_value(v->fields[0]);
     long long days = neo4j_int_value(v->fields[1]);
     long long secs = neo4j_int_value(v->fields[2]);
@@ -1353,6 +1418,25 @@ size_t neo4j_duration_str(const neo4j_value_t *value, char *buf, size_t n)
 	    }
 	}
     }
+=======
+    char intbuf[BUFLEN];
+    size_t l = sprintf(buf,"[");
+    if (l<=0) {
+	return -1;
+    }
+    for (unsigned i = 0; i < 4; ++i)
+    {
+	if (neo4j_int_str(v->fields+i, intbuf, BUFLEN-1)<0) {
+	    return -1;
+	}
+	l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, "%s", intbuf);
+	if (i<3)
+	{
+	    l += snprintf(buf? buf+l : buf, (l<n)? n-l : 0, ",");
+	}
+    }
+    l += snprintf(buf? buf+l : buf, (l<n) ? n-l: 0, "]");
+>>>>>>> master
     if (buf) {
 	buf[minzu(n-1,l)] = '\0';
     }
@@ -1376,7 +1460,11 @@ size_t neo4j_point2d_str(const neo4j_value_t *value, char *buf, size_t n)
     assert(neo4j_type(*value) == NEO4J_POINT2D);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     char numbuf[BUFLEN];
+<<<<<<< HEAD
     size_t l = snprintf(buf, n, "[");
+=======
+    size_t l = sprintf(buf,"[");
+>>>>>>> master
     if (l<=0) {
 	return -1;
     }
@@ -1417,7 +1505,11 @@ size_t neo4j_point3d_str(const neo4j_value_t *value, char *buf, size_t n)
     assert(neo4j_type(*value) == NEO4J_POINT3D);
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     char numbuf[BUFLEN];
+<<<<<<< HEAD
     size_t l = snprintf(buf, n, "[");
+=======
+    size_t l = sprintf(buf,"[");
+>>>>>>> master
     if (l<=0) {
 	return -1;
     }
