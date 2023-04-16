@@ -1587,6 +1587,7 @@ neo4j_value_t neo4j_struct(uint8_t signature,
 	}
 	return neo4j_localtime(fields);
 	break;
+    case NEO4J_LEGACY_DATETIME_SIGNATURE:
     case NEO4J_DATETIME_SIGNATURE:
 	if (n != 3) {
 	    errno = EINVAL;

@@ -1021,6 +1021,8 @@ ssize_t neo4j_struct_fprint(const neo4j_value_t *value, FILE *stream)
 	return neo4j_localtime_fprint(value, stream);
 	break;
     case NEO4J_DATETIME_SIGNATURE:
+	return neo4j_datetime_fprint(value, stream);
+	break;
     case NEO4J_LEGACY_DATETIME_SIGNATURE:
 	return neo4j_datetime_fprint(value, stream);
 	break;
