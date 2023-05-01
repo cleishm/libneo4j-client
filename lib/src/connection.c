@@ -43,6 +43,7 @@ static neo4j_iostream_t *std_tcp_connect(
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags,
         struct neo4j_logger *logger);
 static int negotiate_protocol_version(neo4j_iostream_t *iostream,
+				      version_spec_t *supported_versions,
         uint32_t *protocol_version, uint32_t *protocol_minor_version);
 
 static bool interrupted(neo4j_connection_t *connection);
@@ -282,7 +283,8 @@ neo4j_connection_t *establish_connection(const char *hostname,
     }
 
     uint32_t protocol_version, protocol_minor_version;
-    if (negotiate_protocol_version(iostream, &protocol_version, &protocol_minor_version))
+    if (negotiate_protocol_version(iostream, config->supported_versions,
+				   &protocol_version, &protocol_minor_version))
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
@@ -414,7 +416,9 @@ failure:
 
 
 int negotiate_protocol_version(neo4j_iostream_t *iostream,
-                               uint32_t *protocol_version, uint32_t *protocol_minor_version)
+			       version_spec_t *supported_versions,
+                               uint32_t *protocol_version,
+			       uint32_t *protocol_minor_version)
 {
     uint8_t hello[] = { 0x60, 0x60, 0xB0, 0x17 };
     if (neo4j_ios_write_all(iostream, hello,
@@ -428,10 +432,12 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
     // (https://neo4j.com/docs/bolt/current/bolt/handshake/#bolt-version43)
     // 5.6-5.2, 4.4-4.0, 3
     // (allowing 5.1 causes an unusual issue)
-    uint32_t supported_versions[4] = { htonl(0x040605),htonl(0x000004), 
-				       htonl(0x030404),htonl(0x000003) };
-    if (neo4j_ios_write_all(iostream, supported_versions,
-                sizeof(supported_versions), NULL) < 0)
+    uint32_t supported_versions_nl[4] = {
+      vstonl(supported_versions[0]),vstonl(supported_versions[1]), 
+      vstonl(supported_versions[2]),vstonl(supported_versions[3])
+    };
+    if (neo4j_ios_write_all(iostream, supported_versions_nl,
+                sizeof(supported_versions_nl), NULL) < 0)
     {
         return -1;
     }
@@ -1713,4 +1719,49 @@ int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, 
 
 cleanup:
     return err;
+}
+
+int parse_version_string(char *version_string, version_spec_t *vs) {
+  int M0=0, m0=0, M1=0, m1=0,  n;
+  vs->major=0;
+  vs->minor=0;
+  vs->and_lower=0;
+  n = sscanf(version_string, "%d.%d-%d.%d", &M0, &m0, &M1, &m1);
+  if (n==1) {
+    if (sscanf(version_string, "%d-%d.%d", &M0, &M1, &m1)==3) {
+      m0 = 0;
+      n = 4;
+    }
+  }
+  switch (n) {
+  case 1:
+    vs->major = M0;
+    vs->minor = 0;
+    break;
+  case 2:
+    vs->major = M0;
+    vs->minor = m0;    
+    break;
+  case 3:
+    m1 = 0;
+  case 4:
+    if (M0 != M1) {
+      // Only minor version ranges within a single major version allowed
+      return -1;
+    }
+    vs->major = M0;
+    vs->minor = m0;    
+    if (m1 >= m0) {
+      vs->minor = m1;
+      vs->and_lower = m1-m0;
+    }
+    else {
+      vs->and_lower = m0-m1;
+    }
+    break;
+  default:
+    // couldn't parse
+    return -1;
+  }
+  return 0;
 }

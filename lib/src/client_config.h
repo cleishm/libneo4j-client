@@ -66,6 +66,7 @@ struct neo4j_config
     unsigned int render_inspect_rows;
     const struct neo4j_results_table_colors *results_table_colors;
     const struct neo4j_plan_table_colors *plan_table_colors;
+    version_spec_t *supported_versions;
 };
 
 

@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "client_config.h"
+#include "connection.h"
 #include "memory.h"
 #include "util.h"
 #include <assert.h>
@@ -72,6 +73,9 @@ const struct neo4j_plan_table_colors *neo4j_plan_table_no_colors =
 const struct neo4j_plan_table_colors *neo4j_plan_table_ansi_colors =
         &_neo4j_plan_table_ansi_colors;
 
+static version_spec_t neo4j_supported_versions[4] = {
+  {5, 6, 4}, {4, 0, 0}, {4, 4, 3}, {3, 0, 0}
+};
 
 static ssize_t default_password_callback(void *userdata, char *buf, size_t n);
 
@@ -110,6 +114,7 @@ neo4j_config_t *neo4j_new_config()
     config->render_inspect_rows = NEO4J_DEFAULT_RENDER_INSPECT_ROWS;
     config->results_table_colors = neo4j_results_table_no_colors;
     config->plan_table_colors = neo4j_plan_table_no_colors;
+    config->supported_versions = neo4j_supported_versions;
     return config;
 }
 

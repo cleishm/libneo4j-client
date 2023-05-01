@@ -814,6 +814,48 @@ START_TEST (test_drains_acks_when_closed)
 END_TEST
 
 
+START_TEST (test_version_specs)
+{
+  version_spec_t vs = { 5, 7, 0 };
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 7);
+  ck_assert_int_eq(vs.and_lower, 0);
+  ck_assert(vstonl(vs) == htonl(0x00000705));
+
+  ck_assert_int_eq( parse_version_string("4.3", &vs), 0);
+  ck_assert_int_eq(vs.major, 4);
+  ck_assert_int_eq(vs.minor, 3);
+  ck_assert_int_eq(vs.and_lower, 0);
+
+  ck_assert_int_eq( parse_version_string("5.7-5.4", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 7);
+  ck_assert_int_eq(vs.and_lower, 3);
+
+  ck_assert_int_eq( parse_version_string("5.4-5.7", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 7);
+  ck_assert_int_eq(vs.and_lower, 3);
+  ck_assert(vstonl(vs) == htonl(0x00030705));
+
+  ck_assert_int_eq( parse_version_string("5-5.4", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 4);
+  ck_assert_int_eq(vs.and_lower, 4);
+
+  ck_assert_int_eq( parse_version_string("5.4-5", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 4);
+  ck_assert_int_eq(vs.and_lower, 4);
+
+  ck_assert_int_eq( parse_version_string("4", &vs), 0);
+  ck_assert_int_eq(vs.major, 4);
+  ck_assert_int_eq(vs.minor, 0);
+  ck_assert_int_eq(vs.and_lower, 0);
+  
+}
+END_TEST
+
 TCase* connection_tcase(void)
 {
     TCase *tc = tcase_create("connection");
@@ -839,5 +881,6 @@ TCase* connection_tcase(void)
     tcase_add_test(tc, test_cant_continue_after_eproto_in_failure);
     tcase_add_test(tc, test_cant_continue_after_eproto_in_ack_failure);
     tcase_add_test(tc, test_drains_acks_when_closed);
+    tcase_add_test(tc, test_version_specs);
     return tc;
 }

@@ -164,6 +164,18 @@ const char *libneo4j_client_version(void);
 __neo4j_const
 const char *libneo4j_client_id(void);
 
+/**
+ * Struct for representing Neo4j version supported by (this) client
+ * in connection handshake.
+ */
+
+struct version_spec {
+  uint16_t major;
+  uint16_t minor;
+  uint16_t  and_lower;
+};
+
+typedef struct version_spec version_spec_t;
 
 /*
  * =====================================

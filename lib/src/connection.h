@@ -26,6 +26,11 @@
 #include "memory.h"
 #include "messages.h"
 #include "uri.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define vstonl(vs) htonl((vs.and_lower<<16)|(vs.minor<<8)|vs.major)
 
 /**
  * Callback for receiving responses to requests.
@@ -231,5 +236,7 @@ __neo4j_must_check
 int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, neo4j_response_recv_t callback, void *cdata);
 
 neo4j_value_t extract_extra( neo4j_value_t *params);
+
+int parse_version_string(char *version_string, version_spec_t *vs);
 
 #endif/*NEO4J_CONNECTION_H*/
