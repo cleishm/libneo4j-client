@@ -28,10 +28,40 @@ START_TEST (test_neo4j_config_create_and_release)
 }
 END_TEST
 
+START_TEST (test_neo4j_config_set_supported_versions)
+{
+  neo4j_config_t *config = neo4j_new_config();
+  ck_assert(config->supported_versions != NULL);
+  ck_assert_int_eq
+    (neo4j_config_set_supported_versions(config, "5.4"),0);
+  ck_assert_int_eq
+    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3"),0);
+  ck_assert_int_eq
+    (config->supported_versions[0].major, 5);
+  ck_assert_int_eq
+    (config->supported_versions[0].minor, 4);
+  ck_assert_int_eq
+    (config->supported_versions[0].and_lower, 0);
+  ck_assert_int_eq
+    (config->supported_versions[1].major, 4);
+  ck_assert_int_eq
+    (config->supported_versions[1].minor, 3);
+  ck_assert_int_eq
+    (config->supported_versions[1].and_lower, 3);
+		   
+  ck_assert_int_eq
+    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3,crap"),-1);
+
+  ck_assert_int_eq
+    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3,2,6.4-6.5,1"),0);
+
+}
+END_TEST
 
 TCase* config_tcase(void)
 {
     TCase *tc = tcase_create("config");
     tcase_add_test(tc, test_neo4j_config_create_and_release);
+    tcase_add_test(tc, test_neo4j_config_set_supported_versions);
     return tc;
 }

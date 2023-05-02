@@ -19,12 +19,14 @@
 #include "connection.h"
 #include "memory.h"
 #include "util.h"
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #define NEO4J_DEFAULT_MPOOL_BLOCK_SIZE 128
 #define NEO4J_DEFAULT_RCVBUF_SIZE 4096
@@ -701,4 +703,26 @@ const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
         const neo4j_config_t *config)
 {
     return config->plan_table_colors;
+}
+
+int neo4j_config_set_supported_versions(neo4j_config_t *config, const char *version_string)
+{
+  char *vs = strdup(version_string);
+  char *p = strtok(vs, ",");
+  int n=0;
+  if (vs == NULL)
+    {
+      fprintf(stderr, "Can't allocate string copy\n");
+      return -1;
+    }
+  while ((p != NULL) && (n < 4))
+    {
+      if (parse_version_string(p, config->supported_versions+n) != 0)
+	{
+	  return -1;
+	}
+      p = strtok(NULL, ",");
+      n++;
+    }
+  return 0;
 }

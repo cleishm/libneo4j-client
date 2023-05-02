@@ -2772,6 +2772,15 @@ void neo4j_config_set_plan_table_colors(neo4j_config_t *config,
 const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
         const neo4j_config_t *config);
 
+/**
+ * Set supported versions communicated in the initial client-server
+ * handshake.
+ *
+ * @param [config] The neo4j client configuration to update. 
+ * @param [version_string] The version string, e.g., "5,4.4-4.2,3,2".
+ **/
+
+int neo4j_config_set_supported_versions(neo4j_config_t *config, const char *version_string);
 
 
 #define NEO4J_RENDER_MAX_WIDTH 4095
