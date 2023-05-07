@@ -70,6 +70,9 @@ static const char *get_username(shell_state_t *state, char *buf, size_t n);
 static int unset_width(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_width(shell_state_t *state, char *buf, size_t n);
 
+static int set_versions(shell_state_t *state, struct cypher_input_position pos, const char *value);
+static const char *get_versions(shell_state_t *state, char *buf, size_t n);
+
 static int set_rowlines(shell_state_t *state, struct cypher_input_position pos, const char *value);
 static int unset_rowlines(shell_state_t *state, struct cypher_input_position pos);
 static const char *get_rowlines(shell_state_t *state, char *buf, size_t n);
@@ -106,6 +109,8 @@ static struct options options[] =
           "render a line between each output row in result tables" },
       { "timing", set_timing, true, unset_timing, get_timing,
           "display timing information after each query" },
+      { "versions", set_versions, true, NULL, get_versions,
+ 	  "set Neo4j server versions for client handshake" },
       { "width", set_width, false, unset_width, get_width,
           "the width to render tables (`auto` for terminal width)" },
       { "wrap", set_wrap, true, unset_wrap, get_wrap,
@@ -491,6 +496,25 @@ const char *get_username(shell_state_t *state, char *buf, size_t n)
     return buf;
 }
 
+int set_versions(shell_state_t *state, struct cypher_input_position pos, const char *value)
+{
+  if (value == NULL || *value == '\0') {
+    // default 
+    return 0; 
+  }
+  else {
+    if ( neo4j_config_set_supported_versions(state->config, value) < 0 ) {
+      print_error(state, pos, "Can't parse version string '%s'", value);
+      return -1;
+    }
+    return 0;
+  }
+}
+
+const char *get_versions(shell_state_t *state, char *buf, size_t n)
+{
+  return neo4j_config_get_supported_versions(state->config);
+}
 
 int set_width(shell_state_t *state, struct cypher_input_position pos,
         const char *value)

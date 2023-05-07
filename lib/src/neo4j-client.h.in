@@ -2781,7 +2781,7 @@ const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
  **/
 
 int neo4j_config_set_supported_versions(neo4j_config_t *config, const char *version_string);
-
+const char *neo4j_config_get_supported_versions(neo4j_config_t *config);
 
 #define NEO4J_RENDER_MAX_WIDTH 4095
 

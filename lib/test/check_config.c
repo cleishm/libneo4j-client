@@ -32,28 +32,51 @@ START_TEST (test_neo4j_config_set_supported_versions)
 {
   neo4j_config_t *config = neo4j_new_config();
   ck_assert(config->supported_versions != NULL);
+  ck_assert_str_eq
+    (neo4j_config_get_supported_versions(config),"5.6-5.2 4.0 4.4-4.1 3.0 ");
   ck_assert_int_eq
     (neo4j_config_set_supported_versions(config, "5.4"),0);
   ck_assert_int_eq
-    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3"),0);
+    (neo4j_config_set_supported_versions(config, "5.6-5.1,4.3-4,3,2"),0);
+  ck_assert_str_eq
+    (neo4j_config_get_supported_versions(config), "5.6-5.1 4.3-4.0 3.0 2.0 ");
   ck_assert_int_eq
     (config->supported_versions[0].major, 5);
   ck_assert_int_eq
-    (config->supported_versions[0].minor, 4);
+    (config->supported_versions[0].minor, 6);
   ck_assert_int_eq
-    (config->supported_versions[0].and_lower, 0);
+    (config->supported_versions[0].and_lower, 5);
   ck_assert_int_eq
     (config->supported_versions[1].major, 4);
   ck_assert_int_eq
     (config->supported_versions[1].minor, 3);
   ck_assert_int_eq
     (config->supported_versions[1].and_lower, 3);
+  ck_assert_int_eq
+    (config->supported_versions[2].major, 3);
+  ck_assert_int_eq
+    (config->supported_versions[2].minor, 0);
+  ck_assert_int_eq
+    (config->supported_versions[2].and_lower, 0);
+  ck_assert_int_eq
+    (config->supported_versions[3].major, 2);
+  ck_assert_int_eq
+    (config->supported_versions[3].minor, 0);
+  ck_assert_int_eq
+    (config->supported_versions[3].and_lower, 0);
+
 		   
   ck_assert_int_eq
-    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3,crap"),-1);
-
+    (neo4j_config_set_supported_versions(config, "5.6,6.3-6.1,4"),0);
+  ck_assert_str_eq
+    (neo4j_config_get_supported_versions(config), "5.6 6.3-6.1 4.0 ");
   ck_assert_int_eq
-    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3,2,6.4-6.5,1"),0);
+    (neo4j_config_set_supported_versions(config, "5.4,4.3-4,3,crap"),-1);
+  ck_assert_str_eq
+    (neo4j_config_get_supported_versions(config), "5.6-5.2 4.0 4.4-4.1 3.0 ");
+  
+
+  
 
 }
 END_TEST

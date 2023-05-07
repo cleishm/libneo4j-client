@@ -79,6 +79,8 @@ static version_spec_t neo4j_supported_versions[4] = {
   {5, 6, 4}, {4, 0, 0}, {4, 4, 3}, {3, 0, 0}
 };
 
+static const char neo4j_supported_versions_string[] = "5.6-5.2,4.0,4.4-4.1,3.0";
+
 static ssize_t default_password_callback(void *userdata, char *buf, size_t n);
 
 
@@ -719,10 +721,52 @@ int neo4j_config_set_supported_versions(neo4j_config_t *config, const char *vers
     {
       if (parse_version_string(p, config->supported_versions+n) != 0)
 	{
+	  // set default
+	  int i;
+	  neo4j_config_set_supported_versions(config, neo4j_supported_versions_string);
+	  fprintf(stderr, "%s\n", neo4j_config_get_supported_versions(config));
 	  return -1;
 	}
       p = strtok(NULL, ",");
       n++;
     }
+  if (n<4) {
+    (config->supported_versions+n)->major = 0;
+    (config->supported_versions+n)->minor = 0;
+    (config->supported_versions+n)->and_lower = 0;
+    n++;
+  }
   return 0;
+}
+
+const char *neo4j_config_get_supported_versions(neo4j_config_t *config)
+{
+  static char buf[50];
+  char *p;
+  int l=0, nmax=50, n;
+  version_spec_t *vs;
+  p = buf;
+  for (n=0;n<4;n++) {
+    vs = config->supported_versions+n;
+    if (vs->major == 0)
+      {
+	continue;
+      }
+    if (vs->and_lower == 0) {
+      l=snprintf(p, nmax, "%d.%d ", vs->major, vs->minor);
+    }
+    else {
+      l=snprintf(p, nmax, "%d.%d-%d.%d ", vs->major, vs->minor, vs->major, vs->minor-vs->and_lower);
+    }
+    if (l >= nmax) {
+      *p = '\0';
+      continue;
+    }
+    else {
+      p += l;
+      nmax -= l;
+    }
+    
+  }
+  return buf;
 }

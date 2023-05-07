@@ -126,6 +126,8 @@ static void usage(FILE *s, const char *prog_name)
 " --eval script, -e script\n"
 "                     Evaluate the argument string. May be specified multiple\n"
 "                     times.\n"
+" --support version_string\n"
+"                     Set Neo4j server versions to accept e.g. '4,5.4-5.3'\n"
 " --export name=val   Export a parameter, which will be available in all\n"
 "                     queries.\n"
 " --verbose, -v       Increase logging verbosity.\n"
@@ -407,7 +409,7 @@ int main(int argc, char *argv[])
             }
             break;
 	case SUPP_VER_OPT:
-	  if (neo4j_config_set_supported_versions(state.config, optarg)
+	  if (neo4j_config_set_supported_versions(state.config, optarg))
 	    {
 	      fprintf(state.err, "Couldn't parse version string '%s'\n",
 		      optarg);
