@@ -1,3 +1,8 @@
+**2023-05-07: This fork will be archived.**
+
+*Work on maintaining libneo4j-client compatibility with the latest version of Bolt continues at the top-level repo [libneo4j-omni](https://github.com/majensen/libneo4j-omni)*
+
+
 neo4j-client
 ============
 
