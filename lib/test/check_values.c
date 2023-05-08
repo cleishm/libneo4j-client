@@ -16,17 +16,18 @@
  */
 #include "../../config.h"
 #include "../src/values.h"
+#include "../src/print.h"
 #include "memstream.h"
 #include <check.h>
 #include <errno.h>
 #include <unistd.h>
-
+#include <stdio.h>
+#include <time.h>
 
 static char buf[1024];
 static char *memstream_buffer;
 static size_t memstream_size;
 static FILE *memstream;
-
 
 static void setup(void)
 {
@@ -245,6 +246,15 @@ START_TEST (string_value)
 }
 END_TEST
 
+START_TEST (elementid_value)
+{
+    neo4j_value_t value = neo4j_elementid("ABCDEF");
+    ck_assert(neo4j_type(value) == NEO4J_ELEMENTID);
+    ck_assert_str_eq(neo4j_string_value(value, buf, 99), "ABCDEF");
+    ck_assert_str_eq(neo4j_tostring(value, buf, 99), "\"ABCDEF\"");
+    
+}
+END_TEST
 
 START_TEST (bytes_value)
 {
@@ -522,10 +532,11 @@ START_TEST (relationship_value)
 
     neo4j_value_t field_values[] =
         { neo4j_identity(1), neo4j_identity(8), neo4j_identity(9),
-          type, neo4j_map(props, 1) };
+          type, neo4j_map(props, 1), neo4j_elementid("this"),
+	  neo4j_elementid("that"), neo4j_elementid("other")};
     neo4j_value_t value = neo4j_relationship(field_values);
     ck_assert(neo4j_type(value) == NEO4J_RELATIONSHIP);
-
+    
     ck_assert(neo4j_eq(neo4j_relationship_identity(value),
                 neo4j_identity(1)));
     ck_assert(neo4j_eq(neo4j_relationship_start_node_identity(value),
@@ -533,7 +544,15 @@ START_TEST (relationship_value)
     ck_assert(neo4j_eq(neo4j_relationship_end_node_identity(value),
                 neo4j_identity(9)));
 
+    ck_assert(neo4j_type(neo4j_relationship_elementid(value)) == NEO4J_ELEMENTID);
+
+    char buf[100];
+    neo4j_string_value(neo4j_relationship_elementid(value),buf,99);
+    ck_assert_str_eq("this", buf);
+    ck_assert_str_eq("that", neo4j_string_value(neo4j_relationship_start_node_elementid(value),buf,99));
+    ck_assert_str_eq("other", neo4j_string_value(neo4j_relationship_end_node_elementid(value),buf,99));
     char *str = neo4j_tostring(value, buf, sizeof(buf));
+
     ck_assert(str == buf);
     ck_assert_str_eq(str, "-[:Candidate{year:2016}]-");
 
@@ -584,25 +603,30 @@ START_TEST (path_value)
     neo4j_value_t node3_labels[] = { neo4j_string("Campaign") };
 
     neo4j_value_t node1_fields[] =
-        { neo4j_identity(1), neo4j_list(node1_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(1), neo4j_list(node1_labels, 1), neo4j_map(NULL, 0),
+	  neo4j_elementid("1")};
     neo4j_value_t node1 = neo4j_node(node1_fields);
 
     neo4j_value_t rel1_fields[] =
         { neo4j_identity(8), neo4j_identity(2), neo4j_identity(1),
-          rel1_type, neo4j_map(NULL, 0) };
+          rel1_type, neo4j_map(NULL, 0),
+	  neo4j_elementid("8"), neo4j_elementid("2"), neo4j_elementid("1")};
     neo4j_value_t rel1 = neo4j_relationship(rel1_fields);
 
     neo4j_value_t node2_fields[] =
-        { neo4j_identity(2), neo4j_list(node2_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(2), neo4j_list(node2_labels, 1), neo4j_map(NULL, 0),
+	  neo4j_elementid("2")};
     neo4j_value_t node2 = neo4j_node(node2_fields);
 
     neo4j_value_t rel2_fields[] =
         { neo4j_identity(9), neo4j_identity(2), neo4j_identity(3),
-          rel2_type, neo4j_map(NULL, 0) };
+          rel2_type, neo4j_map(NULL, 0),
+	  neo4j_elementid("9"), neo4j_elementid("2"), neo4j_elementid("3")};
     neo4j_value_t rel2 = neo4j_relationship(rel2_fields);
 
     neo4j_value_t node3_fields[] =
-        { neo4j_identity(3), neo4j_list(node3_labels, 1), neo4j_map(NULL, 0) };
+        { neo4j_identity(3), neo4j_list(node3_labels, 1), neo4j_map(NULL, 0),
+	  neo4j_elementid("3")};
     neo4j_value_t node3 = neo4j_node(node3_fields);
 
     neo4j_value_t path_nodes[] = { node1, node2, node3 };
@@ -619,7 +643,6 @@ START_TEST (path_value)
     ck_assert(neo4j_type(value) == NEO4J_PATH);
 
     ck_assert_int_eq(neo4j_path_length(value), 2);
-
     char *str = neo4j_tostring(value, buf, sizeof(buf));
     ck_assert(str == buf);
     ck_assert_str_eq(str,
@@ -628,12 +651,14 @@ START_TEST (path_value)
 
     ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 56);
     ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 56);
+
     ck_assert_str_eq(buf,
             "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
 
     ck_assert_int_eq(neo4j_fprint(value, memstream), 56);
     fflush(memstream);
+
     ck_assert_str_eq(memstream_buffer,
             "(:State)<-[:Senator]-(:Person)-[:Candidate]->(:Campaign)"
             );
@@ -1048,6 +1073,197 @@ START_TEST (identity_value)
 }
 END_TEST
 
+START_TEST (date_value)
+{
+    neo4j_value_t field_values[] = { neo4j_int(18250) };
+    // Thu Dec 19 2019
+    neo4j_value_t value = neo4j_date(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_DATE);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    ck_assert_str_eq(str, "2019-12-19 (1576800000)");
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 23);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 23);
+    ck_assert_str_eq(buf, "2019-12-19 (1576800000)");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 23), 23);
+    ck_assert_str_eq(buf, "2019-12-19 (1576800000");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 22), 23);
+    ck_assert_str_eq(buf, "2019-12-19 (157680000");
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 23);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "2019-12-19 (1576800000)");
+}
+END_TEST
+
+START_TEST (time_value)
+{
+    neo4j_value_t field_values[] = { neo4j_int(83404000001040),
+				     neo4j_int(-5*3600)};
+    // 23:10:04.000001040-0500
+    neo4j_value_t value = neo4j_time(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_TIME);
+
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    fprintf(stderr,"%s",str);
+    ck_assert_str_eq(str, "23:10:04.000001040-0500 (83404)");
+    ck_assert_int_eq(neo4j_time_secs_offset(value), -5*3600);
+    ck_assert_int_eq(neo4j_time_nsecs(value), 83404000001040);
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 31);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 31);
+    ck_assert_str_eq(buf, "23:10:04.000001040-0500 (83404)");
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 31), 31);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 30), 31);
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 31);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "23:10:04.000001040-0500 (83404)");
+    
+}
+END_TEST
+
+START_TEST (localtime_value)
+{
+    time_t tst_tm = (20*3600 + 1860)+15;
+    neo4j_value_t field_values[] = { neo4j_int(tst_tm*1000000000 + 1040) };
+    // 20:31:15 + 1040ns
+    neo4j_value_t value = neo4j_localtime(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_LOCALTIME);
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    fprintf(stderr,"%s",str);
+    ck_assert_str_eq(str, "20:31:15.000001040 (73875)");
+    ck_assert_int_eq(neo4j_localtime_nsecs(value), (tst_tm*1000000000 + 1040));
+    // ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 16);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 26);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 26), 26);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 25), 26);
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 26);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "20:31:15.000001040 (73875)");
+
+}
+END_TEST
+
+START_TEST (datetime_value)
+{
+    time_t tst_tm = (20*3600 + 1860)+15;
+    char *outs;
+    neo4j_value_t field_values[] =
+	{ neo4j_int(tst_tm), neo4j_int(1040),
+	  neo4j_int( -5*3600  ) };
+    // 20:31:15 + 1040ns
+    neo4j_value_t value = neo4j_datetime(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_DATETIME);
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    fprintf(stderr,"%s",str);
+    asprintf(&outs, "1970-01-01T15:31:15.000001040-0500 (%ld)", tst_tm);
+    ck_assert_str_eq(str, outs);
+    ck_assert_int_eq(neo4j_datetime_secs(value), tst_tm);
+    ck_assert_int_eq(neo4j_datetime_nsecs(value), 1040);
+    ck_assert_int_eq(neo4j_datetime_secs_offset(value), -5*3600);    
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 42);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 42);
+    ck_assert_str_eq(buf, outs);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 42), 42);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 42), 42);
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 42);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, outs);
+
+}
+END_TEST
+
+START_TEST (localdatetime_value)
+{
+    time_t tst_tm = (20*3600 + 1860)+15;
+    char *outs;
+    neo4j_value_t field_values[] =
+	{ neo4j_int(tst_tm), neo4j_int(1040) };
+    // 20:31:15 + 1040ns
+    neo4j_value_t value = neo4j_localdatetime(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_LOCALDATETIME);
+    char *str = neo4j_tostring(value, buf, sizeof(buf));
+    ck_assert(str == buf);
+    fprintf(stderr,"%s\n",str);
+    asprintf(&outs, "1970-01-01T20:31:15.000001040 (%ld)", tst_tm);
+    ck_assert_str_eq(str, outs);
+    ck_assert_int_eq(neo4j_localdatetime_secs(value), tst_tm);
+    ck_assert_int_eq(neo4j_localdatetime_nsecs(value), 1040);
+
+    ck_assert_int_eq(neo4j_ntostring(value, NULL, 0), 37);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, sizeof(buf)), 37);
+    ck_assert_str_eq(buf, outs);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 37), 37);
+    ck_assert_int_eq(neo4j_ntostring(value, buf, 36), 37);
+
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 37);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, outs);
+
+}
+END_TEST
+
+START_TEST (duration_value)
+{
+    neo4j_value_t field_values[] =
+	{ neo4j_int(11), neo4j_int(29),
+	  neo4j_int(180), neo4j_int(300000004) };
+    neo4j_value_t value = neo4j_duration(field_values);
+    ck_assert(neo4j_type(value) == NEO4J_DURATION);
+    ck_assert_int_eq(neo4j_duration_months(value), 11);
+    ck_assert_int_eq(neo4j_duration_days(value), 29);
+    ck_assert_int_eq(neo4j_duration_secs(value), 180);
+    ck_assert_int_eq(neo4j_duration_nsecs(value), 300000004);
+    neo4j_ntostring(value, buf, 99);
+    fprintf(stderr, "%s\n", buf);
+    ck_assert_str_eq(buf, "P11M29DT3M0.300000004S");
+    neo4j_value_t field_values2[] =
+	{ neo4j_int(25), neo4j_int(40), neo4j_int(3783), neo4j_int(300000000) };
+    value = neo4j_duration(field_values2);
+    neo4j_ntostring(value, buf, 99);    
+    fprintf(stderr, "%s\n", buf);
+    ck_assert_str_eq(buf, "P2Y2M10DT1H3M3.300000000S");
+    neo4j_duration_fprint(&value, stderr);
+    ck_assert_int_eq(neo4j_fprint(value, memstream), 25);
+    fflush(memstream);
+    ck_assert_str_eq(memstream_buffer, "P2Y2M10DT1H3M3.300000000S");
+}
+END_TEST
+
+START_TEST (point_value)
+{
+    neo4j_value_t field_values[] =
+	{ neo4j_int(4326), neo4j_float(39.415601),
+	  neo4j_float(-77.408218), neo4j_float(13.83) };
+    neo4j_value_t value2 = neo4j_point2d(field_values);
+    neo4j_value_t value3 = neo4j_point3d(field_values);
+    ck_assert(neo4j_type(value2) == NEO4J_POINT2D);
+    ck_assert(neo4j_type(value3) == NEO4J_POINT3D);
+    ck_assert_int_eq(neo4j_point2d_srid(value2), 4326);
+    ck_assert_int_eq(neo4j_point3d_srid(value3), 4326);
+    ck_assert_float_eq(neo4j_point2d_x(value2), 39.415601);
+    ck_assert_float_eq(neo4j_point3d_x(value3), 39.415601);
+    ck_assert_float_eq(neo4j_point2d_y(value2), -77.408218);
+    ck_assert_float_eq(neo4j_point3d_y(value3), -77.408218);
+    ck_assert_float_eq(neo4j_point3d_z(value3), 13.83);
+    neo4j_tostring(value2, buf, 99);
+    fprintf(stderr, "2: %s\n", buf);
+    neo4j_tostring(value3, buf, 99);
+    fprintf(stderr, "3: %s\n", buf);
+    ck_assert_int_eq(neo4j_ntostring(value2, buf, 27), 27);
+    ck_assert_int_eq(neo4j_ntostring(value2, buf, 26), 27);    
+    ck_assert_int_eq(neo4j_ntostring(value3, buf, 37), 37);
+    ck_assert_int_eq(neo4j_ntostring(value3, buf, 36), 37);        
+}
+END_TEST
+
 
 TCase* values_tcase(void)
 {
@@ -1063,6 +1279,7 @@ TCase* values_tcase(void)
     tcase_add_test(tc, float_eq);
     tcase_add_test(tc, string_value);
     tcase_add_test(tc, string_eq);
+    tcase_add_test(tc, elementid_value);
     tcase_add_test(tc, bytes_value);
     tcase_add_test(tc, list_value);
     tcase_add_test(tc, list_eq);
@@ -1086,5 +1303,12 @@ TCase* values_tcase(void)
     tcase_add_test(tc, identity_value);
     tcase_add_test(tc, struct_value);
     tcase_add_test(tc, struct_eq);
+    tcase_add_test(tc, date_value);
+    tcase_add_test(tc, time_value);
+    tcase_add_test(tc, localtime_value);
+    tcase_add_test(tc, datetime_value);
+    tcase_add_test(tc, localdatetime_value);
+    tcase_add_test(tc, duration_value);
+    tcase_add_test(tc, point_value);
     return tc;
 }

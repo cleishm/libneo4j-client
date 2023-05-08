@@ -1,3 +1,8 @@
+**2023-05-07: This fork will be archived.**
+
+*Work on maintaining libneo4j-client compatibility with the latest version of Bolt continues at the top-level repo [libneo4j-omni](https://github.com/majensen/libneo4j-omni)*
+
+
 neo4j-client
 ============
 
@@ -20,7 +25,7 @@ Requirements
 ------------
 
 neo4j-client is known to work on GNU/Linux, Mac OS X and FreeBSD. It
-requires neo4j 3.0.0 or later.
+support Neo4j through v4.0.
 
 
 Getting Started
@@ -76,12 +81,17 @@ Available commands:
 :export                Display currently exported parameters
 :export name=val ...   Export parameters for queries
 :unexport name ...     Unexport parameters for queries
+:begin [timeout(ms)] [mode(r|w)]
+                       Begin an explicit transaction (v3.0+)
+:commit                Commit an open transaction (v3.0+)
+:rollback              Rollback an open transaction (v3.0+)
 :reset                 Reset the session with the server
 :set                   Display current option values
 :set option=value ...  Set shell options
 :unset option ...      Unset shell options
 :status                Show the client connection status
 :help                  Show usage information
+:dbname [name]         View or set database for queries (v4.0+)
 :format (table|csv)    Set the output format
 :width (<n>|auto)      Set the number of columns in the table output
 

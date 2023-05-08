@@ -66,6 +66,7 @@ struct neo4j_config
     unsigned int render_inspect_rows;
     const struct neo4j_results_table_colors *results_table_colors;
     const struct neo4j_plan_table_colors *plan_table_colors;
+    version_spec_t *supported_versions;
 };
 
 
@@ -112,6 +113,7 @@ static inline neo4j_mpool_t neo4j_std_mpool(const neo4j_config_t *config)
  * @param 0 on success, -1 on error (errno will be set).
  */
 int ensure_basic_auth_credentials(neo4j_config_t *config, const char *host);
+
 
 
 #endif/*NEO4J_CLIENT_CONFIG_H*/

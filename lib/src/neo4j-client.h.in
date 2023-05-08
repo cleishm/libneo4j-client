@@ -72,6 +72,11 @@ typedef struct neo4j_config neo4j_config_t;
 typedef struct neo4j_connection neo4j_connection_t;
 
 /**
+ * An explicit transaction with a neo4j server.
+ */
+typedef struct neo4j_transaction neo4j_transaction_t;
+
+/**
  * A stream of results from a job.
  */
 typedef struct neo4j_result_stream neo4j_result_stream_t;
@@ -159,6 +164,18 @@ const char *libneo4j_client_version(void);
 __neo4j_const
 const char *libneo4j_client_id(void);
 
+/**
+ * Struct for representing Neo4j version supported by (this) client
+ * in connection handshake.
+ */
+
+struct version_spec {
+  uint16_t major;
+  uint16_t minor;
+  uint16_t  and_lower;
+};
+
+typedef struct version_spec version_spec_t;
 
 /*
  * =====================================
@@ -436,6 +453,9 @@ struct neo4j_connection_factory
 #define NEO4J_TLS_MALFORMED_CERTIFICATE -37
 #define NEO4J_SESSION_RESET -38
 #define NEO4J_SESSION_BUSY -39
+#define NEO4J_TRANSACTION_FAILED -40
+#define NEO4J_TRANSACTION_DEFUNCT -41
+#define NEO4J_FEATURE_UNAVAILABLE -42
 
 /**
  * Print the error message corresponding to an error number.
@@ -556,7 +576,16 @@ extern const neo4j_type_t NEO4J_RELATIONSHIP;
 extern const neo4j_type_t NEO4J_PATH;
 /** The neo4j identity value type. */
 extern const neo4j_type_t NEO4J_IDENTITY;
+extern const neo4j_type_t NEO4J_ELEMENTID;
 extern const neo4j_type_t NEO4J_STRUCT;
+extern const neo4j_type_t NEO4J_DATE;
+extern const neo4j_type_t NEO4J_TIME;
+extern const neo4j_type_t NEO4J_LOCALTIME;
+extern const neo4j_type_t NEO4J_DATETIME;
+extern const neo4j_type_t NEO4J_LOCALDATETIME;
+extern const neo4j_type_t NEO4J_DURATION;
+extern const neo4j_type_t NEO4J_POINT2D;
+extern const neo4j_type_t NEO4J_POINT3D;
 
 union _neo4j_value_data
 {
@@ -1007,6 +1036,15 @@ neo4j_value_t neo4j_node_properties(neo4j_value_t value);
 __neo4j_pure
 neo4j_value_t neo4j_node_identity(neo4j_value_t value);
 
+/**
+ * Return the element ID of a neo4j node.
+ *
+ * @param [value] The neo4j node.
+ * @return A neo4j value encoding the element ID of the node.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_node_elementid(neo4j_value_t value);
+
 
 /**
  * Return the type of a neo4j relationship.
@@ -1059,6 +1097,35 @@ neo4j_value_t neo4j_relationship_start_node_identity(neo4j_value_t value);
 __neo4j_pure
 neo4j_value_t neo4j_relationship_end_node_identity(neo4j_value_t value);
 
+// element ids
+
+/**
+ * Return the element ID of a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Element ID of the relationship.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_relationship_elementid(neo4j_value_t value);
+
+/**
+ * Return the start node element ID for a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Element ID of the start node.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_relationship_start_node_elementid(neo4j_value_t value);
+
+/**
+ * Return the end node element ID for a neo4j relationship.
+ *
+ * @param [value] The neo4j relationship.
+ * @return A neo4j value encoding the Element ID of the end node.
+ */
+__neo4j_pure
+neo4j_value_t neo4j_relationship_end_node_elementid(neo4j_value_t value);
+
 
 /**
  * Return the length of a neo4j path.
@@ -1101,6 +1168,52 @@ neo4j_value_t neo4j_path_get_node(neo4j_value_t value, unsigned int hops);
 __neo4j_pure
 neo4j_value_t neo4j_path_get_relationship(neo4j_value_t value,
         unsigned int hops, bool *forward);
+
+neo4j_value_t neo4j_date(const neo4j_value_t fields[1]);
+long long neo4j_date_days(neo4j_value_t value);
+time_t neo4j_date_time_t(neo4j_value_t value);
+
+neo4j_value_t neo4j_time(const neo4j_value_t fields[2]);
+long long neo4j_time_nsecs(neo4j_value_t value);
+long long neo4j_time_secs_offset(neo4j_value_t value);
+struct timespec *neo4j_time_timespec(neo4j_value_t value);
+
+neo4j_value_t neo4j_localtime(const neo4j_value_t fields[2]);
+long long neo4j_localtime_nsecs(neo4j_value_t value);
+struct timespec *neo4j_localtime_timespec(neo4j_value_t value);
+
+neo4j_value_t neo4j_datetime(const neo4j_value_t fields[3]);
+long long neo4j_datetime_secs(neo4j_value_t value);
+long long neo4j_datetime_nsecs(neo4j_value_t value);
+long long neo4j_datetime_secs_offset(neo4j_value_t value);
+struct timespec *neo4j_datetime_timespec(neo4j_value_t value);
+
+neo4j_value_t neo4j_localdatetime(const neo4j_value_t fields[2]);
+long long neo4j_localdatetime_secs(neo4j_value_t value);
+long long neo4j_localdatetime_nsecs(neo4j_value_t value);
+struct timespec *neo4j_localdatetime_timespec(neo4j_value_t value);
+
+neo4j_value_t neo4j_duration(const neo4j_value_t fields[4]);
+long long neo4j_duration_months(neo4j_value_t value);
+long long neo4j_duration_days(neo4j_value_t value);
+long long neo4j_duration_secs(neo4j_value_t value);
+long long neo4j_duration_nsecs(neo4j_value_t value);
+
+neo4j_value_t neo4j_point2d(const neo4j_value_t fields[3]);
+long long neo4j_point2d_srid(neo4j_value_t value);
+double neo4j_point2d_x(neo4j_value_t value);
+double neo4j_point2d_y(neo4j_value_t value);
+
+neo4j_value_t neo4j_point3d(const neo4j_value_t fields[3]);
+long long neo4j_point3d_srid(neo4j_value_t value);
+double neo4j_point3d_x(neo4j_value_t value);
+double neo4j_point3d_y(neo4j_value_t value);
+double neo4j_point3d_z(neo4j_value_t value);
+
+
+
+
+    
 
 
 /*
@@ -1760,6 +1873,9 @@ __neo4j_must_check
 neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_run_in_db(neo4j_connection_t *connection,
+       const char *statement, neo4j_value_t params, const char *dbname);
 /**
  * Evaluate a statement, ignoring any results.
  *
@@ -1778,6 +1894,190 @@ __neo4j_must_check
 neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params);
 
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_send_to_db(neo4j_connection_t *connection,
+        const char *statement, neo4j_value_t params, const char *dbname);
+
+/**
+ * Set the extra dictionary (= neo4j_map) to be sent to server
+ * with run messages (Bolt protocol 3+)
+ *
+ * @attention Once set, this map will be sent on every subsequent run.
+ *            To cancel directives, do neo4j_set_extra(neo4j_null)
+ *
+ * @param [map] A neo4j_map containing directives to the server
+ */
+__neo4j_must_check
+int neo4j_set_extra(neo4j_value_t map);
+
+/*
+ * =====================================
+ * transactions
+ * =====================================
+ */
+
+/**
+ * Begin an explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [connection] The connection.
+ * @param [tx_timeout] Transaction timeout in milliseconds. If -1, default to server-side setting (dbms.transaction.timeout)
+ * @param [tx_mode] Transaction mode string: "r" - read, "w" - write. If NULL, defaults to "w".
+ * @param [dbname] Name of database in which to exec txn (no effect unless Neo4j 4+)
+ * @return A `neo4j_transaction_t` tx. If tx->failed is set, the call failed; check tx->failure_code.
+ *
+ */
+__neo4j_must_check
+neo4j_transaction_t *neo4j_begin_tx(neo4j_connection_t *connection,
+                                    int tx_timeout, const char *tx_mode, const char *dbname);
+
+/**
+ * Commit an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @return int: 0 on success, 1 on failure.
+ *
+ */
+__neo4j_must_check
+int neo4j_commit(neo4j_transaction_t *tx);
+
+/**
+ * Rollback an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @return int: 0 on success, 1 on failure.
+ *
+ */
+__neo4j_must_check
+int neo4j_rollback(neo4j_transaction_t *tx);
+
+/**
+ * Run a query within an open explicit transaction.
+ * @attention This function is available when server protocol is Bolt 3 or higher.
+ *
+ * @param [transaction] The transaction (obtained from `neo4j_begin_tx`)
+ * @param [statement] The statement to be evaluated. This must be a `NULL`
+ *         terminated string and may contain UTF-8 multi-byte characters.
+ * @param [params] The parameters for the statement, which must be a value of
+ *         type NEO4J_MAP or #neo4j_null.
+ * @return A `neo4j_result_stream_t`, or `NULL` on error (errno will be set).
+ *
+ */
+
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_run_in_tx(neo4j_transaction_t *tx,
+                                       const char *statement, neo4j_value_t params);
+
+__neo4j_must_check
+neo4j_result_stream_t *neo4j_send_to_tx(neo4j_transaction_t *tx,
+                                       const char *statement, neo4j_value_t params);
+
+/**
+ * Check if a transaction is open.
+ *
+ * Note: if the error is `NEO4J_STATEMENT_EVALUATION_FAILED`, then additional
+ * error information will be available via neo4j_error_message().
+ *
+ * @param [tx] The transaction.
+ * @return 1 if transaction is open; 0 if closed.
+ */
+
+__neo4j_must_check
+bool neo4j_tx_is_open(neo4j_transaction_t *tx);
+
+/**
+ * Check if a transaction has expired.
+ *
+ * This flag is set when the server fails a transaction operation
+ * due to the transaction having exceeded its timeout, or if the 
+ * connection has been reset out from under it.
+ *
+ * @param [tx] The transaction.
+ * @return true if transaction has expired or connection has reset; 
+ *  false otherwise
+ */
+__neo4j_must_check
+bool neo4j_tx_defunct(neo4j_transaction_t *tx);
+
+/**
+ * Check if a transaction has failed.
+ *
+ * This flag is set when the server fails a transaction operation.
+ * Examine the failure information with neo4j_tx_failure_code()
+ * and neo4j_tx_failure_message().
+ *
+ * @param [tx] The transaction.
+ * @return 1 if transaction has failed; 0 if not.
+ */
+__neo4j_must_check
+int neo4j_tx_failure(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the timeout (in sec) of a transaction.
+ *
+ * @param [tx] The transaction.
+ * @return integer (number of seconds)
+ */
+__neo4j_must_check
+int neo4j_tx_timeout(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the mode (read or write) of a transaction.
+ *
+ * @param [tx] The transaction.
+ * @return const char* ("r" or "w")
+ */
+__neo4j_must_check
+const char *neo4j_tx_mode(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the database to which a transaction is sent (Neo4j 4+)
+ *
+ * @param [tx] The transaction.
+ * @return const char* database name
+ */
+__neo4j_must_check
+const char *neo4j_tx_dbname(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the failure code of a failed transaction as a string.
+ *
+ * @param [tx] The transaction.
+ * @return string (the failure code)
+ */
+__neo4j_must_check
+const char *neo4j_tx_failure_code(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the failure message of a failed transaction as a string.
+ *
+ * @param [tx] The transaction.
+ * @return string (the failure message)
+ */
+__neo4j_must_check
+const char *neo4j_tx_failure_message(neo4j_transaction_t *tx);
+
+/**
+ * Retrieve the server's bookmark of a committed transaction as a string.
+ *
+ * @param [tx] The transaction.
+ * @return string (the bookmark token)
+ */
+__neo4j_must_check
+const char *neo4j_tx_commit_bookmark(neo4j_transaction_t *tx);
+
+/**
+ * Free a transaction object
+ *
+ * Use to clean up after transaction has failed, been committed, or
+ * been rolled back.
+ *
+ * @param [tx] The transaction.
+ * @return none
+ */
+void neo4j_free_tx(neo4j_transaction_t *tx);
 
 /*
  * =====================================
@@ -2472,7 +2772,16 @@ void neo4j_config_set_plan_table_colors(neo4j_config_t *config,
 const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
         const neo4j_config_t *config);
 
+/**
+ * Set supported versions communicated in the initial client-server
+ * handshake.
+ *
+ * @param [config] The neo4j client configuration to update. 
+ * @param [version_string] The version string, e.g., "5,4.4-4.2,3,2".
+ **/
 
+int neo4j_config_set_supported_versions(neo4j_config_t *config, const char *version_string);
+const char *neo4j_config_get_supported_versions(neo4j_config_t *config);
 
 #define NEO4J_RENDER_MAX_WIDTH 4095
 

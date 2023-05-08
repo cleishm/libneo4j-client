@@ -168,7 +168,7 @@ static int response_recv_callback(void *cdata, neo4j_message_type_t type,
 
 START_TEST (test_connects_URI_and_sends_init)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     neo4j_map_entry_t init_metadata_entries[1];
     init_metadata_entries[0] =
@@ -192,7 +192,8 @@ START_TEST (test_connects_URI_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(0x040605),htonl(0x000004), 
+				       htonl(0x030404),htonl(0x000003) };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -202,22 +203,29 @@ START_TEST (test_connects_URI_and_sends_init)
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_INIT_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, connection->version < 3? 2 : 1);
 
     char buf[256];
-    ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
-    ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
-            config->client_id);
+    if (connection->version < 3)
+      {
+        ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
+        ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
+                         config->client_id);
 
-    ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+        ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+      }
+    else
+      {
+        ck_assert(neo4j_type(argv[0]) == NEO4J_MAP);
+      }
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "scheme"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3?1:0], "scheme"), buf, sizeof(buf)),
             "basic");
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "principal"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3?1:0], "principal"), buf, sizeof(buf)),
             "user");
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "credentials"), buf, sizeof(buf)),
+             neo4j_map_get(argv[connection->version<3?1:0], "credentials"), buf, sizeof(buf)),
             "pass");
 
     neo4j_close(connection);
@@ -227,7 +235,7 @@ END_TEST
 
 START_TEST (test_connects_URI_containing_credentials_and_sends_init)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     neo4j_map_entry_t init_metadata_entries[1];
     init_metadata_entries[0] =
@@ -253,7 +261,8 @@ START_TEST (test_connects_URI_containing_credentials_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(0x040605),htonl(0x000004), 
+				       htonl(0x030404),htonl(0x000003) };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -263,22 +272,29 @@ START_TEST (test_connects_URI_containing_credentials_and_sends_init)
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_INIT_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, connection->version <3 ? 2: 1);
 
     char buf[256];
-    ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
-    ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
-            config->client_id);
+    if (connection->version < 3)
+      {
+         ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
+         ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
+                 config->client_id);
 
-    ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+         ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+      }
+    else
+      {
+         ck_assert(neo4j_type(argv[0]) == NEO4J_MAP);
+      }
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "scheme"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3? 1:0], "scheme"), buf, sizeof(buf)),
             "basic");
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "principal"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3? 1:0], "principal"), buf, sizeof(buf)),
             "john");
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "credentials"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3? 1:0], "credentials"), buf, sizeof(buf)),
             "smith");
 
     neo4j_close(connection);
@@ -288,7 +304,7 @@ END_TEST
 
 START_TEST (test_connects_tcp_and_sends_init)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     neo4j_map_entry_t init_metadata_entries[1];
     init_metadata_entries[0] =
@@ -312,7 +328,8 @@ START_TEST (test_connects_tcp_and_sends_init)
     ck_assert(memcmp(hello, expected_hello, 4) == 0);
 
     // check expected versions was sent
-    uint32_t expected_versions[4] = { htonl(1), 0, 0, 0 };
+    uint32_t expected_versions[4] = { htonl(0x040605),htonl(0x000004), 
+				       htonl(0x030404),htonl(0x000003) };
     uint32_t versions[4];
     rb_extract(out_rb, versions, 16);
     ck_assert(memcmp(versions, expected_versions, 16) == 0);
@@ -322,22 +339,29 @@ START_TEST (test_connects_tcp_and_sends_init)
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_INIT_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, connection->version <3? 2 : 1);
 
     char buf[256];
-    ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
-    ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
-            config->client_id);
+    if (connection->version < 3)
+      {
+        ck_assert(neo4j_type(argv[0]) == NEO4J_STRING);
+        ck_assert_str_eq(neo4j_string_value(argv[0], buf, sizeof(buf)),
+                config->client_id);
 
-    ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+        ck_assert(neo4j_type(argv[1]) == NEO4J_MAP);
+      }
+    else
+      {
+        ck_assert(neo4j_type(argv[0]) == NEO4J_MAP);
+      }
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "scheme"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3? 1:0], "scheme"), buf, sizeof(buf)),
             "basic");
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "principal"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3? 1:0], "principal"), buf, sizeof(buf)),
             username);
     ck_assert_str_eq(neo4j_string_value(
-            neo4j_map_get(argv[1], "credentials"), buf, sizeof(buf)),
+            neo4j_map_get(argv[connection->version<3? 1:0], "credentials"), buf, sizeof(buf)),
             password);
 
     neo4j_close(connection);
@@ -347,7 +371,7 @@ END_TEST
 
 START_TEST (test_expired_credentials)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     neo4j_map_entry_t init_metadata_entries[1];
     init_metadata_entries[0] =
@@ -433,7 +457,7 @@ START_TEST (test_fails_if_init_failure)
 {
     neo4j_config_set_logger_provider(config, NULL);
 
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
 
     failure_metadata_entries[0] = neo4j_map_entry("code",
@@ -454,7 +478,7 @@ START_TEST (test_fails_if_init_failure_and_close)
 {
     neo4j_config_set_logger_provider(config, NULL);
 
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
 
     failure_metadata_entries[0] = neo4j_map_entry("code",
@@ -480,7 +504,7 @@ START_TEST (test_fails_if_connection_closes)
     ck_assert_ptr_eq(connection, NULL);
     ck_assert_int_eq(errno, NEO4J_PROTOCOL_NEGOTIATION_FAILED);
 
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
 
     connection = neo4j_connect("neo4j://localhost:7687", config, 0);
@@ -492,7 +516,7 @@ END_TEST
 
 START_TEST (test_drains_outstanding_requests_on_close)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_connection_t *connection = neo4j_connect(
@@ -500,7 +524,7 @@ START_TEST (test_drains_outstanding_requests_on_close)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp);
     ck_assert_int_eq(result, 0);
 
@@ -513,7 +537,7 @@ END_TEST
 
 START_TEST (test_awaits_inflight_requests_on_close)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     neo4j_connection_t *connection = neo4j_connect(
@@ -521,12 +545,12 @@ START_TEST (test_awaits_inflight_requests_on_close)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -546,15 +570,13 @@ END_TEST
 
 START_TEST (test_sends_reset_on_reset)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, NULL, 0); // RESET
-
     neo4j_connection_t *connection = neo4j_connect(
             "neo4j://localhost:7687", config, 0);
     ck_assert_ptr_ne(connection, NULL);
-
     neo4j_reset(connection);
 
     // skip HELLO and protocol negotiation
@@ -565,7 +587,7 @@ START_TEST (test_sends_reset_on_reset)
     uint16_t argc;
     neo4j_message_type_t type = recv_message(server_ios, &mpool, &argv, &argc);
     ck_assert(type == NEO4J_INIT_MESSAGE);
-    ck_assert_int_eq(argc, 2);
+    ck_assert_int_eq(argc, connection->version<3? 2: 1);
 
     // RESET msg
     type = recv_message(server_ios, &mpool, &argv, &argc);
@@ -579,7 +601,7 @@ END_TEST
 
 START_TEST (test_drains_outstanding_requests_on_reset)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
@@ -588,7 +610,7 @@ START_TEST (test_drains_outstanding_requests_on_reset)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp);
     ck_assert_int_eq(result, 0);
 
@@ -602,7 +624,7 @@ END_TEST
 
 START_TEST (test_awaits_inflight_requests_on_reset)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
@@ -611,12 +633,12 @@ START_TEST (test_awaits_inflight_requests_on_reset)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -638,7 +660,7 @@ END_TEST
 
 START_TEST (test_drains_requests_and_acks_after_failure)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
@@ -647,17 +669,17 @@ START_TEST (test_drains_requests_and_acks_after_failure)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp3 = { 1, NULL };
-    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
+    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null, neo4j_null,
             response_recv_callback, &resp3);
     ck_assert_int_eq(result, 0);
 
@@ -680,7 +702,7 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
 {
     neo4j_config_set_logger_provider(config, NULL);
 
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
@@ -689,12 +711,12 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -706,7 +728,7 @@ START_TEST (test_cant_continue_after_eproto_in_failure)
     ck_assert(resp1.type == NEO4J_FAILURE_MESSAGE);
     ck_assert(resp2.type == NULL);
 
-    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
+    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, NEO4J_SESSION_FAILED);
@@ -720,7 +742,7 @@ START_TEST (test_cant_continue_after_eproto_in_ack_failure)
 {
     neo4j_config_set_logger_provider(config, NULL);
 
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
@@ -729,12 +751,12 @@ START_TEST (test_cant_continue_after_eproto_in_ack_failure)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -747,7 +769,7 @@ START_TEST (test_cant_continue_after_eproto_in_ack_failure)
     ck_assert(resp1.type == NEO4J_FAILURE_MESSAGE);
     ck_assert(resp2.type == NEO4J_IGNORED_MESSAGE);
 
-    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null,
+    result = neo4j_session_run(connection, &mpool, "RETURN 2", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, -1);
     ck_assert_int_eq(errno, NEO4J_SESSION_FAILED);
@@ -759,7 +781,7 @@ END_TEST
 
 START_TEST (test_drains_acks_when_closed)
 {
-    uint32_t version = htonl(1);
+    uint32_t version = htonl(4);
     rb_append(in_rb, &version, sizeof(version));
     queue_message(server_ios, NEO4J_SUCCESS_MESSAGE, &empty_map, 1); // INIT
 
@@ -768,12 +790,12 @@ START_TEST (test_drains_acks_when_closed)
     ck_assert_ptr_ne(connection, NULL);
 
     struct received_response resp1 = { 1, NULL };
-    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null,
+    int result = neo4j_session_run(connection, &mpool, "RETURN 1", neo4j_null, neo4j_null,
             response_recv_callback, &resp1);
     ck_assert_int_eq(result, 0);
 
     struct received_response resp2 = { 1, NULL };
-    result = neo4j_session_pull_all(connection, &mpool,
+    result = neo4j_session_pull_all(connection, -1, -1, &mpool,
             response_recv_callback, &resp2);
     ck_assert_int_eq(result, 0);
 
@@ -791,6 +813,48 @@ START_TEST (test_drains_acks_when_closed)
 }
 END_TEST
 
+
+START_TEST (test_version_specs)
+{
+  version_spec_t vs = { 5, 7, 0 };
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 7);
+  ck_assert_int_eq(vs.and_lower, 0);
+  ck_assert(vstonl(vs) == htonl(0x00000705));
+
+  ck_assert_int_eq( parse_version_string("4.3", &vs), 0);
+  ck_assert_int_eq(vs.major, 4);
+  ck_assert_int_eq(vs.minor, 3);
+  ck_assert_int_eq(vs.and_lower, 0);
+
+  ck_assert_int_eq( parse_version_string("5.7-5.4", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 7);
+  ck_assert_int_eq(vs.and_lower, 3);
+
+  ck_assert_int_eq( parse_version_string("5.4-5.7", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 7);
+  ck_assert_int_eq(vs.and_lower, 3);
+  ck_assert(vstonl(vs) == htonl(0x00030705));
+
+  ck_assert_int_eq( parse_version_string("5-5.4", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 4);
+  ck_assert_int_eq(vs.and_lower, 4);
+
+  ck_assert_int_eq( parse_version_string("5.4-5", &vs), 0);
+  ck_assert_int_eq(vs.major, 5);
+  ck_assert_int_eq(vs.minor, 4);
+  ck_assert_int_eq(vs.and_lower, 4);
+
+  ck_assert_int_eq( parse_version_string("4", &vs), 0);
+  ck_assert_int_eq(vs.major, 4);
+  ck_assert_int_eq(vs.minor, 0);
+  ck_assert_int_eq(vs.and_lower, 0);
+  
+}
+END_TEST
 
 TCase* connection_tcase(void)
 {
@@ -817,5 +881,6 @@ TCase* connection_tcase(void)
     tcase_add_test(tc, test_cant_continue_after_eproto_in_failure);
     tcase_add_test(tc, test_cant_continue_after_eproto_in_ack_failure);
     tcase_add_test(tc, test_drains_acks_when_closed);
+    tcase_add_test(tc, test_version_specs);
     return tc;
 }

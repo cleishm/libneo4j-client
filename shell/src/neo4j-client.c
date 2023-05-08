@@ -61,6 +61,7 @@ const char *shortopts = "e:hi:o:p:Pu:v";
 #define COLORIZE_OPT 1011
 #define NO_COLORIZE_OPT 1012
 #define EXPORT_OPT 1013
+#define SUPP_VER_OPT 1014
 
 static struct option longopts[] =
     { { "help", no_argument, NULL, 'h' },
@@ -86,6 +87,7 @@ static struct option longopts[] =
       { "output", required_argument, NULL, 'o' },
       { "verbose", no_argument, NULL, 'v' },
       { "version", no_argument, NULL, VERSION_OPT },
+      { "support", required_argument, NULL, SUPP_VER_OPT },
       { NULL, 0, NULL, 0 } };
 
 static void usage(FILE *s, const char *prog_name)
@@ -124,6 +126,8 @@ static void usage(FILE *s, const char *prog_name)
 " --eval script, -e script\n"
 "                     Evaluate the argument string. May be specified multiple\n"
 "                     times.\n"
+" --support version_string\n"
+"                     Set Neo4j server versions to accept e.g. '4,5.4-5.3'\n"
 " --export name=val   Export a parameter, which will be available in all\n"
 "                     queries.\n"
 " --verbose, -v       Increase logging verbosity.\n"
@@ -404,6 +408,14 @@ int main(int argc, char *argv[])
                 }
             }
             break;
+	case SUPP_VER_OPT:
+	  if (neo4j_config_set_supported_versions(state.config, optarg))
+	    {
+	      fprintf(state.err, "Couldn't parse version string '%s'\n",
+		      optarg);
+	      goto cleanup;
+	    }
+	  break;
         case VERSION_OPT:
             fprintf(state.out, "neo4j-client: %s\n", PACKAGE_VERSION);
             fprintf(state.out, "libneo4j-client: %s\n",

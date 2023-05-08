@@ -16,6 +16,7 @@
  */
 #include "../../config.h"
 #include "connection.h"
+#include "messages.h"
 #include "buffering_iostream.h"
 #include "chunking_iostream.h"
 #include "client_config.h"
@@ -28,10 +29,10 @@
 #endif
 #include "posix_iostream.h"
 #include "serialization.h"
+#include "transaction.h"
 #include "util.h"
 #include <assert.h>
 #include <unistd.h>
-
 
 static int add_userinfo_to_config(const char *userinfo, neo4j_config_t *config,
         uint_fast32_t flags);
@@ -42,7 +43,8 @@ static neo4j_iostream_t *std_tcp_connect(
         unsigned int port, neo4j_config_t *config, uint_fast32_t flags,
         struct neo4j_logger *logger);
 static int negotiate_protocol_version(neo4j_iostream_t *iostream,
-        uint32_t *protocol_version);
+				      version_spec_t *supported_versions,
+        uint32_t *protocol_version, uint32_t *protocol_minor_version);
 
 static bool interrupted(neo4j_connection_t *connection);
 static int session_reset(neo4j_connection_t *connection);
@@ -62,6 +64,10 @@ static int ack_failure(neo4j_connection_t *connection  );
 static int ack_failure_callback(void *cdata, neo4j_message_type_t type,
        const neo4j_value_t *argv, uint16_t argc);
 
+static int hello(neo4j_connection_t *connection);
+static int goodbye(neo4j_connection_t *connection);
+
+static neo4j_map_entry_t xtra[2];
 
 struct neo4j_connection_factory neo4j_std_connection_factory =
 {
@@ -276,13 +282,14 @@ neo4j_connection_t *establish_connection(const char *hostname,
         goto failure;
     }
 
-    uint32_t protocol_version;
-    if (negotiate_protocol_version(iostream, &protocol_version))
+    uint32_t protocol_version, protocol_minor_version;
+    if (negotiate_protocol_version(iostream, config->supported_versions,
+				   &protocol_version, &protocol_minor_version))
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
     }
-    if (protocol_version != 1)
+    if ((protocol_version < 1) || (protocol_version > 5))
     {
         errno = NEO4J_PROTOCOL_NEGOTIATION_FAILED;
         goto failure;
@@ -298,6 +305,7 @@ neo4j_connection_t *establish_connection(const char *hostname,
     connection->port = port;
     connection->iostream = iostream;
     connection->version = protocol_version;
+    connection->minor_version = protocol_minor_version;
 #ifdef HAVE_TLS
     connection->insecure = flags & NEO4J_INSECURE;
 #else
@@ -311,7 +319,7 @@ neo4j_connection_t *establish_connection(const char *hostname,
             hostname, port, connection->insecure? " (insecure)" : "");
     neo4j_log_debug(logger, "connection %p using protocol version %d",
             (void *)connection, protocol_version);
-
+    neo4j_atomic_bool_set(&(connection->poison_tx),false);
     return connection;
 
     int errsv;
@@ -408,7 +416,9 @@ failure:
 
 
 int negotiate_protocol_version(neo4j_iostream_t *iostream,
-        uint32_t *protocol_version)
+			       version_spec_t *supported_versions,
+                               uint32_t *protocol_version,
+			       uint32_t *protocol_minor_version)
 {
     uint8_t hello[] = { 0x60, 0x60, 0xB0, 0x17 };
     if (neo4j_ios_write_all(iostream, hello,
@@ -417,9 +427,17 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
         return -1;
     }
 
-    uint32_t supported_versions[4] = { htonl(1), 0, 0, 0 };
-    if (neo4j_ios_write_all(iostream, supported_versions,
-                sizeof(supported_versions), NULL) < 0)
+    // Here, add 5, 4, 3 as supported versions, leave 1 and 2 behind
+    // Using version ranges as described
+    // (https://neo4j.com/docs/bolt/current/bolt/handshake/#bolt-version43)
+    // 5.6-5.2, 4.4-4.0, 3
+    // (allowing 5.1 causes an unusual issue)
+    uint32_t supported_versions_nl[4] = {
+      vstonl(supported_versions[0]),vstonl(supported_versions[1]), 
+      vstonl(supported_versions[2]),vstonl(supported_versions[3])
+    };
+    if (neo4j_ios_write_all(iostream, supported_versions_nl,
+                sizeof(supported_versions_nl), NULL) < 0)
     {
         return -1;
     }
@@ -436,8 +454,9 @@ int negotiate_protocol_version(neo4j_iostream_t *iostream,
     {
         return -1;
     }
-
-    *protocol_version = ntohl(agreed_version);
+    agreed_version = ntohl(agreed_version);
+    *protocol_version = agreed_version & 0007;
+    *protocol_minor_version = (agreed_version & 0700) >> 8;
     return 0;
 }
 
@@ -473,6 +492,10 @@ int neo4j_close(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in receive_responses() (close) on %p",
+			(void *)connection);
+	
     }
 
     // drain any remaining requests
@@ -481,17 +504,27 @@ int neo4j_close(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in drain_queued_requests() (close) on %p",
+			(void *)connection);
     }
     assert(connection->request_queue_depth == 0);
 
     neo4j_atomic_bool_set(&(connection->processing), false);
-
+    if (connection->version > 2) {
+      // say GOODBYE to server
+      goodbye(connection);
+    }
     if (connection->iostream != NULL &&
         neo4j_ios_close(connection->iostream) && err == 0)
     {
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in neo4j_ios_close() (close) on %p",
+			(void *)connection);
+	
     }
     connection->iostream = NULL;
 
@@ -559,6 +592,7 @@ int neo4j_connection_send(neo4j_connection_t *connection,
         return -1;
     }
 
+
     const neo4j_config_t *config = connection->config;
     int res = neo4j_message_send(connection->iostream, type, argv, argc,
             connection->snd_buffer, config->snd_min_chunk_size,
@@ -599,20 +633,32 @@ int neo4j_connection_recv(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
 int neo4j_reset(neo4j_connection_t *connection)
 {
     REQUIRE(connection != NULL, -1);
-    if (connection->failed)
-    {
-        errno = NEO4J_SESSION_FAILED;
-        return -1;
-    }
 
-    // immediately send RESET request onto the connection
+    // this logic is incorrect - if a connection has failed then a
+    // reset is what can revive it. Allow the RESET message to be
+    // sent, and if that fails, then the connection has truly borked.
+    //
+    // if (connection->failed)
+    // {
+    //    errno = NEO4J_SESSION_FAILED;
+    //    return -1;
+    // }
+    
+    // Immediately send RESET request onto the connection
     if (neo4j_connection_send(connection, NEO4J_RESET_MESSAGE, NULL, 0))
     {
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in neo4j_connection_send() (reset) on %p",
+			(void *)connection);
         return -1;
     }
 
     neo4j_log_trace(connection->logger, "sent RESET in %p", (void *)connection);
+    // clear the failed flag if it came to us set,
+    // since reset call to server succeeded
+    
+    connection->failed = false;
 
     // Check and set the reset_requested sentinal and then check if processing
     // is already taking place.
@@ -625,6 +671,7 @@ int neo4j_reset(neo4j_connection_t *connection)
     int err = session_reset(connection);
     // clear reset_requested BEFORE ending processing, to ensure it is not
     // set if processing resumes
+    neo4j_atomic_bool_set(&(connection->poison_tx),true);
     neo4j_atomic_bool_set(&(connection->reset_requested), false);
     neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
@@ -664,6 +711,9 @@ int session_reset(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in receive_responses() (session_reset) on %p",
+			(void *)connection);
         goto cleanup;
     }
 
@@ -678,13 +728,20 @@ int session_reset(neo4j_connection_t *connection)
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed at neo4j_connection_recv() (session_reset) on %p",
+			(void *)connection);
         goto cleanup;
     }
 
     neo4j_log_debug(connection->logger, "rcvd %s in response to RESET in %p",
             neo4j_message_type_str(type), (void *)connection);
 
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
@@ -693,6 +750,10 @@ int session_reset(neo4j_connection_t *connection)
         err = -1;
         errsv = EPROTO;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed with unexpected message on RESET (session_reset) on %p",
+			(void *)connection);
+	
         goto cleanup;
     }
 
@@ -703,6 +764,10 @@ cleanup:
         err = -1;
         errsv = errno;
         connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in drain_queued_requests() (session_reset) on %p",
+			(void *)connection);
+	
     }
 
     neo4j_mpool_drain(&mpool);
@@ -877,6 +942,10 @@ int send_requests(neo4j_connection_t *connection)
         int offset = (connection->request_queue_head + i) %
                 connection->request_queue_size;
         struct neo4j_request *request = &(connection->request_queue[offset]);
+        /* if (request->type == NEO4J_PULL_ALL_MESSAGE) { */
+        /*   char buf[128]; */
+        /*   fprintf(stderr, "%s\n",neo4j_tostring(request->argv[0],buf,sizeof(buf))); */
+        /* } */
 
         if (neo4j_connection_send(connection, request->type,
                     request->argv, request->argc))
@@ -936,7 +1005,11 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
             return -1;
         }
 
+#ifndef NEOCLIENT_BUILD
         if (failure && type != NEO4J_IGNORED_MESSAGE)
+#else
+        if (failure && !MESSAGE_TYPE_IS(type,IGNORED))
+#endif
         {
             neo4j_log_error(connection->logger,
                     "Unexpected %s message received in %p"
@@ -944,9 +1017,17 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
                     neo4j_message_type_str(type), (void *)connection);
             errno = EPROTO;
             connection->failed = true;
+	    neo4j_log_trace(connection->logger,
+			    "Connection failed with unexpected message after failure (receive_responses) on %p",
+			    (void *)connection);
+	    
             return -1;
         }
+#ifndef NEOCLIENT_BUILD	
         if (type == NEO4J_FAILURE_MESSAGE)
+#else
+	if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif
         {
             failure = true;
         }
@@ -954,7 +1035,7 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
         neo4j_log_debug(connection->logger, "rcvd %s in response to %s (%p)",
                 neo4j_message_type_str(type),
                 neo4j_message_type_str(request->type), (void *)request);
-
+        // request callback executed here
         int result = request->receive(request->cdata, type, argv, argc);
         int errsv = errno;
         if (result <= 0)
@@ -964,10 +1045,18 @@ int receive_responses(neo4j_connection_t *connection, const unsigned int *condit
         }
         if (result < 0)
         {
-            connection->failed = true;
-            errno = errsv;
-            return -1;
-        }
+	    char code[128];
+	    neo4j_string_value(neo4j_map_get(argv[0],"code"),code,sizeof(code));
+	    char msg[256];
+	    neo4j_string_value(neo4j_map_get(argv[0],"message"),msg,sizeof(msg));
+	    connection->failed = true;
+	    neo4j_log_trace(connection->logger,
+			    "Connection failed in request->receive() (receive_responses) on %p\nFailure code was: %s\nMessage was: %s",
+			    (void *)connection, (const char *) code,
+			    (const char *)msg);
+	    errno = errsv;
+	    return -1;
+	}
     }
 
     if (interruptable && interrupted(connection))
@@ -1102,7 +1191,6 @@ struct init_cdata
     int error;
 };
 
-
 int initialize(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
@@ -1131,20 +1219,37 @@ int initialize(neo4j_connection_t *connection)
     struct init_cdata cdata = { .connection = connection, .error = 0 };
 
     req->type = NEO4J_INIT_MESSAGE;
-    req->_argv[0] = neo4j_string(config->client_id);
-    neo4j_map_entry_t auth_token[3] =
+    if (connection->version < 3)
+      {
+      req->_argv[0] = neo4j_string(config->client_id);
+      neo4j_map_entry_t auth_token[3] =
         { neo4j_map_entry("scheme", neo4j_string("basic")),
           neo4j_map_entry("principal", neo4j_string(config->username)),
           neo4j_map_entry("credentials", neo4j_string(config->password)) };
-    req->_argv[1] = neo4j_map(auth_token, 3);
-    req->argv = req->_argv;
-    req->argc = 2;
+      req->_argv[1] = neo4j_map(auth_token, 3);
+      req->argv = req->_argv;
+      req->argc = 2;
+      }
+    else
+      {
+        neo4j_map_entry_t auth_token[4] =
+          { neo4j_map_entry("user_agent", neo4j_string(config->client_id)),
+            neo4j_map_entry("scheme", neo4j_string("basic")),
+            neo4j_map_entry("principal", neo4j_string(config->username)),
+            neo4j_map_entry("credentials", neo4j_string(config->password)) };
+        req->_argv[0] = neo4j_map(auth_token, 4);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->receive = initialize_callback;
     req->cdata = &cdata;
 
     neo4j_log_trace(connection->logger,
+                    (connection->version < 3)?
             "enqu INIT{\"%s\", {scheme: basic, principal: \"%s\", "
-            "credentials: ****}} (%p) in %p",
+                    "credentials: ****}} (%p) in %p" :
+            "enqu INIT{user_agent: \"%s\", scheme: basic, principal: \"%s\", "
+                    "credentials: ****}} (%p) in %p",
             config->client_id, config->username,
             (void *)req, (void *)connection);
 
@@ -1176,6 +1281,39 @@ cleanup:
     return err;
 }
 
+// hello - alias for initialize (Bolt 3.0)
+
+int hello(neo4j_connection_t *connection)
+{
+    return initialize(connection);
+}
+
+// Note (Bolt 3.0)
+// The GOODBYE message does not generate a server response. It signals a graceful
+// finish on the client-side. This functon is called in neo4j_close() when
+// Bolt 3+ is used
+
+int goodbye(neo4j_connection_t *connection)
+{
+    REQUIRE(connection != NULL, -1);
+    if (connection->failed)
+      {
+        errno = NEO4J_SESSION_FAILED;
+        return -1;
+      }
+
+    if (neo4j_connection_send(connection, NEO4J_GOODBYE_MESSAGE, NULL, 0))
+      {
+        connection->failed = true;
+	neo4j_log_trace(connection->logger,
+			"Connection failed in neo4j_connection_send() (goodbye) on %p",
+			(void *)connection);
+	
+        return -1;
+      }
+    neo4j_log_trace(connection->logger, "sent GOODBYE in %p", (void *)connection);
+    return 0;
+}
 
 int initialize_callback(void *cdata, neo4j_message_type_t type,
         const neo4j_value_t *argv, uint16_t argc)
@@ -1190,7 +1328,11 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
 
     char description[128];
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         snprintf(description, sizeof(description),
                 "SUCCESS in %p (response to INIT)", (void *)connection);
@@ -1221,7 +1363,11 @@ int initialize_callback(void *cdata, neo4j_message_type_t type,
         return 0;
     }
 
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_FAILURE_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,FAILURE) )
+#endif
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
@@ -1288,7 +1434,8 @@ cleanup:
     return result;
 }
 
-
+// in Bolt 3, ACK_FAILURE is eschewed for RESET message as
+// a response to server FAILURE.
 int ack_failure(neo4j_connection_t *connection)
 {
     assert(connection != NULL);
@@ -1298,12 +1445,14 @@ int ack_failure(neo4j_connection_t *connection)
     {
         return -1;
     }
-    req->type = NEO4J_ACK_FAILURE_MESSAGE;
+    req->type = (connection->version < 3)? NEO4J_ACK_FAILURE_MESSAGE :
+      NEO4J_RESET_MESSAGE;
     req->argc = 0;
     req->receive = ack_failure_callback;
     req->cdata = connection;
 
-    neo4j_log_trace(connection->logger, "enqu ACK_FAILURE (%p) in %p",
+    neo4j_log_trace(connection->logger, "enqu %s (%p) in %p",
+            (connection->version < 3)? "ACK_FAILURE" : "RESET",
             (void *)req, (void *)connection);
 
     return neo4j_session_sync(connection, NULL);
@@ -1316,35 +1465,46 @@ int ack_failure_callback(void *cdata, neo4j_message_type_t type,
     assert(cdata != NULL);
     neo4j_connection_t *connection = (neo4j_connection_t *)cdata;
 
-    if (type == NULL)
+    char buf[12];
+    strcpy(buf, (connection->version < 3)? "ACK_FAILURE" : "RESET");
+#ifndef NEOCLIENT_BUILD
+    if (type == NEO4J_IGNORED_MESSAGE || type == NULL)
+#else
+    if ( MESSAGE_TYPE_IS(type,IGNORED) || type == NULL )
+#endif
     {
         // only when draining after connection close
         return 0;
     }
+#ifndef NEOCLIENT_BUILD    
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(connection->logger,
                 "Unexpected %s message received in %p"
-                " (expected SUCCESS in response to ACK_FAILURE)",
-                neo4j_message_type_str(type), (void *)connection);
+                " (expected SUCCESS in response to %s)",
+                 neo4j_message_type_str(type), (void *)connection, buf);
         errno = EPROTO;
         return -1;
     }
 
-    neo4j_log_trace(connection->logger, "ACK_FAILURE complete in %p",
+    neo4j_log_trace(connection->logger, "%s complete in %p", buf,
             (void *)connection);
     return 0;
 }
 
 
 int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
-        const char *statement, neo4j_value_t params,
+        const char *statement, neo4j_value_t params, neo4j_value_t extra,
         neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
     REQUIRE(mpool != NULL, -1);
     REQUIRE(statement != NULL, -1);
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), -1);
+    REQUIRE(neo4j_type(extra) == NEO4J_MAP || neo4j_is_null(extra), -1);
     REQUIRE(callback != NULL, -1);
 
     if (neo4j_atomic_bool_set(&(connection->processing), true))
@@ -1362,8 +1522,9 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     req->type = NEO4J_RUN_MESSAGE;
     req->_argv[0] = neo4j_string(statement);
     req->_argv[1] = neo4j_is_null(params)? neo4j_map(NULL, 0) : params;
+    req->_argv[2] = neo4j_is_null(extra)? neo4j_map(NULL,0) : extra;
     req->argv = req->_argv;
-    req->argc = 2;
+    req->argc = (connection->version > 2)? 3 : 2;
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;
@@ -1371,9 +1532,20 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     if (neo4j_log_is_enabled(connection->logger, NEO4J_LOG_TRACE))
     {
         char buf[1024];
-        neo4j_log_trace(connection->logger, "enqu RUN{\"%s\", %s} (%p) in %p",
-                statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
-                (void *)req, (void *)connection);
+        if (connection->version < 3)
+          {
+            neo4j_log_trace(connection->logger, "enqu RUN{\"%s\", %s} (%p) in %p",
+                            statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
+                            (void *)req, (void *)connection);
+          }
+        else
+          {
+            char buf2[1024];
+            neo4j_log_trace(connection->logger, "enqu RUN{\"%s\", %s, %s} (%p) in %p",
+                            statement, neo4j_tostring(req->argv[1], buf, sizeof(buf)),
+                            neo4j_tostring(req->argv[2], buf2, sizeof(buf2)),
+                            (void *)req, (void *)connection);
+          }
     }
 
     err = 0;
@@ -1383,9 +1555,8 @@ cleanup:
     return err;
 }
 
-
-int neo4j_session_pull_all(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
-        neo4j_response_recv_t callback, void *cdata)
+int neo4j_session_pull_all(neo4j_connection_t *connection, int n, int qid, 
+        neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
     REQUIRE(mpool != NULL, -1);
@@ -1405,14 +1576,33 @@ int neo4j_session_pull_all(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
     }
 
     req->type = NEO4J_PULL_ALL_MESSAGE;
-    req->argv = NULL;
-    req->argc = 0;
+    if (connection->version < 4)
+      {
+        req->argv = NULL;
+        req->argc = 0;
+      }
+    else
+      {
+        xtra[0] = neo4j_map_entry("n",neo4j_int( n));
+        xtra[1] = neo4j_map_entry("qid",neo4j_int( qid));
+        req->_argv[0] = neo4j_map(xtra, 2);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;
-
-    neo4j_log_trace(connection->logger, "enqu PULL_ALL (%p) in %p",
-            (void *)req, (void *)connection);
+    if (connection->version < 4)
+      {
+        neo4j_log_trace(connection->logger, "enqu PULL_ALL (%p) in %p",
+		        (void *)req, (void *)connection);
+      }
+    else
+      {
+        char buf[128];
+        neo4j_log_trace(connection->logger, "enqu PULL %s (%p) in %p",
+                neo4j_tostring(req->argv[0],buf, sizeof(buf)), (void *)req, (void *)connection);
+      }
 
     err = 0;
 
@@ -1422,7 +1612,7 @@ cleanup:
 }
 
 
-int neo4j_session_discard_all(neo4j_connection_t *connection,
+int neo4j_session_discard_all(neo4j_connection_t *connection, int n, int qid,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata)
 {
     REQUIRE(connection != NULL, -1);
@@ -1443,18 +1633,135 @@ int neo4j_session_discard_all(neo4j_connection_t *connection,
     }
 
     req->type = NEO4J_DISCARD_ALL_MESSAGE;
-    req->argv = NULL;
-    req->argc = 0;
+    if (connection->version < 4)
+      {
+        req->argv = NULL;
+        req->argc = 0;
+      }
+    else
+      {
+        xtra[0] = neo4j_map_entry("n",neo4j_int(n));
+        xtra[1] = neo4j_map_entry("qid",neo4j_int(qid));
+        req->_argv[0] = neo4j_map(xtra, 2);
+        req->argv = req->_argv;
+        req->argc = 1;
+      }
     req->mpool = mpool;
     req->receive = callback;
     req->cdata = cdata;
 
-    neo4j_log_trace(connection->logger, "enqu DISCARD_ALL (%p) in %p",
-            (void *)req, (void *)connection);
+    if (connection->version < 4)
+      {
+        neo4j_log_trace(connection->logger, "enqu DISCARD_ALL (%p) in %p",
+                        (void *)req, (void *)connection);
+      }
+    else
+      {
+        char buf[128];
+        neo4j_log_trace(connection->logger, "enqu DISCARD %s (%p) in %p",
+                        neo4j_tostring(req->argv[0],buf, sizeof(buf)), (void *)req, (void *)connection);
+      }
 
     err = 0;
 
 cleanup:
     neo4j_atomic_bool_set(&(connection->processing), false);
     return err;
+}
+
+int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_type, neo4j_response_recv_t callback, void *cdata)
+{
+    REQUIRE(connection != NULL, -1);
+    REQUIRE(cdata != NULL, -1);
+    REQUIRE(callback != NULL, -1);
+
+    neo4j_transaction_t *tx = (neo4j_transaction_t *) cdata;
+    int err = -1;
+    struct neo4j_request *req = new_request(connection);
+    if (req == NULL)
+    {
+        goto cleanup;
+    }
+
+    req->type = neo4j_message_type_for_type(msg_type);
+    if (strcmp(msg_type,"BEGIN") == 0)
+    {
+	const neo4j_map_entry_t ent[3] = {
+	    neo4j_map_entry("mode",neo4j_string(tx->mode)),
+	    neo4j_map_entry("db",neo4j_string(tx->dbname == NULL ? "" : tx->dbname)),
+	    neo4j_map_entry("tx_timeout",neo4j_int(tx->timeout))
+	};
+	int nent = (tx->timeout >= 0)?3:2;
+	req->_argv[0] = neo4j_map(ent,nent); // extra dictionary
+	req->argv = req->_argv;
+	req->argc = 1;
+    }
+    else
+    {
+	req->argv = NULL;
+	req->argc = 0;
+    }
+    req->mpool = &(tx->mpool);
+    req->receive = callback; // callback specified in transaction.c
+    req->cdata = cdata; // this will be the neo4j_transaction_t object
+    if (neo4j_log_is_enabled(connection->logger,NEO4J_LOG_TRACE)) {
+        neo4j_log_trace(connection->logger, "enqu %s (%p) in %p",
+                        msg_type, (void *)req, (void *)connection);
+    }
+    if (neo4j_session_sync(connection,NULL)) {
+      if (tx->failed != 0) {
+        errno = tx->failure;
+      }
+      goto cleanup;
+    }
+
+    err = 0;
+
+cleanup:
+    return err;
+}
+
+int parse_version_string(char *version_string, version_spec_t *vs) {
+  int M0=0, m0=0, M1=0, m1=0,  n;
+  vs->major=0;
+  vs->minor=0;
+  vs->and_lower=0;
+  n = sscanf(version_string, "%d.%d-%d.%d", &M0, &m0, &M1, &m1);
+  if (n==1) {
+    if (sscanf(version_string, "%d-%d.%d", &M0, &M1, &m1)==3) {
+      m0 = 0;
+      n = 4;
+    }
+  }
+  switch (n) {
+  case 1:
+    vs->major = M0;
+    vs->minor = 0;
+    break;
+  case 2:
+    vs->major = M0;
+    vs->minor = m0;    
+    break;
+  case 3:
+    m1 = 0;
+  case 4:
+    if (M0 != M1) {
+      // Only minor version ranges within a single major version allowed
+      return -1;
+    }
+    vs->major = M0;
+    vs->minor = m0;    
+    if (m1 >= m0) {
+      vs->minor = m1;
+      vs->and_lower = m1-m0;
+    }
+    else {
+      vs->and_lower = m0-m1;
+    }
+    break;
+  default:
+    // couldn't parse
+    return -1;
+  }
+  return 0;
 }

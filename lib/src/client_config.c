@@ -16,14 +16,17 @@
  */
 #include "../../config.h"
 #include "client_config.h"
+#include "connection.h"
 #include "memory.h"
 #include "util.h"
+#include <string.h>
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #define NEO4J_DEFAULT_MPOOL_BLOCK_SIZE 128
 #define NEO4J_DEFAULT_RCVBUF_SIZE 4096
@@ -72,6 +75,11 @@ const struct neo4j_plan_table_colors *neo4j_plan_table_no_colors =
 const struct neo4j_plan_table_colors *neo4j_plan_table_ansi_colors =
         &_neo4j_plan_table_ansi_colors;
 
+static version_spec_t neo4j_supported_versions[4] = {
+  {5, 6, 4}, {4, 0, 0}, {4, 4, 3}, {3, 0, 0}
+};
+
+static const char neo4j_supported_versions_string[] = "5.6-5.2,4.0,4.4-4.1,3.0";
 
 static ssize_t default_password_callback(void *userdata, char *buf, size_t n);
 
@@ -110,6 +118,7 @@ neo4j_config_t *neo4j_new_config()
     config->render_inspect_rows = NEO4J_DEFAULT_RENDER_INSPECT_ROWS;
     config->results_table_colors = neo4j_results_table_no_colors;
     config->plan_table_colors = neo4j_plan_table_no_colors;
+    config->supported_versions = neo4j_supported_versions;
     return config;
 }
 
@@ -215,7 +224,6 @@ int neo4j_config_nset_username(neo4j_config_t *config,
     REQUIRE(config != NULL, -1);
     return replace_strptr_ndup(&(config->username), username, n);
 }
-
 
 int neo4j_config_set_password(neo4j_config_t *config, const char *password)
 {
@@ -697,4 +705,68 @@ const struct neo4j_plan_table_colors *neo4j_config_get_plan_table_colorization(
         const neo4j_config_t *config)
 {
     return config->plan_table_colors;
+}
+
+int neo4j_config_set_supported_versions(neo4j_config_t *config, const char *version_string)
+{
+  char *vs = strdup(version_string);
+  char *p = strtok(vs, ",");
+  int n=0;
+  if (vs == NULL)
+    {
+      fprintf(stderr, "Can't allocate string copy\n");
+      return -1;
+    }
+  while ((p != NULL) && (n < 4))
+    {
+      if (parse_version_string(p, config->supported_versions+n) != 0)
+	{
+	  // set default
+	  int i;
+	  neo4j_config_set_supported_versions(config, neo4j_supported_versions_string);
+	  fprintf(stderr, "%s\n", neo4j_config_get_supported_versions(config));
+	  return -1;
+	}
+      p = strtok(NULL, ",");
+      n++;
+    }
+  if (n<4) {
+    (config->supported_versions+n)->major = 0;
+    (config->supported_versions+n)->minor = 0;
+    (config->supported_versions+n)->and_lower = 0;
+    n++;
+  }
+  return 0;
+}
+
+const char *neo4j_config_get_supported_versions(neo4j_config_t *config)
+{
+  static char buf[50];
+  char *p;
+  int l=0, nmax=50, n;
+  version_spec_t *vs;
+  p = buf;
+  for (n=0;n<4;n++) {
+    vs = config->supported_versions+n;
+    if (vs->major == 0)
+      {
+	continue;
+      }
+    if (vs->and_lower == 0) {
+      l=snprintf(p, nmax, "%d.%d ", vs->major, vs->minor);
+    }
+    else {
+      l=snprintf(p, nmax, "%d.%d-%d.%d ", vs->major, vs->minor, vs->major, vs->minor-vs->and_lower);
+    }
+    if (l >= nmax) {
+      *p = '\0';
+      continue;
+    }
+    else {
+      p += l;
+      nmax -= l;
+    }
+    
+  }
+  return buf;
 }

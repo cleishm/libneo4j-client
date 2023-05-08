@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
-
+#include <stdio.h>
 
 struct markers
 {
@@ -180,7 +180,8 @@ int neo4j_string_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
 {
     REQUIRE(value, -1);
     REQUIRE(stream, -1);
-    assert(neo4j_type(*value) == NEO4J_STRING);
+    assert(neo4j_type(*value) == NEO4J_STRING ||
+	   neo4j_type(*value) == NEO4J_ELEMENTID);
     const struct neo4j_string *v = (const struct neo4j_string *)value;
 
     struct iovec iov[3];
@@ -293,7 +294,16 @@ int neo4j_struct_serialize(const neo4j_value_t *value, neo4j_iostream_t *stream)
     assert(neo4j_type(*value) == NEO4J_STRUCT ||
             neo4j_type(*value) == NEO4J_NODE ||
             neo4j_type(*value) == NEO4J_RELATIONSHIP ||
-            neo4j_type(*value) == NEO4J_PATH);
+            neo4j_type(*value) == NEO4J_PATH ||
+            neo4j_type(*value) == NEO4J_DATE ||
+            neo4j_type(*value) == NEO4J_TIME ||
+            neo4j_type(*value) == NEO4J_DATETIME ||
+            neo4j_type(*value) == NEO4J_LOCALDATETIME ||
+            neo4j_type(*value) == NEO4J_LOCALTIME ||
+            neo4j_type(*value) == NEO4J_DURATION ||
+            neo4j_type(*value) == NEO4J_POINT2D ||
+            neo4j_type(*value) == NEO4J_POINT3D
+	   );
     const struct neo4j_struct *v = (const struct neo4j_struct *)value;
     REQUIRE(v->nfields == 0 || v->fields != NULL, -1);
 

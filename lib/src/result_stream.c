@@ -21,9 +21,14 @@
 #include "job.h"
 #include "metadata.h"
 #include "util.h"
+#include "values.h"
 #include <assert.h>
 #include <stddef.h>
 
+#define NUM_XTRA_MAP_ENTS 6
+// making global to avoid disrupting the neo4j_run() signature
+static neo4j_value_t g_extra_map;
+static neo4j_map_entry_t g_extra_ents[NUM_XTRA_MAP_ENTS];
 
 int neo4j_check_failure(neo4j_result_stream_t *results)
 {
@@ -67,7 +72,6 @@ const char *neo4j_fieldname(neo4j_result_stream_t *results,
     REQUIRE(results != NULL, NULL);
     return results->fieldname(results, index);
 }
-
 
 neo4j_result_t *neo4j_fetch_next(neo4j_result_stream_t *results)
 {
@@ -251,6 +255,41 @@ static int set_eval_failure(run_result_stream_t *results,
         const char *src_message_type, const neo4j_value_t *argv, uint16_t argc);
 static void set_failure(run_result_stream_t *results, int error);
 
+int neo4j_set_extra(neo4j_value_t map)
+{
+  REQUIRE(neo4j_type(map) == NEO4J_MAP || neo4j_is_null(map), -1);
+  unsigned int i;
+  const struct neo4j_map *p = (const struct neo4j_map *)&map;
+  for (i=0;i<neo4j_map_size(map);i++)
+    {
+      g_extra_ents[i] = p->entries[i];
+    }
+  g_extra_map = neo4j_map(g_extra_ents,i);
+  return 0;
+}
+
+neo4j_result_stream_t *neo4j_run_in_db(neo4j_connection_t *connection,
+        const char *statement, neo4j_value_t params, const char *dbname)
+{
+   REQUIRE(connection != NULL, NULL);
+   REQUIRE(statement != NULL, NULL);
+   REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
+   REQUIRE(dbname != NULL, NULL);
+
+   if (connection->version < 4)
+     {
+       errno = NEO4J_FEATURE_UNAVAILABLE;
+       char buf[128];
+       sprintf(buf,"named dbs not available in protocol version %d", connection->version);
+       neo4j_log_error_errno(connection->logger, (const char*) buf);
+       return NULL;
+     }
+   g_extra_ents[0] = neo4j_map_entry("db", neo4j_string(dbname));
+   g_extra_map = neo4j_map(g_extra_ents,1);
+   neo4j_result_stream_t *rs = neo4j_run(connection, statement, params);
+   g_extra_map = neo4j_null;
+   return rs;
+}
 
 neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params)
@@ -258,14 +297,14 @@ neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
     REQUIRE(connection != NULL, NULL);
     REQUIRE(statement != NULL, NULL);
     REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
-
+    REQUIRE(neo4j_type(g_extra_map) == NEO4J_MAP || neo4j_is_null(g_extra_map), NULL);
     run_result_stream_t *results = run_rs_open(connection);
     if (results == NULL)
     {
         return NULL;
     }
 
-    if (neo4j_session_run(connection, &(results->mpool), statement, params,
+    if (neo4j_session_run(connection, &(results->mpool), statement, params, g_extra_map,
             run_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_run failed");
@@ -273,8 +312,8 @@ neo4j_result_stream_t *neo4j_run(neo4j_connection_t *connection,
     }
     (results->refcount)++;
 
-    if (neo4j_session_pull_all(results->connection, &(results->record_mpool),
-            pull_all_callback, results))
+    if (neo4j_session_pull_all(results->connection, -1, -1,
+            &(results->record_mpool), pull_all_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_session_pull_all failed");
         goto failure;
@@ -294,6 +333,29 @@ failure:
 }
 
 
+neo4j_result_stream_t *neo4j_send_to_db(neo4j_connection_t *connection,
+         const char *statement, neo4j_value_t params, const char *dbname)
+{
+  REQUIRE(connection != NULL, NULL);
+  REQUIRE(statement != NULL, NULL);
+  REQUIRE(neo4j_type(params) == NEO4J_MAP || neo4j_is_null(params), NULL);
+  REQUIRE(dbname != NULL, NULL);
+
+  if (connection->version < 4)
+    {
+      errno = NEO4J_FEATURE_UNAVAILABLE;
+      char buf[128];
+      sprintf(buf,"named dbs not available in protocol version %d", connection->version);
+      neo4j_log_error_errno(connection->logger, (const char*) buf);
+      return NULL;
+    }
+  g_extra_ents[0] = neo4j_map_entry("db", neo4j_string(dbname));
+  g_extra_map = neo4j_map(g_extra_ents,1);
+  neo4j_result_stream_t *rs = neo4j_send(connection, statement, params);
+  g_extra_map = neo4j_null;
+  return rs;
+}
+
 neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         const char *statement, neo4j_value_t params)
 {
@@ -307,7 +369,7 @@ neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
         return NULL;
     }
 
-    if (neo4j_session_run(connection, &(results->mpool), statement, params,
+    if (neo4j_session_run(connection, &(results->mpool), statement, params, g_extra_map,
             run_callback, results))
     {
         neo4j_log_debug_errno(results->logger, "neo4j_connection_run failed");
@@ -315,8 +377,8 @@ neo4j_result_stream_t *neo4j_send(neo4j_connection_t *connection,
     }
     (results->refcount)++;
 
-    if (neo4j_session_discard_all(results->connection, &(results->mpool),
-            discard_all_callback, results))
+    if (neo4j_session_discard_all(results->connection, -1, -1,
+            &(results->mpool), discard_all_callback, results))
     {
         neo4j_log_debug_errno(results->logger,
                 "neo4j_connection_discard_all failed");
@@ -335,7 +397,6 @@ failure:
     errno = errsv;
     return NULL;
 }
-
 
 run_result_stream_t *run_rs_open(neo4j_connection_t *connection)
 {
@@ -774,11 +835,20 @@ int run_callback(void *cdata, neo4j_message_type_t type,
         return 0;
     }
 
+#ifndef NEOCLIENT_BUILD    
     if (type == NEO4J_FAILURE_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif	
     {
         return set_eval_failure(results, "RUN", argv, argc);
     }
+    
+#ifndef NEOCLIENT_BUILD    
     if (type == NEO4J_IGNORED_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,IGNORED) )
+#endif
     {
         if (results->failure == 0)
         {
@@ -791,7 +861,11 @@ int run_callback(void *cdata, neo4j_message_type_t type,
     snprintf(description, sizeof(description), "%s in %p (response to RUN)",
             neo4j_message_type_str(type), (void *)connection);
 
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(logger, "Unexpected %s", description);
         set_failure(results, errno = EPROTO);
@@ -838,7 +912,11 @@ int pull_all_callback(void *cdata, neo4j_message_type_t type,
     assert(argc == 0 || argv != NULL);
     run_result_stream_t *results = (run_result_stream_t *)cdata;
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_RECORD_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,RECORD) )
+#endif
     {
         if (append_result(results, argv, argc))
         {
@@ -891,7 +969,11 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     neo4j_config_t *config = connection->config;
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_IGNORED_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,IGNORED) )
+#endif
     {
         if (results->failure == 0)
         {
@@ -907,11 +989,20 @@ int stream_end(run_result_stream_t *results, neo4j_message_type_t type,
 
     assert(results->failure == 0);
 
+#ifndef NEOCLIENT_BUILD
     if (type == NEO4J_FAILURE_MESSAGE)
+#else
+    if ( MESSAGE_TYPE_IS(type,FAILURE) )
+#endif
     {
         return set_eval_failure(results, src_message_type, argv, argc);
     }
+
+#ifndef NEOCLIENT_BUILD
     if (type != NEO4J_SUCCESS_MESSAGE)
+#else
+    if ( !MESSAGE_TYPE_IS(type,SUCCESS) )
+#endif
     {
         neo4j_log_error(logger,
                 "Unexpected %s message received in %p"

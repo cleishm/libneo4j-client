@@ -26,6 +26,11 @@
 #include "memory.h"
 #include "messages.h"
 #include "uri.h"
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define vstonl(vs) htonl((vs.and_lower<<16)|(vs.minor<<8)|vs.major)
 
 /**
  * Callback for receiving responses to requests.
@@ -72,6 +77,7 @@ struct neo4j_connection
 
     neo4j_iostream_t *iostream;
     uint32_t version;
+    uint32_t minor_version;
     bool insecure;
 
     uint8_t *snd_buffer;
@@ -80,6 +86,7 @@ struct neo4j_connection
     char *server_id;
     bool credentials_expired;
     bool failed;
+    neo4j_atomic_bool poison_tx;
     neo4j_atomic_bool reset_requested;
 
     struct neo4j_request *request_queue;
@@ -179,13 +186,14 @@ int neo4j_session_sync(neo4j_connection_t *connection,
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [statement] The statement to send.
  * @param [params] The parameters to send.
+ * @param [extra] The 'extra' map containing bolt metadata (Neo4j 3+)
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
 int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
-        const char *statement, neo4j_value_t params,
+        const char *statement, neo4j_value_t params, neo4j_value_t extra,
         neo4j_response_recv_t callback, void *cdata);
 
 /**
@@ -194,13 +202,15 @@ int neo4j_session_run(neo4j_connection_t *connection, neo4j_mpool_t *mpool,
  * @internal
  *
  * @param [connection] The connection to send the message in.
+ * @param [n] Number of records to pull; set to -1 to pull all (Bolt 4+)
+ * @param [qid] ID of query to pull from; set to -1 for most recent (Bolt 4+)
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
-int neo4j_session_pull_all(neo4j_connection_t *connection,
+int neo4j_session_pull_all(neo4j_connection_t *connection, int n, int qid,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
 
 /**
@@ -209,14 +219,24 @@ int neo4j_session_pull_all(neo4j_connection_t *connection,
  * @internal
  *
  * @param [connection] The connection to send the message in.
+ * @param [n] Number of records to discard; set to -1 to discard all (Bolt 4+)
+ * @param [qid] ID of query to discard from; set to -1 for most recent (Bolt 4+)
  * @param [mpool] The memory pool to use when sending and receiving.
  * @param [callback] The callback to be invoked for responses.
  * @param [cdata] Opaque data to be provided to the callback.
  * @return 0 on success, -1 on failure (errno will be set).
  */
 __neo4j_must_check
-int neo4j_session_discard_all(neo4j_connection_t *connection,
+int neo4j_session_discard_all(neo4j_connection_t *connection, int n, int qid,
         neo4j_mpool_t *mpool, neo4j_response_recv_t callback, void *cdata);
 
+
+// bolt 3 stuff here for now
+__neo4j_must_check
+int neo4j_session_transact(neo4j_connection_t *connection, const char*msg_name, neo4j_response_recv_t callback, void *cdata);
+
+neo4j_value_t extract_extra( neo4j_value_t *params);
+
+int parse_version_string(char *version_string, version_spec_t *vs);
 
 #endif/*NEO4J_CONNECTION_H*/
